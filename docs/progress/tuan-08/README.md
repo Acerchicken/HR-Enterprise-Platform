@@ -12,7 +12,7 @@ Phân vai theo ADR-11: TV1 Duong code, TV2 Thanh nghiệp vụ, TV3 Duy ca kiể
 Mỗi việc là một nhánh tách từ `dev`, xong thì mở PR vào `dev`. Quy tắc nhánh chi tiết ở
 [`docs/CONVENTIONS.md`](../../CONVENTIONS.md#6-git-nhánh-và-review).
 
-| Nhánh | Người | Việc | Output | Hạn PR vào `dev` | Review |
+| Nhánh | Người | Việc | Output | Hạn mở PR vào `dev` | Review |
 |---|---|---|---|---|---|
 | `docs/leave-rules` | TV2 Thanh | Business rule luồng nghỉ phép; sơ đồ quy trình; đối chiếu UC1, UC2 với requirements | `docs/business/leave-rules.md`, sơ đồ, issue | Thứ 3 (27/10) | TV1, TV3 |
 | `chore/rabbitmq-mailpit` | TV4 Bảo | Thêm RabbitMQ và Mailpit vào docker-compose | `docker-compose.yml`, `.env.example` | Thứ 4 (28/10) | TV1 |
@@ -21,15 +21,17 @@ Mỗi việc là một nhánh tách từ `dev`, xong thì mở PR vào `dev`. Qu
 | `feat/leave-workflow-api` | TV1 Duong | API tạo, duyệt/từ chối, hủy, HR hoàn tất đơn trong một transaction | `backend/src/modules/leave/` | Thứ 5 (29/10) | TV2 (nghiệp vụ), TV3 (ca kiểm thử) |
 | `feat/leave-outbox-worker` | TV1 Duong | Outbox, publisher, worker gửi email | `backend/src/modules/leave/outbox/`, `backend/src/worker/` | Thứ 6 (30/10), sau khi `chore/rabbitmq-mailpit` vào `dev` | TV4 (hạ tầng), TV2 |
 | `docs/adr-12-cloud-provider` | TV4 Bảo | So sánh cloud provider, ADR-12, map capability, ước tính chi phí | ADR-12 trong mục 3 của file này, `docs/cloud/mapping.md` | Thứ 6 (30/10) | TV1 |
-| `feat/leave-ui` | TV1 Duong | 5 màn hình nghỉ phép | `frontend/src/pages/leave/` | Chủ nhật (1/11) | TV2, TV3 |
+| `feat/leave-ui` | TV1 Duong | 5 màn hình nghỉ phép | `frontend/src/pages/leave/` | Chủ nhật (1/11), 12:00 | TV2, TV3 |
+| `docs/test-report-leave` | TV3 Duy | Kiểm thử chức năng các màn hình nghỉ phép theo ca kiểm thử | Bổ sung `docs/business/test-report-tuan-08.md`, issue | Chủ nhật (1/11), 21:00 | TV1 |
 
 Thứ tự phụ thuộc:
 
 1. Thứ 3: TV2 merge `docs/leave-rules` → TV3 viết ca kiểm thử, TV1 code API theo đó.
 2. Thứ 4: TV4 merge `chore/rabbitmq-mailpit` → TV1 viết worker.
 3. Thứ 5: TV3 merge ca kiểm thử → TV1 đối chiếu API với từng ca.
-4. Chủ nhật: TV3 kiểm thử chức năng các màn hình nghỉ phép trên `dev`, mở issue nếu lỗi.
-5. Thứ 2 (2/11): TV1 mở PR `dev` → `main` để chốt tuần 8.
+4. Chủ nhật: TV1 merge `feat/leave-ui` trước 12:00 → TV3 kiểm thử chức năng các màn hình nghỉ phép trên `dev`, mở issue nếu lỗi.
+5. Thứ 2 (2/11), 9:00: mọi người điền mục "Việc đã làm" trong file cá nhân.
+6. Thứ 2 (2/11): TV1 mở PR `dev` → `main` để chốt tuần 8.
 
 ## 1. Các công việc đã hoàn thành
 

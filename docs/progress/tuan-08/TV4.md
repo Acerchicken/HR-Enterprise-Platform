@@ -2,6 +2,17 @@
 
 Vai trò: chọn cloud provider, chi phí, CI/CD, hạ tầng bằng code, hạ tầng chạy local.
 
+## Hạn chót
+
+| Hạn | Việc |
+|---|---|
+| **Thứ 4 (28/10), 12:00** | PR `chore/rabbitmq-mailpit` được merge vào `dev` (TV1 cần để viết worker từ chiều thứ 4) |
+| **Thứ 4 (28/10), 21:00** | Mở PR `ci/github-actions` vào `dev` |
+| **Thứ 5 (29/10)** | CI chạy được trên PR; báo TV1 bật branch protection |
+| **Thứ 6 (30/10), 21:00** | Mở PR `docs/adr-12-cloud-provider` vào `dev`: ADR-12 + bảng mapping + chi phí |
+| Trong 24 giờ kể từ khi được gán | Review PR của TV1 có đụng tới hạ tầng (worker, queue) |
+| **Thứ 2 (2/11), 9:00** | Điền mục "Việc đã làm" ở cuối file này |
+
 ## Việc cần làm
 
 | Nhánh | Việc | Output | Hạn PR vào `dev` |
