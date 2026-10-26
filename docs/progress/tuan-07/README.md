@@ -8,24 +8,29 @@ API workflow làm ở tuần 8. Tech stack chốt trong ADR-04: **NestJS + React
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (nhóm trưởng) | Chốt tech stack (ADR-04); khung repo modular monolith, xử lý lỗi chung; quy ước code + quy trình PR; module Leave: entity + state machine | Khung repo, `docs/CONVENTIONS.md`, PR template, state machine + 9 unit test | [TV1.md](TV1.md) |
-| TV2 | Migration đầu tiên (5 schema, 11 bảng); module Employee, Organization, Audit; mã hóa trường nhạy cảm; `docs/openapi.yaml` sinh từ code | 13 endpoint chạy local, migration, e2e test | [TV2.md](TV2.md) |
-| TV3 | Khung frontend React + Vite; màn hình đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức | Frontend chạy local, gọi được API | [TV3.md](TV3.md) |
-| TV4 | docker-compose; realm Keycloak (4 role, 4 tài khoản demo); tích hợp OIDC; seed 2,000 nhân viên; hướng dẫn chạy | Chạy cả hệ thống bằng một lệnh, seed data | [TV4.md](TV4.md) |
+| TV1 (nhóm trưởng) | Chốt tech stack (ADR-04); khung modular monolith, quy ước code, quy trình PR; migration 5 schema; module Identity, Employee, Organization, Audit; module Leave (entity + state machine); frontend (đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức); docker-compose, realm Keycloak, seed 2,000 nhân viên | Repo chạy được ở local, 13 endpoint, 24 unit test + 18 e2e test | [TV1.md](TV1.md) |
+| TV2 | Không có công việc hoàn thành | – | [TV2.md](TV2.md) |
+| TV3 | Không có công việc hoàn thành | – | [TV3.md](TV3.md) |
+| TV4 | Không có công việc hoàn thành | – | [TV4.md](TV4.md) |
 
-**Chưa làm được theo kế hoạch:** map capability sang cloud service (vẫn chờ chốt provider), chuyển sang tuần 8.
+**Chưa làm được theo kế hoạch:** kế hoạch tuần 6 chia phần code cho cả 4 người, thực tế chỉ TV1 code. Nhóm điều chỉnh phân vai
+từ tuần 8 (QĐ-07). Map capability sang cloud service vẫn chờ chốt provider, chuyển cho TV4 ở tuần 8.
 
 **Kết quả kiểm thử:** 24 unit test và 18 e2e test đều qua; đã thử trên trình duyệt với Keycloak thật (đăng nhập, danh bạ,
 xem trường nhạy cảm, sơ đồ tổ chức, sửa số điện thoại).
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 8: 26/10 – 2/11)
 
-| Thành viên | Công việc | Output |
-|---|---|---|
-| TV1 (nhóm trưởng) | API workflow nghỉ phép: tạo đơn (kiểm tra số dư, trùng lịch, Idempotency-Key), duyệt/từ chối, hủy, HR hoàn tất; mỗi bước cập nhật đơn + số dư + lịch sử + audit trong một transaction; review PR | 6 endpoint /leave-requests, e2e test cho từng bước chuyển trạng thái |
-| TV2 | Bảng outbox và publisher đẩy event sang queue; 5 event LeaveRequest*; API tra cứu đơn theo scope mine/team/all; cập nhật openapi.yaml | Event vào được queue, openapi.yaml cập nhật |
-| TV3 | Màn hình tạo đơn, đơn của tôi, duyệt đơn (manager), xử lý đơn (HR), tra cứu audit (HR) | Demo luồng nghỉ phép end-to-end trên giao diện |
-| TV4 | RabbitMQ trong docker-compose; worker Notification gửi email qua Mailpit, retry + dead-letter queue, bỏ qua event trùng; chốt cloud provider và map capability | Worker gửi được email, bảng mapping cloud service |
+Phân vai mới theo QĐ-07.
+
+| Thành viên | Vai trò | Công việc | Output |
+|---|---|---|---|
+| TV1 (nhóm trưởng) | Code chính | API workflow nghỉ phép (tạo, duyệt/từ chối, hủy, HR hoàn tất) trong một transaction; outbox + publisher; worker gửi email; 5 màn hình nghỉ phép theo wireframe của TV3; review và merge PR | Demo luồng nghỉ phép end-to-end ở local, e2e test theo ca kiểm thử của TV2 |
+| TV2 | Nghiệp vụ và ca kiểm thử | Bảng business rule luồng nghỉ phép; ca kiểm thử nghiệp vụ cho 5 bước workflow; rà business rule UC1, UC2 trong code tuần 7 | `docs/business/leave-rules.md`, `docs/business/leave-test-cases.md`, issue |
+| TV3 | Yêu cầu, giao diện, kiểm thử chấp nhận | Kiểm thử chấp nhận các màn hình tuần 7; wireframe + tiêu chí chấp nhận 5 màn hình nghỉ phép | Biên bản kiểm thử, issue, `docs/ui/leave-screens.md` |
+| TV4 | Cloud, IaC, CI/CD | Chọn cloud provider (ADR-05), map capability + chi phí; CI GitHub Actions; RabbitMQ + Mailpit trong docker-compose | ADR-05, bảng mapping, `.github/workflows/ci.yml` |
+
+Thứ tự phụ thuộc: TV2 và TV3 giao business rule, wireframe trước thứ 4 để TV1 code theo; TV4 xong docker-compose trước thứ 4 để TV1 viết worker.
 
 ## 3. Quyết định quan trọng
 
@@ -163,3 +168,42 @@ Role MANAGER chỉ cho biết "là quản lý"; quyền duyệt từng đơn v�
 thì lần đăng nhập sau role được cập nhật mà không phải sửa gì trong Keycloak.
 
 **Khi nào xem lại:** cần quản lý ủy quyền (duyệt thay khi quản lý nghỉ) thì thêm bảng ủy quyền.
+
+### QĐ-07 – Điều chỉnh phân vai cho giai đoạn code
+
+**Bối cảnh:** kế hoạch tuần 6 chia phần code tuần 7 cho cả 4 người theo module. Thực tế tuần 7 chỉ TV1 code; TV2, TV3, TV4
+chưa có công việc hoàn thành. Còn 6 tuần, phần code đã có khung thống nhất, và mỗi thành viên vẫn cần có đóng góp rõ ràng,
+kiểm chứng được trên repo.
+
+**Các giải pháp:**
+
+| # | Giải pháp | Mô tả |
+|---|---|---|
+| A | Giữ phân vai cũ | Mỗi người code module của mình như kế hoạch tuần 4 |
+| B | Một người code chính, ba người theo chuyên môn | TV1 code; TV2 nghiệp vụ + ca kiểm thử; TV3 yêu cầu, giao diện, kiểm thử chấp nhận; TV4 cloud, IaC, CI/CD |
+| C | Code theo cặp | Hai cặp, mỗi cặp một nửa số module |
+
+**Tiêu chí lựa chọn:**
+
+| Tiêu chí | Trọng số | A | B | C |
+|---|---|---|---|---|
+| Khả thi với thực tế tham gia của nhóm | 30% | 1 | 5 | 2 |
+| Kiến trúc và code nhất quán | 20% | 2 | 5 | 3 |
+| Mỗi thành viên có output riêng, kiểm chứng được | 20% | 4 | 4 | 3 |
+| Không dồn rủi ro vào một người | 15% | 4 | 2 | 4 |
+| Bám kế hoạch tổng 10 tuần (output từng tuần) | 15% | 3 | 4 | 3 |
+| **Tổng điểm có trọng số** | | **2.55** | **4.20** | **2.85** |
+
+**Giải pháp được chọn:** B. Output từng tuần của kế hoạch tổng giữ nguyên; chỉ đổi người làm.
+
+**Trade-off:** TV1 gánh toàn bộ code ứng dụng, là điểm nghẽn: TV1 vắng hoặc chậm thì cả nhóm chậm. Ba thành viên còn lại ít
+trực tiếp với code ứng dụng, nên phải chủ động đọc code để trả lời được ở phần Architecture Defense.
+
+**Tiêu chí nghiệm thu:**
+- Mỗi tuần, mỗi thành viên có ít nhất một PR hoặc issue bằng tài khoản GitHub của chính mình.
+- TV2: mỗi bước workflow có ca kiểm thử; mỗi ca có test tự động tương ứng.
+- TV3: mỗi màn hình có wireframe và tiêu chí chấp nhận trước khi code; có biên bản kiểm thử chấp nhận hàng tuần.
+- TV4: CI chạy trên mọi PR từ tuần 8; IaC tạo lại được môi trường staging từ tuần 9.
+
+**Khi nào xem lại:** TV1 trễ kế hoạch 2 tuần liên tiếp thì chuyển một phần code (ví dụ module Document hoặc màn hình frontend) cho thành viên khác.
+

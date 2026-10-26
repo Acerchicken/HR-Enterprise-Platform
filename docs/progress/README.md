@@ -27,7 +27,18 @@ Thư mục này lưu kế hoạch 10 tuần và báo cáo tiến độ hàng tu�
   6. **Tiêu chí nghiệm thu**: cách kiểm chứng giải pháp đã chọn đáp ứng đúng yêu cầu.
   7. **Khi nào xem lại**: điều kiện khiến nhóm phải đổi quyết định.
 
-## Phân vai (cố định cho 10 tuần)
+## Phân vai
+
+Tuần 4–7 theo kế hoạch ban đầu (bảng dưới). Từ tuần 8 điều chỉnh theo [QĐ-07](tuan-07/README.md#qđ-07--điều-chỉnh-phân-vai-cho-giai-đoạn-code):
+
+| Mã | Vai trò từ tuần 8 |
+|---|---|
+| TV1 | Code chính (backend, frontend), kiến trúc, review và merge PR, báo cáo thứ 2 |
+| TV2 | Nghiệp vụ và ca kiểm thử |
+| TV3 | Yêu cầu, giao diện (wireframe) và kiểm thử chấp nhận |
+| TV4 | Cloud, IaC và CI/CD |
+
+Phân vai ban đầu (tuần 4):
 
 | Mã | Thành viên | Vai trò | Phụ trách chính |
 |---|---|---|---|
@@ -53,3 +64,4 @@ ADR (Architecture Decision Record) là bản ghi một quyết định kiến tr
 | QĐ-04 | Mã hóa trường nhạy cảm ở tầng ứng dụng | 7 |
 | QĐ-05 | Audit log append-only khóa ở mức database | 7 |
 | QĐ-06 | Role MANAGER suy ra từ sơ đồ tổ chức | 7 |
+| QĐ-07 | Điều chỉnh phân vai cho giai đoạn code | 7 |
