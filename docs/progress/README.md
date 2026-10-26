@@ -21,7 +21,7 @@ Thư mục này lưu kế hoạch 10 tuần và báo cáo tiến độ hàng tu�
 - Mỗi quyết định quan trọng ghi theo cùng một khung:
   1. **Bối cảnh**: vấn đề và ràng buộc.
   2. **Các giải pháp** đã cân nhắc.
-  3. **Tiêu chí lựa chọn**: bảng chấm điểm 1–5 theo trọng số (5 = tốt nhất). Điểm là đánh giá của nhóm dựa trên NFR và ràng buộc của đồ án.
+  3. **Tiêu chí lựa chọn**: bảng chấm điểm 1–5 cho từng phương án theo từng tiêu chí (5 = tốt nhất). Điểm là đánh giá của nhóm dựa trên NFR và ràng buộc của đồ án.
   4. **Giải pháp được chọn** và lý do.
   5. **Trade-off** chấp nhận được.
   6. **Tiêu chí nghiệm thu**: cách kiểm chứng giải pháp đã chọn đáp ứng đúng yêu cầu.

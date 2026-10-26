@@ -40,14 +40,13 @@ RTO ≤ 4 giờ; ngân sách < 100 USD/tháng.
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Đáp ứng RPO ≤ 1 giờ, RTO ≤ 4 giờ (backup, point-in-time recovery) | 30% | 2 | 5 | 4 |
-| Công vận hành của nhóm (vá lỗi, backup, giám sát) | 25% | 1 | 5 | 3 |
-| Bảo mật có sẵn (mã hóa at rest, TLS, vá bảo mật) | 20% | 2 | 5 | 4 |
-| Chi phí hàng tháng trong ngân sách | 15% | 4 | 3 | 3 |
-| Mức phụ thuộc vào vendor (lock-in) | 10% | 5 | 2 | 3 |
-| **Tổng điểm có trọng số** | | **2.35** | **4.40** | **3.50** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Đáp ứng RPO ≤ 1 giờ, RTO ≤ 4 giờ (backup, point-in-time recovery) | 2 | 5 | 4 |
+| Công vận hành của nhóm (vá lỗi, backup, giám sát) | 1 | 5 | 3 |
+| Bảo mật có sẵn (mã hóa at rest, TLS, vá bảo mật) | 2 | 5 | 4 |
+| Chi phí hàng tháng trong ngân sách | 4 | 3 | 3 |
+| Mức phụ thuộc vào vendor (lock-in) | 5 | 2 | 3 |
 
 **Giải pháp được chọn:** B. Nhóm dồn effort vào business logic (workflow, phân quyền, audit), là phần tạo ra giá trị và được chấm điểm.
 
@@ -75,13 +74,12 @@ chuẩn mở: OIDC cho đăng nhập, PostgreSQL cho database, API kiểu S3 cho
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Phù hợp nhu cầu thật (nội bộ, peak 10 RPS) | 30% | 2 | 5 | 3 |
-| Chi phí | 25% | 1 | 4 | 5 |
-| Độ phức tạp vận hành cho nhóm 4 người | 25% | 1 | 4 | 5 |
-| Chịu được 1 instance lỗi / deploy không downtime | 20% | 5 | 4 | 1 |
-| **Tổng điểm có trọng số** | | **2.10** | **4.30** | **3.60** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Phù hợp nhu cầu thật (nội bộ, peak 10 RPS) | 2 | 5 | 3 |
+| Chi phí | 1 | 4 | 5 |
+| Độ phức tạp vận hành cho nhóm 4 người | 1 | 4 | 5 |
+| Chịu được 1 instance lỗi / deploy không downtime | 5 | 4 | 1 |
 
 **Giải pháp được chọn:** B. Hai instance là để đạt availability và deploy cuốn chiếu, không phải để scale.
 

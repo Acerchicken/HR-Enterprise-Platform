@@ -46,14 +46,13 @@ chuẩn để khi lên cloud thay bằng managed identity provider (ADR-00).
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Cả 4 người đọc và review được code của nhau (một ngôn ngữ cho FE + BE) | 30% | 5 | 2 | 2 |
-| Hỗ trợ sẵn cấu trúc module, DI, guard cho modular monolith | 25% | 5 | 5 | 3 |
-| Tốc độ phát triển trong 7 tuần | 20% | 4 | 3 | 5 |
-| Thư viện cho OIDC, ORM, migration, OpenAPI | 15% | 4 | 5 | 4 |
-| Thuận lợi cho phần AI (tuần 12) | 10% | 3 | 3 | 5 |
-| **Tổng điểm có trọng số** | | **4.45** | **3.50** | **3.45** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Cả 4 người đọc và review được code của nhau (một ngôn ngữ cho FE + BE) | 5 | 2 | 2 |
+| Hỗ trợ sẵn cấu trúc module, DI, guard cho modular monolith | 5 | 5 | 3 |
+| Tốc độ phát triển trong 7 tuần | 4 | 3 | 5 |
+| Thư viện cho OIDC, ORM, migration, OpenAPI | 4 | 5 | 4 |
+| Thuận lợi cho phần AI (tuần 12) | 3 | 3 | 5 |
 
 **Giải pháp được chọn:** A, với TypeORM truy cập PostgreSQL và Keycloak làm identity provider khi chạy local.
 
@@ -82,14 +81,13 @@ Keycloak tốn khoảng 500 MB RAM khi chạy local.
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Người đọc được database / backup vẫn không thấy dữ liệu | 35% | 1 | 3 | 5 |
-| Khóa không lộ qua log SQL hay database | 20% | 3 | 2 | 5 |
-| Phát hiện dữ liệu bị sửa | 15% | 1 | 2 | 5 |
-| Độ phức tạp code | 15% | 5 | 3 | 3 |
-| Tìm kiếm / lọc trên trường đó | 15% | 5 | 2 | 1 |
-| **Tổng điểm có trọng số** | | **2.60** | **2.50** | **4.10** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Người đọc được database / backup vẫn không thấy dữ liệu | 1 | 3 | 5 |
+| Khóa không lộ qua log SQL hay database | 3 | 2 | 5 |
+| Phát hiện dữ liệu bị sửa | 1 | 2 | 5 |
+| Độ phức tạp code | 5 | 3 | 3 |
+| Tìm kiếm / lọc trên trường đó | 5 | 2 | 1 |
 
 **Giải pháp được chọn:** C, **kết hợp với** A khi lên cloud (hai lớp). Trường nhạy cảm tách sang bảng `employee_sensitive`.
 
@@ -117,13 +115,12 @@ quản lý cẩn thận (tuần 9 chuyển sang secret manager).
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Chặn được sửa/xóa kể cả khi code lỗi | 35% | 1 | 4 | 5 |
-| Ghi audit cùng transaction với thao tác | 30% | 5 | 5 | 2 |
-| Tra cứu audit linh hoạt (theo đối tượng, người, thời gian) | 20% | 5 | 5 | 3 |
-| Công triển khai | 15% | 5 | 4 | 2 |
-| **Tổng điểm có trọng số** | | **3.60** | **4.50** | **3.25** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Chặn được sửa/xóa kể cả khi code lỗi | 1 | 4 | 5 |
+| Ghi audit cùng transaction với thao tác | 5 | 5 | 2 |
+| Tra cứu audit linh hoạt (theo đối tượng, người, thời gian) | 5 | 5 | 3 |
+| Công triển khai | 5 | 4 | 2 |
 
 **Giải pháp được chọn:** B.
 
@@ -148,13 +145,12 @@ quản lý cẩn thận (tuần 9 chuyển sang secret manager).
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Luôn khớp với sơ đồ tổ chức | 40% | 1 | 2 | 5 |
-| Công quản trị | 30% | 1 | 2 | 5 |
-| Dễ hiểu, dễ kiểm tra | 15% | 4 | 4 | 4 |
-| Hiệu năng (truy vấn thêm mỗi request) | 15% | 5 | 4 | 3 |
-| **Tổng điểm có trọng số** | | **2.05** | **2.60** | **4.55** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Luôn khớp với sơ đồ tổ chức | 1 | 2 | 5 |
+| Công quản trị | 1 | 2 | 5 |
+| Dễ hiểu, dễ kiểm tra | 4 | 4 | 4 |
+| Hiệu năng (truy vấn thêm mỗi request) | 5 | 4 | 3 |
 
 **Giải pháp được chọn:** C. Role HR và ADMIN vẫn gán rõ ràng (Keycloak hoặc `role_assignment`), không suy ra.
 
@@ -182,14 +178,13 @@ kiểm chứng được trên repo.
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Khả thi với thực tế tham gia của nhóm | 30% | 1 | 5 | 2 |
-| Kiến trúc và code nhất quán | 20% | 2 | 5 | 3 |
-| Mỗi thành viên có output riêng, kiểm chứng được | 20% | 4 | 4 | 3 |
-| Không dồn rủi ro vào một người | 15% | 4 | 2 | 4 |
-| Bám kế hoạch tổng 10 tuần (output từng tuần) | 15% | 3 | 4 | 3 |
-| **Tổng điểm có trọng số** | | **2.55** | **4.20** | **2.85** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Khả thi với thực tế tham gia của nhóm | 1 | 5 | 2 |
+| Kiến trúc và code nhất quán | 2 | 5 | 3 |
+| Mỗi thành viên có output riêng, kiểm chứng được | 4 | 4 | 3 |
+| Không dồn rủi ro vào một người | 4 | 2 | 4 |
+| Bám kế hoạch tổng 10 tuần (output từng tuần) | 3 | 4 | 3 |
 
 **Giải pháp được chọn:** B. Output từng tuần của kế hoạch tổng giữ nguyên; chỉ đổi người làm.
 

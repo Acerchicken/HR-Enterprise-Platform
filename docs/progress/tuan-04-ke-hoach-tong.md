@@ -65,13 +65,12 @@ bảo mật, vận hành trên cloud chứ không chỉ số lượng chức nă
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Đáp ứng yêu cầu bắt buộc của đề tài | 30% | 5 | 5 | 2 |
-| Khả năng hoàn thành trong 10 tuần với 4 người | 30% | 1 | 4 | 5 |
-| Đủ "chiều sâu" để thể hiện kiến trúc (transaction, async, security) | 25% | 2 | 5 | 3 |
-| Còn thời gian cho deploy, load test, AI | 15% | 1 | 4 | 5 |
-| **Tổng điểm có trọng số** | | **2.45** | **4.55** | **3.60** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Đáp ứng yêu cầu bắt buộc của đề tài | 5 | 5 | 2 |
+| Khả năng hoàn thành trong 10 tuần với 4 người | 1 | 4 | 5 |
+| Đủ "chiều sâu" để thể hiện kiến trúc (transaction, async, security) | 2 | 5 | 3 |
+| Còn thời gian cho deploy, load test, AI | 1 | 4 | 5 |
 
 **Giải pháp được chọn:** B.
 

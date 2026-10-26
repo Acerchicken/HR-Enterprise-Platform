@@ -39,14 +39,13 @@ Các bước của workflow chạy đồng bộ trong một ACID transaction, c�
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Transaction đơn + số dư + audit đơn giản, đúng | 25% | 5 | 5 | 2 |
-| Công deploy, debug, vận hành cho 4 người | 25% | 5 | 4 | 1 |
-| Ranh giới rõ, tách được service khi cần | 20% | 1 | 4 | 5 |
-| Phù hợp tải (peak 10 RPS, thiết kế 50 RPS) | 15% | 5 | 5 | 3 |
-| Chi phí hạ tầng | 15% | 5 | 5 | 2 |
-| **Tổng điểm có trọng số** | | **4.20** | **4.55** | **2.50** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Transaction đơn + số dư + audit đơn giản, đúng | 5 | 5 | 2 |
+| Công deploy, debug, vận hành cho 4 người | 5 | 4 | 1 |
+| Ranh giới rõ, tách được service khi cần | 1 | 4 | 5 |
+| Phù hợp tải (peak 10 RPS, thiết kế 50 RPS) | 5 | 5 | 3 |
+| Chi phí hạ tầng | 5 | 5 | 2 |
 
 **Giải pháp được chọn:** B. Transaction cục bộ, không cần Saga; deploy và debug dễ; module có ranh giới rõ để tách khi cần.
 
@@ -74,15 +73,14 @@ Các bước của workflow chạy đồng bộ trong một ACID transaction, c�
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Quan hệ và JOIN (tổ chức, quản lý, đơn) | 25% | 5 | 3 | 1 |
-| Transaction ACID cho số dư phép | 25% | 5 | 3 | 3 |
-| Truy vấn linh hoạt cho audit, báo cáo | 15% | 5 | 4 | 2 |
-| Ít thành phần phải vận hành (full-text, vector có sẵn) | 15% | 5 | 3 | 2 |
-| Khả năng scale ngang | 10% | 3 | 4 | 5 |
-| Nhóm đã quen | 10% | 5 | 3 | 2 |
-| **Tổng điểm có trọng số** | | **4.80** | **3.25** | **2.30** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Quan hệ và JOIN (tổ chức, quản lý, đơn) | 5 | 3 | 1 |
+| Transaction ACID cho số dư phép | 5 | 3 | 3 |
+| Truy vấn linh hoạt cho audit, báo cáo | 5 | 4 | 2 |
+| Ít thành phần phải vận hành (full-text, vector có sẵn) | 5 | 3 | 2 |
+| Khả năng scale ngang | 3 | 4 | 5 |
+| Nhóm đã quen | 5 | 3 | 2 |
 
 **Giải pháp được chọn:** A. Relational model + ACID; full-text search và pgvector (cho RAG tuần 12) có sẵn, ít thành phần phải vận hành.
 
@@ -108,14 +106,13 @@ Các bước của workflow chạy đồng bộ trong một ACID transaction, c�
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Kết quả duyệt chính xác ngay cho người dùng | 30% | 5 | 2 | 5 |
-| Lỗi email/index không làm hỏng quy trình duyệt | 25% | 1 | 5 | 5 |
-| Giữ API p95 < 500 ms | 20% | 2 | 5 | 5 |
-| Độ phức tạp (queue, worker, outbox) | 15% | 5 | 2 | 3 |
-| Không mất event | 10% | 2 | 4 | 5 |
-| **Tổng điểm có trọng số** | | **3.10** | **3.55** | **4.70** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Kết quả duyệt chính xác ngay cho người dùng | 5 | 2 | 5 |
+| Lỗi email/index không làm hỏng quy trình duyệt | 1 | 5 | 5 |
+| Giữ API p95 < 500 ms | 2 | 5 | 5 |
+| Độ phức tạp (queue, worker, outbox) | 5 | 2 | 3 |
+| Không mất event | 2 | 4 | 5 |
 
 **Giải pháp được chọn:** C. Dùng **queue** (không dùng event stream) vì mỗi event chỉ có 1–2 consumer và vài trăm event/ngày.
 
@@ -142,13 +139,12 @@ Các bước của workflow chạy đồng bộ trong một ACID transaction, c�
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Giảm tải database cho dữ liệu đọc nhiều | 30% | 2 | 4 | 5 |
-| Thêm thành phần phải vận hành và chi phí | 30% | 5 | 5 | 2 |
-| Dữ liệu nhất quán giữa các instance | 25% | 5 | 3 | 5 |
-| Độ phức tạp code | 15% | 5 | 4 | 3 |
-| **Tổng điểm có trọng số** | | **4.10** | **4.05** | **3.80** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Giảm tải database cho dữ liệu đọc nhiều | 2 | 4 | 5 |
+| Thêm thành phần phải vận hành và chi phí | 5 | 5 | 2 |
+| Dữ liệu nhất quán giữa các instance | 5 | 3 | 5 |
+| Độ phức tạp code | 5 | 4 | 3 |
 
 **Giải pháp được chọn:** B, dù điểm gần bằng A. Lý do nghiêng về B: tuần 11 cần chứng minh được chiến lược cache; dữ liệu
 cũ tối đa 10 phút là chấp nhận được với phòng ban, chức danh.
