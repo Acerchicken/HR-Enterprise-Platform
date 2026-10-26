@@ -9,8 +9,8 @@ API workflow làm ở tuần 8. Tech stack chốt trong ADR-04: **NestJS + React
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
 | TV1 (Duong, nhóm trưởng) | Chốt tech stack (ADR-04); khung modular monolith, quy ước code, quy trình PR; migration 5 schema; module Identity, Employee, Organization, Audit; module Leave (entity + state machine); frontend (đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức); docker-compose, realm Keycloak, seed 2,000 nhân viên | Repo chạy được ở local, 13 endpoint | [TV1.md](TV1.md) |
-| TV2 (Duy) | Không có công việc hoàn thành | – | [TV2.md](TV2.md) |
-| TV3 (Thanh) | Không có công việc hoàn thành | – | [TV3.md](TV3.md) |
+| TV2 (Thanh) | Không có công việc hoàn thành | – | [TV2.md](TV2.md) |
+| TV3 (Duy) | Không có công việc hoàn thành | – | [TV3.md](TV3.md) |
 | TV4 (Bảo) | Không có công việc hoàn thành | – | [TV4.md](TV4.md) |
 
 **Chưa làm được theo kế hoạch:** kế hoạch tuần 6 chia phần code cho cả 4 người, thực tế chỉ TV1 code. Nhóm điều chỉnh phân vai
@@ -18,16 +18,16 @@ từ tuần 8 (ADR-11). Map capability sang cloud service vẫn chờ chốt pro
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 8: 26/10 – 2/11)
 
-Phân vai mới theo ADR-11: TV1 Duong, TV2 Duy, TV3 Thanh, TV4 Bảo.
+Phân vai mới theo ADR-11: TV1 Duong, TV2 Thanh, TV3 Duy, TV4 Bảo.
 
 | Thành viên | Vai trò | Công việc | Output |
 |---|---|---|---|
-| TV1 (Duong, nhóm trưởng) | Code chính | API workflow nghỉ phép (tạo, duyệt/từ chối, hủy, HR hoàn tất) trong một transaction; outbox + publisher; worker gửi email; 5 màn hình nghỉ phép; review và merge PR | Demo luồng nghỉ phép end-to-end ở local, e2e test theo ca kiểm thử của TV2 |
-| TV2 (Duy) | Một phần nghiệp vụ + ca kiểm thử | Danh mục loại phép và ngày lễ 2026; ca kiểm thử cho 5 bước workflow (dựa trên business rule của TV3); kiểm thử chức năng các màn hình tuần 7 với 4 tài khoản demo | `docs/business/leave-types-holidays.md`, `docs/business/leave-test-cases.md`, biên bản kiểm thử, issue |
-| TV3 (Thanh) | Nghiệp vụ | Bảng business rule luồng nghỉ phép (số dư, trùng lịch, nghỉ nửa ngày, hủy đơn, quản lý vắng mặt, HR hoàn tất); sơ đồ quy trình nghỉ phép; đối chiếu business rule UC1, UC2 trong code tuần 7 với functional requirements tuần 5 | `docs/business/leave-rules.md`, sơ đồ quy trình, issue cho các điểm lệch |
+| TV1 (Duong, nhóm trưởng) | Code chính | API workflow nghỉ phép (tạo, duyệt/từ chối, hủy, HR hoàn tất) trong một transaction; outbox + publisher; worker gửi email; 5 màn hình nghỉ phép; review và merge PR | Demo luồng nghỉ phép end-to-end ở local, e2e test theo ca kiểm thử của TV3 |
+| TV2 (Thanh) | Nghiệp vụ | Bảng business rule luồng nghỉ phép (số dư, trùng lịch, nghỉ nửa ngày, hủy đơn, quản lý vắng mặt, HR hoàn tất); sơ đồ quy trình nghỉ phép; đối chiếu business rule UC1, UC2 trong code tuần 7 với functional requirements tuần 5 | `docs/business/leave-rules.md`, sơ đồ quy trình, issue cho các điểm lệch |
+| TV3 (Duy) | Một phần nghiệp vụ + ca kiểm thử | Danh mục loại phép và ngày lễ 2026; ca kiểm thử cho 5 bước workflow (dựa trên business rule của TV2); kiểm thử chức năng các màn hình tuần 7 với 4 tài khoản demo | `docs/business/leave-types-holidays.md`, `docs/business/leave-test-cases.md`, biên bản kiểm thử, issue |
 | TV4 (Bảo) | Cloud, IaC, CI/CD | Chọn cloud provider (ADR-12), map capability + chi phí; CI GitHub Actions; RabbitMQ + Mailpit trong docker-compose | ADR-12, bảng mapping, `.github/workflows/ci.yml` |
 
-Thứ tự phụ thuộc: TV3 giao business rule trước thứ 3 để TV2 viết ca kiểm thử và TV1 code theo; TV2 giao ca kiểm thử trước thứ 5; TV4 xong docker-compose trước thứ 4 để TV1 viết worker.
+Thứ tự phụ thuộc: TV2 giao business rule trước thứ 3 để TV3 viết ca kiểm thử và TV1 code theo; TV3 giao ca kiểm thử trước thứ 5; TV4 xong docker-compose trước thứ 4 để TV1 viết worker.
 
 ## 3. Quyết định quan trọng
 
@@ -168,7 +168,7 @@ thì lần đăng nhập sau role được cập nhật mà không phải sửa 
 
 ### ADR-11 – Điều chỉnh phân vai cho giai đoạn code
 
-**Bối cảnh:** kế hoạch tuần 6 chia phần code tuần 7 cho cả 4 người theo module. Thực tế tuần 7 chỉ TV1 code; TV2, TV3, TV4
+**Bối cảnh:** kế hoạch tuần 6 chia phần code tuần 7 cho cả 4 người theo module. Thực tế tuần 7 chỉ TV1 code; TV3, TV2, TV4
 chưa có công việc hoàn thành. Còn 6 tuần, phần code đã có khung thống nhất, và mỗi thành viên vẫn cần có đóng góp rõ ràng,
 kiểm chứng được trên repo.
 
@@ -177,7 +177,7 @@ kiểm chứng được trên repo.
 | # | Giải pháp | Mô tả |
 |---|---|---|
 | A | Giữ phân vai cũ | Mỗi người code module của mình như kế hoạch tuần 4 |
-| B | Một người code chính, ba người theo chuyên môn | TV1 code; TV2 một phần nghiệp vụ + ca kiểm thử; TV3 nghiệp vụ; TV4 cloud, IaC, CI/CD |
+| B | Một người code chính, ba người theo chuyên môn | TV1 code; TV2 nghiệp vụ; TV3 một phần nghiệp vụ + ca kiểm thử; TV4 cloud, IaC, CI/CD |
 | C | Code theo cặp | Hai cặp, mỗi cặp một nửa số module |
 
 **Tiêu chí lựa chọn:**
@@ -198,8 +198,8 @@ trực tiếp với code ứng dụng, nên phải chủ động đọc code đ�
 
 **Tiêu chí nghiệm thu:**
 - Mỗi tuần, mỗi thành viên có ít nhất một PR hoặc issue bằng tài khoản GitHub của chính mình.
-- TV3: mỗi use case có bảng business rule trước khi TV1 code; mọi điểm lệch giữa code và requirements được mở issue.
-- TV2: mỗi business rule có ít nhất một ca kiểm thử; mỗi ca có test tự động tương ứng; có biên bản kiểm thử chức năng hàng tuần.
+- TV2: mỗi use case có bảng business rule trước khi TV1 code; mọi điểm lệch giữa code và requirements được mở issue.
+- TV3: mỗi business rule có ít nhất một ca kiểm thử; mỗi ca có test tự động tương ứng; có biên bản kiểm thử chức năng hàng tuần.
 - TV4: CI chạy trên mọi PR từ tuần 8; IaC tạo lại được môi trường staging từ tuần 9.
 
 **Khi nào xem lại:** TV1 trễ kế hoạch 2 tuần liên tiếp thì chuyển một phần code (ví dụ module Document hoặc màn hình frontend) cho thành viên khác.

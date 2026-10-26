@@ -34,11 +34,11 @@ Tuần 4–7 theo kế hoạch ban đầu (bảng dưới). Từ tuần 8 điề
 | Mã | Thành viên (từ tuần 7) | Vai trò từ tuần 8 |
 |---|---|---|
 | TV1 | Duong – nhóm trưởng | Code chính (backend, frontend), kiến trúc, review và merge PR, báo cáo thứ 2 |
-| TV2 | Duy | Một phần nghiệp vụ (danh mục, quy định nhỏ) và ca kiểm thử, kiểm thử chức năng |
-| TV3 | Thanh | Nghiệp vụ: business rule, quy trình, đối chiếu với requirements |
+| TV2 | Thanh | Nghiệp vụ: business rule, quy trình, đối chiếu với requirements |
+| TV3 | Duy | Một phần nghiệp vụ (danh mục, quy định nhỏ) và ca kiểm thử, kiểm thử chức năng |
 | TV4 | Bảo | Cloud, IaC và CI/CD |
 
-Lưu ý: mã TV gắn với vai trò, nên từ tuần 7 mã TV2–TV4 đổi người so với tuần 4–6: Duy là TV2 (tuần 4–6 là TV4), Thanh là TV3 (tuần 4–6 là TV2), Bảo là TV4 (tuần 4–6 là TV3). Duong vẫn là TV1.
+Lưu ý: từ tuần 7, TV1 (Duong) và TV2 (Thanh) giữ nguyên mã như tuần 4–6; Duy là TV3 (tuần 4–6 là TV4), Bảo là TV4 (tuần 4–6 là TV3).
 
 Phân vai ban đầu (tuần 4–6):
 

@@ -1,20 +1,20 @@
-# Tuần 7 – TV2 (Duy)
+# Tuần 7 – TV2 (Thanh)
 
 ## Việc đã làm
 
 Không có công việc hoàn thành trong tuần 7.
 
-## Vai trò từ tuần 8: Một phần nghiệp vụ và ca kiểm thử
+## Vai trò từ tuần 8: Nghiệp vụ
 
 Theo [ADR-11](README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code), TV2 chịu trách nhiệm:
-- Một phần nghiệp vụ: các danh mục và quy định nhỏ (loại phép, ngày lễ, cách tính ngày nghỉ).
-- Biến mỗi business rule (do TV3 viết) thành **ca kiểm thử**: đầu vào, điều kiện, kết quả mong đợi. Đây là căn cứ cho test tự động của TV1.
-- **Kiểm thử chức năng** cuối mỗi tuần: dùng các tài khoản demo đi hết các màn hình, đối chiếu với ca kiểm thử, mở issue cho mỗi lỗi.
+- Viết và giữ đúng **business rule** của từng use case trước khi TV1 code.
+- Vẽ **quy trình nghiệp vụ** (ai làm gì, theo thứ tự nào, khi nào rẽ nhánh).
+- Giữ requirements, NFR, user journey cập nhật; đối chiếu code với requirements và mở issue khi lệch.
 
 ## Việc tuần 8
 
 | Việc | Output |
 |---|---|
-| Danh mục loại phép (số ngày tối đa, có lương hay không, cần giấy tờ gì) và ngày lễ 2026 | `docs/business/leave-types-holidays.md` |
-| Ca kiểm thử cho 5 bước workflow nghỉ phép, mỗi bước có ca hợp lệ và ca bị từ chối | `docs/business/leave-test-cases.md` |
-| Kiểm thử chức năng các màn hình tuần 7 (đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức) với 4 tài khoản demo | Biên bản kiểm thử, issue cho từng lỗi |
+| Bảng business rule luồng nghỉ phép: kiểm tra số dư, trùng lịch, nghỉ nửa ngày, hủy đơn, quản lý vắng mặt, HR hoàn tất | `docs/business/leave-rules.md` (giao trước thứ 3) |
+| Sơ đồ quy trình nghỉ phép từ tạo đơn đến hoàn tất, có các nhánh từ chối và hủy | Sơ đồ trong `docs/business/` |
+| Đối chiếu business rule UC1, UC2 trong code tuần 7 với bảng functional requirements tuần 5 | Issue cho từng điểm lệch |

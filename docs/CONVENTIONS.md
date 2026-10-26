@@ -12,16 +12,16 @@ Hệ thống là **modular monolith** (ADR-01). Để sau này tách được mo
 3. **Không** tạo foreign key chéo schema. Foreign key trong cùng schema thì được.
 4. Thao tác nghiệp vụ và audit log ghi trong **cùng một transaction**: truyền `EntityManager` vào `AuditService.record(entry, manager)`.
 
-| Module | Người code | Schema | Business rule (TV3 Thanh) / ca kiểm thử (TV2 Duy) |
+| Module | Người code | Schema | Business rule (TV2 Thanh) / ca kiểm thử (TV3 Duy) |
 |---|---|---|---|
-| identity | TV1 | `iam` | TV3 / TV2 |
-| organization | TV1 | `org` | TV3 / TV2 |
-| employee | TV1 | `employee` | TV3 / TV2 |
-| audit | TV1 | `audit` | TV3 / TV2 |
-| leave | TV1 | `leave` | TV3 / TV2 |
-| document, worker (tuần 8–10) | TV1 | `document` | TV3 / TV2 |
+| identity | TV1 | `iam` | TV2 / TV3 |
+| organization | TV1 | `org` | TV2 / TV3 |
+| employee | TV1 | `employee` | TV2 / TV3 |
+| audit | TV1 | `audit` | TV2 / TV3 |
+| leave | TV1 | `leave` | TV2 / TV3 |
+| document, worker (tuần 8–10) | TV1 | `document` | TV2 / TV3 |
 
-Hạ tầng (`docker-compose.yml`, `.github/workflows/`, IaC) do TV4 (Bảo) phụ trách. Business rule do TV3 (Thanh), ca kiểm thử và kiểm thử chức năng do TV2 (Duy) phụ trách. TV1 (Duong) code toàn bộ module
+Hạ tầng (`docker-compose.yml`, `.github/workflows/`, IaC) do TV4 (Bảo) phụ trách. Business rule do TV2 (Thanh), ca kiểm thử và kiểm thử chức năng do TV3 (Duy) phụ trách. TV1 (Duong) code toàn bộ module
 (xem ADR-11 trong `docs/progress/tuan-07/README.md`).
 
 ## 2. Cấu trúc một module
