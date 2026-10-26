@@ -10,12 +10,26 @@ Thread trên Discussions: **[Tên nhóm]_Enterprise HR Platform**. Mỗi báo c�
 
 | Thành viên | Công việc đã hoàn thành |
 |---|---|
-| TV1 (nhóm trưởng) | Chọn đề tài, xác định phạm vi MVP; lập kế hoạch 10 tuần; phân vai trong nhóm; tạo thread trên Discussions |
+| TV1 (Duong, nhóm trưởng) | Chọn đề tài, xác định phạm vi MVP; lập kế hoạch 10 tuần; phân vai trong nhóm; tạo thread trên Discussions |
 | TV2 (Thanh) | Đọc yêu cầu đề tài, đề xuất danh sách use case và entity ban đầu |
 | TV3 (Bảo) | Tìm hiểu quy trình HR (hồ sơ nhân viên, nghỉ phép) làm cơ sở viết requirements |
 | TV4 (Duy) | Tạo repo GitHub và board quản lý công việc; tìm hiểu các cloud provider và chương trình credit cho sinh viên |
 
 ## 2. Phân công vai trò (4 người)
+
+Phân vai có hai giai đoạn. Giai đoạn phân tích, thiết kế (tuần 4–6) theo phân vai ban đầu. Từ giai đoạn code (tuần 7),
+thực tế chỉ TV1 code nên nhóm điều chỉnh theo [ADR-11](tuan-07/README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code).
+
+### Từ tuần 7 (đang áp dụng)
+
+| Mã | Thành viên | Vai trò | Phụ trách chính |
+|---|---|---|---|
+| TV1 | Duong – nhóm trưởng | Code chính + Solution architect | Toàn bộ code backend và frontend, kiến trúc và ADR, review và merge PR, báo cáo thứ 2; AI assistant (tuần 12) |
+| TV2 | Thanh | Nghiệp vụ | Business rule từng use case trước khi code, quy trình nghiệp vụ, giữ requirements/NFR cập nhật, đối chiếu code với requirements |
+| TV3 | Duy | Ca kiểm thử + một phần nghiệp vụ | Danh mục và quy định nhỏ (loại phép, ngày lễ), ca kiểm thử từ business rule, kiểm thử chức năng cuối tuần; load test (tuần 11) |
+| TV4 | Bảo | Cloud, IaC, CI/CD | Chọn cloud provider, chi phí, hạ tầng local (docker-compose), CI/CD, IaC, deploy, monitoring |
+
+### Tuần 4–6 (phân vai ban đầu)
 
 | Mã | Thành viên | Vai trò | Phụ trách chính trong 10 tuần |
 |---|---|---|---|

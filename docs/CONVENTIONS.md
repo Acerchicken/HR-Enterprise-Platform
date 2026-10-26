@@ -59,20 +59,60 @@ modules/employee/
 
 - `synchronize` luôn tắt. Mọi thay đổi schema phải qua migration trong `backend/src/database/migrations/`.
 - Tên file: `<timestamp>-<MoTa>.ts`, ví dụ `1730500000000-AddLeaveOutbox.ts`. Có cả `up` và `down`.
-- Không sửa migration đã merge vào `main`; muốn đổi thì viết migration mới.
+- Không sửa migration đã merge vào `dev` hoặc `main`; muốn đổi thì viết migration mới.
 - Trường nhạy cảm (CCCD, tài khoản ngân hàng, lương…) lưu qua `FieldCrypto`, không bao giờ ghi giá trị vào log hay audit.
 
-## 6. Git và review
+## 6. Git, nhánh và review
 
-- Nhánh chính: `main` (luôn chạy được). Không push thẳng vào `main`.
-- Nhánh làm việc: `feat/<module>-<mo-ta>`, `fix/<mo-ta>`, `docs/<mo-ta>`. Ví dụ `feat/leave-approve-api`.
-- Commit theo Conventional Commits: `feat(leave): add approve endpoint`, `fix(employee): ...`, `docs: ...`, `test: ...`.
-- Mỗi PR:
-  - nhỏ, một mục đích, mô tả theo template `.github/pull_request_template.md`;
-  - `npm run lint` và `npm test` qua ở máy mình trước khi mở;
-  - **ít nhất 1 người review**; PR của TV1 do TV2/TV3 (nghiệp vụ) hoặc TV4 (hạ tầng) review, PR của người khác do TV1 review;
-  - người mở PR tự merge sau khi được approve (squash merge).
-- Review trong vòng 24 giờ. Góp ý bắt buộc sửa ghi rõ "cần sửa"; góp ý tùy chọn ghi "nit:".
+### Các nhánh
+
+| Nhánh | Dùng để | Ai được đưa code vào |
+|---|---|---|
+| `main` | Bản đã chốt sau mỗi tuần, luôn chạy được | Chỉ qua PR `dev` → `main` (TV1 mở vào thứ 2 hằng tuần). Không ai push thẳng |
+| `dev` | Gộp việc trong tuần | Chỉ qua PR từ nhánh việc. Không push thẳng |
+| Nhánh việc | Một việc trong kế hoạch tuần | Người được giao việc đó |
+
+Tên nhánh việc theo loại việc:
+
+| Tiền tố | Khi nào | Ví dụ |
+|---|---|---|
+| `feat/` | Chức năng mới | `feat/leave-workflow-api` |
+| `fix/` | Sửa lỗi | `fix/leave-balance-negative` |
+| `docs/` | Tài liệu nghiệp vụ, ca kiểm thử, ADR, báo cáo | `docs/leave-rules` |
+| `chore/` | Hạ tầng local, cấu hình, dependency | `chore/rabbitmq-mailpit` |
+| `ci/` | Pipeline CI/CD | `ci/github-actions` |
+| `infra/` | IaC cho cloud (từ tuần 9) | `infra/terraform-staging` |
+
+Danh sách nhánh của từng tuần ghi trong `docs/progress/tuan-NN/README.md`.
+
+### Quy trình cho một việc
+
+1. Tách nhánh từ `dev` mới nhất: `git checkout dev && git pull && git checkout -b <nhánh>`.
+2. Mỗi nhánh **chỉ một việc**, sống tối đa vài ngày. Việc lớn thì chia thành nhiều nhánh nối tiếp nhau.
+3. Commit theo Conventional Commits: `feat(leave): add approve endpoint`, `fix(employee): ...`, `docs(business): ...`,
+   `chore(infra): ...`, `ci: ...`, `test: ...`.
+4. Trước khi mở PR: kéo `dev` mới nhất về nhánh của mình (`git pull origin dev`), sửa xung đột nếu có.
+5. Mở PR vào `dev`, mô tả theo template `.github/pull_request_template.md`. PR code phải qua `npm run lint` và `npm test` ở máy mình.
+6. Sau khi được approve và CI xanh, người mở PR tự merge bằng **squash merge**, rồi xóa nhánh.
+7. Thứ 2 hằng tuần, TV1 mở PR `dev` → `main` và merge bằng **merge commit** (không squash) để giữ commit và tên tác giả của từng người.
+
+### Review
+
+| PR của | Người review |
+|---|---|
+| TV1 – code | TV2 (Thanh) xem đúng business rule chưa; TV3 (Duy) xem kết quả có khớp ca kiểm thử không. PR đụng hạ tầng thì thêm TV4 (Bảo) |
+| TV2 – business rule | TV1 và TV3 |
+| TV3 – ca kiểm thử, biên bản kiểm thử | TV2 và TV1 |
+| TV4 – hạ tầng, CI/CD, IaC, ADR cloud | TV1 |
+
+- Mỗi PR ít nhất 1 người approve. Review trong vòng 24 giờ.
+- Góp ý bắt buộc sửa ghi rõ "cần sửa"; góp ý tùy chọn ghi "nit:".
+
+### Quy tắc chung
+
+- Ai làm việc nào thì tự commit và mở PR bằng **tài khoản GitHub của mình**. Không commit hộ người khác.
+- Branch protection (TV1 bật khi CI đã chạy được): `main` và `dev` bắt buộc qua PR, CI phải xanh, ít nhất 1 approve.
+- Không sửa lịch sử của nhánh người khác (không force push lên nhánh không phải của mình, không bao giờ force push `dev`, `main`).
 
 ## 7. Test
 
