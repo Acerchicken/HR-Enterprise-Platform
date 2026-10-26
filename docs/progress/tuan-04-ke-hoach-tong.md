@@ -50,7 +50,7 @@ Tuần 9–13 là kế hoạch tổng quan vì nhóm chưa học P3–P5; mỗi 
 
 ## 5. Quyết định quan trọng
 
-### QĐ-01 – Phạm vi MVP: một luồng nghiệp vụ nghỉ phép end-to-end
+### ADR-05 – Phạm vi MVP: một luồng nghiệp vụ nghỉ phép end-to-end
 
 **Bối cảnh:** đề tài có 7 use case bắt buộc cộng phần AI mở rộng; nhóm 4 người, 10 tuần; môn học chấm nặng phần kiến trúc,
 bảo mật, vận hành trên cloud chứ không chỉ số lượng chức năng.

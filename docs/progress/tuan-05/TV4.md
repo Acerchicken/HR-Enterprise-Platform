@@ -24,7 +24,7 @@ Workload chính là online transactional (API + DB), read-heavy (~90% đọc). P
 | Tài liệu HR | ~500 file × ~4 MB | ≈ 2 GB |
 
 Kết luận: một ứng dụng chạy 2 instance sau load balancer là đủ (2 instance để đạt availability, không phải để scale).
-Kubernetes hay microservices là over-engineering cho nhóm 4 người (QĐ-02).
+Kubernetes hay microservices là over-engineering cho nhóm 4 người (ADR-06).
 
 ## 2. Kiến trúc cloud ban đầu
 

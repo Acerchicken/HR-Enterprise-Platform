@@ -24,7 +24,7 @@ là ứng viên cho xử lý bất đồng bộ (quyết định ở tuần 6).
 |---|---|---|
 | Performance | p95 < 300 ms cho API đọc, p95 < 500 ms cho API ghi, tìm kiếm p95 < 1 s | Ứng dụng nội bộ, thao tác tương tác trực tiếp |
 | Scalability | 2,000 nhân viên, ~500 người dùng đồng thời lúc cao điểm; chịu được 5× (10,000 nhân viên) mà không đổi kiến trúc | Thiết kế theo tăng trưởng, không chỉ tải hiện tại |
-| Availability | 99.5% / tháng (≈ 3.6 giờ downtime/tháng) | Hệ thống nội bộ, không phải thanh toán; 99.9% cần multi-AZ và tăng chi phí (QĐ-02) |
+| Availability | 99.5% / tháng (≈ 3.6 giờ downtime/tháng) | Hệ thống nội bộ, không phải thanh toán; 99.9% cần multi-AZ và tăng chi phí (ADR-06) |
 | Reliability | RPO ≤ 1 giờ, RTO ≤ 4 giờ; không mất đơn đã Submitted | Hồ sơ và đơn từ có giá trị pháp lý |
 | Security | Employee không bao giờ đọc được hồ sơ người khác; Manager chỉ thấy đơn của nhân viên trực thuộc; trường nhạy cảm (CCCD, tài khoản ngân hàng, lương) mã hóa at rest và chỉ HR xem; 100% thao tác duyệt và đọc trường nhạy cảm được audit; TLS cho mọi kết nối | Dữ liệu cá nhân nhạy cảm; requirement viết ở dạng kiểm chứng được |
 | Cost | MVP < 100 USD / tháng | Ngân sách đồ án |

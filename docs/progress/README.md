@@ -29,13 +29,13 @@ Thư mục này lưu kế hoạch 10 tuần và báo cáo tiến độ hàng tu�
 
 ## Phân vai
 
-Tuần 4–7 theo kế hoạch ban đầu (bảng dưới). Từ tuần 8 điều chỉnh theo [QĐ-07](tuan-07/README.md#qđ-07--điều-chỉnh-phân-vai-cho-giai-đoạn-code):
+Tuần 4–7 theo kế hoạch ban đầu (bảng dưới). Từ tuần 8 điều chỉnh theo [ADR-11](tuan-07/README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code):
 
 | Mã | Vai trò từ tuần 8 |
 |---|---|
 | TV1 | Code chính (backend, frontend), kiến trúc, review và merge PR, báo cáo thứ 2 |
-| TV2 | Nghiệp vụ và ca kiểm thử |
-| TV3 | Yêu cầu, giao diện (wireframe) và kiểm thử chấp nhận |
+| TV2 | Một phần nghiệp vụ (danh mục, quy định nhỏ) và ca kiểm thử, kiểm thử chức năng |
+| TV3 | Nghiệp vụ: business rule, quy trình, đối chiếu với requirements |
 | TV4 | Cloud, IaC và CI/CD |
 
 Phân vai ban đầu (tuần 4):
@@ -53,15 +53,18 @@ ADR (Architecture Decision Record) là bản ghi một quyết định kiến tr
 
 | Mã | Quyết định | Tuần |
 |---|---|---|
-| QĐ-01 | Phạm vi MVP: một luồng nghiệp vụ nghỉ phép end-to-end | 4 |
 | ADR-00 | Dùng managed services cho database, storage, identity | 5 |
-| QĐ-02 | Mục tiêu availability 99.5%, thiết kế cho 50 RPS | 5 |
 | ADR-01 | Modular monolith thay vì microservices | 6 |
 | ADR-02 | PostgreSQL thay vì NoSQL | 6 |
 | ADR-03 | Workflow đồng bộ, thông báo và index bất đồng bộ (outbox + queue) | 6 |
-| QĐ-03 | Không dùng Redis ở MVP, cache in-memory cho dữ liệu tham chiếu | 6 |
 | ADR-04 | Tech stack: NestJS + React + PostgreSQL + Keycloak | 7 |
-| QĐ-04 | Mã hóa trường nhạy cảm ở tầng ứng dụng | 7 |
-| QĐ-05 | Audit log append-only khóa ở mức database | 7 |
-| QĐ-06 | Role MANAGER suy ra từ sơ đồ tổ chức | 7 |
-| QĐ-07 | Điều chỉnh phân vai cho giai đoạn code | 7 |
+| ADR-05 | Phạm vi MVP: một luồng nghiệp vụ nghỉ phép end-to-end | 4 |
+| ADR-06 | Mục tiêu availability 99.5%, thiết kế cho 50 RPS | 5 |
+| ADR-07 | Không dùng Redis ở MVP, cache in-memory cho dữ liệu tham chiếu | 6 |
+| ADR-08 | Mã hóa trường nhạy cảm ở tầng ứng dụng | 7 |
+| ADR-09 | Audit log append-only khóa ở mức database | 7 |
+| ADR-10 | Role MANAGER suy ra từ sơ đồ tổ chức | 7 |
+| ADR-11 | Điều chỉnh phân vai cho giai đoạn code | 7 |
+
+ADR-00 → ADR-04 được đánh số ngay khi ra quyết định. ADR-05 → ADR-11 là các quyết định được ghi lại sau theo cùng khung,
+nên số thứ tự không trùng với thứ tự tuần. ADR tiếp theo bắt đầu từ ADR-12.

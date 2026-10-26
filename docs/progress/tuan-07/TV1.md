@@ -1,7 +1,7 @@
 # Tuần 7 – TV1 (nhóm trưởng): toàn bộ phần code nền tảng
 
 Tuần 7 chỉ TV1 tham gia code; TV2, TV3, TV4 chưa có công việc hoàn thành. Từ tuần 8 nhóm điều chỉnh phân vai
-(xem [QĐ-07](README.md#qđ-07--điều-chỉnh-phân-vai-cho-giai-đoạn-code)).
+(xem [ADR-11](README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code)).
 
 ## Việc đã làm
 
@@ -26,8 +26,8 @@ backend/src/
 │   ├── api-error.filter.ts   mọi lỗi trả về {code, message, traceId}
 │   ├── trace-id.middleware.ts gắn traceId cho mỗi request (header X-Trace-Id)
 │   ├── pagination.ts         ?page=&size=, trả về {items, page, size, total}
-│   ├── ttl-cache.ts          cache in-memory TTL (QĐ-03)
-│   └── field-crypto.ts       mã hóa AES-256-GCM (QĐ-04)
+│   ├── ttl-cache.ts          cache in-memory TTL (ADR-07)
+│   └── field-crypto.ts       mã hóa AES-256-GCM (ADR-08)
 ├── config/                   đọc biến môi trường
 ├── database/                 data-source, migrations/, seed.ts
 └── modules/                  identity, organization, employee, audit, leave
@@ -90,7 +90,7 @@ sai người duyệt, hủy đơn đã duyệt, đếm ngày làm việc.
 | audit | audit_log |
 
 Ràng buộc đặt trong database:
-- `audit_log`: trigger chặn UPDATE và DELETE (QĐ-05).
+- `audit_log`: trigger chặn UPDATE và DELETE (ADR-09).
 - `leave_balance`: `used + pending ≤ entitled`.
 - `leave_request`: unique `(employee_id, idempotency_key)`; `end_date ≥ start_date`.
 - `employee`: không tự làm quản lý của chính mình; `status` chỉ nhận ACTIVE, ON_LEAVE, TERMINATED.
@@ -242,7 +242,7 @@ curl -s -d client_id=hr-api-test -d grant_type=password -d username=hr -d passwo
 1. Đọc `Authorization: Bearer <token>`.
 2. Kiểm tra chữ ký bằng JWKS của Keycloak, issuer, hạn dùng, và client (`azp`) thuộc danh sách `OIDC_ALLOWED_CLIENTS`.
 3. Tìm tài khoản theo `sub`, không có thì theo email công ty; lần đầu thì tự tạo và gắn với hồ sơ nhân viên cùng email.
-4. Role = role trong token + role trong `role_assignment` + EMPLOYEE (có hồ sơ) + MANAGER (có nhân viên trực thuộc, QĐ-06).
+4. Role = role trong token + role trong `role_assignment` + EMPLOYEE (có hồ sơ) + MANAGER (có nhân viên trực thuộc, ADR-10).
 
 API gọi Keycloak qua mạng nội bộ Docker (`keycloak:8080`) nhưng token có issuer `localhost:8080`, nên cấu hình tách riêng
 `OIDC_ISSUER` và `OIDC_JWKS_URI`. Khi lên cloud chỉ đổi hai biến này.

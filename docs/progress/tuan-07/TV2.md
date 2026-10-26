@@ -4,17 +4,17 @@
 
 Không có công việc hoàn thành trong tuần 7.
 
-## Vai trò từ tuần 8: Nghiệp vụ và ca kiểm thử
+## Vai trò từ tuần 8: Một phần nghiệp vụ và ca kiểm thử
 
-Theo [QĐ-07](README.md#qđ-07--điều-chỉnh-phân-vai-cho-giai-đoạn-code), TV2 chịu trách nhiệm:
-- Viết và giữ đúng **business rule** của từng use case (số dư phép, trùng lịch, ai được duyệt, quy định của công ty giả định).
-- Biến mỗi business rule thành **ca kiểm thử nghiệp vụ** (đầu vào, điều kiện, kết quả mong đợi), làm căn cứ cho test tự động.
-- Kiểm tra kết quả test tự động có phủ hết các ca đã viết chưa.
+Theo [ADR-11](README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code), TV2 chịu trách nhiệm:
+- Một phần nghiệp vụ: các danh mục và quy định nhỏ (loại phép, ngày lễ, cách tính ngày nghỉ).
+- Biến mỗi business rule (do TV3 viết) thành **ca kiểm thử**: đầu vào, điều kiện, kết quả mong đợi. Đây là căn cứ cho test tự động của TV1.
+- **Kiểm thử chức năng** cuối mỗi tuần: dùng các tài khoản demo đi hết các màn hình, đối chiếu với ca kiểm thử, mở issue cho mỗi lỗi.
 
 ## Việc tuần 8
 
 | Việc | Output |
 |---|---|
-| Bảng business rule cho luồng nghỉ phép: số dư, trùng lịch, nghỉ nửa ngày, ngày lễ, hủy đơn, quản lý vắng mặt | `docs/business/leave-rules.md` |
-| Ca kiểm thử nghiệp vụ cho 5 bước của workflow, mỗi bước có ca hợp lệ và ca bị từ chối | `docs/business/leave-test-cases.md` |
-| Rà soát business rule UC1, UC2 trong code tuần 7 với bảng functional requirements tuần 5, ghi các điểm lệch | Issue trên GitHub |
+| Danh mục loại phép (số ngày tối đa, có lương hay không, cần giấy tờ gì) và ngày lễ 2026 | `docs/business/leave-types-holidays.md` |
+| Ca kiểm thử cho 5 bước workflow nghỉ phép, mỗi bước có ca hợp lệ và ca bị từ chối | `docs/business/leave-test-cases.md` |
+| Kiểm thử chức năng các màn hình tuần 7 (đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức) với 4 tài khoản demo | Biên bản kiểm thử, issue cho từng lỗi |

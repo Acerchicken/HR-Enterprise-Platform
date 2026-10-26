@@ -4,7 +4,7 @@
 
 | Việc | Output | Trạng thái |
 |---|---|---|
-| Chọn chiến lược lưu trữ và cache cho từng loại dữ liệu | Mục 1 (QĐ-03) | Xong |
+| Chọn chiến lược lưu trữ và cache cho từng loại dữ liệu | Mục 1 (ADR-07) | Xong |
 | Lập bảng sync/async | Mục 2 | Xong |
 | Định nghĩa event model | Mục 3 | Xong |
 
@@ -20,7 +20,7 @@
 | Audit | audit_log | PostgreSQL append-only | Truy vết, cùng transaction với thao tác |
 | Search index | Tên, phòng ban, nội dung tài liệu | PostgreSQL full-text | Quy mô nhỏ, không cần search engine riêng |
 
-Không dùng Redis ở MVP (QĐ-03). Dữ liệu tham chiếu cache in-memory kiểu cache-aside, TTL 10 phút, xóa cache khi cập nhật.
+Không dùng Redis ở MVP (ADR-07). Dữ liệu tham chiếu cache in-memory kiểu cache-aside, TTL 10 phút, xóa cache khi cập nhật.
 Không cache số dư phép, quyền truy cập và dữ liệu nhạy cảm.
 
 ## 2. Sync vs Async

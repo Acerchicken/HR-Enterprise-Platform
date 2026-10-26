@@ -128,7 +128,7 @@ Các bước của workflow chạy đồng bộ trong một ACID transaction, c�
 
 **Khi nào xem lại:** có nhiều consumer cần đọc lại lịch sử event (ví dụ analytics) thì cân nhắc event stream.
 
-### QĐ-03 – Không dùng Redis ở MVP
+### ADR-07 – Không dùng Redis ở MVP
 
 **Bối cảnh:** read-heavy (~90% đọc) nhưng tải nhỏ; dữ liệu tham chiếu (phòng ban, chức danh, loại phép) đọc nhiều, ít đổi.
 

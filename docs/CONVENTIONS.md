@@ -12,17 +12,17 @@ Hệ thống là **modular monolith** (ADR-01). Để sau này tách được mo
 3. **Không** tạo foreign key chéo schema. Foreign key trong cùng schema thì được.
 4. Thao tác nghiệp vụ và audit log ghi trong **cùng một transaction**: truyền `EntityManager` vào `AuditService.record(entry, manager)`.
 
-| Module | Người code | Schema | Người viết business rule / ca kiểm thử |
+| Module | Người code | Schema | Business rule (TV3) / ca kiểm thử (TV2) |
 |---|---|---|---|
-| identity | TV1 | `iam` | TV2 |
-| organization | TV1 | `org` | TV2 |
-| employee | TV1 | `employee` | TV2 |
-| audit | TV1 | `audit` | TV2 |
-| leave | TV1 | `leave` | TV2 |
-| document, worker (tuần 8–10) | TV1 | `document` | TV2 |
+| identity | TV1 | `iam` | TV3 / TV2 |
+| organization | TV1 | `org` | TV3 / TV2 |
+| employee | TV1 | `employee` | TV3 / TV2 |
+| audit | TV1 | `audit` | TV3 / TV2 |
+| leave | TV1 | `leave` | TV3 / TV2 |
+| document, worker (tuần 8–10) | TV1 | `document` | TV3 / TV2 |
 
-Hạ tầng (`docker-compose.yml`, `.github/workflows/`, IaC) do TV4 phụ trách. Wireframe và tiêu chí chấp nhận giao diện do TV3 phụ trách
-(xem QĐ-07 trong `docs/progress/tuan-07/README.md`).
+Hạ tầng (`docker-compose.yml`, `.github/workflows/`, IaC) do TV4 phụ trách. Business rule do TV3, ca kiểm thử và kiểm thử chức năng do TV2 phụ trách
+(xem ADR-11 trong `docs/progress/tuan-07/README.md`).
 
 ## 2. Cấu trúc một module
 
@@ -70,7 +70,7 @@ modules/employee/
 - Mỗi PR:
   - nhỏ, một mục đích, mô tả theo template `.github/pull_request_template.md`;
   - `npm run lint` và `npm test` qua ở máy mình trước khi mở;
-  - **ít nhất 1 người review**; PR của TV1 do TV2 (nghiệp vụ) hoặc TV4 (hạ tầng) review, PR của người khác do TV1 review;
+  - **ít nhất 1 người review**; PR của TV1 do TV2/TV3 (nghiệp vụ) hoặc TV4 (hạ tầng) review, PR của người khác do TV1 review;
   - người mở PR tự merge sau khi được approve (squash merge).
 - Review trong vòng 24 giờ. Góp ý bắt buộc sửa ghi rõ "cần sửa"; góp ý tùy chọn ghi "nit:".
 

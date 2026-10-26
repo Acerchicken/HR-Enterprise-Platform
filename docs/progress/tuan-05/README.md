@@ -61,7 +61,7 @@ chuẩn mở: OIDC cho đăng nhập, PostgreSQL cho database, API kiểu S3 cho
 
 **Khi nào xem lại:** nếu credit sinh viên không đủ cho managed database, chuyển sang giải pháp C cho môi trường staging.
 
-### QĐ-02 – Availability 99.5% và thiết kế cho 50 RPS (không dùng Kubernetes)
+### ADR-06 – Availability 99.5% và thiết kế cho 50 RPS (không dùng Kubernetes)
 
 **Bối cảnh:** peak ước tính ≈ 10 RPS; hệ thống nội bộ, không phải thanh toán; ngân sách < 100 USD/tháng.
 

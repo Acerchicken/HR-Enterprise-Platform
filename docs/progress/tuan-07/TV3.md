@@ -4,16 +4,17 @@
 
 Không có công việc hoàn thành trong tuần 7.
 
-## Vai trò từ tuần 8: Yêu cầu, giao diện và kiểm thử chấp nhận
+## Vai trò từ tuần 8: Nghiệp vụ
 
-Theo [QĐ-07](README.md#qđ-07--điều-chỉnh-phân-vai-cho-giai-đoạn-code), TV3 chịu trách nhiệm:
-- Giữ requirements, NFR và user journey cập nhật.
-- Thiết kế giao diện (wireframe) và **tiêu chí chấp nhận** cho từng màn hình trước khi TV1 code.
-- **Kiểm thử chấp nhận** cuối mỗi tuần: dùng các tài khoản demo đi hết các màn hình, đối chiếu tiêu chí, mở issue cho mỗi lỗi.
+Theo [ADR-11](README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code), TV3 chịu trách nhiệm:
+- Viết và giữ đúng **business rule** của từng use case trước khi TV1 code.
+- Vẽ **quy trình nghiệp vụ** (ai làm gì, theo thứ tự nào, khi nào rẽ nhánh).
+- Giữ requirements, NFR, user journey cập nhật; đối chiếu code với requirements và mở issue khi lệch.
 
 ## Việc tuần 8
 
 | Việc | Output |
 |---|---|
-| Kiểm thử chấp nhận các màn hình tuần 7 (đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức) với 4 tài khoản demo | Biên bản kiểm thử, issue cho từng lỗi |
-| Wireframe + tiêu chí chấp nhận cho 5 màn hình nghỉ phép: tạo đơn, đơn của tôi, duyệt đơn (manager), xử lý đơn (HR), tra cứu audit (HR) | `docs/ui/leave-screens.md` (kèm ảnh wireframe) |
+| Bảng business rule luồng nghỉ phép: kiểm tra số dư, trùng lịch, nghỉ nửa ngày, hủy đơn, quản lý vắng mặt, HR hoàn tất | `docs/business/leave-rules.md` (giao trước thứ 3) |
+| Sơ đồ quy trình nghỉ phép từ tạo đơn đến hoàn tất, có các nhánh từ chối và hủy | Sơ đồ trong `docs/business/` |
+| Đối chiếu business rule UC1, UC2 trong code tuần 7 với bảng functional requirements tuần 5 | Issue cho từng điểm lệch |

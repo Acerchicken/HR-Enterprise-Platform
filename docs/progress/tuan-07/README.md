@@ -14,23 +14,23 @@ API workflow làm ở tuần 8. Tech stack chốt trong ADR-04: **NestJS + React
 | TV4 | Không có công việc hoàn thành | – | [TV4.md](TV4.md) |
 
 **Chưa làm được theo kế hoạch:** kế hoạch tuần 6 chia phần code cho cả 4 người, thực tế chỉ TV1 code. Nhóm điều chỉnh phân vai
-từ tuần 8 (QĐ-07). Map capability sang cloud service vẫn chờ chốt provider, chuyển cho TV4 ở tuần 8.
+từ tuần 8 (ADR-11). Map capability sang cloud service vẫn chờ chốt provider, chuyển cho TV4 ở tuần 8.
 
 **Kết quả kiểm thử:** 24 unit test và 18 e2e test đều qua; đã thử trên trình duyệt với Keycloak thật (đăng nhập, danh bạ,
 xem trường nhạy cảm, sơ đồ tổ chức, sửa số điện thoại).
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 8: 26/10 – 2/11)
 
-Phân vai mới theo QĐ-07.
+Phân vai mới theo ADR-11.
 
 | Thành viên | Vai trò | Công việc | Output |
 |---|---|---|---|
-| TV1 (nhóm trưởng) | Code chính | API workflow nghỉ phép (tạo, duyệt/từ chối, hủy, HR hoàn tất) trong một transaction; outbox + publisher; worker gửi email; 5 màn hình nghỉ phép theo wireframe của TV3; review và merge PR | Demo luồng nghỉ phép end-to-end ở local, e2e test theo ca kiểm thử của TV2 |
-| TV2 | Nghiệp vụ và ca kiểm thử | Bảng business rule luồng nghỉ phép; ca kiểm thử nghiệp vụ cho 5 bước workflow; rà business rule UC1, UC2 trong code tuần 7 | `docs/business/leave-rules.md`, `docs/business/leave-test-cases.md`, issue |
-| TV3 | Yêu cầu, giao diện, kiểm thử chấp nhận | Kiểm thử chấp nhận các màn hình tuần 7; wireframe + tiêu chí chấp nhận 5 màn hình nghỉ phép | Biên bản kiểm thử, issue, `docs/ui/leave-screens.md` |
-| TV4 | Cloud, IaC, CI/CD | Chọn cloud provider (ADR-05), map capability + chi phí; CI GitHub Actions; RabbitMQ + Mailpit trong docker-compose | ADR-05, bảng mapping, `.github/workflows/ci.yml` |
+| TV1 (nhóm trưởng) | Code chính | API workflow nghỉ phép (tạo, duyệt/từ chối, hủy, HR hoàn tất) trong một transaction; outbox + publisher; worker gửi email; 5 màn hình nghỉ phép; review và merge PR | Demo luồng nghỉ phép end-to-end ở local, e2e test theo ca kiểm thử của TV2 |
+| TV2 | Một phần nghiệp vụ + ca kiểm thử | Danh mục loại phép và ngày lễ 2026; ca kiểm thử cho 5 bước workflow (dựa trên business rule của TV3); kiểm thử chức năng các màn hình tuần 7 với 4 tài khoản demo | `docs/business/leave-types-holidays.md`, `docs/business/leave-test-cases.md`, biên bản kiểm thử, issue |
+| TV3 | Nghiệp vụ | Bảng business rule luồng nghỉ phép (số dư, trùng lịch, nghỉ nửa ngày, hủy đơn, quản lý vắng mặt, HR hoàn tất); sơ đồ quy trình nghỉ phép; đối chiếu business rule UC1, UC2 trong code tuần 7 với functional requirements tuần 5 | `docs/business/leave-rules.md`, sơ đồ quy trình, issue cho các điểm lệch |
+| TV4 | Cloud, IaC, CI/CD | Chọn cloud provider (ADR-12), map capability + chi phí; CI GitHub Actions; RabbitMQ + Mailpit trong docker-compose | ADR-12, bảng mapping, `.github/workflows/ci.yml` |
 
-Thứ tự phụ thuộc: TV2 và TV3 giao business rule, wireframe trước thứ 4 để TV1 code theo; TV4 xong docker-compose trước thứ 4 để TV1 viết worker.
+Thứ tự phụ thuộc: TV3 giao business rule trước thứ 3 để TV2 viết ca kiểm thử và TV1 code theo; TV2 giao ca kiểm thử trước thứ 5; TV4 xong docker-compose trước thứ 4 để TV1 viết worker.
 
 ## 3. Quyết định quan trọng
 
@@ -70,7 +70,7 @@ Keycloak tốn khoảng 500 MB RAM khi chạy local.
 
 **Khi nào xem lại:** nếu phần AI cần thư viện chỉ có ở Python, tách AI assistant thành service Python riêng (đã là ứng viên tách theo ADR-01).
 
-### QĐ-04 – Mã hóa trường nhạy cảm ở tầng ứng dụng
+### ADR-08 – Mã hóa trường nhạy cảm ở tầng ứng dụng
 
 **Bối cảnh:** NFR yêu cầu CCCD, số tài khoản, lương mã hóa at rest và chỉ HR xem được; ngay cả người có quyền đọc database
 (admin, backup bị lộ) cũng không được thấy.
@@ -106,7 +106,7 @@ quản lý cẩn thận (tuần 9 chuyển sang secret manager).
 
 **Khi nào xem lại:** cần tìm theo CCCD thì thêm cột hash (HMAC) để tra cứu chính xác mà không giải mã.
 
-### QĐ-05 – Audit log append-only khóa ở mức database
+### ADR-09 – Audit log append-only khóa ở mức database
 
 **Bối cảnh:** UC7 và NFR yêu cầu log chỉ được thêm, không ai sửa/xóa, kể cả khi code có lỗi.
 
@@ -137,7 +137,7 @@ quản lý cẩn thận (tuần 9 chuyển sang secret manager).
 
 **Khi nào xem lại:** tuần 9 (threat model) nếu yêu cầu chống cả admin database thì sao chép audit sang storage bất biến (C).
 
-### QĐ-06 – Role MANAGER suy ra từ sơ đồ tổ chức
+### ADR-10 – Role MANAGER suy ra từ sơ đồ tổ chức
 
 **Bối cảnh:** khoảng 150 quản lý; người làm quản lý thay đổi theo sơ đồ tổ chức; quyền duyệt đơn phải khớp với quan hệ quản lý thật.
 
@@ -169,7 +169,7 @@ thì lần đăng nhập sau role được cập nhật mà không phải sửa 
 
 **Khi nào xem lại:** cần quản lý ủy quyền (duyệt thay khi quản lý nghỉ) thì thêm bảng ủy quyền.
 
-### QĐ-07 – Điều chỉnh phân vai cho giai đoạn code
+### ADR-11 – Điều chỉnh phân vai cho giai đoạn code
 
 **Bối cảnh:** kế hoạch tuần 6 chia phần code tuần 7 cho cả 4 người theo module. Thực tế tuần 7 chỉ TV1 code; TV2, TV3, TV4
 chưa có công việc hoàn thành. Còn 6 tuần, phần code đã có khung thống nhất, và mỗi thành viên vẫn cần có đóng góp rõ ràng,
@@ -180,7 +180,7 @@ kiểm chứng được trên repo.
 | # | Giải pháp | Mô tả |
 |---|---|---|
 | A | Giữ phân vai cũ | Mỗi người code module của mình như kế hoạch tuần 4 |
-| B | Một người code chính, ba người theo chuyên môn | TV1 code; TV2 nghiệp vụ + ca kiểm thử; TV3 yêu cầu, giao diện, kiểm thử chấp nhận; TV4 cloud, IaC, CI/CD |
+| B | Một người code chính, ba người theo chuyên môn | TV1 code; TV2 một phần nghiệp vụ + ca kiểm thử; TV3 nghiệp vụ; TV4 cloud, IaC, CI/CD |
 | C | Code theo cặp | Hai cặp, mỗi cặp một nửa số module |
 
 **Tiêu chí lựa chọn:**
@@ -201,8 +201,8 @@ trực tiếp với code ứng dụng, nên phải chủ động đọc code đ�
 
 **Tiêu chí nghiệm thu:**
 - Mỗi tuần, mỗi thành viên có ít nhất một PR hoặc issue bằng tài khoản GitHub của chính mình.
-- TV2: mỗi bước workflow có ca kiểm thử; mỗi ca có test tự động tương ứng.
-- TV3: mỗi màn hình có wireframe và tiêu chí chấp nhận trước khi code; có biên bản kiểm thử chấp nhận hàng tuần.
+- TV3: mỗi use case có bảng business rule trước khi TV1 code; mọi điểm lệch giữa code và requirements được mở issue.
+- TV2: mỗi business rule có ít nhất một ca kiểm thử; mỗi ca có test tự động tương ứng; có biên bản kiểm thử chức năng hàng tuần.
 - TV4: CI chạy trên mọi PR từ tuần 8; IaC tạo lại được môi trường staging từ tuần 9.
 
 **Khi nào xem lại:** TV1 trễ kế hoạch 2 tuần liên tiếp thì chuyển một phần code (ví dụ module Document hoặc màn hình frontend) cho thành viên khác.
