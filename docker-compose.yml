@@ -1,0 +1,97 @@
+# Chạy toàn bộ hệ thống ở local:  docker compose up -d --build
+#   Web:      http://localhost:5173   (đăng nhập bằng tài khoản demo, xem README)
+#   API:      http://localhost:3000/api/v1   · Swagger: http://localhost:3000/api/docs
+#   Keycloak: http://localhost:8080   (admin / admin)
+# Trên cloud, db và keycloak được thay bằng managed PostgreSQL và managed identity provider (ADR-00).
+name: hr-platform
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hr
+      POSTGRES_PASSWORD: hr
+      POSTGRES_DB: hr
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hr -d hr"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.7
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Token luôn có iss = http://localhost:8080/realms/hr, kể cả khi API gọi Keycloak qua mạng nội bộ Docker.
+      KC_HOSTNAME: http://localhost:8080
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/realm-hr.json:/opt/keycloak/data/import/realm-hr.json:ro
+
+  api:
+    build: ./backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      CORS_ORIGIN: http://localhost:5173
+      DB_HOST: db
+      DB_USER: hr
+      DB_PASSWORD: hr
+      DB_NAME: hr
+      AUTH_MODE: oidc
+      OIDC_ISSUER: http://localhost:8080/realms/hr
+      OIDC_JWKS_URI: http://keycloak:8080/realms/hr/protocol/openid-connect/certs
+      OIDC_ALLOWED_CLIENTS: hr-web,hr-api-test
+      FIELD_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # Chạy một lần để nạp dữ liệu mẫu (bỏ qua nếu DB đã có dữ liệu).
+  seed:
+    build: ./backend
+    command: ["node", "dist/database/seed.js"]
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_USER: hr
+      DB_PASSWORD: hr
+      DB_NAME: hr
+      FIELD_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:3000/api/v1
+        VITE_OIDC_AUTHORITY: http://localhost:8080/realms/hr
+        VITE_OIDC_CLIENT_ID: hr-web
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  db-data:
