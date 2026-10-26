@@ -1,0 +1,374 @@
+# Sinh tự động từ code – không sửa tay. Cập nhật: npm run openapi (trong backend/)
+openapi: 3.0.0
+paths:
+  /api/v1/health:
+    get:
+      operationId: HealthController_check
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags:
+        - health
+  /api/v1/audit-logs:
+    get:
+      operationId: AuditController_search
+      parameters:
+        - name: entity
+          required: false
+          in: query
+          schema:
+            example: employee
+            type: string
+        - name: entityId
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: actor
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: from
+          required: false
+          in: query
+          schema:
+            format: date-time
+            example: 2026-10-01
+            type: string
+        - name: to
+          required: false
+          in: query
+          schema:
+            format: date-time
+            example: 2026-11-01
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags:
+        - audit
+      security:
+        - bearer: []
+  /api/v1/departments:
+    get:
+      operationId: OrganizationController_list
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a1
+        - organization
+      security: &a2
+        - bearer: []
+    post:
+      operationId: OrganizationController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepartmentDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a1
+      security: *a2
+  /api/v1/departments/tree:
+    get:
+      operationId: OrganizationController_tree
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a1
+      security: *a2
+  /api/v1/departments/{id}:
+    get:
+      operationId: OrganizationController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a1
+      security: *a2
+    patch:
+      operationId: OrganizationController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDepartmentDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a1
+      security: *a2
+  /api/v1/positions:
+    get:
+      operationId: OrganizationController_positions
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a1
+      security: *a2
+  /api/v1/me:
+    get:
+      operationId: EmployeeController_me
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a3
+        - employee
+      security: &a4
+        - bearer: []
+  /api/v1/employees:
+    get:
+      operationId: EmployeeController_directory
+      parameters:
+        - name: q
+          required: false
+          in: query
+          description: Tìm theo tên, email hoặc mã nhân viên
+          schema:
+            type: string
+        - name: dept
+          required: false
+          in: query
+          description: Lọc theo phòng ban
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+      security: *a4
+    post:
+      operationId: EmployeeController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/employees/{id}:
+    get:
+      operationId: EmployeeController_profile
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: include
+          required: false
+          in: query
+          description: "HR: kèm trường nhạy cảm (mỗi lần xem đều ghi audit)"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+      security: *a4
+    patch:
+      operationId: EmployeeController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmployeeDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/employees/{id}/direct-reports:
+    get:
+      operationId: EmployeeController_directReports
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/departments/{id}/members:
+    get:
+      operationId: EmployeeController_members
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/leave-types:
+    get:
+      operationId: LeaveController_types
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a5
+        - leave
+      security: &a6
+        - bearer: []
+  /api/v1/leave-balances/me:
+    get:
+      operationId: LeaveController_myBalances
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+info:
+  title: Enterprise HR Platform API
+  description: "REST API /api/v1. Xác thực: Bearer JWT do Keycloak (OIDC) cấp.
+    Lỗi: {code, message, traceId}."
+  version: 0.1.0 (tuần 7)
+  contact: {}
+tags: []
+servers: []
+components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+  schemas:
+    CreateDepartmentDto:
+      type: object
+      properties:
+        code:
+          type: string
+          example: ENG-PLT
+        name:
+          type: string
+          example: Platform Engineering
+        office:
+          type: string
+          example: Hà Nội
+        parentId:
+          type: object
+        headEmployeeId:
+          type: object
+      required:
+        - code
+        - name
+        - office
+    UpdateDepartmentDto:
+      type: object
+      properties:
+        name:
+          type: string
+        office:
+          type: string
+        parentId:
+          type: object
+          nullable: true
+        headEmployeeId:
+          type: object
+          nullable: true
+    CreateEmployeeDto:
+      type: object
+      properties:
+        employeeCode:
+          type: string
+          example: E02001
+        fullName:
+          type: string
+        workEmail:
+          type: string
+        phone:
+          type: string
+        departmentId:
+          type: string
+        positionId:
+          type: string
+        managerId:
+          type: string
+        hireDate:
+          type: string
+          example: 2026-11-01
+      required:
+        - employeeCode
+        - fullName
+        - workEmail
+        - departmentId
+        - positionId
+        - hireDate
+    UpdateEmployeeDto:
+      type: object
+      properties:
+        version:
+          type: number
+          description: Version hiện tại (optimistic locking). Lệch → 409.
+        phone:
+          type: string
+          example: 0912 345 678
+        address:
+          type: string
+        fullName:
+          type: string
+        dateOfBirth:
+          type: string
+        departmentId:
+          type: string
+        positionId:
+          type: string
+        managerId:
+          type: object
+          nullable: true
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - ON_LEAVE
+            - TERMINATED
+        nationalId:
+          type: string
+          description: CCCD (12 số)
+        bankAccount:
+          type: string
+        salary:
+          type: string
+          description: Lương tháng (VND)

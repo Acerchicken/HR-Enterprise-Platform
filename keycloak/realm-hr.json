@@ -1,0 +1,137 @@
+{
+  "realm": "hr",
+  "enabled": true,
+  "displayName": "Enterprise HR Platform",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "employee",
+        "description": "Nhân viên"
+      },
+      {
+        "name": "manager",
+        "description": "Quản lý"
+      },
+      {
+        "name": "hr",
+        "description": "Nhân sự"
+      },
+      {
+        "name": "admin",
+        "description": "Quản trị hệ thống"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "hr-web",
+      "name": "HR Platform SPA",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*"
+      }
+    },
+    {
+      "clientId": "hr-api-test",
+      "name": "Client chỉ dùng cho test bằng curl/Postman (password grant)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "employee",
+      "email": "employee@hr.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Nhân",
+      "lastName": "Trần Thị",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "employee"
+      ]
+    },
+    {
+      "username": "manager",
+      "email": "manager@hr.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Quản",
+      "lastName": "Nguyễn Văn",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "employee",
+        "manager"
+      ]
+    },
+    {
+      "username": "hr",
+      "email": "hr@hr.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Hằng",
+      "lastName": "Lê Thu",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "employee",
+        "hr"
+      ]
+    },
+    {
+      "username": "admin",
+      "email": "admin@hr.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Quân",
+      "lastName": "Phạm Minh",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "employee",
+        "admin"
+      ]
+    }
+  ]
+}
