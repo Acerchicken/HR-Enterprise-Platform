@@ -1,4 +1,4 @@
-# Tuần 7 – TV3
+# Tuần 7 – TV3 (Thanh)
 
 ## Việc đã làm
 

@@ -8,10 +8,10 @@ API workflow làm ở tuần 8. Tech stack chốt trong ADR-04: **NestJS + React
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (nhóm trưởng) | Chốt tech stack (ADR-04); khung modular monolith, quy ước code, quy trình PR; migration 5 schema; module Identity, Employee, Organization, Audit; module Leave (entity + state machine); frontend (đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức); docker-compose, realm Keycloak, seed 2,000 nhân viên | Repo chạy được ở local, 13 endpoint, 24 unit test + 18 e2e test | [TV1.md](TV1.md) |
-| TV2 | Không có công việc hoàn thành | – | [TV2.md](TV2.md) |
-| TV3 | Không có công việc hoàn thành | – | [TV3.md](TV3.md) |
-| TV4 | Không có công việc hoàn thành | – | [TV4.md](TV4.md) |
+| TV1 (Duong, nhóm trưởng) | Chốt tech stack (ADR-04); khung modular monolith, quy ước code, quy trình PR; migration 5 schema; module Identity, Employee, Organization, Audit; module Leave (entity + state machine); frontend (đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức); docker-compose, realm Keycloak, seed 2,000 nhân viên | Repo chạy được ở local, 13 endpoint, 24 unit test + 18 e2e test | [TV1.md](TV1.md) |
+| TV2 (Duy) | Không có công việc hoàn thành | – | [TV2.md](TV2.md) |
+| TV3 (Thanh) | Không có công việc hoàn thành | – | [TV3.md](TV3.md) |
+| TV4 (Bảo) | Không có công việc hoàn thành | – | [TV4.md](TV4.md) |
 
 **Chưa làm được theo kế hoạch:** kế hoạch tuần 6 chia phần code cho cả 4 người, thực tế chỉ TV1 code. Nhóm điều chỉnh phân vai
 từ tuần 8 (ADR-11). Map capability sang cloud service vẫn chờ chốt provider, chuyển cho TV4 ở tuần 8.
@@ -21,14 +21,14 @@ xem trường nhạy cảm, sơ đồ tổ chức, sửa số điện thoại).
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 8: 26/10 – 2/11)
 
-Phân vai mới theo ADR-11.
+Phân vai mới theo ADR-11: TV1 Duong, TV2 Duy, TV3 Thanh, TV4 Bảo.
 
 | Thành viên | Vai trò | Công việc | Output |
 |---|---|---|---|
-| TV1 (nhóm trưởng) | Code chính | API workflow nghỉ phép (tạo, duyệt/từ chối, hủy, HR hoàn tất) trong một transaction; outbox + publisher; worker gửi email; 5 màn hình nghỉ phép; review và merge PR | Demo luồng nghỉ phép end-to-end ở local, e2e test theo ca kiểm thử của TV2 |
-| TV2 | Một phần nghiệp vụ + ca kiểm thử | Danh mục loại phép và ngày lễ 2026; ca kiểm thử cho 5 bước workflow (dựa trên business rule của TV3); kiểm thử chức năng các màn hình tuần 7 với 4 tài khoản demo | `docs/business/leave-types-holidays.md`, `docs/business/leave-test-cases.md`, biên bản kiểm thử, issue |
-| TV3 | Nghiệp vụ | Bảng business rule luồng nghỉ phép (số dư, trùng lịch, nghỉ nửa ngày, hủy đơn, quản lý vắng mặt, HR hoàn tất); sơ đồ quy trình nghỉ phép; đối chiếu business rule UC1, UC2 trong code tuần 7 với functional requirements tuần 5 | `docs/business/leave-rules.md`, sơ đồ quy trình, issue cho các điểm lệch |
-| TV4 | Cloud, IaC, CI/CD | Chọn cloud provider (ADR-12), map capability + chi phí; CI GitHub Actions; RabbitMQ + Mailpit trong docker-compose | ADR-12, bảng mapping, `.github/workflows/ci.yml` |
+| TV1 (Duong, nhóm trưởng) | Code chính | API workflow nghỉ phép (tạo, duyệt/từ chối, hủy, HR hoàn tất) trong một transaction; outbox + publisher; worker gửi email; 5 màn hình nghỉ phép; review và merge PR | Demo luồng nghỉ phép end-to-end ở local, e2e test theo ca kiểm thử của TV2 |
+| TV2 (Duy) | Một phần nghiệp vụ + ca kiểm thử | Danh mục loại phép và ngày lễ 2026; ca kiểm thử cho 5 bước workflow (dựa trên business rule của TV3); kiểm thử chức năng các màn hình tuần 7 với 4 tài khoản demo | `docs/business/leave-types-holidays.md`, `docs/business/leave-test-cases.md`, biên bản kiểm thử, issue |
+| TV3 (Thanh) | Nghiệp vụ | Bảng business rule luồng nghỉ phép (số dư, trùng lịch, nghỉ nửa ngày, hủy đơn, quản lý vắng mặt, HR hoàn tất); sơ đồ quy trình nghỉ phép; đối chiếu business rule UC1, UC2 trong code tuần 7 với functional requirements tuần 5 | `docs/business/leave-rules.md`, sơ đồ quy trình, issue cho các điểm lệch |
+| TV4 (Bảo) | Cloud, IaC, CI/CD | Chọn cloud provider (ADR-12), map capability + chi phí; CI GitHub Actions; RabbitMQ + Mailpit trong docker-compose | ADR-12, bảng mapping, `.github/workflows/ci.yml` |
 
 Thứ tự phụ thuộc: TV3 giao business rule trước thứ 3 để TV2 viết ca kiểm thử và TV1 code theo; TV2 giao ca kiểm thử trước thứ 5; TV4 xong docker-compose trước thứ 4 để TV1 viết worker.
 

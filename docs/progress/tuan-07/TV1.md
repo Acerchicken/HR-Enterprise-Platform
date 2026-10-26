@@ -1,4 +1,4 @@
-# Tuần 7 – TV1 (nhóm trưởng): toàn bộ phần code nền tảng
+# Tuần 7 – TV1 (Duong, nhóm trưởng): toàn bộ phần code nền tảng
 
 Tuần 7 chỉ TV1 tham gia code; TV2, TV3, TV4 chưa có công việc hoàn thành. Từ tuần 8 nhóm điều chỉnh phân vai
 (xem [ADR-11](README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code)).

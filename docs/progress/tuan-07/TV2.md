@@ -1,4 +1,4 @@
-# Tuần 7 – TV2
+# Tuần 7 – TV2 (Duy)
 
 ## Việc đã làm
 

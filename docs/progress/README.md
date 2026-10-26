@@ -31,14 +31,16 @@ Thư mục này lưu kế hoạch 10 tuần và báo cáo tiến độ hàng tu�
 
 Tuần 4–7 theo kế hoạch ban đầu (bảng dưới). Từ tuần 8 điều chỉnh theo [ADR-11](tuan-07/README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code):
 
-| Mã | Vai trò từ tuần 8 |
-|---|---|
-| TV1 | Code chính (backend, frontend), kiến trúc, review và merge PR, báo cáo thứ 2 |
-| TV2 | Một phần nghiệp vụ (danh mục, quy định nhỏ) và ca kiểm thử, kiểm thử chức năng |
-| TV3 | Nghiệp vụ: business rule, quy trình, đối chiếu với requirements |
-| TV4 | Cloud, IaC và CI/CD |
+| Mã | Thành viên (từ tuần 7) | Vai trò từ tuần 8 |
+|---|---|---|
+| TV1 | Duong – nhóm trưởng | Code chính (backend, frontend), kiến trúc, review và merge PR, báo cáo thứ 2 |
+| TV2 | Duy | Một phần nghiệp vụ (danh mục, quy định nhỏ) và ca kiểm thử, kiểm thử chức năng |
+| TV3 | Thanh | Nghiệp vụ: business rule, quy trình, đối chiếu với requirements |
+| TV4 | Bảo | Cloud, IaC và CI/CD |
 
-Phân vai ban đầu (tuần 4):
+Lưu ý: mã TV gắn với vai trò, nên từ tuần 7 mã TV2–TV4 đổi người so với tuần 4–6: Duy là TV2 (tuần 4–6 là TV4), Thanh là TV3 (tuần 4–6 là TV2), Bảo là TV4 (tuần 4–6 là TV3). Duong vẫn là TV1.
+
+Phân vai ban đầu (tuần 4–6):
 
 | Mã | Thành viên | Vai trò | Phụ trách chính |
 |---|---|---|---|
