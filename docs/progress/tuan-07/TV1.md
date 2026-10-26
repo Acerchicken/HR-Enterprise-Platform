@@ -47,11 +47,11 @@ Validation: mọi body và query đều có DTO kiểm tra bằng class-validato
 - Nhánh làm việc: `feat/<module>-<mo-ta>`, `fix/<mo-ta>`, `docs/<mo-ta>`.
 - Commit theo Conventional Commits: `feat(leave): add approve endpoint`.
 - Mỗi PR ít nhất 1 người review; PR đụng tới phân quyền, migration, kiến trúc thì TV1 review. Review trong 24 giờ.
-- PR template có checklist: lint, test, e2e, cập nhật openapi, thử migration up/down, ảnh hưởng phân quyền.
+- PR template có checklist: lint, cập nhật openapi, thử migration up/down, ảnh hưởng phân quyền.
 
 ### 3. Module Leave: state machine
 
-File `leave-state-machine.ts` là hàm thuần (không đụng database) để dễ test. Tuần 8 gọi nó trong transaction rồi cập nhật bảng.
+File `leave-state-machine.ts` là hàm thuần (không đụng database), tách khỏi phần lưu dữ liệu. Tuần 8 gọi nó trong transaction rồi cập nhật bảng.
 
 | Trạng thái hiện tại | Hành động | Ai được làm | Trạng thái mới | Thay đổi số dư |
 |---|---|---|---|---|
@@ -71,11 +71,6 @@ Số ngày nghỉ tính theo ngày làm việc, bỏ thứ 7 và chủ nhật (`
 
 Entity đã có: `leave_type`, `leave_balance` (database chặn `used + pending > entitled`), `leave_request` (có `version`,
 unique `employee_id + idempotency_key`), `leave_request_history`. Hai API đọc đã chạy: `GET /leave-types`, `GET /leave-balances/me`.
-
-### 4. Test
-
-9 unit test trong `leave-state-machine.spec.ts`: duyệt, từ chối, hủy, hoàn tất, duyệt lần hai, duyệt đơn đã từ chối,
-sai người duyệt, hủy đơn đã duyệt, đếm ngày làm việc.
 
 ## Phần B – Migration, module Employee, Organization, Audit, OpenAPI
 
@@ -128,7 +123,7 @@ Mọi endpoint có tiền tố `/api/v1`. Thử trực tiếp ở Swagger: http:
 | HR | Toàn bộ; trường nhạy cảm chỉ khi gọi `?include=sensitive`, mỗi lần đều ghi audit | Mọi trường |
 | Admin | Chỉ thông tin danh bạ | Không |
 
-Quy tắc viết thành hàm thuần trong `employee-access.ts`, có 7 unit test.
+Quy tắc viết thành hàm thuần trong `employee-access.ts`.
 
 Các kiểm tra khác khi sửa hồ sơ:
 - `version` cũ → 409 (optimistic locking).
@@ -140,11 +135,6 @@ Các kiểm tra khác khi sửa hồ sơ:
 `AuditService.record(entry, manager)` được các module khác gọi trong cùng transaction. Các thao tác đang ghi audit:
 tạo/sửa nhân viên, tạo/sửa phòng ban, HR xem trường nhạy cảm (`VIEW_SENSITIVE`). Khi sửa lương hay CCCD, audit chỉ ghi
 tên trường với giá trị `***`. Mỗi dòng audit có `traceId` để đối chiếu với log của request.
-
-### 5. Test
-
-- Unit test: phân quyền hồ sơ (7), mã hóa trường (4), cây tổ chức và vòng lặp (2), cache (2).
-- 18 e2e test trong `backend/test/app.e2e-spec.ts`, chạy với database đã seed: `npm run test:e2e`.
 
 ## Phần C – Frontend
 
@@ -180,11 +170,6 @@ File `frontend/.env.example`, sao chép thành `.env.local`:
 
 Chạy: `cd frontend && npm install && npm run dev` → http://localhost:5173.
 
-### 4. Kiểm thử
-
-Đã thử bằng trình duyệt với Keycloak thật, tài khoản `hr`: đăng nhập, tìm "nguyen" trong danh bạ (128 kết quả), mở hồ sơ,
-xem trường nhạy cảm, mở sơ đồ tổ chức, sửa số điện thoại. Không có lỗi trên console.
-
 ## Phần D – docker-compose, Keycloak, đăng nhập OIDC, dữ liệu mẫu
 
 ### 1. Cách chạy
@@ -218,7 +203,7 @@ Xóa sạch và làm lại: `docker compose down -v`, hoặc chỉ dữ liệu: 
 
 Realm `hr`:
 - Client `hr-web`: public client, Authorization Code + PKCE (S256), redirect về http://localhost:5173.
-- Client `hr-api-test`: chỉ để lấy token bằng username/password khi test bằng curl/Postman; bỏ khi deploy.
+- Client `hr-api-test`: chỉ để lấy token bằng username/password khi gọi API bằng curl/Postman; bỏ khi deploy.
 - 4 realm role: employee, manager, hr, admin. Access token hết hạn sau 15 phút; bật chống dò mật khẩu.
 
 Tài khoản demo, mật khẩu chung `Passw0rd!`:
@@ -247,7 +232,7 @@ curl -s -d client_id=hr-api-test -d grant_type=password -d username=hr -d passwo
 API gọi Keycloak qua mạng nội bộ Docker (`keycloak:8080`) nhưng token có issuer `localhost:8080`, nên cấu hình tách riêng
 `OIDC_ISSUER` và `OIDC_JWKS_URI`. Khi lên cloud chỉ đổi hai biến này.
 
-Chế độ `AUTH_MODE=dev`: token dạng `dev:<email>`, dùng khi không muốn bật Keycloak và cho e2e test. Tự bị chặn khi `NODE_ENV=production`.
+Chế độ `AUTH_MODE=dev`: token dạng `dev:<email>`, dùng khi không muốn bật Keycloak. Tự bị chặn khi `NODE_ENV=production`.
 
 ### 4. Dữ liệu mẫu
 

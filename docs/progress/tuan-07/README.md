@@ -8,16 +8,13 @@ API workflow làm ở tuần 8. Tech stack chốt trong ADR-04: **NestJS + React
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (Duong, nhóm trưởng) | Chốt tech stack (ADR-04); khung modular monolith, quy ước code, quy trình PR; migration 5 schema; module Identity, Employee, Organization, Audit; module Leave (entity + state machine); frontend (đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức); docker-compose, realm Keycloak, seed 2,000 nhân viên | Repo chạy được ở local, 13 endpoint, 24 unit test + 18 e2e test | [TV1.md](TV1.md) |
+| TV1 (Duong, nhóm trưởng) | Chốt tech stack (ADR-04); khung modular monolith, quy ước code, quy trình PR; migration 5 schema; module Identity, Employee, Organization, Audit; module Leave (entity + state machine); frontend (đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức); docker-compose, realm Keycloak, seed 2,000 nhân viên | Repo chạy được ở local, 13 endpoint | [TV1.md](TV1.md) |
 | TV2 (Duy) | Không có công việc hoàn thành | – | [TV2.md](TV2.md) |
 | TV3 (Thanh) | Không có công việc hoàn thành | – | [TV3.md](TV3.md) |
 | TV4 (Bảo) | Không có công việc hoàn thành | – | [TV4.md](TV4.md) |
 
 **Chưa làm được theo kế hoạch:** kế hoạch tuần 6 chia phần code cho cả 4 người, thực tế chỉ TV1 code. Nhóm điều chỉnh phân vai
 từ tuần 8 (ADR-11). Map capability sang cloud service vẫn chờ chốt provider, chuyển cho TV4 ở tuần 8.
-
-**Kết quả kiểm thử:** 24 unit test và 18 e2e test đều qua; đã thử trên trình duyệt với Keycloak thật (đăng nhập, danh bạ,
-xem trường nhạy cảm, sơ đồ tổ chức, sửa số điện thoại).
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 8: 26/10 – 2/11)
 
@@ -66,7 +63,7 @@ Keycloak tốn khoảng 500 MB RAM khi chạy local.
 **Tiêu chí nghiệm thu:**
 - Mọi thành viên clone repo và chạy được hệ thống trong dưới 15 phút theo hướng dẫn.
 - Đổi từ Keycloak local sang managed identity provider chỉ bằng biến môi trường `OIDC_ISSUER`, `OIDC_JWKS_URI`.
-- `npm run lint` và `npm test` chạy được trên cả Windows và Linux.
+- `npm run lint` chạy được trên cả Windows và Linux.
 
 **Khi nào xem lại:** nếu phần AI cần thư viện chỉ có ở Python, tách AI assistant thành service Python riêng (đã là ứng viên tách theo ADR-01).
 
@@ -101,8 +98,8 @@ quản lý cẩn thận (tuần 9 chuyển sang secret manager).
 
 **Tiêu chí nghiệm thu:**
 - Đọc thẳng bảng `employee.employee_sensitive` chỉ thấy chuỗi mã hóa.
-- Sửa một byte trong chuỗi mã hóa thì giải mã báo lỗi (unit test).
-- Nhân viên, quản lý, admin gọi `?include=sensitive` đều bị 403; HR xem được và có một dòng audit `VIEW_SENSITIVE` (e2e test).
+- Sửa một byte trong chuỗi mã hóa thì giải mã báo lỗi.
+- Nhân viên, quản lý, admin gọi `?include=sensitive` đều bị 403; HR xem được và có một dòng audit `VIEW_SENSITIVE`.
 
 **Khi nào xem lại:** cần tìm theo CCCD thì thêm cột hash (HMAC) để tra cứu chính xác mà không giải mã.
 
@@ -133,7 +130,7 @@ quản lý cẩn thận (tuần 9 chuyển sang secret manager).
 **Trade-off:** người có quyền superuser của database vẫn tắt được trigger; xóa dữ liệu khi test phải dùng `TRUNCATE`
 (chỉ dùng trong seed `--reset` ở môi trường dev).
 
-**Tiêu chí nghiệm thu:** chạy `DELETE FROM audit.audit_log` bị database từ chối với thông báo "audit_log là append-only" (e2e test).
+**Tiêu chí nghiệm thu:** chạy `DELETE FROM audit.audit_log` bị database từ chối với thông báo "audit_log là append-only".
 
 **Khi nào xem lại:** tuần 9 (threat model) nếu yêu cầu chống cả admin database thì sao chép audit sang storage bất biến (C).
 
@@ -164,7 +161,7 @@ quản lý cẩn thận (tuần 9 chuyển sang secret manager).
 **Trade-off:** mỗi request thêm một truy vấn kiểm tra nhân viên trực thuộc (có index `manager_id`, dưới 1 ms ở 2,000 nhân viên).
 Role MANAGER chỉ cho biết "là quản lý"; quyền duyệt từng đơn vẫn kiểm tra "là quản lý trực tiếp của người tạo đơn".
 
-**Tiêu chí nghiệm thu:** tài khoản `manager` có role MANAGER, `employee` thì không (e2e test); HR đổi quản lý của một nhân viên
+**Tiêu chí nghiệm thu:** tài khoản `manager` có role MANAGER, `employee` thì không; HR đổi quản lý của một nhân viên
 thì lần đăng nhập sau role được cập nhật mà không phải sửa gì trong Keycloak.
 
 **Khi nào xem lại:** cần quản lý ủy quyền (duyệt thay khi quản lý nghỉ) thì thêm bảng ủy quyền.
