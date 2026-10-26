@@ -1,4 +1,4 @@
-# Tuần 5 – TV2: Functional requirements
+# Tuần 5 – TV2 (Thanh): Functional requirements
 
 ## Việc đã làm
 

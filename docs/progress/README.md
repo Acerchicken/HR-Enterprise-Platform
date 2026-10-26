@@ -42,10 +42,10 @@ Phân vai ban đầu (tuần 4):
 
 | Mã | Thành viên | Vai trò | Phụ trách chính |
 |---|---|---|---|
-| TV1 | [Tên] – nhóm trưởng | Project lead + Solution architect | Kế hoạch, báo cáo thứ 2, kiến trúc và ADR, review code; module Leave; AI assistant (tuần 12) |
-| TV2 | [Tên] | Backend developer | Data model, API spec; module Employee, Organization, Identity & Access, Audit, Search |
-| TV3 | [Tên] | Frontend developer + Business analyst | Requirements, NFR, user journey; giao diện SPA; kiểm thử chức năng |
-| TV4 | [Tên] | DevOps / Cloud engineer | Cloud, container, CI/CD, IaC; module Document, queue + worker; monitoring, load test |
+| TV1 | Duong – nhóm trưởng | Project lead + Solution architect | Kế hoạch, báo cáo thứ 2, kiến trúc và ADR, review code; module Leave; AI assistant (tuần 12) |
+| TV2 | Thanh | Backend developer | Data model, API spec; module Employee, Organization, Identity & Access, Audit, Search |
+| TV3 | Bảo | Frontend developer + Business analyst | Requirements, NFR, user journey; giao diện SPA; kiểm thử chức năng |
+| TV4 | Duy | DevOps / Cloud engineer | Cloud, container, CI/CD, IaC; module Document, queue + worker; monitoring, load test |
 
 ## Danh sách quyết định (ADR)
 

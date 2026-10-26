@@ -1,4 +1,4 @@
-# Tuần 5 – TV3: User journey và NFR
+# Tuần 5 – TV3 (Bảo): User journey và NFR
 
 ## Việc đã làm
 

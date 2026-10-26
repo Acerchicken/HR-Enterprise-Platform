@@ -8,9 +8,9 @@ Các bước của workflow chạy đồng bộ trong một ACID transaction, c�
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
 | TV1 (nhóm trưởng) | Business capability map (4 nhóm); application components (7 module + 1 worker); ADR-01, ADR-03 | Capability map, component table, 2 ADR | [TV1.md](TV1.md) |
-| TV2 | API specification REST /api/v1 (xác thực, lỗi, idempotency); data model 11 entity + data ownership; ADR-02 | API spec, ERD, ADR-02 | [TV2.md](TV2.md) |
-| TV3 | Chiến lược lưu trữ và cache; bảng sync/async; 6 business event | Bảng storage/cache, bảng sync/async, event model | [TV3.md](TV3.md) |
-| TV4 | Integration với 5 hệ thống ngoài; 8 tình huống lỗi và cách xử lý | Bảng integration, bảng failure handling | [TV4.md](TV4.md) |
+| TV2 (Thanh) | API specification REST /api/v1 (xác thực, lỗi, idempotency); data model 11 entity + data ownership; ADR-02 | API spec, ERD, ADR-02 | [TV2.md](TV2.md) |
+| TV3 (Bảo) | Chiến lược lưu trữ và cache; bảng sync/async; 6 business event | Bảng storage/cache, bảng sync/async, event model | [TV3.md](TV3.md) |
+| TV4 (Duy) | Integration với 5 hệ thống ngoài; 8 tình huống lỗi và cách xử lý | Bảng integration, bảng failure handling | [TV4.md](TV4.md) |
 
 **Chưa làm được theo kế hoạch:** map capability sang cloud service (vẫn chờ chốt provider).
 
@@ -19,9 +19,9 @@ Các bước của workflow chạy đồng bộ trong một ACID transaction, c�
 | Thành viên | Công việc | Output |
 |---|---|---|
 | TV1 (nhóm trưởng) | Khung dự án modular monolith, quy ước code, quy trình review PR; bắt đầu module Leave (model + state machine) | Khung repo, tài liệu quy ước code |
-| TV2 | OpenAPI; migration cho các schema; module Employee và Organization | OpenAPI YAML, migration, API Employee/Organization chạy local |
-| TV3 | Khung frontend SPA; màn hình đăng nhập, hồ sơ cá nhân, danh bạ | Frontend chạy local, gọi được API |
-| TV4 | docker-compose (app + PostgreSQL); đăng nhập OIDC; seed ~2,000 nhân viên; map cloud service khi chốt provider | docker-compose, seed data, README |
+| TV2 (Thanh) | OpenAPI; migration cho các schema; module Employee và Organization | OpenAPI YAML, migration, API Employee/Organization chạy local |
+| TV3 (Bảo) | Khung frontend SPA; màn hình đăng nhập, hồ sơ cá nhân, danh bạ | Frontend chạy local, gọi được API |
+| TV4 (Duy) | docker-compose (app + PostgreSQL); đăng nhập OIDC; seed ~2,000 nhân viên; map cloud service khi chốt provider | docker-compose, seed data, README |
 
 ## 3. Quyết định quan trọng
 

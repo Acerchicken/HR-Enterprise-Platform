@@ -1,4 +1,4 @@
-# Tuần 5 – TV4: Workload analysis và kiến trúc cloud ban đầu
+# Tuần 5 – TV4 (Duy): Workload analysis và kiến trúc cloud ban đầu
 
 ## Việc đã làm
 

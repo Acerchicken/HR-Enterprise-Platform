@@ -1,4 +1,4 @@
-# Tuần 6 – TV2: API specification, Data model, ADR-02
+# Tuần 6 – TV2 (Thanh): API specification, Data model, ADR-02
 
 ## Việc đã làm
 

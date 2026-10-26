@@ -11,18 +11,18 @@ Thread trên Discussions: **[Tên nhóm]_Enterprise HR Platform**. Mỗi báo c�
 | Thành viên | Công việc đã hoàn thành |
 |---|---|
 | TV1 (nhóm trưởng) | Chọn đề tài, xác định phạm vi MVP; lập kế hoạch 10 tuần; phân vai trong nhóm; tạo thread trên Discussions |
-| TV2 | Đọc yêu cầu đề tài, đề xuất danh sách use case và entity ban đầu |
-| TV3 | Tìm hiểu quy trình HR (hồ sơ nhân viên, nghỉ phép) làm cơ sở viết requirements |
-| TV4 | Tạo repo GitHub và board quản lý công việc; tìm hiểu các cloud provider và chương trình credit cho sinh viên |
+| TV2 (Thanh) | Đọc yêu cầu đề tài, đề xuất danh sách use case và entity ban đầu |
+| TV3 (Bảo) | Tìm hiểu quy trình HR (hồ sơ nhân viên, nghỉ phép) làm cơ sở viết requirements |
+| TV4 (Duy) | Tạo repo GitHub và board quản lý công việc; tìm hiểu các cloud provider và chương trình credit cho sinh viên |
 
 ## 2. Phân công vai trò (4 người)
 
 | Mã | Thành viên | Vai trò | Phụ trách chính trong 10 tuần |
 |---|---|---|---|
-| TV1 | [Tên] – nhóm trưởng | Project lead + Solution architect | Kế hoạch, báo cáo thứ 2, kiến trúc tổng thể và ADR, review code; backend module Leave (workflow nghỉ phép); AI assistant (tuần 12) |
-| TV2 | [Tên] | Backend developer | Data model, API spec; module Employee, Organization, Identity & Access, Audit, Search |
-| TV3 | [Tên] | Frontend developer + Business analyst | Requirements, NFR, user journey; giao diện SPA; kiểm thử chức năng |
-| TV4 | [Tên] | DevOps / Cloud engineer | Cloud, container, CI/CD, IaC; module Document (object storage), queue + worker; monitoring, load test |
+| TV1 | Duong – nhóm trưởng | Project lead + Solution architect | Kế hoạch, báo cáo thứ 2, kiến trúc tổng thể và ADR, review code; backend module Leave (workflow nghỉ phép); AI assistant (tuần 12) |
+| TV2 | Thanh | Backend developer | Data model, API spec; module Employee, Organization, Identity & Access, Audit, Search |
+| TV3 | Bảo | Frontend developer + Business analyst | Requirements, NFR, user journey; giao diện SPA; kiểm thử chức năng |
+| TV4 | Duy | DevOps / Cloud engineer | Cloud, container, CI/CD, IaC; module Document (object storage), queue + worker; monitoring, load test |
 
 ## 3. Phạm vi MVP
 
@@ -88,6 +88,6 @@ từng bước và có ca bị từ chối quyền; 7 use case đều có ít nh
 | Thành viên | Công việc | Output |
 |---|---|---|
 | TV1 (nhóm trưởng) | Business problem statement, users và stakeholders; Architecture Canvas; ADR đầu tiên | Problem statement, Architecture Canvas, ADR-00 |
-| TV2 | Functional requirements cho 7 use case theo actor–action–input–output–business rule | Bảng functional requirements |
-| TV3 | User journey đơn nghỉ phép; NFR có target cụ thể | User journey, bảng NFR |
-| TV4 | Workload analysis, ước lượng average RPS và peak RPS; kiến trúc cloud ban đầu | Bảng workload, sơ đồ kiến trúc v1 |
+| TV2 (Thanh) | Functional requirements cho 7 use case theo actor–action–input–output–business rule | Bảng functional requirements |
+| TV3 (Bảo) | User journey đơn nghỉ phép; NFR có target cụ thể | User journey, bảng NFR |
+| TV4 (Duy) | Workload analysis, ước lượng average RPS và peak RPS; kiến trúc cloud ban đầu | Bảng workload, sơ đồ kiến trúc v1 |

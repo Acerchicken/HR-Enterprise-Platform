@@ -1,4 +1,4 @@
-# Tuần 6 – TV4: Integration architecture, Failure handling
+# Tuần 6 – TV4 (Duy): Integration architecture, Failure handling
 
 ## Việc đã làm
 

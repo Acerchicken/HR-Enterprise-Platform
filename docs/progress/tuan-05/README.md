@@ -8,9 +8,9 @@ nên kiến trúc ưu tiên security và audit hơn là khả năng scale.
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
 | TV1 (nhóm trưởng) | Business problem statement có số đo; 4 nhóm người dùng và stakeholder; Architecture Canvas; ADR-00 | Problem statement, bảng users, Canvas, ADR-00 | [TV1.md](TV1.md) |
-| TV2 | Functional requirements cho 7 use case theo actor–action–input–output–business rule | Bảng functional requirements | [TV2.md](TV2.md) |
-| TV3 | User journey đơn nghỉ phép; NFR có target cụ thể cho 6 nhóm | User journey, bảng NFR | [TV3.md](TV3.md) |
-| TV4 | Workload analysis và ước lượng traffic (peak ≈ 10 RPS, thiết kế cho 50 RPS); kiến trúc cloud ban đầu | Bảng workload, kiến trúc v1 | [TV4.md](TV4.md) |
+| TV2 (Thanh) | Functional requirements cho 7 use case theo actor–action–input–output–business rule | Bảng functional requirements | [TV2.md](TV2.md) |
+| TV3 (Bảo) | User journey đơn nghỉ phép; NFR có target cụ thể cho 6 nhóm | User journey, bảng NFR | [TV3.md](TV3.md) |
+| TV4 (Duy) | Workload analysis và ước lượng traffic (peak ≈ 10 RPS, thiết kế cho 50 RPS); kiến trúc cloud ban đầu | Bảng workload, kiến trúc v1 | [TV4.md](TV4.md) |
 
 **Chưa làm được theo kế hoạch:** chưa chốt cloud provider, nên kiến trúc v1 mới ở mức capability (chưa gắn tên dịch vụ cụ thể).
 
@@ -19,9 +19,9 @@ nên kiến trúc ưu tiên security và audit hơn là khả năng scale.
 | Thành viên | Công việc | Output |
 |---|---|---|
 | TV1 (nhóm trưởng) | Business capability map, application components; ADR-01 (Monolith vs Microservices), ADR-03 (Sync vs Async) | Component diagram, 2 ADR |
-| TV2 | API specification; data model và data ownership; ADR-02 (PostgreSQL vs NoSQL) | API spec, ERD, ADR-02 |
-| TV3 | Chiến lược storage và cache; bảng sync/async; event model | Bảng storage/cache, bảng sync/async, danh sách event |
-| TV4 | Integration với hệ thống ngoài; phân tích tình huống lỗi; map capability sang cloud service khi chốt provider | Bảng integration, bảng failure handling |
+| TV2 (Thanh) | API specification; data model và data ownership; ADR-02 (PostgreSQL vs NoSQL) | API spec, ERD, ADR-02 |
+| TV3 (Bảo) | Chiến lược storage và cache; bảng sync/async; event model | Bảng storage/cache, bảng sync/async, danh sách event |
+| TV4 (Duy) | Integration với hệ thống ngoài; phân tích tình huống lỗi; map capability sang cloud service khi chốt provider | Bảng integration, bảng failure handling |
 
 ## 3. Quyết định quan trọng
 

@@ -1,4 +1,4 @@
-# Tuần 6 – TV3: Storage & cache, Sync/Async, Event model
+# Tuần 6 – TV3 (Bảo): Storage & cache, Sync/Async, Event model
 
 ## Việc đã làm
 
