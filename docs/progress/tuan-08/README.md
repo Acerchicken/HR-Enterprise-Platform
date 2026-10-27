@@ -39,10 +39,10 @@ _Điền cuối tuần._
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (Duong, nhóm trưởng) | | | [TV1.md](TV1.md) |
-| TV2 (Thanh) | | | [TV2.md](TV2.md) |
-| TV3 (Bảo) | | | [TV3.md](TV3.md) |
-| TV4 (Duy) | | | [TV4.md](TV4.md) |
+| TV1 (Duong, nhóm trưởng) | | | [Duong_TV1.md](Duong_TV1.md) |
+| TV2 (Thanh) | | | [Thanh_TV2.md](Thanh_TV2.md) |
+| TV3 (Bảo) | | | [Bao_TV3.md](Bao_TV3.md) |
+| TV4 (Duy) | | | [Duy_TV4.md](Duy_TV4.md) |
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 9: 2/11 – 9/11)
 

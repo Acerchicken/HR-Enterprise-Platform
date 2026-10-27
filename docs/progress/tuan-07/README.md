@@ -8,10 +8,10 @@ API workflow làm ở tuần 8. Tech stack chốt trong ADR-04: **NestJS + React
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (Duong, nhóm trưởng) | Chốt tech stack (ADR-04); khung modular monolith, quy ước code, quy trình PR; migration 5 schema; module Identity, Employee, Organization, Audit; module Leave (entity + state machine); frontend (đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức); docker-compose, realm Keycloak, seed 2,000 nhân viên | Repo chạy được ở local, 13 endpoint | [TV1.md](TV1.md) |
-| TV2 (Thanh) | Không có công việc hoàn thành | – | [TV2.md](TV2.md) |
-| TV3 (Bảo) | Không có công việc hoàn thành | – | [TV3.md](TV3.md) |
-| TV4 (Duy) | Không có công việc hoàn thành | – | [TV4.md](TV4.md) |
+| TV1 (Duong, nhóm trưởng) | Chốt tech stack (ADR-04); khung modular monolith, quy ước code, quy trình PR; migration 5 schema; module Identity, Employee, Organization, Audit; module Leave (entity + state machine); frontend (đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức); docker-compose, realm Keycloak, seed 2,000 nhân viên | Repo chạy được ở local, 13 endpoint | [Duong_TV1.md](Duong_TV1.md) |
+| TV2 (Thanh) | Không có công việc hoàn thành | – | [Thanh_TV2.md](Thanh_TV2.md) |
+| TV3 (Bảo) | Không có công việc hoàn thành | – | [Bao_TV3.md](Bao_TV3.md) |
+| TV4 (Duy) | Không có công việc hoàn thành | – | [Duy_TV4.md](Duy_TV4.md) |
 
 **Chưa làm được theo kế hoạch:** kế hoạch tuần 6 chia phần code cho cả 4 người, thực tế chỉ TV1 code. Nhóm điều chỉnh phân vai
 từ tuần 8 (ADR-11). Map capability sang cloud service vẫn chờ chốt provider, chuyển cho TV3 ở tuần 8.
