@@ -18,7 +18,7 @@ Thư mục này lưu kế hoạch 10 tuần và báo cáo tiến độ hàng tu�
 - `tuan-04-ke-hoach-tong.md`: kế hoạch tổng của cả dự án, phân vai, phạm vi MVP.
 - Mỗi tuần từ tuần 5 là một thư mục:
   - `README.md`: bảng tóm tắt việc đã hoàn thành, tóm tắt kế hoạch tuần sau, các quyết định quan trọng của tuần.
-  - `Duong_TV1.md` … `Duy_TV4.md`: chi tiết phần việc và output của từng thành viên.
+  - `TV1_Duong.md` … `TV4_Duy.md`: chi tiết phần việc và output của từng thành viên.
 - Mỗi quyết định quan trọng ghi theo cùng một khung:
   1. **Bối cảnh**: vấn đề và ràng buộc.
   2. **Các giải pháp** đã cân nhắc.
