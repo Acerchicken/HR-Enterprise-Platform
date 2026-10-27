@@ -36,10 +36,10 @@ Tuần 4–6 theo phân vai ban đầu (bảng dưới). Từ tuần 7 điều c
 |---|---|---|
 | TV1 | Duong – nhóm trưởng | Code chính (backend, frontend), kiến trúc, review và merge PR, báo cáo thứ 2 |
 | TV2 | Thanh | Nghiệp vụ: business rule, quy trình, đối chiếu với requirements |
-| TV3 | Duy | Một phần nghiệp vụ (danh mục, quy định nhỏ) và ca kiểm thử, kiểm thử chức năng |
-| TV4 | Bảo | Cloud, IaC và CI/CD |
+| TV3 | Bảo | Cloud, IaC và CI/CD |
+| TV4 | Duy | Một phần nghiệp vụ (danh mục, quy định nhỏ) và ca kiểm thử, kiểm thử chức năng |
 
-Lưu ý: từ tuần 7, TV1 (Duong) và TV2 (Thanh) giữ nguyên mã như tuần 4–6; Duy là TV3 (tuần 4–6 là TV4), Bảo là TV4 (tuần 4–6 là TV3).
+Lưu ý: mỗi thành viên giữ nguyên mã như tuần 4–6 (TV1 Duong, TV2 Thanh, TV3 Bảo, TV4 Duy), chỉ vai trò thay đổi từ tuần 7.
 
 Phân vai ban đầu (tuần 4–6):
 

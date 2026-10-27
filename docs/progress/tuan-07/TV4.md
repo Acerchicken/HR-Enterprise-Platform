@@ -1,21 +1,20 @@
-# Tuần 7 – TV4 (Bảo)
+# Tuần 7 – TV4 (Duy)
 
 ## Việc đã làm
 
-Không có công việc hoàn thành trong tuần 7. Việc map capability sang cloud service (từ tuần 5) vẫn chưa làm, chuyển sang tuần 8.
+Không có công việc hoàn thành trong tuần 7.
 
-## Vai trò từ tuần 8: Cloud, IaC và CI/CD
+## Vai trò từ tuần 8: Một phần nghiệp vụ và ca kiểm thử
 
 Theo [ADR-11](README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code), TV4 chịu trách nhiệm:
-- Chọn cloud provider, map capability sang dịch vụ cụ thể, ước tính và theo dõi chi phí.
-- Viết **IaC** (hạ tầng bằng code) và **CI/CD** (pipeline tự động build, test, deploy).
-- Hạ tầng chạy local trong `docker-compose.yml` (queue, mail giả lập…).
+- Một phần nghiệp vụ: các danh mục và quy định nhỏ (loại phép, ngày lễ, cách tính ngày nghỉ).
+- Biến mỗi business rule (do TV2 viết) thành **ca kiểm thử**: đầu vào, điều kiện, kết quả mong đợi. Đây là căn cứ cho test tự động của TV1.
+- **Kiểm thử chức năng** cuối mỗi tuần: dùng các tài khoản demo đi hết các màn hình, đối chiếu với ca kiểm thử, mở issue cho mỗi lỗi.
 
 ## Việc tuần 8
 
 | Việc | Output |
 |---|---|
-| So sánh 2–3 cloud provider (credit sinh viên, chi phí, dịch vụ managed cần dùng), viết ADR-12 theo khung quyết định | ADR-12 trong báo cáo tuần 8 |
-| Map 7 capability của kiến trúc v1 sang dịch vụ cụ thể, ước tính chi phí/tháng | Bảng mapping + bảng chi phí |
-| CI trên GitHub Actions: mỗi PR chạy lint + unit test backend và build frontend | `.github/workflows/ci.yml` |
-| Thêm RabbitMQ và Mailpit vào docker-compose cho worker thông báo | `docker-compose.yml` cập nhật |
+| Danh mục loại phép (số ngày tối đa, có lương hay không, cần giấy tờ gì) và ngày lễ 2026 | `docs/business/leave-types-holidays.md` |
+| Ca kiểm thử cho 5 bước workflow nghỉ phép, mỗi bước có ca hợp lệ và ca bị từ chối | `docs/business/leave-test-cases.md` |
+| Kiểm thử chức năng các màn hình tuần 7 (đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức) với 4 tài khoản demo | Biên bản kiểm thử, issue cho từng lỗi |

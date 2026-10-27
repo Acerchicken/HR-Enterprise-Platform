@@ -1,6 +1,6 @@
 # Tuần 7 – TV1 (Duong, nhóm trưởng): toàn bộ phần code nền tảng
 
-Tuần 7 chỉ TV1 tham gia code; TV2, TV3, TV4 chưa có công việc hoàn thành. Từ tuần 8 nhóm điều chỉnh phân vai
+Tuần 7 chỉ TV1 tham gia code; TV2, TV4, TV3 chưa có công việc hoàn thành. Từ tuần 8 nhóm điều chỉnh phân vai
 (xem [ADR-11](README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code)).
 
 ## Việc đã làm
@@ -11,7 +11,7 @@ Tuần 7 chỉ TV1 tham gia code; TV2, TV3, TV4 chưa có công việc hoàn th�
 | B | Migration đầu tiên (5 schema, 11 bảng); module Employee, Organization, Audit; mã hóa trường nhạy cảm; OpenAPI | `backend/src/database/migrations/`, `backend/src/modules/`, `docs/openapi.yaml` | Xong |
 | C | Frontend React + Vite: đăng nhập, hồ sơ, danh bạ, chi tiết nhân viên, sơ đồ tổ chức | `frontend/` | Xong |
 | D | docker-compose; realm Keycloak; tích hợp OIDC; seed 2,000 nhân viên; README | `docker-compose.yml`, `keycloak/realm-hr.json`, `backend/src/database/seed.ts` | Xong |
-| – | Map capability sang cloud service | – | Chưa làm: chờ chốt provider (chuyển cho TV4 tuần 8) |
+| – | Map capability sang cloud service | – | Chưa làm: chờ chốt provider (chuyển cho TV3 tuần 8) |
 
 ## Phần A – Tech stack, khung dự án, quy ước code, module Leave
 

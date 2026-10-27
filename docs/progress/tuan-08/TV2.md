@@ -9,12 +9,12 @@ Vai trò: viết business rule trước khi TV1 code, vẽ quy trình nghiệp v
 | **Thứ 3 (27/10), 21:00** | Mở PR `docs/leave-rules` vào `dev`: bảng business rule + sơ đồ quy trình |
 | **Thứ 4 (28/10)** | Sửa theo góp ý review, PR được merge vào `dev` |
 | **Thứ 6 (30/10)** | Mở xong issue cho các điểm lệch UC1, UC2 |
-| Trong 24 giờ kể từ khi được gán | Review PR của TV1 và TV3 |
+| Trong 24 giờ kể từ khi được gán | Review PR của TV1 và TV4 |
 | **Thứ 2 (2/11), 9:00** | Điền mục "Việc đã làm" ở cuối file này |
 
 ## Việc cần làm
 
-Nhánh: `docs/leave-rules`, hạn PR vào `dev` **thứ 3 (27/10)**. TV1 và TV3 cần file này để code và viết ca kiểm thử.
+Nhánh: `docs/leave-rules`, hạn PR vào `dev` **thứ 3 (27/10)**. TV1 và TV4 cần file này để code và viết ca kiểm thử.
 
 | Việc | Output | Hạn |
 |---|---|---|
@@ -24,7 +24,7 @@ Nhánh: `docs/leave-rules`, hạn PR vào `dev` **thứ 3 (27/10)**. TV1 và TV3
 
 Trong tuần:
 - Review PR `feat/leave-workflow-api`, `feat/leave-outbox-worker`, `feat/leave-ui` của TV1 về mặt nghiệp vụ: code có đúng các BR không.
-- Review PR ca kiểm thử của TV3: mỗi BR đã có ca kiểm thử chưa.
+- Review PR ca kiểm thử của TV4: mỗi BR đã có ca kiểm thử chưa.
 
 ## Cách làm trên git
 

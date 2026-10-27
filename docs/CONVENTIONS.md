@@ -12,16 +12,16 @@ Hệ thống là **modular monolith** (ADR-01). Để sau này tách được mo
 3. **Không** tạo foreign key chéo schema. Foreign key trong cùng schema thì được.
 4. Thao tác nghiệp vụ và audit log ghi trong **cùng một transaction**: truyền `EntityManager` vào `AuditService.record(entry, manager)`.
 
-| Module | Người code | Schema | Business rule (TV2 Thanh) / ca kiểm thử (TV3 Duy) |
+| Module | Người code | Schema | Business rule (TV2 Thanh) / ca kiểm thử (TV4 Duy) |
 |---|---|---|---|
-| identity | TV1 | `iam` | TV2 / TV3 |
-| organization | TV1 | `org` | TV2 / TV3 |
-| employee | TV1 | `employee` | TV2 / TV3 |
-| audit | TV1 | `audit` | TV2 / TV3 |
-| leave | TV1 | `leave` | TV2 / TV3 |
-| document, worker (tuần 8–10) | TV1 | `document` | TV2 / TV3 |
+| identity | TV1 | `iam` | TV2 / TV4 |
+| organization | TV1 | `org` | TV2 / TV4 |
+| employee | TV1 | `employee` | TV2 / TV4 |
+| audit | TV1 | `audit` | TV2 / TV4 |
+| leave | TV1 | `leave` | TV2 / TV4 |
+| document, worker (tuần 8–10) | TV1 | `document` | TV2 / TV4 |
 
-Hạ tầng (`docker-compose.yml`, `.github/workflows/`, IaC) do TV4 (Bảo) phụ trách. Business rule do TV2 (Thanh), ca kiểm thử và kiểm thử chức năng do TV3 (Duy) phụ trách. TV1 (Duong) code toàn bộ module
+Hạ tầng (`docker-compose.yml`, `.github/workflows/`, IaC) do TV3 (Bảo) phụ trách. Business rule do TV2 (Thanh), ca kiểm thử và kiểm thử chức năng do TV4 (Duy) phụ trách. TV1 (Duong) code toàn bộ module
 (xem ADR-11 trong `docs/progress/tuan-07/README.md`).
 
 ## 2. Cấu trúc một module
@@ -100,10 +100,10 @@ Danh sách nhánh của từng tuần ghi trong `docs/progress/tuan-NN/README.md
 
 | PR của | Người review |
 |---|---|
-| TV1 – code | TV2 (Thanh) xem đúng business rule chưa; TV3 (Duy) xem kết quả có khớp ca kiểm thử không. PR đụng hạ tầng thì thêm TV4 (Bảo) |
-| TV2 – business rule | TV1 và TV3 |
-| TV3 – ca kiểm thử, biên bản kiểm thử | TV2 và TV1 |
-| TV4 – hạ tầng, CI/CD, IaC, ADR cloud | TV1 |
+| TV1 – code | TV2 (Thanh) xem đúng business rule chưa; TV4 (Duy) xem kết quả có khớp ca kiểm thử không. PR đụng hạ tầng thì thêm TV3 (Bảo) |
+| TV2 – business rule | TV1 và TV4 |
+| TV3 – hạ tầng, CI/CD, IaC, ADR cloud | TV1 |
+| TV4 – ca kiểm thử, biên bản kiểm thử | TV2 và TV1 |
 
 - Mỗi PR ít nhất 1 người approve. Review trong vòng 24 giờ.
 - Góp ý bắt buộc sửa ghi rõ "cần sửa"; góp ý tùy chọn ghi "nit:".

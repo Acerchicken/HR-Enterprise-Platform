@@ -26,8 +26,8 @@ thực tế chỉ TV1 code nên nhóm điều chỉnh theo [ADR-11](tuan-07/READ
 |---|---|---|---|
 | TV1 | Duong – nhóm trưởng | Code chính + Solution architect | Toàn bộ code backend và frontend, kiến trúc và ADR, review và merge PR, báo cáo thứ 2; AI assistant (tuần 12) |
 | TV2 | Thanh | Nghiệp vụ | Business rule từng use case trước khi code, quy trình nghiệp vụ, giữ requirements/NFR cập nhật, đối chiếu code với requirements |
-| TV3 | Duy | Ca kiểm thử + một phần nghiệp vụ | Danh mục và quy định nhỏ (loại phép, ngày lễ), ca kiểm thử từ business rule, kiểm thử chức năng cuối tuần; load test (tuần 11) |
-| TV4 | Bảo | Cloud, IaC, CI/CD | Chọn cloud provider, chi phí, hạ tầng local (docker-compose), CI/CD, IaC, deploy, monitoring |
+| TV3 | Bảo | Cloud, IaC, CI/CD | Chọn cloud provider, chi phí, hạ tầng local (docker-compose), CI/CD, IaC, deploy, monitoring |
+| TV4 | Duy | Ca kiểm thử + một phần nghiệp vụ | Danh mục và quy định nhỏ (loại phép, ngày lễ), ca kiểm thử từ business rule, kiểm thử chức năng cuối tuần; load test (tuần 11) |
 
 ### Tuần 4–6 (phân vai ban đầu)
 
