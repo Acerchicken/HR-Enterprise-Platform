@@ -7,10 +7,10 @@ nên kiến trúc ưu tiên security và audit hơn là khả năng scale.
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (nhóm trưởng) | Business problem statement có số đo; 4 nhóm người dùng và stakeholder; Architecture Canvas; ADR-00 | Problem statement, bảng users, Canvas, ADR-00 | [Duong_TV1.md](Duong_TV1.md) |
-| TV2 (Thanh) | Functional requirements cho 7 use case theo actor–action–input–output–business rule | Bảng functional requirements | [Thanh_TV2.md](Thanh_TV2.md) |
-| TV3 (Bảo) | User journey đơn nghỉ phép; NFR có target cụ thể cho 6 nhóm | User journey, bảng NFR | [Bao_TV3.md](Bao_TV3.md) |
-| TV4 (Duy) | Workload analysis và ước lượng traffic (peak ≈ 10 RPS, thiết kế cho 50 RPS); kiến trúc cloud ban đầu | Bảng workload, kiến trúc v1 | [Duy_TV4.md](Duy_TV4.md) |
+| TV1 (nhóm trưởng) | Business problem statement có số đo; 4 nhóm người dùng và stakeholder; Architecture Canvas; ADR-00 | Problem statement, bảng users, Canvas, ADR-00 | [TV1_Duong.md](TV1_Duong.md) |
+| TV2 (Thanh) | Functional requirements cho 7 use case theo actor–action–input–output–business rule | Bảng functional requirements | [TV2_Thanh.md](TV2_Thanh.md) |
+| TV3 (Bảo) | User journey đơn nghỉ phép; NFR có target cụ thể cho 6 nhóm | User journey, bảng NFR | [TV3_Bao.md](TV3_Bao.md) |
+| TV4 (Duy) | Workload analysis và ước lượng traffic (peak ≈ 10 RPS, thiết kế cho 50 RPS); kiến trúc cloud ban đầu | Bảng workload, kiến trúc v1 | [TV4_Duy.md](TV4_Duy.md) |
 
 **Chưa làm được theo kế hoạch:** chưa chốt cloud provider, nên kiến trúc v1 mới ở mức capability (chưa gắn tên dịch vụ cụ thể).
 

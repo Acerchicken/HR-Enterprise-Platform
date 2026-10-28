@@ -7,10 +7,10 @@ Các bước của workflow chạy đồng bộ trong một ACID transaction, c�
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (nhóm trưởng) | Business capability map (4 nhóm); application components (7 module + 1 worker); ADR-01, ADR-03 | Capability map, component table, 2 ADR | [Duong_TV1.md](Duong_TV1.md) |
-| TV2 (Thanh) | API specification REST /api/v1 (xác thực, lỗi, idempotency); data model 11 entity + data ownership; ADR-02 | API spec, ERD, ADR-02 | [Thanh_TV2.md](Thanh_TV2.md) |
-| TV3 (Bảo) | Chiến lược lưu trữ và cache; bảng sync/async; 6 business event | Bảng storage/cache, bảng sync/async, event model | [Bao_TV3.md](Bao_TV3.md) |
-| TV4 (Duy) | Integration với 5 hệ thống ngoài; 8 tình huống lỗi và cách xử lý | Bảng integration, bảng failure handling | [Duy_TV4.md](Duy_TV4.md) |
+| TV1 (nhóm trưởng) | Business capability map (4 nhóm); application components (7 module + 1 worker); ADR-01, ADR-03 | Capability map, component table, 2 ADR | [TV1_Duong.md](TV1_Duong.md) |
+| TV2 (Thanh) | API specification REST /api/v1 (xác thực, lỗi, idempotency); data model 11 entity + data ownership; ADR-02 | API spec, ERD, ADR-02 | [TV2_Thanh.md](TV2_Thanh.md) |
+| TV3 (Bảo) | Chiến lược lưu trữ và cache; bảng sync/async; 6 business event | Bảng storage/cache, bảng sync/async, event model | [TV3_Bao.md](TV3_Bao.md) |
+| TV4 (Duy) | Integration với 5 hệ thống ngoài; 8 tình huống lỗi và cách xử lý | Bảng integration, bảng failure handling | [TV4_Duy.md](TV4_Duy.md) |
 
 **Chưa làm được theo kế hoạch:** map capability sang cloud service (vẫn chờ chốt provider).
 
