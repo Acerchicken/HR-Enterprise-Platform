@@ -53,5 +53,47 @@ container, CI/CD, IaC, deploy staging lần đầu)._
 
 ### ADR-12 – Chọn cloud provider
 
-_TV3 viết theo khung: bối cảnh, các giải pháp, tiêu chí lựa chọn, giải pháp được chọn, trade-off, tiêu chí nghiệm thu,
-khi nào xem lại._
+**Bối cảnh:**
+Nhóm cần chọn cloud provider để triển khai hệ thống Enterprise HR Platform (~2,000 nhân viên, workload peak ≈ 10 RPS, thiết kế cho 50 RPS theo NFR tuần 5). Hệ thống tuân theo các quyết định kiến trúc đã chốt: modular monolith (ADR-01), PostgreSQL (ADR-02), managed services cho database, storage và identity (ADR-00), không dùng Kubernetes (ADR-06). Ngân sách hạ tầng < 100 USD/tháng, cần chốt provider ở tuần 8 để tuần 9 viết IaC (Terraform) và deploy staging lần đầu.
+
+**Các giải pháp:**
+
+| # | Giải pháp | Mô tả |
+|---|---|---|
+| A | Amazon Web Services (AWS) | Hệ sinh thái cloud enterprise toàn diện nhất; managed container (App Runner / ECS Fargate), RDS PostgreSQL, S3, SQS, CloudWatch, Secrets Manager |
+| B | Microsoft Azure | Tích hợp tốt với OIDC enterprise; hỗ trợ gói Azure for Students ($100 credit không cần thẻ tín dụng); Azure Container Apps, PostgreSQL Flexible Server, Blob Storage |
+| C | Google Cloud Platform (GCP) | Cloud Run serverless container nhẹ, tự có HTTPS; Cloud SQL for PostgreSQL; Cloud Storage; Cloud Pub/Sub; gói credit dùng thử $300 |
+
+**Tiêu chí lựa chọn:**
+
+| Tiêu chí | A (AWS) | B (Azure) | C (GCP) |
+|---|---|---|---|
+| Hỗ trợ đầy đủ 7 capability managed (DB, Storage, Auth, Queue, Container, Monitor, KMS) | 5 | 4 | 4 |
+| Khả năng tiếp cận credit sinh viên và độ ổn định tài khoản | 3 | 5 | 4 |
+| Chi phí hàng tháng trong ngân sách (< 100 USD/tháng cho môi trường staging) | 4 | 4 | 5 |
+| Tài liệu chuẩn, công cụ IaC (Terraform) và phù hợp chuẩn môn học | 5 | 4 | 4 |
+| Hỗ trợ mở rộng cho AI/RAG (pgvector, LLM API) ở tuần 12 | 5 | 4 | 5 |
+
+**Giải pháp được chọn:** **A (Amazon Web Services)**.
+
+Lý do:
+1. AWS là nền tảng tham chiếu chuẩn của môn học Cloud Application Development, tài liệu và mô hình Well-Architected Framework hỗ trợ tốt nhất cho phần phản biện kiến trúc (Architecture Defense).
+2. Dịch vụ managed container (AWS App Runner / ECS Fargate) đáp ứng chính xác ADR-06 (chạy 2 instance sau load balancer, không cần vận hành cụm Kubernetes phức tạp).
+3. Amazon RDS for PostgreSQL hỗ trợ sẵn extension `pgvector` phục vụ tính năng RAG ở tuần 12, cùng cơ chế backup tự động và khôi phục point-in-time đáp ứng RPO ≤ 1 giờ, RTO ≤ 4 giờ (ADR-00).
+4. Amazon S3 là chuẩn lưu trữ tài liệu với presigned URL cho frontend tải file trực tiếp; SQS đáp ứng tốt luồng outbox/worker bất đồng bộ.
+5. Dự toán chi phí ở mức cấu hình tối thiểu khoảng 42–65 USD/tháng, hoàn toàn nằm trong ngân sách < 100 USD/tháng.
+
+**Trade-off:**
+Đăng ký AWS yêu cầu thẻ thanh toán quốc tế và kiểm soát chi phí chặt chẽ; một số dịch vụ (RDS, NAT Gateway nếu dùng VPC phức tạp) có chi phí cố định. Nhóm giải quyết bằng cách:
+- Thiết lập AWS Budgets gửi cảnh báo về email nhóm ở các mốc 20 USD, 50 USD và 80 USD.
+- Tối giản kiến trúc mạng ở môi trường Staging (không dùng NAT Gateway riêng đắt đỏ, dùng App Runner hoặc public/private subnet tối giản).
+- Phương án dự phòng: nếu tài khoản AWS gặp trục trặc về credit/hạn mức, nhóm chuyển sang Azure dùng gói Azure for Students ($100 credit) mà không phải sửa mã nguồn nhờ tính tương thích của container và PostgreSQL.
+
+**Tiêu chí nghiệm thu:**
+- Tài khoản AWS được kích hoạt và cài đặt AWS Budget cảnh báo ở 20 USD, 50 USD, 80 USD.
+- Bảng mapping 7 capability sang dịch vụ AWS cụ thể được phê duyệt trong `docs/cloud/mapping.md`.
+- Dự toán chi phí hàng tháng chi tiết dưới 100 USD/tháng.
+- Viết được mã Terraform (IaC) dựng lại toàn bộ hạ tầng staging trên AWS trong tuần 9.
+
+**Khi nào xem lại:**
+Nếu tài khoản AWS bị giới hạn hạn mức hoặc chi phí thực tế tuần 9 vượt dự toán, nhóm sẽ chuyển đổi hạ tầng sang Microsoft Azure theo phương án dự phòng B.
