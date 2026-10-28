@@ -2,6 +2,8 @@
 #   Web:      http://localhost:5173   (đăng nhập bằng tài khoản demo, xem README)
 #   API:      http://localhost:3000/api/v1   · Swagger: http://localhost:3000/api/docs
 #   Keycloak: http://localhost:8080   (admin / admin)
+#   RabbitMQ: http://localhost:15672  (hr / hr)
+#   Mailpit:  http://localhost:8025   (hộp thư giả lập)
 # Trên cloud, db và keycloak được thay bằng managed PostgreSQL và managed identity provider (ADR-00).
 name: hr-platform
 
@@ -37,6 +39,30 @@ services:
     volumes:
       - ./keycloak/realm-hr.json:/opt/keycloak/data/import/realm-hr.json:ro
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: hr
+      RABBITMQ_DEFAULT_PASS: hr
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+
   api:
     build: ./backend
     environment:
@@ -52,6 +78,9 @@ services:
       OIDC_JWKS_URI: http://keycloak:8080/realms/hr/protocol/openid-connect/certs
       OIDC_ALLOWED_CLIENTS: hr-web,hr-api-test
       FIELD_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=
+      RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
     ports:
       - "3000:3000"
     depends_on:
@@ -59,6 +88,8 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1/health || exit 1"]
       interval: 5s
@@ -95,3 +126,4 @@ services:
 
 volumes:
   db-data:
+  rabbitmq-data:
