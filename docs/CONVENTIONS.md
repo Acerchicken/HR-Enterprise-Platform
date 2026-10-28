@@ -93,7 +93,7 @@ Danh sách nhánh của từng tuần ghi trong `docs/progress/tuan-NN/README.md
    `chore(infra): ...`, `ci: ...`, `test: ...`.
 4. Trước khi mở PR: kéo `dev` mới nhất về nhánh của mình (`git pull origin dev`), sửa xung đột nếu có.
 5. Mở PR vào `dev`, mô tả theo template `.github/pull_request_template.md`. PR code phải qua `npm run lint` và `npm test` ở máy mình.
-6. Sau khi được approve và CI xanh, người mở PR tự merge bằng **squash merge**, rồi xóa nhánh.
+6. Sau khi được approve và CI xanh, **Duong merge** bằng **squash merge**, rồi xóa nhánh. Người mở PR không tự merge.
 7. Thứ 2 hằng tuần, TV1 mở PR `dev` → `main` và merge bằng **merge commit** (không squash) để giữ commit và tên tác giả của từng người.
 
 ### Review
@@ -105,13 +105,13 @@ Danh sách nhánh của từng tuần ghi trong `docs/progress/tuan-NN/README.md
 | TV3 – hạ tầng, CI/CD, IaC, ADR cloud | TV1 |
 | TV4 – ca kiểm thử, biên bản kiểm thử | TV2 và TV1 |
 
-- Mỗi PR ít nhất 1 người approve. Review trong vòng 24 giờ.
+- Mỗi PR ít nhất 1 người approve, trong đó bắt buộc có approve của TV1 (Duong, code owner). Review trong vòng 24 giờ.
 - Góp ý bắt buộc sửa ghi rõ "cần sửa"; góp ý tùy chọn ghi "nit:".
 
 ### Quy tắc chung
 
 - Ai làm việc nào thì tự commit và mở PR bằng **tài khoản GitHub của mình**. Không commit hộ người khác.
-- Branch protection (TV1 bật khi CI đã chạy được): `main` và `dev` bắt buộc qua PR, CI phải xanh, ít nhất 1 approve.
+- Branch protection (ruleset trên GitHub): `main` và `dev` bắt buộc qua PR, có approve của Duong, cấm force push và xóa nhánh, chỉ Duong merge được. Khi CI chạy được thì thêm điều kiện CI phải xanh.
 - Không sửa lịch sử của nhánh người khác (không force push lên nhánh không phải của mình, không bao giờ force push `dev`, `main`).
 
 ## 7. Test
