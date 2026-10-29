@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   VersionColumn,
 } from 'typeorm';
+import { HalfDay } from './leave-rules';
 import { LeaveStatus } from './leave-state-machine';
 
 @Entity({ schema: 'leave', name: 'leave_request' })
@@ -25,6 +26,10 @@ export class LeaveRequest {
   @Column({ name: 'end_date', type: 'date' })
   endDate: string;
 
+  /** Nghỉ nửa ngày buổi sáng/chiều (BR-04); null là nghỉ cả ngày. */
+  @Column({ name: 'half_day', type: 'varchar', length: 2, nullable: true })
+  halfDay: HalfDay | null;
+
   @Column({ type: 'numeric', precision: 5, scale: 1 })
   days: string;
 
@@ -34,8 +39,9 @@ export class LeaveRequest {
   @Column({ type: 'varchar', length: 20 })
   status: LeaveStatus;
 
-  @Column({ name: 'approver_id', type: 'uuid' })
-  approverId: string;
+  /** Người đã duyệt/từ chối; null khi đơn chưa có quyết định. */
+  @Column({ name: 'approver_id', type: 'uuid', nullable: true })
+  approverId: string | null;
 
   @VersionColumn()
   version: number;

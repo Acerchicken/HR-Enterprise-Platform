@@ -63,16 +63,3 @@ export function transition(
   }
   return { kind: 'changed', to: rule.to, balanceEffect: rule.effect(days) };
 }
-
-/** Số ngày làm việc (bỏ thứ 7, chủ nhật) giữa hai ngày, tính cả hai đầu. */
-export function workingDays(start: string, end: string): number {
-  const s = new Date(`${start}T00:00:00Z`);
-  const e = new Date(`${end}T00:00:00Z`);
-  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e < s) return 0;
-  let count = 0;
-  for (const d = new Date(s); d <= e; d.setUTCDate(d.getUTCDate() + 1)) {
-    const wd = d.getUTCDay();
-    if (wd !== 0 && wd !== 6) count++;
-  }
-  return count;
-}
