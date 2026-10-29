@@ -33,12 +33,12 @@
 - `hasDirectReports()` hiện được Identity dùng để suy ra role `MANAGER`; chưa được dùng để chặn gán quản lý đã nghỉ hoặc chuyển nhân viên có cấp dưới sang `TERMINATED`.
 - `@IsOptional()` trong DTO bỏ qua cả `null`. Với các trường cập nhật không cho null, cần kiểm tra validation/service và response thực tế trước khi khẳng định lỗi HTTP.
 - `UpdateEmployeeDto.version` là tùy chọn; service chỉ so version khi client gửi. Quy ước repo nói bản ghi quan trọng dùng optimistic locking, lệch version trả 409.
-- `ApiErrorFilter` ánh xạ lỗi unique constraint `23505` sang 409; lỗi database constraint khác chưa có ánh xạ riêng và có thể thành 500.
-- Lỗi ngoặc trong bản ghi chép/dán controller không xuất hiện trong controller hiện có trong repo; không đưa thành issue nếu chưa xác minh lại bằng file thật.
+- `ApiErrorFilter` ánh xạ lỗi unique constraint `23505` sang 409; vì vậy tạo phòng ban trùng `code` sẽ được trả 409, dù service không kiểm tra trùng trước khi ghi DB.
+- Hành vi PATCH khi gửi `null` chưa chạy thử; chỉ ghi nhận là ca cần kiểm thử, chưa kết luận mã lỗi hay xem là lỗi 500 đã xác nhận.
 
 ## Bản nháp issue UC2.3 — điểm lệch nghiệp vụ đã xác nhận
 
-**Tiêu đề:** `[UC2] Làm rõ và thực thi quy tắc quản lý trực tiếp`
+**Tiêu đề:** `[UC2] Làm rõ và bắt buộc quy tắc "đúng 1 quản lý trực tiếp"`
 
 ```markdown
 ## Use case
@@ -106,6 +106,5 @@ Code hiện cho quản lý trực tiếp xem thêm dữ liệu cá nhân; ADMIN 
 
 ## Không đưa vào issue nếu chưa xác minh
 
-- Chưa có kết quả chạy thử lỗi database khi gửi `null`; mô tả HTTP 500 mới là khả năng suy ra từ error filter.
+- Chưa có kết quả chạy thử PATCH với `null`; coi đây là ca cần kiểm thử, không khẳng định lỗi HTTP 500.
 - Không kết luận `headEmployeeId` vi phạm rule quản lý trực tiếp trước khi chốt ý nghĩa nghiệp vụ của trường này.
-- Không ghi lỗi cú pháp/ngoặc của controller từ bản sao chép; file controller trong repo đã kiểm tra không có lỗi đó.
