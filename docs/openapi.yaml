@@ -251,10 +251,200 @@ paths:
         - leave
       security: &a6
         - bearer: []
+  /api/v1/leave-holidays:
+    get:
+      operationId: LeaveController_holidays
+      parameters:
+        - name: year
+          required: false
+          in: query
+          schema:
+            example: 2026
+            type: number
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
   /api/v1/leave-balances/me:
     get:
       operationId: LeaveController_myBalances
       parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/leave-requests:
+    post:
+      operationId: LeaveController_create
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Chuỗi duy nhất cho mỗi lần tạo đơn; gửi lại cùng key trả về đơn đã
+            tạo
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLeaveRequestDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a5
+      security: *a6
+    get:
+      operationId: LeaveController_all
+      parameters:
+        - name: status
+          required: false
+          in: query
+          schema:
+            enum:
+              - SUBMITTED
+              - APPROVED
+              - REJECTED
+              - COMPLETED
+              - CANCELLED
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/leave-requests/me:
+    get:
+      operationId: LeaveController_mine
+      parameters:
+        - name: status
+          required: false
+          in: query
+          schema:
+            enum:
+              - SUBMITTED
+              - APPROVED
+              - REJECTED
+              - COMPLETED
+              - CANCELLED
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/leave-requests/pending-approval:
+    get:
+      operationId: LeaveController_pendingApproval
+      parameters:
+        - name: status
+          required: false
+          in: query
+          schema:
+            enum:
+              - SUBMITTED
+              - APPROVED
+              - REJECTED
+              - COMPLETED
+              - CANCELLED
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/leave-requests/{id}:
+    get:
+      operationId: LeaveController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/leave-requests/{id}/approve:
+    post:
+      operationId: LeaveController_approve
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveDecisionDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/leave-requests/{id}/reject:
+    post:
+      operationId: LeaveController_reject
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveDecisionDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/leave-requests/{id}/cancel:
+    post:
+      operationId: LeaveController_cancel
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveDecisionDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/leave-requests/{id}/complete:
+    post:
+      operationId: LeaveController_complete
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveDecisionDto"
       responses:
         "200":
           description: ""
@@ -372,3 +562,39 @@ components:
         salary:
           type: string
           description: Lương tháng (VND)
+    CreateLeaveRequestDto:
+      type: object
+      properties:
+        leaveType:
+          type: string
+          example: ANNUAL
+          description: Mã loại phép (GET /leave-types)
+        startDate:
+          type: string
+          example: 2026-11-09
+        endDate:
+          type: string
+          example: 2026-11-10
+        halfDay:
+          type: string
+          enum:
+            - AM
+            - PM
+          description: Nghỉ nửa ngày (chỉ khi startDate = endDate)
+        reason:
+          type: string
+      required:
+        - leaveType
+        - startDate
+        - endDate
+    LeaveDecisionDto:
+      type: object
+      properties:
+        version:
+          type: number
+          description: Version hiện tại của đơn (optimistic locking). Lệch → 409.
+        comment:
+          type: string
+          description: Ghi chú, ví dụ lý do từ chối
+      required:
+        - version
