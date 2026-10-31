@@ -2,6 +2,17 @@
 
 Vai trò: chọn cloud provider, chi phí, CI/CD, hạ tầng bằng code, hạ tầng chạy local.
 
+## Cập nhật 31/10: việc còn lại đến hết tuần
+
+Tình trạng: `chore/rabbitmq-mailpit` (PR #10) và `ci/github-actions` (PR #11) đã vào `dev`. TV1 đã sửa thêm lỗi Mailpit không
+khởi động (thiếu `MP_SMTP_AUTH_ALLOW_INSECURE`, PR #15). ADR-12 (PR #12) mở đúng hạn, còn 2 điểm cần sửa trong review.
+
+| Hạn | Việc | Output |
+|---|---|---|
+| **Thứ 7 (31/10), 21:00** | Sửa 2 điểm "Cần sửa" trong review PR #12: mạng ra của App Runner khi gắn VPC Connector (NAT hoặc VPC endpoint, cộng chi phí); chuyển sang Cognito cần sửa module identity (claim `azp` → `client_id`, `cognito:groups`) | Push lên nhánh `docs/adr-12-cloud-provider`, PR #12 được merge |
+| Trong 24 giờ kể từ khi được gán | Review PR `feat/leave-outbox-worker` của TV1 (phần RabbitMQ, Mailpit, worker) | Review trên GitHub |
+| **Thứ 2 (2/11), 9:00** | Điền mục "Việc đã làm" ở cuối file này | |
+
 ## Hạn chót
 
 | Hạn | Việc |
