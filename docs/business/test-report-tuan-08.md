@@ -19,5 +19,13 @@
 | **4. Chi tiết NV** | `admin` xem thông tin lương, hợp đồng. | Bị hệ thống chặn HTTP `403 Forbidden`. | Giao diện chặn và báo `403 Forbidden` đúng thiết kế. Đạt. |
 | **5. Sơ đồ TC** | Vào màn hình Sơ đồ tổ chức. | Vẽ đúng cây sơ đồ theo phòng ban, chức vụ. | Hiển thị đầy đủ mối quan hệ quản lý. Đạt. |
 
-## 2. Danh sách Issue / Lỗi phát sinh
-- **Lỗi 1 (Ví dụ nếu có):** Không có lỗi (0 issue). Các kết quả thực tế hoàn toàn khớp với kết quả mong đợi và thiết kế phân quyền bảo mật.
+## 2. Màn hình nghỉ phép (Leave Workflow UI)
+
+Thực hiện kiểm thử trên môi trường `dev` (sau khi merge `feat/leave-ui`) theo các ca từ TC-01 đến TC-22.
+
+| Mã TC | Chức năng kiểm thử | Kết quả mong đợi | Kết quả thực tế | Trạng thái | Ghi chú |
+| :--- | :--- | :--- | :--- | :---: | :--- |
+| **TC-01 -> TC-04** | Tạo đơn xin nghỉ (hợp lệ, nửa ngày, trùng lịch, quá số dư) | Phản hồi đúng trạng thái và thông báo lỗi. | Hoạt động đúng thiết kế. | PASSED | |
+| **TC-05 -> TC-10** | Quản lý duyệt/từ chối đơn và kiểm tra phân quyền | Trạng thái cập nhật chuẩn xác, chặn đúng quyền `403`. | Xử lý đúng Business Rule. | PASSED | |
+| **TC-11 -> TC-14** | Nhân viên tự hủy đơn / HR hoàn tất đơn | Trạng thái chuyển `CANCELLED` hoặc `COMPLETED` hợp lý. | Gặp lỗi L-01 theo mô tả tại mục 1.3. | FAILED | Issue `#18` |
+| **TC-15 -> TC-22** | Các ca ngoại lệ (Delegation, duyệt 2 lần, v.v.) | Xử lý chặt chẽ, không bị lỗi dữ liệu số dư. | Gặp lỗi L-02 theo mô tả tại mục 1.3. | FAILED | Issue `#19` |
