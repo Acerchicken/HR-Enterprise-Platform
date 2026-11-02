@@ -1,6 +1,6 @@
 # Bản nháp đối chiếu UC1, UC2 — code tuần 7 và FR tuần 5
 
-> Bản nháp cục bộ để rà soát nội dung. Chưa tạo GitHub Issue, chưa commit và chưa push.
+> Bản đối chiếu ghi nhận hiện trạng code tuần 7 so với FR tuần 5. Hai điểm lệch UC2 đã được tách thành [issue #21](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/21) và [issue #22](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/22).
 
 ## Phạm vi
 
@@ -36,48 +36,15 @@
 - `ApiErrorFilter` ánh xạ lỗi unique constraint `23505` sang 409; vì vậy tạo phòng ban trùng `code` sẽ được trả 409, dù service không kiểm tra trùng trước khi ghi DB.
 - Hành vi PATCH khi gửi `null` chưa chạy thử; chỉ ghi nhận là ca cần kiểm thử, chưa kết luận mã lỗi hay xem là lỗi 500 đã xác nhận.
 
-## Bản nháp issue UC2.3 — điểm lệch nghiệp vụ đã xác nhận
+## Issue #22 — UC2.3: quy tắc quản lý trực tiếp
 
-**Tiêu đề:** `[UC2] Làm rõ và bắt buộc quy tắc "đúng 1 quản lý trực tiếp"`
-
-```markdown
-## Use case
-UC2 – Organizational info.
-Yêu cầu nguồn: `docs/progress/tuan-05/TV2_Thanh.md`.
-
-## Yêu cầu nghiệp vụ
-Functional requirements tuần 5 ghi: “Mỗi nhân viên có đúng 1 quản lý trực tiếp”.
-
-## Điểm lệch trong code tuần 7
-- Cột `employee.employee.manager_id` trong entity và migration cho phép `NULL`.
-- `CreateEmployeeDto.managerId` là tùy chọn; `EmployeeService.create()` lưu `managerId = null` nếu không gửi.
-- `UpdateEmployeeDto.managerId` cho phép `null`.
-- Trong `update()`, `assertNoManagerCycle()` chỉ chạy khi `dto.managerId` có giá trị. Vì vậy, `PATCH` với `managerId: null` bỏ qua bước kiểm tra quản lý và cho phép HR gỡ quản lý trực tiếp.
-- Code đã chặn tự quản lý và vòng lặp khi gán quản lý khác null.
-
-## Ảnh hưởng
-Quan hệ quản lý trực tiếp được dùng để xác định người duyệt `DIRECT_MANAGER`. Nhân viên không có quản lý có thể không có người duyệt hợp lệ cho đơn nghỉ (UC4, BR-06).
-
-## Cần thống nhất mô hình nghiệp vụ
-Với cây quản lý tự tham chiếu hiện tại, cần quyết định cách biểu diễn người đứng đầu:
-
-1. Cho phép đúng một người đứng đầu không có quản lý. Khi đó cần chặn tạo bản ghi gốc thứ hai. Cần xác định người đứng đầu đã `TERMINATED` có còn được tính là bản ghi gốc không; nếu không, cần cho phép bổ nhiệm người đứng đầu mới mà vẫn giữ hồ sơ người cũ.
-2. Nếu không cho phép bản ghi gốc, cần thiết kế cách biểu diễn quản lý của người đứng đầu ngoài cây nhân viên hiện tại. Chỉ thêm `NOT NULL` cho `manager_id` không đủ để giải quyết nếu vẫn phải tránh vòng lặp.
-
-Dù chọn phương án nào, cần quy định ai duyệt đơn nghỉ của người đứng đầu. Có thể cân nhắc người duyệt thay do HR ghi nhận theo BR-06, nhưng cần xác nhận nghiệp vụ và quyền tương ứng.
-
-## Tiêu chí hoàn tất
-- Functional requirement và code thống nhất về ngoại lệ cho người đứng đầu.
-- Nếu có ngoại lệ: đúng một bản ghi gốc là hợp lệ; tạo thiếu quản lý khi đã có người đứng đầu bị từ chối; có quy tắc xử lý bản ghi gốc `TERMINATED`; và xác định người duyệt đơn nghỉ của người đứng đầu.
-- Nếu không có ngoại lệ: mô hình quản lý được điều chỉnh để người đứng đầu có quản lý hợp lệ mà không tạo vòng lặp; migration, seed và validation tuân theo mô hình mới.
-- Có test cho tạo nhân viên thiếu quản lý (bao gồm trường hợp đã có người đứng đầu), `PATCH managerId: null`, và các trường hợp người đứng đầu đã thống nhất.
-```
+Đã mở [issue #22](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/22) để thống nhất ngoại lệ người đứng đầu, hành vi khi thiếu/gỡ quản lý và người duyệt đơn nghỉ của người đứng đầu. Issue ghi nhận điểm lệch giữa FR và khả năng hiện tại, đồng thời để quyết định mô hình nghiệp vụ trước khi đề xuất thay đổi schema hoặc validation.
 
 ## Các issue/điểm làm rõ khác có thể tách riêng
 
 ### UC2.2 — Tra cây tổ chức theo mã phòng ban
 
-**Tiêu đề gợi ý:** `[UC2] Làm rõ input mã phòng ban khi tra sơ đồ tổ chức`
+Đã mở [issue #21](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/21) để thống nhất việc bổ sung tra cứu cây con theo `department.code` hay cập nhật FR cho chức năng trả toàn bộ cây.
 
 FR ghi input là “Mã phòng ban”, nhưng endpoint cây hiện trả toàn bộ cây, không nhận code. Cần thống nhất:
 
