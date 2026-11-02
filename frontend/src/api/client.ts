@@ -89,3 +89,40 @@ export interface LeaveBalance {
   pending: number;
   available: number;
 }
+
+export type LeaveStatus = 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
+export type LeaveAction = 'approve' | 'reject' | 'cancel' | 'complete';
+
+export interface LeaveType {
+  id: string;
+  code: string;
+  name: string;
+  maxDaysPerYear: string;
+}
+
+export interface LeaveHistory {
+  fromStatus: LeaveStatus | null;
+  toStatus: LeaveStatus;
+  actorId: string;
+  actorName: string | null;
+  comment: string | null;
+  at: string;
+}
+
+export interface LeaveRequest {
+  id: string;
+  employeeId: string;
+  employeeName: string | null;
+  leaveType: string | null;
+  startDate: string;
+  endDate: string;
+  halfDay: 'AM' | 'PM' | null;
+  days: number;
+  reason: string | null;
+  status: LeaveStatus;
+  approverId: string | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  history?: LeaveHistory[];
+}
