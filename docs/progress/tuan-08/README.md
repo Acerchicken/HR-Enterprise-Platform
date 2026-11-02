@@ -35,19 +35,36 @@ Thứ tự phụ thuộc:
 
 ## 1. Các công việc đã hoàn thành
 
-_Điền cuối tuần._
+Số liệu chốt ngày 2/11/2026. Tình trạng PR theo GitHub; "chờ merge" là PR đã đạt nhưng chưa được merge lúc viết báo cáo.
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (Duong, nhóm trưởng) | | | [TV1_Duong.md](TV1_Duong.md) |
-| TV2 (Thanh) | | | [TV2_Thanh.md](TV2_Thanh.md) |
-| TV3 (Bảo) | | | [TV3_Bao.md](TV3_Bao.md) |
-| TV4 (Duy) | | | [TV4_Duy.md](TV4_Duy.md) |
+| TV1 (Duong, nhóm trưởng) | API workflow nghỉ phép (tạo, duyệt/từ chối, hủy, HR hoàn tất) trong một transaction, có idempotency, optimistic locking, trừ ngày lễ, nghỉ nửa ngày; outbox + publisher RabbitMQ + worker gửi email; 5 màn hình nghỉ phép; sửa BR-03 (trừ ngày lễ), sửa lỗi Mailpit; làm lại ca kiểm thử và biên bản kiểm thử tuần 7 thay TV4; ruleset bảo vệ `dev`/`main`; review toàn bộ PR | PR #9, #8, #15, #14 (đã merge); #24, #25 (chờ merge). Luồng nghỉ phép chạy end-to-end ở local, email tới Mailpit | [TV1_Duong.md](TV1_Duong.md) |
+| TV2 (Thanh) | Business rule BR-01 → BR-11 và sơ đồ quy trình nghỉ phép; đối chiếu UC1/UC2 với code tuần 7, mở 2 issue | PR #1 (đã merge); PR #23 (chờ merge, trễ ~2 ngày); issue #21, #22 | [TV2_Thanh.md](TV2_Thanh.md) |
+| TV3 (Bảo) | RabbitMQ + Mailpit trong docker-compose; CI GitHub Actions (lint, unit test, build); ADR-12 + bảng mapping + chi phí | PR #10, #11 (đã merge, trễ ~1 ngày do lần đầu mở nhầm vào `main`); PR #12 (còn 2 điểm cần sửa) | [TV3_Bao.md](TV3_Bao.md) |
+| TV4 (Duy) | Danh mục loại phép và ngày lễ 2026 (bản cuối do TV1 sửa theo review) | PR #5 (đã merge) | [TV4_Duy.md](TV4_Duy.md) |
+
+**Chưa làm được theo kế hoạch:**
+- **Ca kiểm thử và kiểm thử chức năng của TV4:** PR #13 trễ hạn và không đạt nên được đóng; TV1 làm lại ở PR #14. Các PR nộp lại
+  sau đó (#17, #20) không đạt: #17 ghi đè bản danh mục đã merge; #20 báo kết quả kiểm thử màn hình nghỉ phép trong khi các màn
+  hình này chưa có trên `dev`, issue #18 và #19 không tái hiện được trên API. Kiểm thử màn hình nghỉ phép theo ca kiểm thử
+  chuyển sang đầu tuần 9.
+- **ADR-12 (TV3):** chưa sửa 2 điểm review (mạng của App Runner, Cognito) trước hạn 31/10, chưa merge.
+- **BR-06 (người duyệt thay khi quản lý vắng mặt):** chưa có mô hình dữ liệu, chưa code; phụ thuộc issue #22.
+- **Review chéo:** TV2, TV3, TV4 chưa để lại review nào trên GitHub cho PR của TV1 (#9, #24, #25).
+- **Tiến độ TV1:** `feat/leave-outbox-worker` và `feat/leave-ui` trễ 2–3 ngày so với hạn 30/10 và 1/11.
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 9: 2/11 – 9/11)
 
-_Điền cuối tuần. Dự kiến theo kế hoạch tổng: P3 – Security & DevOps (threat model, ma trận phân quyền, quản lý secret,
-container, CI/CD, IaC, deploy staging lần đầu)._
+Theo kế hoạch tổng: P3 – Security & DevOps. Bảng dưới là dự kiến, TV1 chốt khi tạo file kế hoạch tuần 9. Từ tuần 9 áp dụng quy trình mới: review trên nhánh, góp ý ghi trong file cá nhân,
+chỉ mở PR khi đạt điều kiện merge ([`CONVENTIONS.md`](../../CONVENTIONS.md#quy-trình-cho-một-việc-từ-tuần-9)).
+
+| Thành viên | Công việc | Output |
+|---|---|---|
+| TV1 (Duong, nhóm trưởng) | Ma trận phân quyền RBAC/ABAC đối chiếu code; quản lý secret (bỏ khóa mã hóa mặc định khỏi code, đọc từ biến môi trường/secret manager); Dockerfile production cho API, worker, web; sửa module identity nếu chốt Cognito | Access-control matrix, Dockerfile, PR code |
+| TV2 (Thanh) | Threat model (STRIDE) cho luồng hồ sơ và nghỉ phép; chốt issue #21, #22 và BR-06 | `docs/security/threat-model.md`, cập nhật `leave-rules.md` |
+| TV3 (Bảo) | Hoàn tất ADR-12; Terraform dựng staging trên cloud đã chọn; pipeline CD deploy staging lần đầu | `infra/`, workflow CD, staging chạy được |
+| TV4 (Duy) | Kiểm thử màn hình nghỉ phép theo TC-01 → TC-22 trên `dev` (chạy thật, ghi kết quả từng bước); kiểm thử phân quyền theo ma trận của TV1 | Mục 2 `test-report-tuan-08.md`, biên bản kiểm thử tuần 9, issue |
 
 ## 3. Quyết định quan trọng
 
