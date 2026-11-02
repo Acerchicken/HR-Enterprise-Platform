@@ -77,6 +77,7 @@ npm install
 npm run migration:run
 npm run seed                 # thêm "-- --reset" để tạo lại từ đầu
 npm run start:dev            # http://localhost:3000/api/docs
+npm run start:worker         # (terminal khác) worker gửi email thông báo nghỉ phép qua Mailpit
 
 cd ../frontend
 cp .env.example .env.local
