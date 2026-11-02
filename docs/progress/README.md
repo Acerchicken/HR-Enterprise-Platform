@@ -11,17 +11,18 @@ Thư mục này lưu kế hoạch 10 tuần và báo cáo tiến độ hàng tu�
 | 5 | 5/10 – 12/10 | P1 – Business, Requirements & Cloud Architecture | [tuan-05/](tuan-05/README.md) |
 | 6 | 12/10 – 19/10 | P2 – Application, Data & Integration Architecture | [tuan-06/](tuan-06/README.md) |
 | 7 | 19/10 – 26/10 | Implementation 1 – Nền tảng (code) | [tuan-07/](tuan-07/README.md) |
+| 8 | 26/10 – 2/11 | Implementation 2 – Workflow nghỉ phép (kế hoạch, điền kết quả cuối tuần) | [tuan-08/](tuan-08/README.md) |
 
 ## Cách tổ chức
 
 - `tuan-04-ke-hoach-tong.md`: kế hoạch tổng của cả dự án, phân vai, phạm vi MVP.
 - Mỗi tuần từ tuần 5 là một thư mục:
   - `README.md`: bảng tóm tắt việc đã hoàn thành, tóm tắt kế hoạch tuần sau, các quyết định quan trọng của tuần.
-  - `TV1.md` … `TV4.md`: chi tiết phần việc và output của từng thành viên.
+  - `TV1_Duong.md` … `TV4_Duy.md`: chi tiết phần việc và output của từng thành viên.
 - Mỗi quyết định quan trọng ghi theo cùng một khung:
   1. **Bối cảnh**: vấn đề và ràng buộc.
   2. **Các giải pháp** đã cân nhắc.
-  3. **Tiêu chí lựa chọn**: bảng chấm điểm 1–5 theo trọng số (5 = tốt nhất). Điểm là đánh giá của nhóm dựa trên NFR và ràng buộc của đồ án.
+  3. **Tiêu chí lựa chọn**: bảng chấm điểm 1–5 cho từng phương án theo từng tiêu chí (5 = tốt nhất). Điểm là đánh giá của nhóm dựa trên NFR và ràng buộc của đồ án.
   4. **Giải pháp được chọn** và lý do.
   5. **Trade-off** chấp nhận được.
   6. **Tiêu chí nghiệm thu**: cách kiểm chứng giải pháp đã chọn đáp ứng đúng yêu cầu.
@@ -29,16 +30,16 @@ Thư mục này lưu kế hoạch 10 tuần và báo cáo tiến độ hàng tu�
 
 ## Phân vai
 
-Tuần 4–7 theo kế hoạch ban đầu (bảng dưới). Từ tuần 8 điều chỉnh theo [ADR-11](tuan-07/README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code):
+Tuần 4–6 theo phân vai ban đầu (bảng dưới). Từ tuần 7 điều chỉnh theo [ADR-11](tuan-07/README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code):
 
 | Mã | Thành viên (từ tuần 7) | Vai trò từ tuần 8 |
 |---|---|---|
 | TV1 | Duong – nhóm trưởng | Code chính (backend, frontend), kiến trúc, review và merge PR, báo cáo thứ 2 |
-| TV2 | Duy | Một phần nghiệp vụ (danh mục, quy định nhỏ) và ca kiểm thử, kiểm thử chức năng |
-| TV3 | Thanh | Nghiệp vụ: business rule, quy trình, đối chiếu với requirements |
-| TV4 | Bảo | Cloud, IaC và CI/CD |
+| TV2 | Thanh | Nghiệp vụ: business rule, quy trình, đối chiếu với requirements |
+| TV3 | Bảo | Cloud, IaC và CI/CD |
+| TV4 | Duy | Một phần nghiệp vụ (danh mục, quy định nhỏ) và ca kiểm thử, kiểm thử chức năng |
 
-Lưu ý: mã TV gắn với vai trò, nên từ tuần 7 mã TV2–TV4 đổi người so với tuần 4–6: Duy là TV2 (tuần 4–6 là TV4), Thanh là TV3 (tuần 4–6 là TV2), Bảo là TV4 (tuần 4–6 là TV3). Duong vẫn là TV1.
+Lưu ý: mỗi thành viên giữ nguyên mã như tuần 4–6 (TV1 Duong, TV2 Thanh, TV3 Bảo, TV4 Duy), chỉ vai trò thay đổi từ tuần 7.
 
 Phân vai ban đầu (tuần 4–6):
 

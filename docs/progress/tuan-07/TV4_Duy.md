@@ -1,4 +1,4 @@
-# Tuần 7 – TV2 (Duy)
+# Tuần 7 – TV4 (Duy)
 
 ## Việc đã làm
 
@@ -6,9 +6,9 @@ Không có công việc hoàn thành trong tuần 7.
 
 ## Vai trò từ tuần 8: Một phần nghiệp vụ và ca kiểm thử
 
-Theo [ADR-11](README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code), TV2 chịu trách nhiệm:
+Theo [ADR-11](README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code), TV4 chịu trách nhiệm:
 - Một phần nghiệp vụ: các danh mục và quy định nhỏ (loại phép, ngày lễ, cách tính ngày nghỉ).
-- Biến mỗi business rule (do TV3 viết) thành **ca kiểm thử**: đầu vào, điều kiện, kết quả mong đợi. Đây là căn cứ cho test tự động của TV1.
+- Biến mỗi business rule (do TV2 viết) thành **ca kiểm thử**: đầu vào, điều kiện, kết quả mong đợi. Đây là căn cứ cho test tự động của TV1.
 - **Kiểm thử chức năng** cuối mỗi tuần: dùng các tài khoản demo đi hết các màn hình, đối chiếu với ca kiểm thử, mở issue cho mỗi lỗi.
 
 ## Việc tuần 8

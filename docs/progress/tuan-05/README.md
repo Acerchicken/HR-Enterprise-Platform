@@ -7,10 +7,10 @@ nên kiến trúc ưu tiên security và audit hơn là khả năng scale.
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (nhóm trưởng) | Business problem statement có số đo; 4 nhóm người dùng và stakeholder; Architecture Canvas; ADR-00 | Problem statement, bảng users, Canvas, ADR-00 | [TV1.md](TV1.md) |
-| TV2 (Thanh) | Functional requirements cho 7 use case theo actor–action–input–output–business rule | Bảng functional requirements | [TV2.md](TV2.md) |
-| TV3 (Bảo) | User journey đơn nghỉ phép; NFR có target cụ thể cho 6 nhóm | User journey, bảng NFR | [TV3.md](TV3.md) |
-| TV4 (Duy) | Workload analysis và ước lượng traffic (peak ≈ 10 RPS, thiết kế cho 50 RPS); kiến trúc cloud ban đầu | Bảng workload, kiến trúc v1 | [TV4.md](TV4.md) |
+| TV1 (nhóm trưởng) | Business problem statement có số đo; 4 nhóm người dùng và stakeholder; Architecture Canvas; ADR-00 | Problem statement, bảng users, Canvas, ADR-00 | [TV1_Duong.md](TV1_Duong.md) |
+| TV2 (Thanh) | Functional requirements cho 7 use case theo actor–action–input–output–business rule | Bảng functional requirements | [TV2_Thanh.md](TV2_Thanh.md) |
+| TV3 (Bảo) | User journey đơn nghỉ phép; NFR có target cụ thể cho 6 nhóm | User journey, bảng NFR | [TV3_Bao.md](TV3_Bao.md) |
+| TV4 (Duy) | Workload analysis và ước lượng traffic (peak ≈ 10 RPS, thiết kế cho 50 RPS); kiến trúc cloud ban đầu | Bảng workload, kiến trúc v1 | [TV4_Duy.md](TV4_Duy.md) |
 
 **Chưa làm được theo kế hoạch:** chưa chốt cloud provider, nên kiến trúc v1 mới ở mức capability (chưa gắn tên dịch vụ cụ thể).
 
@@ -40,14 +40,13 @@ RTO ≤ 4 giờ; ngân sách < 100 USD/tháng.
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Đáp ứng RPO ≤ 1 giờ, RTO ≤ 4 giờ (backup, point-in-time recovery) | 30% | 2 | 5 | 4 |
-| Công vận hành của nhóm (vá lỗi, backup, giám sát) | 25% | 1 | 5 | 3 |
-| Bảo mật có sẵn (mã hóa at rest, TLS, vá bảo mật) | 20% | 2 | 5 | 4 |
-| Chi phí hàng tháng trong ngân sách | 15% | 4 | 3 | 3 |
-| Mức phụ thuộc vào vendor (lock-in) | 10% | 5 | 2 | 3 |
-| **Tổng điểm có trọng số** | | **2.35** | **4.40** | **3.50** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Đáp ứng RPO ≤ 1 giờ, RTO ≤ 4 giờ (backup, point-in-time recovery) | 2 | 5 | 4 |
+| Công vận hành của nhóm (vá lỗi, backup, giám sát) | 1 | 5 | 3 |
+| Bảo mật có sẵn (mã hóa at rest, TLS, vá bảo mật) | 2 | 5 | 4 |
+| Chi phí hàng tháng trong ngân sách | 4 | 3 | 3 |
+| Mức phụ thuộc vào vendor (lock-in) | 5 | 2 | 3 |
 
 **Giải pháp được chọn:** B. Nhóm dồn effort vào business logic (workflow, phân quyền, audit), là phần tạo ra giá trị và được chấm điểm.
 
@@ -75,13 +74,12 @@ chuẩn mở: OIDC cho đăng nhập, PostgreSQL cho database, API kiểu S3 cho
 
 **Tiêu chí lựa chọn:**
 
-| Tiêu chí | Trọng số | A | B | C |
-|---|---|---|---|---|
-| Phù hợp nhu cầu thật (nội bộ, peak 10 RPS) | 30% | 2 | 5 | 3 |
-| Chi phí | 25% | 1 | 4 | 5 |
-| Độ phức tạp vận hành cho nhóm 4 người | 25% | 1 | 4 | 5 |
-| Chịu được 1 instance lỗi / deploy không downtime | 20% | 5 | 4 | 1 |
-| **Tổng điểm có trọng số** | | **2.10** | **4.30** | **3.60** |
+| Tiêu chí | A | B | C |
+|---|---|---|---|
+| Phù hợp nhu cầu thật (nội bộ, peak 10 RPS) | 2 | 5 | 3 |
+| Chi phí | 1 | 4 | 5 |
+| Độ phức tạp vận hành cho nhóm 4 người | 1 | 4 | 5 |
+| Chịu được 1 instance lỗi / deploy không downtime | 5 | 4 | 1 |
 
 **Giải pháp được chọn:** B. Hai instance là để đạt availability và deploy cuốn chiếu, không phải để scale.
 

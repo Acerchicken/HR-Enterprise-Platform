@@ -1,4 +1,4 @@
-# Tuần 7 – TV4 (Bảo)
+# Tuần 7 – TV3 (Bảo)
 
 ## Việc đã làm
 
@@ -6,7 +6,7 @@ Không có công việc hoàn thành trong tuần 7. Việc map capability sang 
 
 ## Vai trò từ tuần 8: Cloud, IaC và CI/CD
 
-Theo [ADR-11](README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code), TV4 chịu trách nhiệm:
+Theo [ADR-11](README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code), TV3 chịu trách nhiệm:
 - Chọn cloud provider, map capability sang dịch vụ cụ thể, ước tính và theo dõi chi phí.
 - Viết **IaC** (hạ tầng bằng code) và **CI/CD** (pipeline tự động build, test, deploy).
 - Hạ tầng chạy local trong `docker-compose.yml` (queue, mail giả lập…).

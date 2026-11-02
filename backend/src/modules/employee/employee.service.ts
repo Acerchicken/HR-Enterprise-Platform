@@ -47,6 +47,34 @@ export class EmployeeService {
     return this.repo.exists({ where: { managerId: employeeId, status: In(['ACTIVE', 'ON_LEAVE']) } });
   }
 
+  // ---------- Interface cho module Leave ----------
+
+  /** Quản lý trực tiếp hiện tại của nhân viên (null nếu không có hoặc không tồn tại). */
+  async managerIdOf(employeeId: string): Promise<string | null> {
+    const e = await this.repo.findOne({ where: { id: employeeId }, select: { id: true, managerId: true } });
+    return e?.managerId ?? null;
+  }
+
+  async directReportIds(managerId: string): Promise<string[]> {
+    const rows = await this.repo.find({
+      where: { managerId, status: In(['ACTIVE', 'ON_LEAVE']) },
+      select: { id: true },
+    });
+    return rows.map((r) => r.id);
+  }
+
+  /** Email công việc để gửi thông báo (dùng cho worker). */
+  async contactOf(employeeId: string): Promise<{ email: string; fullName: string } | null> {
+    const e = await this.repo.findOne({ where: { id: employeeId }, select: { id: true, workEmail: true, fullName: true } });
+    return e ? { email: e.workEmail, fullName: e.fullName } : null;
+  }
+
+  async namesOf(ids: string[]): Promise<Map<string, string>> {
+    if (!ids.length) return new Map();
+    const rows = await this.repo.find({ where: { id: In([...new Set(ids)]) }, select: { id: true, fullName: true } });
+    return new Map(rows.map((r) => [r.id, r.fullName]));
+  }
+
   // ---------- Danh bạ ----------
 
   async directory(params: { q?: string; dept?: string; managerId?: string; page: number; size: number }): Promise<Page<DirectoryEntry>> {
