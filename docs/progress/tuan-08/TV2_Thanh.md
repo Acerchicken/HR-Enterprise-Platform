@@ -52,4 +52,7 @@ git push -u origin docs/leave-rules
 
 ## Việc đã làm
 
-_Điền cuối tuần._
+- Hoàn thành bảng business rule BR-01–BR-11 và sơ đồ Mermaid cho luồng nghỉ phép trong `docs/business/leave-rules.md`; cập nhật theo góp ý review. PR #1 (`docs/leave-rules` → `dev`) đã được merge.
+- Đối chiếu UC1/UC2 trong code tuần 7 với functional requirements tuần 5; mở issue #21 về input mã phòng ban và issue #22 về quy tắc quản lý trực tiếp/ngoại lệ người đứng đầu. Đã mở PR #23 (`docs/uc1-uc2-review` → `dev`).
+- Review các PR của TV1 về API, outbox và giao diện nghỉ phép; đối chiếu nghiệp vụ triển khai với business rule.
+- Review PR của TV4 về ca kiểm thử nghỉ phép; đối chiếu độ bao phủ ca kiểm thử với các business rules.
