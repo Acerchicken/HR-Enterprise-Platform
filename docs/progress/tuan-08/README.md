@@ -49,7 +49,8 @@ Số liệu chốt ngày 2/11/2026. Tình trạng PR theo GitHub; "chờ merge" 
   sau đó (#17, #20) không đạt: #17 ghi đè bản danh mục đã merge; #20 báo kết quả kiểm thử màn hình nghỉ phép trong khi các màn
   hình này chưa có trên `dev`, issue #18 và #19 không tái hiện được trên API. Kiểm thử màn hình nghỉ phép theo ca kiểm thử
   chuyển sang đầu tuần 9.
-- **ADR-12 (TV3):** chưa sửa 2 điểm review (mạng của App Runner, Cognito) trước hạn 31/10, chưa merge.
+- **ADR-12 (TV3):** chưa sửa 2 điểm review (mạng của App Runner, Cognito) trước hạn 31/10; PR #12 đã đóng ngày 2/11, chuyển
+  thành việc đầu tiên của TV3 tuần 9 (hạn 4/11).
 - **BR-06 (người duyệt thay khi quản lý vắng mặt):** chưa có mô hình dữ liệu, chưa code; phụ thuộc issue #22.
 - **Review chéo:** TV2, TV3, TV4 chưa để lại review nào trên GitHub cho PR của TV1 (#9, #24, #25).
 - **Tiến độ TV1:** `feat/leave-outbox-worker` và `feat/leave-ui` trễ 2–3 ngày so với hạn 30/10 và 1/11.
@@ -63,7 +64,7 @@ chỉ mở PR khi đạt điều kiện merge ([`CONVENTIONS.md`](../../CONVENTI
 |---|---|---|
 | TV1 (Duong, nhóm trưởng) | Ma trận phân quyền RBAC/ABAC đối chiếu code; quản lý secret (bỏ khóa mã hóa mặc định khỏi code, đọc từ biến môi trường/secret manager); Dockerfile production cho API, worker, web; sửa module identity nếu chốt Cognito | Access-control matrix, Dockerfile, PR code |
 | TV2 (Thanh) | Threat model (STRIDE) cho luồng hồ sơ và nghỉ phép; chốt issue #21, #22 và BR-06 | `docs/security/threat-model.md`, cập nhật `leave-rules.md` |
-| TV3 (Bảo) | Hoàn tất ADR-12; Terraform dựng staging trên cloud đã chọn; pipeline CD deploy staging lần đầu | `infra/`, workflow CD, staging chạy được |
+| TV3 (Bảo) | **Việc đầu tiên, hạn thứ 4 (4/11) 21:00:** sửa ADR-12 trên nhánh `docs/adr-12-cloud-provider` theo 2 điểm review (mạng ra của App Runner khi gắn VPC Connector + chi phí NAT/VPC endpoint; Cognito cần sửa module identity), gửi link nhánh cho TV1 review, đạt mới mở PR (PR #12 đã đóng). Sau đó: Terraform dựng staging trên AWS; pipeline CD deploy staging lần đầu | ADR-12 trong mục 3, `docs/cloud/mapping.md`; `infra/`, workflow CD, staging chạy được |
 | TV4 (Duy) | Kiểm thử màn hình nghỉ phép theo TC-01 → TC-22 trên `dev` (chạy thật, ghi kết quả từng bước); kiểm thử phân quyền theo ma trận của TV1 | Mục 2 `test-report-tuan-08.md`, biên bản kiểm thử tuần 9, issue |
 
 ## 3. Quyết định quan trọng
