@@ -9,7 +9,7 @@
 ## Tóm tắt
 
 - **UC1:** Các quy tắc phân quyền sửa và trường nhạy cảm nhìn chung được triển khai. Một số quyền xem và hành vi bổ sung trong code chưa được mô tả cụ thể trong FR; cần quyết định có cập nhật FR hay không.
-- **UC2:** Có hai điểm lệch trực tiếp đáng xem xét: tìm cây theo mã phòng ban chưa có; `managerId` có thể để trống dù FR yêu cầu mỗi nhân viên có đúng một quản lý trực tiếp.
+- **UC2:** Có hai điểm chưa khớp cần thống nhất: API chưa tra cây theo mã phòng ban; `managerId` có thể để trống dù FR yêu cầu mỗi nhân viên có một quản lý. Riêng ngoại lệ cho người đứng đầu cần được chốt trước khi kết luận cách sửa.
 - Các mục về quản lý đã nghỉ việc, trưởng phòng, version và xử lý `null` là đề xuất làm rõ hoặc kiểm thử thêm; không nên ghi tất cả là lỗi FR đã xác nhận.
 
 ## Bảng đối chiếu
@@ -23,7 +23,7 @@
 | UC1.4 | Trả hồ sơ đã cập nhật | `update()` trả lại hồ sơ sau cập nhật qua `profile(id, actor, false)`. | Khớp. |
 | UC2.1 | Mọi vai trò xem phòng ban, sơ đồ và quản lý trực tiếp | Các endpoint đọc không gắn `@Roles`; `AuthGuard` toàn cục vẫn yêu cầu đăng nhập. Có API danh sách/cây phòng ban, chức danh, danh bạ, quản lý trực tiếp và cấp dưới. | Khớp nếu “mọi vai trò” nghĩa là mọi người dùng đã đăng nhập. Không phải endpoint công khai. |
 | UC2.2 | Nhập mã phòng ban, nhận cây tổ chức | `GET departments/tree` không nhận mã và trả toàn bộ cây; `GET departments/:id` và `/members` nhận UUID. `department.code` unique nhưng chưa có endpoint tra cây theo code. | Lệch nếu FR bắt buộc input là mã phòng ban; cần chọn bổ sung tra cứu theo code hoặc sửa FR để nói rõ trả toàn bộ cây. |
-| UC2.3 | Mỗi nhân viên có đúng một quản lý trực tiếp | `manager_id` nullable ở entity và migration; `CreateEmployeeDto.managerId` tùy chọn; create lưu `null` nếu thiếu. Update nhận `managerId: null`; `assertNoManagerCycle()` chỉ chạy khi giá trị managerId truthy, nên HR có thể gỡ quản lý. Code có chặn tự quản lý và vòng lặp khi gán managerId khác null. | Lệch trực tiếp; cần thống nhất ngoại lệ cho người đứng đầu và mô hình duyệt đơn của người đó. |
+| UC2.3 | Mỗi nhân viên có đúng một quản lý trực tiếp | `manager_id` nullable ở entity và migration; `CreateEmployeeDto.managerId` tùy chọn; create lưu `null` nếu thiếu. Update nhận `managerId: null`; `assertNoManagerCycle()` chỉ chạy khi giá trị managerId truthy, nên HR có thể gỡ quản lý. Code có chặn tự quản lý và vòng lặp khi gán managerId khác null. | FR chưa được enforce cho mọi nhân viên; cần chốt ngoại lệ người đứng đầu và người duyệt đơn của họ trước khi chọn cách sửa. |
 
 ## Các điểm kỹ thuật đã xác nhận
 
@@ -40,9 +40,7 @@
 
 Đã mở [issue #22](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/22) để thống nhất ngoại lệ người đứng đầu, hành vi khi thiếu/gỡ quản lý và người duyệt đơn nghỉ của người đứng đầu. Issue ghi nhận điểm lệch giữa FR và khả năng hiện tại, đồng thời để quyết định mô hình nghiệp vụ trước khi đề xuất thay đổi schema hoặc validation.
 
-## Các issue/điểm làm rõ khác có thể tách riêng
-
-### UC2.2 — Tra cây tổ chức theo mã phòng ban
+## Issue #21 — UC2.2: tra cây theo mã phòng ban
 
 Đã mở [issue #21](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/21) để thống nhất việc bổ sung tra cứu cây con theo `department.code` hay cập nhật FR cho chức năng trả toàn bộ cây.
 
@@ -50,6 +48,8 @@ FR ghi input là “Mã phòng ban”, nhưng endpoint cây hiện trả toàn b
 
 - Bổ sung endpoint/parameter tìm cây con theo `department.code`; hoặc
 - Sửa FR để mô tả thao tác xem toàn bộ cây và phân biệt chức năng lọc phòng ban.
+
+## Các điểm làm rõ khác (chưa tách issue)
 
 ### UC2 — Trạng thái của quản lý trực tiếp
 
