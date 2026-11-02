@@ -169,6 +169,10 @@ describe('HR Platform API (e2e)', () => {
         `DELETE FROM leave.leave_request_history WHERE request_id IN (SELECT id FROM leave.leave_request WHERE employee_id = $1)`,
         [employeeId],
       );
+      await ds.query(
+        `DELETE FROM leave.outbox WHERE aggregate_id IN (SELECT id FROM leave.leave_request WHERE employee_id = $1)`,
+        [employeeId],
+      );
       await ds.query('DELETE FROM leave.leave_request WHERE employee_id = $1', [employeeId]);
     };
 
@@ -237,6 +241,11 @@ describe('HR Platform API (e2e)', () => {
 
       const logs = await http.get(`/api/v1/audit-logs?entity=leave_request&entityId=${id}`).set(HR).expect(200);
       expect(logs.body.items.map((l: any) => l.action).sort()).toEqual(['LEAVE_APPROVE', 'LEAVE_COMPLETE', 'LEAVE_SUBMIT']);
+
+      // Outbox: mỗi thao tác ghi đúng một event trong cùng transaction (lần gửi lặp không ghi thêm).
+      const events = await ds.query('SELECT event_type, payload FROM leave.outbox WHERE aggregate_id = $1 ORDER BY id', [id]);
+      expect(events.map((e: any) => e.event_type)).toEqual(['LeaveRequested', 'LeaveApproved', 'LeaveCompleted']);
+      expect(events[0].payload).toMatchObject({ requestId: id, employeeId, leaveType: 'ANNUAL', days: 2 });
     });
 
     it('quản lý từ chối trả lại số ngày đang giữ (BR-09)', async () => {

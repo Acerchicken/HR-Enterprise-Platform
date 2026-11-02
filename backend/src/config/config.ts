@@ -24,6 +24,13 @@ export interface AppConfig {
   };
   /** Khóa AES-256 (32 byte, base64) để mã hóa trường nhạy cảm ở tầng ứng dụng. */
   fieldEncryptionKey: string;
+  /** RabbitMQ cho outbox publisher và worker. Để trống thì API không đẩy event (vd khi chạy test). */
+  rabbitmqUrl: string | null;
+  smtp: {
+    host: string;
+    port: number;
+    from: string;
+  };
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -52,6 +59,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     },
     fieldEncryptionKey:
       env.FIELD_ENCRYPTION_KEY ?? 'ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=',
+    rabbitmqUrl: env.RABBITMQ_URL || null,
+    smtp: {
+      host: env.SMTP_HOST ?? 'localhost',
+      port: Number(env.SMTP_PORT ?? 1025),
+      from: env.SMTP_FROM ?? 'no-reply@hr.local',
+    },
   };
 }
 
