@@ -6,9 +6,11 @@
 
 Đối chiếu functional requirements trong `docs/progress/tuan-05/TV2_Thanh.md` với code tuần 7 ở module Employee, Organization, Identity và migration `backend/src/database/migrations/1729900000000-InitSchemas.ts`.
 
+> Các đường dẫn API trong tài liệu lược bỏ tiền tố chung `/api/v1`.
+
 ## Tóm tắt
 
-- **UC1:** Các quy tắc phân quyền sửa và trường nhạy cảm nhìn chung được triển khai. Một số quyền xem và hành vi bổ sung trong code chưa được mô tả cụ thể trong FR; cần quyết định có cập nhật FR hay không.
+- **UC1:** Quy tắc sửa hồ sơ trong FR nhìn chung khớp với code. Một số quyền xem và hành vi bổ sung chưa được quy định rõ trong FR; cần xác nhận có chủ ý và cập nhật FR nếu cần.
 - **UC2:** Có hai điểm chưa khớp cần thống nhất: API chưa tra cây theo mã phòng ban; `managerId` có thể để trống dù FR yêu cầu mỗi nhân viên có một quản lý. Riêng ngoại lệ cho người đứng đầu cần được chốt trước khi kết luận cách sửa.
 - Các mục về quản lý đã nghỉ việc, trưởng phòng, version và xử lý `null` là đề xuất làm rõ hoặc kiểm thử thêm; không nên ghi tất cả là lỗi FR đã xác nhận.
 
@@ -18,7 +20,7 @@
 |---|---|---|---|
 | UC1.1 | Employee, HR xem hồ sơ | `GET employees/:id` yêu cầu đăng nhập qua `AuthGuard`; HR xem cấp HR, nhân viên xem hồ sơ mình, quản lý trực tiếp xem cấp PERSONAL, người khác (kể cả ADMIN) xem cấp PUBLIC. | Khớp phần xem hồ sơ cơ bản; quyền PERSONAL của quản lý trực tiếp là phần vượt FR, cần xác nhận có chủ ý không. |
 | UC1.2 | Employee chỉ sửa trường liên hệ | `forbiddenFields` chỉ cho nhân viên sửa `phone`, `address` trên hồ sơ của mình; nhân viên không có `employeeId` không sửa được hồ sơ; HR được sửa. | Khớp. |
-| UC1.3 — đọc | Trường nhạy cảm chỉ HR | `profile()` chỉ trả trường nhạy cảm cho HR; vai trò khác nhận 403. Mỗi lượt đọc trường nhạy cảm ghi audit `VIEW_SENSITIVE`. | Khớp; audit là hành vi bổ sung phù hợp. |
+| UC1.3 — đọc | FR tuần 5 không nêu quyền đọc trường nhạy cảm; chỉ quy định HR được sửa | Code hiện chỉ trả trường nhạy cảm cho HR; vai trò khác nhận 403. Mỗi lượt đọc trường nhạy cảm ghi audit `VIEW_SENSITIVE`. | Đây là giới hạn quyền đọc được code bổ sung; cần xác nhận và cập nhật FR nếu đây là yêu cầu nghiệp vụ. |
 | UC1.3 — sửa | Trường nhạy cảm chỉ HR sửa | `nationalId`, `bankAccount`, `salary` không thuộc `SELF_EDITABLE`; chỉ HR vượt qua kiểm tra quyền. Giá trị được mã hóa, audit chỉ ghi dấu che thay vì giá trị. | Khớp. |
 | UC1.4 | Trả hồ sơ đã cập nhật | `update()` trả lại hồ sơ sau cập nhật qua `profile(id, actor, false)`. | Khớp. |
 | UC2.1 | Mọi vai trò xem phòng ban, sơ đồ và quản lý trực tiếp | Các endpoint đọc không gắn `@Roles`; `AuthGuard` toàn cục vẫn yêu cầu đăng nhập. Có API danh sách/cây phòng ban, chức danh, danh bạ, quản lý trực tiếp và cấp dưới. | Khớp nếu “mọi vai trò” nghĩa là mọi người dùng đã đăng nhập. Không phải endpoint công khai. |
