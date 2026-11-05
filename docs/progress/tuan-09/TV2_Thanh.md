@@ -100,6 +100,13 @@ _TV1 ghi góp ý vào đây trước khi bạn mở PR. Mỗi dòng: ngày, nhá
 
 | Ngày | Nhánh | Người góp ý | Góp ý | Trạng thái |
 |---|---|---|---|---|
+| 5/11 | `docs/week8-tv2-report` | TV1 | Đạt: đã bỏ 2 dòng review không có dấu vết, gửi đúng hạn 3/11. Mở PR được | Chờ mở PR |
+| 5/11 | `docs/access-control-matrix` | TV1 | Đạt, gửi đúng hạn 4/11: phủ 27/27 operation, đối chiếu `@Roles` và service chính xác (TV1 đã kiểm từng controller). Mở PR được | Chờ mở PR |
+| 5/11 | `docs/access-control-matrix` | TV1 | Trả lời câu hỏi 1–3 ở mục "Điểm lệch": TV1 đề xuất **giữ nguyên** (danh bạ, cấp dưới trực tiếp, thành viên phòng ban, danh mục tổ chức/loại phép/ngày lễ mở cho mọi người đã đăng nhập theo UC2, UC6). Ghi vào ma trận là quyết định có chủ ý thay vì "cần xác nhận" | Chờ sửa |
+| 5/11 | `docs/access-control-matrix` | TV1 | nit: sau khi `docs/leave-rules-br06` merge, sửa dòng Duyệt/Từ chối: "HR nếu chủ đơn là CEO" và người duyệt thay theo BR-06 (ghi là chưa có trong code) | Chờ sửa |
+| 5/11 | `docs/leave-rules-br06` | TV1 | Đạt, gửi đúng hạn 5/11: quyết định #21, #22, BR-06 rõ, khớp seed (có đúng một nhân viên chức danh `CEO`, không có quản lý). Mở PR được | Chờ mở PR |
+| 5/11 | `docs/leave-rules-br06` | TV1 | nit: file `tuan-05/TV2_Thanh.md` là báo cáo tuần 5; thêm một dòng ghi chú dưới bảng FR "Cập nhật 5/11/2026 theo issue #21, #22" để người đọc biết FR đã đổi | Chờ sửa |
+| 5/11 | `docs/leave-rules-br06` | TV1 | Sau khi merge: comment quyết định vào issue #21 (đóng luôn vì chỉ sửa FR) và #22 (để mở, TV1 code tuần 10) | Chờ làm |
 
 ## Việc đã làm
 

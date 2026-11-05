@@ -111,9 +111,25 @@ _TV1 ghi góp ý vào đây trước khi bạn mở PR. Mỗi dòng: ngày, nhá
 
 | Ngày | Nhánh | Người góp ý | Góp ý | Trạng thái |
 |---|---|---|---|---|
-| 30/10 | `docs/adr-12-cloud-provider` | TV1 | Cần sửa: mạng ra của App Runner khi gắn VPC Connector phải qua NAT hoặc VPC endpoint; cộng chi phí | Chưa sửa |
-| 30/10 | `docs/adr-12-cloud-provider` | TV1 | Cần sửa: chuyển sang Cognito cần sửa module identity (`azp` → `client_id`, `cognito:groups`) | Chưa sửa |
-| 30/10 | `docs/adr-12-cloud-provider` | TV1 | nit: thêm chi phí public IPv4 cho Fargate; xác nhận Thanh đồng ý dùng tài khoản Azure | Chưa sửa |
+| 30/10 | `docs/adr-12-cloud-provider` | TV1 | Cần sửa: mạng ra của App Runner khi gắn VPC Connector phải qua NAT hoặc VPC endpoint; cộng chi phí | Đã sửa |
+| 30/10 | `docs/adr-12-cloud-provider` | TV1 | Cần sửa: chuyển sang Cognito cần sửa module identity (`azp` → `client_id`, `cognito:groups`) | Đã sửa |
+| 30/10 | `docs/adr-12-cloud-provider` | TV1 | nit: thêm chi phí public IPv4 cho Fargate; xác nhận Thanh đồng ý dùng tài khoản Azure | Đã sửa |
+| 5/11 | tất cả nhánh | TV1 | **Sai quy trình:** 4 PR (#30–#33) được mở thẳng, chưa gửi link nhánh để review trước (CONVENTIONS mục 6, bước 4). Từ lần sau gửi link trước, hết "cần sửa" mới mở PR | Ghi nhận |
+| 5/11 | `docs/adr-12-cloud-provider` | TV1 | Đã sửa đủ 3 góp ý 30/10, nhưng gửi lúc 5/11 09:46 (trễ ~13 giờ so với hạn 4/11 21:00) | Ghi nhận |
+| 5/11 | `docs/adr-12-cloud-provider` | TV1 | Cần sửa: dự toán ~84,65 USD/tháng nhưng thẻ thanh toán giới hạn 1.500.000 VNĐ (~60 USD) → tháng đầu sẽ bị từ chối thanh toán. Chọn: giảm chi phí (NAT instance `t4g.nano` thay NAT Gateway, tắt NAT ngoài giờ demo) để dự toán dưới 60 USD, hoặc nâng hạn mức/credit; cập nhật ADR + `mapping.md` cho khớp | Chưa sửa |
+| 5/11 | `docs/adr-12-cloud-provider` | TV1 | Cần sửa: repo đang public, bỏ email cá nhân của Thanh khỏi ADR (chỉ ghi "TV2 (Thanh) đã đồng ý") | Chưa sửa |
+| 5/11 | `docs/adr-12-cloud-provider` | TV1 | Cần sửa: số liệu lệch giữa ADR và Terraform: ADR ghi Budgets 40/70/85 USD, `budgets.tf` là 25/40/50 USD; `mapping.md` ghi worker ở public subnet + phí public IPv4, `sqs_worker.tf` đặt worker ở private subnet qua NAT (đúng hơn, bỏ phí IPv4). Chốt một bộ số | Chưa sửa |
+| 5/11 | `ci/docker-images` | TV1 | Cần sửa: job backend để `exit-code: '0'` (commit "temp ... to debug") nên CI không bao giờ chặn lỗ hổng CRITICAL. Đặt lại `exit-code: '1'`, `severity: CRITICAL`; lỗ hổng chưa sửa được thì ghi vào `.trivyignore` kèm lý do và hạn xem lại | Chưa sửa |
+| 5/11 | `ci/docker-images` | TV1 | Cần sửa: mô tả PR ghi frontend chạy bằng user nginx, nhưng `nginx:1.27-alpine` chạy tiến trình master bằng root. Dùng `nginxinc/nginx-unprivileged` (cổng 8080, sửa `nginx.conf` và `docker-compose.yml`) hoặc ghi rõ trade-off | Chưa sửa |
+| 5/11 | `ci/docker-images` | TV1 | nit: bỏ `apk upgrade` ở stage build (không vào image cuối); gộp 6 commit thử nghiệm khi merge (squash) | Chưa sửa |
+| 5/11 | `infra/terraform-staging` | TV1 | Cần sửa: biến môi trường App Runner không khớp với app. App đọc `AUTH_MODE`, `OIDC_ISSUER`, `OIDC_JWKS_URI`, `OIDC_ALLOWED_CLIENTS`, `CORS_ORIGIN`, `RABBITMQ_URL`/`SMTP_*` (xem `backend/src/config/config.ts`); Terraform đặt `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `SQS_QUEUE_URL` mà app không đọc → API sẽ xác thực theo Keycloak localhost và chặn CORS từ CloudFront. Đặt `OIDC_ISSUER = https://cognito-idp.<region>.amazonaws.com/<pool>`, `OIDC_ALLOWED_CLIENTS = <web client id>`, `CORS_ORIGIN = https://<cloudfront>`; biến queue thống nhất với TV1 ở `feat/queue-adapter` | Chưa sửa |
+| 5/11 | `infra/terraform-staging` | TV1 | Cần sửa: `rds.force_ssl = 0` tắt bắt buộc TLS tới DB, ngược mục tiêu tuần bảo mật. Đặt `1`; TV1 thêm cấu hình TLS cho kết nối DB ở `feat/secret-config` (`DB_SSL=true`) | Chưa sửa |
+| 5/11 | `infra/terraform-staging` | TV1 | Cần sửa: trust policy của role GitHub Actions cho `repo:...:*` (mọi nhánh, mọi PR). Giới hạn `repo:Acerchicken/HR-Enterprise-Platform:ref:refs/heads/dev` (thêm `main` khi có production) | Chưa sửa |
+| 5/11 | `infra/terraform-staging` | TV1 | Cần sửa: App Runner tạo với image `:latest` nhưng ECR còn rỗng lúc `apply` lần đầu → tạo service sẽ lỗi. Ghi thứ tự trong `infra/README.md` (tạo ECR → push image đầu tiên → tạo App Runner) hoặc tách bằng `-target` | Chưa sửa |
+| 5/11 | `infra/terraform-staging` | TV1 | Cần làm: gửi tóm tắt `terraform plan` (số tài nguyên, không có secret) như kế hoạch, và cho biết đã `apply` chưa. Chưa `apply` khi chưa có góp ý "đạt" | Chưa làm |
+| 5/11 | `ci/deploy-staging` | TV1 | Cần sửa: `VITE_API_URL` dùng `vars.STAGING_API_URL` có sẵn `/api/v1`, bước health check lại nối thêm `/api/v1/health` → gọi `/api/v1/api/v1/health`. Tách 2 biến (`STAGING_API_BASE_URL` không có `/api/v1`) | Chưa sửa |
+| 5/11 | `ci/deploy-staging` | TV1 | Cần sửa: các biến `VITE_*` có giá trị mặc định localhost → thiếu biến thì vẫn build và deploy bản web hỏng. Thiếu biến thì cho job fail | Chưa sửa |
+| 5/11 | `ci/deploy-staging` | TV1 | nit: ghi trong `infra/README.md` danh sách GitHub `vars`/`secrets` cần tạo và lấy từ `terraform output` nào | Chưa sửa |
 
 ## Việc đã làm
 
