@@ -82,14 +82,12 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan backend image with Trivy
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          scan-type: 'image'
           image-ref: hr-platform-api:test
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
-          vuln-type: 'os,library'
           severity: 'CRITICAL'
 
   docker-frontend:
@@ -118,12 +116,10 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan frontend image with Trivy
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          scan-type: 'image'
           image-ref: hr-platform-web:test
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
-          vuln-type: 'os,library'
           severity: 'CRITICAL'

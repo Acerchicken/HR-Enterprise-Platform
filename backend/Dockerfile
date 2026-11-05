@@ -1,5 +1,6 @@
 # ---- build ----
 FROM node:20-alpine AS build
+RUN apk update && apk upgrade --no-cache
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -9,6 +10,7 @@ RUN npm run build && npm prune --omit=dev
 
 # ---- runtime ----
 FROM node:20-alpine
+RUN apk update && apk upgrade --no-cache
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
