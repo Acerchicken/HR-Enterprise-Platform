@@ -81,15 +81,23 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Scan backend image with Trivy (report all, no fail)
+      - name: Scan backend image with Trivy (JSON report)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: hr-platform-api:test
-          format: 'table'
+          format: 'json'
+          output: 'trivy-backend.json'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
           scanners: 'vuln'
+
+      - name: Upload Trivy backend report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-backend-report
+          path: trivy-backend.json
+          retention-days: 1
 
   docker-frontend:
     name: Docker Frontend (Build & Scan)
