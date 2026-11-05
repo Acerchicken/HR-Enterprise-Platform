@@ -19,20 +19,23 @@ Tài liệu này mô tả quy tắc nghiệp vụ cho luồng nghỉ phép MVP, 
 | BR-09 | **Từ chối giải phóng số ngày đang giữ.** Khi người duyệt hợp lệ từ chối đơn `SUBMITTED`, trạng thái chuyển sang `REJECTED`; số ngày của đơn được trừ khỏi `pending`, không cộng vào `used`. | Đơn 1,5 ngày bị từ chối: `pending` giảm 1,5 ngày, `used` không đổi. |
 | BR-10 | **HR hoàn tất đơn đã duyệt.** Chỉ HR được chuyển đơn `APPROVED` sang `COMPLETED`. Trong cùng một transaction, số ngày được trừ khỏi `pending` và cộng vào `used`; ghi lịch sử/audit cùng thay đổi nghiệp vụ. HR không hoàn tất đơn chưa được duyệt. | HR hoàn tất đơn 2 ngày: `pending` giảm 2, `used` tăng 2; đơn chuyển sang `COMPLETED`. |
 | BR-11 | **Ghi nhận lịch sử và xử lý thao tác lặp an toàn.** Mỗi lần chuyển trạng thái hợp lệ phải lưu người thực hiện, trạng thái trước/sau và thời điểm; gửi lặp cùng quyết định không được áp dụng thay đổi số dư lần thứ hai. Gửi quyết định khác khi đơn đã có quyết định thì bị chặn. | Quản lý bấm duyệt hai lần: lần đầu chuyển đơn sang `APPROVED`; lần sau giữ nguyên trạng thái và không thay đổi số dư. Nếu gửi từ chối sau khi đơn đã duyệt, thao tác bị chặn. |
+| BR-12 | **HR hoặc quản lý được tạo đơn hộ nhân viên trong phạm vi cho phép.** HR được tạo hộ cho mọi nhân viên; quản lý chỉ được tạo hộ cho cấp dưới trực tiếp của mình, không bao gồm nhân viên chỉ được phân công duyệt thay theo BR-06. Đơn tạo hộ áp dụng đầy đủ BR-01–BR-04; chủ đơn, số dư và ngày nghỉ là của nhân viên được tạo hộ. Đơn vẫn qua người duyệt hợp lệ theo BR-05/BR-06. Nếu quản lý tạo hộ cho cấp dưới trực tiếp thì chính quản lý đó vẫn có thể duyệt đơn; đây là trade-off được chấp nhận, không yêu cầu tách người tạo và người duyệt. Nhân viên đứng tên đơn nhận email và có thể tự hủy khi đơn còn `SUBMITTED` theo BR-07. Lịch sử và audit phải lưu riêng người tạo hộ và chủ đơn; không ghi người tạo hộ thành chủ đơn. | HR tạo hộ cho nhân viên A: đơn trừ số dư của A, gửi email cho A và chờ quản lý trực tiếp của A duyệt. Quản lý trực tiếp tạo hộ cho A: người đó vừa tạo vừa có thể duyệt; lịch sử/audit thể hiện rõ người tạo và A là chủ đơn. |
 
 ## Sơ đồ quy trình
 
 ```mermaid
 flowchart TD
-    A[Nhân viên xem số dư và tạo đơn] --> B{Đủ số dư, không trùng lịch, có ngày làm việc?}
-    B -- Không --> X[Từ chối gửi đơn; không giữ chỗ]
-    B -- Có --> C[SUBMITTED: giữ chỗ pending]
+    A[Nhân viên tự tạo đơn hoặc HR/quản lý tạo hộ] --> P{Người tạo có quyền tạo cho chủ đơn?}
+    P -- Không --> X1[Từ chối tạo đơn]
+    P -- Có --> B{Đủ số dư của chủ đơn, không trùng lịch, có ngày làm việc?}
+    B -- Không --> X2[Từ chối gửi đơn; không giữ chỗ]
+    B -- Có --> C[SUBMITTED: giữ chỗ pending của chủ đơn; ghi riêng người tạo và chủ đơn; gửi email cho nhân viên]
     C --> G{Nhân viên hủy trước khi có quyết định?}
     G -- Có --> H[CANCELLED: trả pending]
     G -- Không --> D{Có quản lý trực tiếp hoặc người duyệt thay hợp lệ?}
     D -- Chưa có --> W[Chờ người duyệt hợp lệ]
     W --> G
-    D -- Có --> E{Quản lý/người thay quyết định; HR nếu người nghỉ là CEO}
+    D -- Có --> E{Quản lý/người thay quyết định; HR nếu chủ đơn là CEO}
     E -- Từ chối --> R[REJECTED: trả pending]
     E -- Duyệt --> F[APPROVED]
     F --> I[HR kiểm tra và hoàn tất]
@@ -51,6 +54,7 @@ Ghi chú: thao tác lặp cùng quyết định trên đơn đã ở trạng th�
 - Kiểm tra trùng lịch (BR-02), biểu diễn buổi nghỉ nửa ngày (BR-04; entity chưa lưu buổi sáng/chiều) và phân công người duyệt thay (BR-06) chưa được thể hiện trong state machine hiện tại, cần triển khai/đối chiếu khi hoàn thiện API và mô hình dữ liệu. State machine hiện chỉ cho phép quan hệ `DIRECT_MANAGER` duyệt hoặc từ chối. Bảng số dư lưu `entitled`, `used`, `pending`.
 - **Quyết định cho UC2.3 / issue #22:** chỉ người giữ chức danh CEO là gốc duy nhất của sơ đồ và được phép có `managerId = null`; mọi nhân viên khác phải có đúng một quản lý trực tiếp đang làm việc. Người giữ chức danh CEO duy nhất không có quản lý được HR duyệt đơn. Cần đồng bộ ràng buộc dữ liệu, validation tạo/cập nhật nhân viên và quyền endpoint duyệt; code hiện tại cho phép `managerId` null tùy ý và chưa cho HR duyệt đơn nghỉ, nên chưa thực thi quyết định này.
 - **Thiết kế nghiệp vụ BR-06:** lưu phân công người duyệt thay tách biệt với `employee.managerId`, gồm quản lý được thay, người thay, ngày bắt đầu/kết thúc và HR tạo/cập nhật. Ràng buộc không chồng lấn theo từng quản lý; người thay phải là MANAGER đang làm việc. Inbox hiển thị các đơn `SUBMITTED` của cấp dưới trực tiếp của quản lý được thay trong thời hạn phân công. Người thay được ghi nhận là actor quyết định trong history/audit/approver; hết hạn thì không còn quyền. Nếu người thay vắng, HR thay người trong cùng phân công; không cho phép ủy quyền dây chuyền. Chưa có bảng/API/logic này trong code.
+- **BR-12 chưa được triển khai:** API hiện chỉ tạo đơn cho chính người gọi; chưa hỗ trợ HR tạo hộ mọi nhân viên hoặc quản lý tạo hộ cấp dưới trực tiếp. Cần xác thực phạm vi tạo hộ, tính BR-01–BR-04 và cập nhật số dư theo chủ đơn, gửi email cho chủ đơn, đồng thời lưu riêng người tạo và chủ đơn trong history/audit. Phê duyệt vẫn theo BR-05/BR-06; cho phép quản lý vừa tạo hộ vừa duyệt đơn của cấp dưới là trade-off nghiệp vụ đã chấp nhận.
 - **Quyết định cho UC2.2 / issue #21:** sửa FR thay vì thêm endpoint. `GET /departments/tree` tiếp tục trả toàn bộ cây, không yêu cầu mã phòng ban; UUID dùng cho chi tiết phòng ban và danh sách thành viên. Điều này khớp API hiện có và tránh thêm một endpoint trùng lặp; nếu sau này cần cây con theo mã, ghi thành yêu cầu riêng.
 - Lịch ngày lễ thuộc MVP (BR-03): cần lưu danh sách ngày nghỉ lễ theo năm (dữ liệu năm 2026 lấy từ `leave-types-holidays.md`) để tính số ngày nghỉ.
 - Quy trình điều chỉnh đơn đã duyệt chưa thuộc MVP.

@@ -18,6 +18,8 @@
 | UC6 Self-service search | Employee | Tìm đồng nghiệp, tài liệu | Từ khóa | Danh sách kết quả | Kết quả được lọc theo quyền |
 | UC7 Audit history | HR, Admin | Xem lịch sử thao tác | Đối tượng, người thực hiện, khoảng thời gian | Danh sách log | Log chỉ được thêm (append-only), không ai sửa/xóa |
 
+> Cập nhật 5/11/2026 theo issue #21 và #22: UC2.2 không yêu cầu mã phòng ban để xem cây; UC2.3 quy định chỉ CEO không có quản lý trực tiếp, HR duyệt đơn của CEO.
+
 ## Ghi chú cho tuần sau
 
 - Mỗi business rule ở cột cuối sẽ thành một ca test tự động khi code (tuần 7–8).
