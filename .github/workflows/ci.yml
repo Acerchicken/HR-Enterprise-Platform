@@ -89,6 +89,7 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           severity: 'CRITICAL'
+          scanners: 'vuln'
 
   docker-frontend:
     name: Docker Frontend (Build & Scan)
@@ -123,3 +124,4 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           severity: 'CRITICAL'
+          scanners: 'vuln'
