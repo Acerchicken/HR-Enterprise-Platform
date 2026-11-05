@@ -41,4 +41,13 @@ Vai trò: code chính (backend, frontend), review và merge PR, báo cáo thứ 
 
 ## Việc đã làm
 
-_Điền cuối tuần._
+| Việc | Output | Tình trạng |
+|---|---|---|
+| `feat/leave-workflow-api`: API tạo, duyệt/từ chối, hủy, HR hoàn tất; mỗi thao tác một transaction (state machine, số dư, history, audit); `Idempotency-Key`, `version`; trừ ngày lễ (bảng `leave.holiday`), nghỉ nửa ngày; 7 ca e2e mới | PR #9 | Đã merge 29/10, đúng hạn |
+| `feat/leave-outbox-worker`: bảng `leave.outbox` ghi cùng transaction, publisher (publisher confirm, chịu được RabbitMQ chết), worker gửi email qua Mailpit, chống trùng, DLQ | PR #24 | Chờ merge, trễ 3 ngày (hạn 30/10) |
+| `feat/leave-ui`: tạo đơn, đơn của tôi (hủy), đơn chờ duyệt, chi tiết + lịch sử, HR hoàn tất; chạy thử với `employee`, `manager`, `hr` | PR #25 | Chờ merge, trễ 1 ngày (hạn 1/11 12:00) |
+| Sửa BR-03 để không trừ ngày lễ (đồng ý với TV2 qua comment PR #1) | PR #8 | Đã merge |
+| Sửa Mailpit không khởi động (PR #10) | PR #15 | Đã merge |
+| Làm lại ca kiểm thử (22 ca) và kiểm thử thật 5 màn hình tuần 7 với 4 tài khoản, thay TV4 sau khi PR #13 không đạt | PR #14 | Đã merge |
+| Review và merge PR của nhóm; bật ruleset `dev`/`main` (chỉ TV1 merge); cập nhật quy trình review trước khi mở PR từ tuần 9 | Review trên #1, #5, #10–#13, #17, #20, #23; `CONVENTIONS.md` | Xong |
+

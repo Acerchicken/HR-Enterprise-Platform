@@ -1,4 +1,4 @@
-import { submitEffect, transition, workingDays } from './leave-state-machine';
+import { submitEffect, transition } from './leave-state-machine';
 
 describe('leave state machine', () => {
   it('manager trực tiếp duyệt đơn SUBMITTED', () => {
@@ -47,12 +47,5 @@ describe('leave state machine', () => {
 
   it('tạo đơn giữ chỗ pending', () => {
     expect(submitEffect(2)).toEqual({ pending: 2, used: 0 });
-  });
-
-  it('đếm ngày làm việc, bỏ cuối tuần', () => {
-    expect(workingDays('2026-10-23', '2026-10-26')).toBe(2); // T6 → T2
-    expect(workingDays('2026-10-24', '2026-10-25')).toBe(0); // T7, CN
-    expect(workingDays('2026-10-26', '2026-10-30')).toBe(5);
-    expect(workingDays('2026-10-30', '2026-10-26')).toBe(0);
   });
 });

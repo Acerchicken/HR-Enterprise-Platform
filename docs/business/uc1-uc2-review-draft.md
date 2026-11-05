@@ -1,0 +1,79 @@
+# Bản nháp đối chiếu UC1, UC2 — code tuần 7 và FR tuần 5
+
+> Bản đối chiếu ghi nhận hiện trạng code tuần 7 so với FR tuần 5. Hai điểm lệch UC2 đã được tách thành [issue #21](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/21) và [issue #22](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/22).
+
+## Phạm vi
+
+Đối chiếu functional requirements trong `docs/progress/tuan-05/TV2_Thanh.md` với code tuần 7 ở module Employee, Organization, Identity và migration `backend/src/database/migrations/1729900000000-InitSchemas.ts`.
+
+> Các đường dẫn API trong tài liệu lược bỏ tiền tố chung `/api/v1`.
+
+## Tóm tắt
+
+- **UC1:** Quy tắc sửa hồ sơ trong FR nhìn chung khớp với code. Một số quyền xem và hành vi bổ sung chưa được quy định rõ trong FR; cần xác nhận có chủ ý và cập nhật FR nếu cần.
+- **UC2:** Có hai điểm chưa khớp cần thống nhất: API chưa tra cây theo mã phòng ban; `managerId` có thể để trống dù FR yêu cầu mỗi nhân viên có một quản lý. Riêng ngoại lệ cho người đứng đầu cần được chốt trước khi kết luận cách sửa.
+- Các mục về quản lý đã nghỉ việc, trưởng phòng, version và xử lý `null` là đề xuất làm rõ hoặc kiểm thử thêm; không nên ghi tất cả là lỗi FR đã xác nhận.
+
+## Bảng đối chiếu
+
+| Mã | Yêu cầu FR tuần 5 | Hiện trạng code tuần 7 | Kết luận |
+|---|---|---|---|
+| UC1.1 | Employee, HR xem hồ sơ | `GET employees/:id` yêu cầu đăng nhập qua `AuthGuard`; HR xem cấp HR, nhân viên xem hồ sơ mình, quản lý trực tiếp xem cấp PERSONAL, người khác (kể cả ADMIN) xem cấp PUBLIC. | Khớp phần xem hồ sơ cơ bản; quyền PERSONAL của quản lý trực tiếp là phần vượt FR, cần xác nhận có chủ ý không. |
+| UC1.2 | Employee chỉ sửa trường liên hệ | `forbiddenFields` chỉ cho nhân viên sửa `phone`, `address` trên hồ sơ của mình; nhân viên không có `employeeId` không sửa được hồ sơ; HR được sửa. | Khớp. |
+| UC1.3 — đọc | FR tuần 5 không nêu quyền đọc trường nhạy cảm; chỉ quy định HR được sửa | Code hiện chỉ trả trường nhạy cảm cho HR; vai trò khác nhận 403. Mỗi lượt đọc trường nhạy cảm ghi audit `VIEW_SENSITIVE`. | Đây là giới hạn quyền đọc được code bổ sung; cần xác nhận và cập nhật FR nếu đây là yêu cầu nghiệp vụ. |
+| UC1.3 — sửa | Trường nhạy cảm chỉ HR sửa | `nationalId`, `bankAccount`, `salary` không thuộc `SELF_EDITABLE`; chỉ HR vượt qua kiểm tra quyền. Giá trị được mã hóa, audit chỉ ghi dấu che thay vì giá trị. | Khớp. |
+| UC1.4 | Trả hồ sơ đã cập nhật | `update()` trả lại hồ sơ sau cập nhật qua `profile(id, actor, false)`. | Khớp. |
+| UC2.1 | Mọi vai trò xem phòng ban, sơ đồ và quản lý trực tiếp | Các endpoint đọc không gắn `@Roles`; `AuthGuard` toàn cục vẫn yêu cầu đăng nhập. Có API danh sách/cây phòng ban, chức danh, danh bạ, quản lý trực tiếp và cấp dưới. | Khớp nếu “mọi vai trò” nghĩa là mọi người dùng đã đăng nhập. Không phải endpoint công khai. |
+| UC2.2 | Nhập mã phòng ban, nhận cây tổ chức | `GET departments/tree` không nhận mã và trả toàn bộ cây; `GET departments/:id` và `/members` nhận UUID. `department.code` unique nhưng chưa có endpoint tra cây theo code. | Lệch nếu FR bắt buộc input là mã phòng ban; cần chọn bổ sung tra cứu theo code hoặc sửa FR để nói rõ trả toàn bộ cây. |
+| UC2.3 | Mỗi nhân viên có đúng một quản lý trực tiếp | `manager_id` nullable ở entity và migration; `CreateEmployeeDto.managerId` tùy chọn; create lưu `null` nếu thiếu. Update nhận `managerId: null`; `assertNoManagerCycle()` chỉ chạy khi giá trị managerId truthy, nên HR có thể gỡ quản lý. Code có chặn tự quản lý và vòng lặp khi gán managerId khác null. | FR chưa được enforce cho mọi nhân viên; cần chốt ngoại lệ người đứng đầu và người duyệt đơn của họ trước khi chọn cách sửa. |
+
+## Các điểm kỹ thuật đã xác nhận
+
+- Migration có FK tự tham chiếu cho `employee.manager_id` và chặn `manager_id = id`, nhưng cho phép `NULL`.
+- `department_id` và `position_id` không có FK trong migration; theo quy ước modular monolith, đây là liên kết chéo schema nên cần kiểm tra ở service.
+- `org.department.parent_id` có FK tự tham chiếu. `head_employee_id` không có FK trong migration được đọc.
+- `hasDirectReports()` hiện được Identity dùng để suy ra role `MANAGER`; chưa được dùng để chặn gán quản lý đã nghỉ hoặc chuyển nhân viên có cấp dưới sang `TERMINATED`.
+- `@IsOptional()` trong DTO bỏ qua cả `null`. Với các trường cập nhật không cho null, cần kiểm tra validation/service và response thực tế trước khi khẳng định lỗi HTTP.
+- `UpdateEmployeeDto.version` là tùy chọn; service chỉ so version khi client gửi. Quy ước repo nói bản ghi quan trọng dùng optimistic locking, lệch version trả 409.
+- `ApiErrorFilter` ánh xạ lỗi unique constraint `23505` sang 409; vì vậy tạo phòng ban trùng `code` sẽ được trả 409, dù service không kiểm tra trùng trước khi ghi DB.
+- Hành vi PATCH khi gửi `null` chưa chạy thử; chỉ ghi nhận là ca cần kiểm thử, chưa kết luận mã lỗi hay xem là lỗi 500 đã xác nhận.
+
+## Issue #22 — UC2.3: quy tắc quản lý trực tiếp
+
+Đã mở [issue #22](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/22) để thống nhất ngoại lệ người đứng đầu, hành vi khi thiếu/gỡ quản lý và người duyệt đơn nghỉ của người đứng đầu. Issue ghi nhận điểm lệch giữa FR và khả năng hiện tại, đồng thời để quyết định mô hình nghiệp vụ trước khi đề xuất thay đổi schema hoặc validation.
+
+## Issue #21 — UC2.2: tra cây theo mã phòng ban
+
+Đã mở [issue #21](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/21) để thống nhất việc bổ sung tra cứu cây con theo `department.code` hay cập nhật FR cho chức năng trả toàn bộ cây.
+
+FR ghi input là “Mã phòng ban”, nhưng endpoint cây hiện trả toàn bộ cây, không nhận code. Cần thống nhất:
+
+- Bổ sung endpoint/parameter tìm cây con theo `department.code`; hoặc
+- Sửa FR để mô tả thao tác xem toàn bộ cây và phân biệt chức năng lọc phòng ban.
+
+## Các điểm làm rõ khác (chưa tách issue)
+
+### UC2 — Trạng thái của quản lý trực tiếp
+
+Code cho phép gán nhân viên `TERMINATED` làm quản lý và chưa chặn việc chấm dứt nhân viên còn cấp dưới. Đây là quy tắc chưa được nêu trực tiếp trong FR; cần xác nhận business rule trước khi ghi nhận thành bug. Nếu thống nhất quản lý phải đang làm việc, cần chặn gán quản lý không phù hợp và yêu cầu chuyển cấp dưới trước khi chấm dứt.
+
+### UC2 — Ý nghĩa `headEmployeeId`
+
+`headEmployeeId` và `managerId` là hai trường riêng; service hiện chưa kiểm tra nhân viên trưởng đơn vị có tồn tại/đang làm việc/thuộc đơn vị hay quan hệ này có phải quản lý trực tiếp hay không. Cần xác nhận `headEmployeeId` chỉ biểu thị trưởng phòng và `managerId` mới là nguồn chuẩn của quản lý trực tiếp. Migration được đọc không khai báo FK cho `head_employee_id`.
+
+### UC1/UC2 — Null trong PATCH
+
+`@IsOptional()` bỏ qua `null` cho cả trường nullable và không nullable. Cần kiểm thử PATCH với `null` trên các trường bắt buộc như `fullName`, `departmentId`, `positionId`, `status`, `name`, `office`, rồi xác nhận response và bổ sung validation nếu cần. Không kết luận mã lỗi trước khi chạy test.
+
+### UC1 — Version trong PATCH
+
+`version` được mô tả là optimistic locking nhưng DTO cho phép bỏ qua; service chỉ so khi có version. Đây là điểm cần đối chiếu với quy ước “cập nhật bản ghi quan trọng dùng version” và thống nhất bắt buộc hay tùy chọn. Không phải business rule được nêu trực tiếp trong FR tuần 5.
+
+### UC1 — Phạm vi FR còn thiếu chi tiết
+
+Code hiện cho quản lý trực tiếp xem thêm dữ liệu cá nhân; ADMIN không có quyền HR; HR đọc trường nhạy cảm theo yêu cầu và mỗi lần đọc đều audit; HR có thể cập nhật mọi trường, bao gồm hồ sơ của chính HR; `employeeCode`, `workEmail`, `hireDate` không sửa qua PATCH; nhân viên `TERMINATED` bị ẩn khỏi danh bạ. Cần quyết định mục nào là chủ ý thiết kế và cập nhật FR tương ứng; không gộp tất cả thành một lỗi code.
+
+## Không đưa vào issue nếu chưa xác minh
+
+- Chưa có kết quả chạy thử PATCH với `null`; coi đây là ca cần kiểm thử, không khẳng định lỗi HTTP 500.
+- Không kết luận `headEmployeeId` vi phạm rule quản lý trực tiếp trước khi chốt ý nghĩa nghiệp vụ của trường này.

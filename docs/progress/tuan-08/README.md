@@ -5,7 +5,22 @@ thông báo email qua queue), có business rule và ca kiểm thử đi kèm, c�
 
 Phân vai theo ADR-11: TV1 Duong code, TV2 Thanh nghiệp vụ, TV3 Bảo cloud, IaC, CI/CD, TV4 Duy ca kiểm thử + một phần nghiệp vụ.
 
-> File này là kế hoạch đầu tuần. Cuối tuần (thứ 2, 2/11) nhóm điền mục 1–3 để làm báo cáo.
+> Đã chốt ngày 2/11/2026. Bản chốt trên `main` có tag [`week-08`](https://github.com/Acerchicken/HR-Enterprise-Platform/releases/tag/week-08).
+
+## Tóm tắt tuần 8
+
+**Đã làm được:** luồng nghỉ phép chạy end-to-end ở local: nhân viên tạo đơn → quản lý trực tiếp duyệt/từ chối → HR hoàn
+tất, mỗi bước một transaction có audit, trừ ngày lễ, nghỉ nửa ngày, chống gửi trùng; email thông báo đi qua outbox →
+RabbitMQ → worker → Mailpit; 5 màn hình nghỉ phép. Có business rule BR-01 → BR-11, danh mục loại phép và ngày lễ 2026, 22 ca
+kiểm thử, biên bản kiểm thử 5 màn hình tuần 7, đối chiếu UC1/UC2 (issue #21, #22). CI (lint, unit test, build) chạy trên
+mọi PR; `dev`/`main` có ruleset, chỉ nhóm trưởng merge.
+
+**Chưa xong, chuyển sang tuần 9:** ADR-12 (chọn AWS, còn 2 điểm cần sửa); kiểm thử màn hình nghỉ phép theo ca kiểm thử;
+BR-06 (người duyệt thay).
+
+**Tuần 9 (2/11 – 9/11):** P3 – Security & DevOps: ma trận phân quyền, threat model, quản lý secret, image Docker + quét lỗ
+hổng trong CI, Terraform staging trên AWS và deploy staging lần đầu. Chi tiết ở [`tuan-09/README.md`](../tuan-09/README.md).
+Từ tuần 9 áp dụng quy trình review trên nhánh trước khi mở PR.
 
 ## Kế hoạch tuần 8 theo nhánh
 
@@ -35,73 +50,42 @@ Thứ tự phụ thuộc:
 
 ## 1. Các công việc đã hoàn thành
 
-_Điền cuối tuần._
+Số liệu chốt ngày 2/11/2026, tình trạng PR theo GitHub.
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (Duong, nhóm trưởng) | | | [Duong_TV1.md](Duong_TV1.md) |
-| TV2 (Thanh) | | | [Thanh_TV2.md](Thanh_TV2.md) |
-| TV3 (Bảo) | | | [Bao_TV3.md](Bao_TV3.md) |
-| TV4 (Duy) | | | [Duy_TV4.md](Duy_TV4.md) |
+| TV1 (Duong, nhóm trưởng) | API workflow nghỉ phép (tạo, duyệt/từ chối, hủy, HR hoàn tất) trong một transaction, có idempotency, optimistic locking, trừ ngày lễ, nghỉ nửa ngày; outbox + publisher RabbitMQ + worker gửi email; 5 màn hình nghỉ phép; sửa BR-03 (trừ ngày lễ), sửa lỗi Mailpit; làm lại ca kiểm thử và biên bản kiểm thử tuần 7 thay TV4; ruleset bảo vệ `dev`/`main`; review toàn bộ PR | PR #8, #9, #14, #15, #24, #25 (đã merge). Luồng nghỉ phép chạy end-to-end ở local, email tới Mailpit | [TV1_Duong.md](TV1_Duong.md) |
+| TV2 (Thanh) | Business rule BR-01 → BR-11 và sơ đồ quy trình nghỉ phép; đối chiếu UC1/UC2 với code tuần 7, mở 2 issue | PR #1, #23 (đã merge; #23 trễ ~2 ngày); issue #21, #22 | [TV2_Thanh.md](TV2_Thanh.md) |
+| TV3 (Bảo) | RabbitMQ + Mailpit trong docker-compose; CI GitHub Actions (lint, unit test, build); ADR-12 + bảng mapping + chi phí | PR #10, #11 (đã merge, trễ ~1 ngày do lần đầu mở nhầm vào `main`); PR #12 (đã đóng, còn 2 điểm cần sửa) | [TV3_Bao.md](TV3_Bao.md) |
+| TV4 (Duy) | Danh mục loại phép và ngày lễ 2026 (bản cuối do TV1 sửa theo review) | PR #5 (đã merge) | [TV4_Duy.md](TV4_Duy.md) |
+
+**Chưa làm được theo kế hoạch:**
+- **Ca kiểm thử và kiểm thử chức năng của TV4:** PR #13 trễ hạn và không đạt nên được đóng; TV1 làm lại ở PR #14. Các PR nộp lại
+  sau đó (#17, #20) không đạt và đã đóng: #17 ghi đè bản danh mục đã merge; #20 báo kết quả kiểm thử màn hình nghỉ phép trong khi các màn
+  hình này chưa có trên `dev`, issue #18 và #19 không tái hiện được trên API. Kiểm thử màn hình nghỉ phép theo ca kiểm thử
+  chuyển sang đầu tuần 9.
+- **ADR-12 (TV3):** chưa sửa 2 điểm review (mạng của App Runner, Cognito) trước hạn 31/10; PR #12 đã đóng ngày 2/11, chuyển
+  thành việc đầu tiên của TV3 tuần 9 (hạn 4/11).
+- **BR-06 (người duyệt thay khi quản lý vắng mặt):** chưa có mô hình dữ liệu, chưa code; phụ thuộc issue #22.
+- **Review chéo:** TV2, TV3, TV4 chưa để lại review nào trên GitHub cho PR của TV1 (#9, #24, #25).
+- **Tiến độ TV1:** `feat/leave-outbox-worker` và `feat/leave-ui` trễ 2–3 ngày so với hạn 30/10 và 1/11.
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 9: 2/11 – 9/11)
 
-_Điền cuối tuần. Dự kiến theo kế hoạch tổng: P3 – Security & DevOps (threat model, ma trận phân quyền, quản lý secret,
-container, CI/CD, IaC, deploy staging lần đầu)._
+P3 – Security & DevOps. Kế hoạch chi tiết, nhánh và hạn ở [`tuan-09/README.md`](../tuan-09/README.md). Từ tuần 9: review trên
+nhánh, góp ý ghi trong file cá nhân, chỉ mở PR khi đạt điều kiện merge
+([`CONVENTIONS.md`](../../CONVENTIONS.md#quy-trình-cho-một-việc-từ-tuần-9)).
+
+| Thành viên | Công việc | Output |
+|---|---|---|
+| TV1 (Duong, nhóm trưởng) | Quản lý secret ở tầng ứng dụng (production thiếu secret thì không khởi động); hỗ trợ token Cognito; tách queue thành adapter RabbitMQ (local) / SQS (cloud); e2e test theo ma trận phân quyền; báo cáo, merge, PR `dev` → `main` | PR code, e2e test, báo cáo tuần 9 |
+| TV2 (Thanh) | Ma trận phân quyền RBAC/ABAC; chốt issue #21, #22 và BR-06; threat model STRIDE | `docs/security/access-control-matrix.md`, `docs/security/threat-model.md`, cập nhật `leave-rules.md` |
+| TV3 (Bảo) | Sửa xong ADR-12 (việc đầu tiên, hạn 4/11); CI build + quét image Docker; Terraform staging trên AWS; pipeline deploy staging lần đầu | ADR-12, `.github/workflows/`, `infra/`, staging chạy được |
+| TV4 (Duy) | Kiểm thử màn hình nghỉ phép theo TC-01 → TC-22 (chạy thật); ca kiểm thử phân quyền theo ma trận và chạy thử; smoke test staging | Mục 2 `test-report-tuan-08.md`, `security-test-cases.md`, `test-report-tuan-09.md`, issue |
 
 ## 3. Quyết định quan trọng
 
 ### ADR-12 – Chọn cloud provider
 
-**Bối cảnh:**
-Nhóm cần chọn cloud provider để triển khai hệ thống Enterprise HR Platform (~2,000 nhân viên, workload peak ≈ 10 RPS, thiết kế cho 50 RPS theo NFR tuần 5). Hệ thống tuân theo các quyết định kiến trúc đã chốt: modular monolith (ADR-01), PostgreSQL (ADR-02), managed services cho database, storage và identity (ADR-00), không dùng Kubernetes (ADR-06). Ngân sách hạ tầng < 100 USD/tháng (ngân sách mục tiêu kiểm soát là 50 USD/tháng). Cần chốt provider ở tuần 8 để tuần 9 viết IaC (Terraform) và deploy staging lần đầu.
-
-**Các giải pháp:**
-
-| # | Giải pháp | Mô tả |
-|---|---|---|
-| A | Amazon Web Services (AWS) | Hệ sinh thái cloud enterprise toàn diện nhất; App Runner (API), ECS Fargate (Worker), RDS PostgreSQL, S3, Cognito, SQS, CloudWatch, Secrets Manager |
-| B | Microsoft Azure | Tích hợp tốt với OIDC enterprise; hỗ trợ gói Azure for Students ($100 credit không cần thẻ tín dụng); Azure Container Apps, PostgreSQL Flexible Server, Blob Storage, Service Bus |
-| C | Google Cloud Platform (GCP) | Cloud Run serverless container nhẹ, tự có HTTPS; Cloud SQL for PostgreSQL; Cloud Storage; Cloud Pub/Sub; gói credit dùng thử $300 |
-
-**Tiêu chí lựa chọn:**
-
-| Tiêu chí | A (AWS) | B (Azure) | C (GCP) |
-|---|---|---|---|
-| Hỗ trợ đầy đủ 7 capability managed (DB, Storage, Auth, Queue, Container, Monitor, KMS) | 5 | 4 | 4 |
-| Phù hợp chuẩn môn học và mô hình tham chiếu Cloud (Well-Architected Framework) | 5 | 4 | 4 |
-| Mức độ phổ biến của hệ sinh thái, tài liệu và công cụ IaC (Terraform) | 5 | 4 | 4 |
-| Khả năng tiếp cận credit sinh viên và độ ổn định tài khoản | 3 | 5 | 4 |
-| Chi phí hàng tháng trong ngân sách (< 100 USD/tháng, mục tiêu ≤ 50 USD) | 4 | 4 | 5 |
-| Hỗ trợ mở rộng cho AI/RAG (pgvector, LLM API) ở tuần 12 | 5 | 4 | 5 |
-| **Tổng điểm** | **27** | **25** | **26** |
-
-_Nguyên tắc phân định khi điểm số tiệm cận:_ Khi các phương án đều đáp ứng yêu cầu kỹ thuật và chi phí, ưu tiên nền tảng là chuẩn tham chiếu chính thức của môn học Cloud Application Development (AWS) để hỗ trợ tốt nhất cho tài liệu kiến trúc và phần phản biện (Architecture Defense).
-
-**Giải pháp được chọn:** **A (Amazon Web Services)**.
-
-Lý do:
-1. **Chuẩn môn học & Kiến trúc:** AWS là nền tảng tham chiếu chuẩn của môn học và đồ án, mô hình Well-Architected Framework hỗ trợ đắc lực cho việc chấm điểm kiến trúc và bảo vệ đồ án.
-2. **Compute tối ưu theo vai trò:** Tách biệt rõ ràng: Backend API chạy trên **AWS App Runner** (tự scale theo HTTP traffic, có sẵn HTTPS và Load Balancer); Notification Worker chạy trên **Amazon ECS Fargate** (task độc lập, liên tục tiêu thụ queue SQS mà không bị throttle CPU như App Runner).
-3. **Database & AI:** Amazon RDS for PostgreSQL 16 hỗ trợ sẵn extension `pgvector` phục vụ tính năng RAG ở tuần 12, cùng cơ chế backup tự động và khôi phục point-in-time đáp ứng RPO ≤ 1 giờ, RTO ≤ 4 giờ (ADR-00).
-4. **Identity & Storage managed:** Sử dụng **Amazon Cognito User Pool** (chuẩn OIDC, miễn phí vĩnh viễn cho 50,000 MAU) và **Amazon S3** (presigned URL cho tải tài liệu trực tiếp).
-5. **Message Queue:** Sử dụng **Amazon SQS** (serverless, miễn phí 1 triệu requests/tháng). Module outbox/worker của backend sử dụng interface trừu tượng `QueueService` (local dùng adapter RabbitMQ, cloud dùng adapter SQS), giúp đổi môi trường mà không ảnh hưởng tới business logic.
-6. **Chi phí:** Dự toán chi phí thực tế hàng tháng nằm trong khoảng **46–52 USD/tháng**, hoàn toàn nằm trong ngân sách cho phép (< 100 USD/tháng) và bám sát mục tiêu 50 USD/tháng.
-
-**Trade-off & Kế hoạch quản trị rủi ro:**
-1. **Tài khoản và thẻ thanh toán:** AWS yêu cầu thẻ thanh toán quốc tế. Nhóm sử dụng tài khoản AWS cá nhân của TV3 (Bảo) liên kết thẻ Debit đã cài hạn mức tối đa 1.500.000 VNĐ (~60 USD), kết hợp đăng ký gói credit sinh viên qua AWS Educate / GitHub Student Developer Pack.
-2. **Kiểm soát chi phí:** Thiết lập AWS Budgets gửi email cảnh báo tự động về nhóm ở 3 mốc:
-   - **25 USD (50%)**: Cảnh báo sớm để rà soát log và lưu lượng.
-   - **40 USD (80%)**: Cảnh báo khẩn cấp để kiểm tra các tài nguyên nhàn rỗi.
-   - **50 USD (100%)**: Ngưỡng ngân sách mục tiêu của nhóm; kích hoạt quy trình hạ cấu hình hoặc tạm tắt container ngoài giờ demo.
-3. **Tối ưu mạng (không dùng NAT Gateway đắt tiền):** RDS đặt trong Private Subnet; Worker Fargate đặt trong Public Subnet với Security Group chặn 100% chiều vào (DENY ALL Inbound), chỉ cho phép chiều ra Internet (Outbound 443) để gọi SQS, Cognito, Secrets Manager qua Internet Gateway miễn phí; S3 kết nối qua Gateway VPC Endpoint miễn phí.
-4. **Phương án dự phòng (Fallback Plan):** Nếu tài khoản AWS gặp sự cố hạn mức hoặc thẻ thanh toán trong tuần 9, nhóm chuyển ngay sang **Microsoft Azure** sử dụng gói **Azure for Students ($100 credit miễn phí không cần thẻ tín dụng)** của TV2 (Thanh - email `@vnu.edu.vn`) theo phương án B mà không phải sửa code ứng dụng.
-
-**Tiêu chí nghiệm thu:**
-- Tài khoản AWS được kích hoạt và cài đặt AWS Budget cảnh báo ở 25 USD, 40 USD, 50 USD.
-- Bảng mapping 7 capability sang dịch vụ AWS cụ thể được phê duyệt trong `docs/cloud/mapping.md`.
-- Dự toán chi phí chi tiết đồng bộ ở mức 46–52 USD/tháng (ngân sách mục tiêu 50 USD, trần < 100 USD).
-- Viết được mã Terraform (IaC) dựng lại toàn bộ hạ tầng staging trên AWS trong tuần 9.
-
-**Khi nào xem lại:**
-Nếu tài khoản AWS bị giới hạn quota hoặc chi phí thực tế tuần 9 vượt quá 50 USD, nhóm sẽ chuyển đổi hạ tầng sang Microsoft Azure theo phương án dự phòng B.
+_Chưa chốt trong tuần 8: PR #12 đã đóng vì còn 2 điểm cần sửa. TV3 hoàn tất ở tuần 9 (hạn 4/11), ADR được ghi vào mục 3 của
+[`tuan-09/README.md`](../tuan-09/README.md#adr-12--chọn-cloud-provider)._

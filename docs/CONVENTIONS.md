@@ -85,16 +85,30 @@ Tên nhánh việc theo loại việc:
 
 Danh sách nhánh của từng tuần ghi trong `docs/progress/tuan-NN/README.md`.
 
-### Quy trình cho một việc
+### Quy trình cho một việc (từ tuần 9)
+
+Từ tuần 9 nhóm **review trên nhánh trước, chỉ mở PR khi đã đạt điều kiện merge**, để mỗi việc chỉ có một PR và PR mở ra
+là merge được ngay (tránh tình trạng một việc mở 2–3 PR rồi đóng như tuần 8).
 
 1. Tách nhánh từ `dev` mới nhất: `git checkout dev && git pull && git checkout -b <nhánh>`.
 2. Mỗi nhánh **chỉ một việc**, sống tối đa vài ngày. Việc lớn thì chia thành nhiều nhánh nối tiếp nhau.
 3. Commit theo Conventional Commits: `feat(leave): add approve endpoint`, `fix(employee): ...`, `docs(business): ...`,
    `chore(infra): ...`, `ci: ...`, `test: ...`.
-4. Trước khi mở PR: kéo `dev` mới nhất về nhánh của mình (`git pull origin dev`), sửa xung đột nếu có.
-5. Mở PR vào `dev`, mô tả theo template `.github/pull_request_template.md`. PR code phải qua `npm run lint` và `npm test` ở máy mình.
-6. Sau khi được approve và CI xanh, người mở PR tự merge bằng **squash merge**, rồi xóa nhánh.
-7. Thứ 2 hằng tuần, TV1 mở PR `dev` → `main` và merge bằng **merge commit** (không squash) để giữ commit và tên tác giả của từng người.
+4. **Xin review trước khi mở PR:** push nhánh, gửi link so sánh
+   `https://github.com/Acerchicken/HR-Enterprise-Platform/compare/dev...<nhánh>` vào nhóm chat cho người review (bảng Review bên
+   dưới). Chưa mở PR ở bước này.
+5. **Góp ý ghi trong file cá nhân:** người review ghi góp ý vào mục **"Góp ý review"** trong file cá nhân tuần đó của người làm
+   (`docs/progress/tuan-NN/TVn_Ten.md`), mỗi góp ý một dòng: ngày, nhánh, người góp ý, nội dung, ghi rõ "cần sửa" hoặc "nit:".
+   TV1 là người cập nhật mục này lên `dev` (ngoại lệ duy nhất được ghi thẳng vào `dev`, chỉ cho file `docs/progress/`);
+   người review khác gửi nội dung cho TV1.
+6. Người làm sửa trên nhánh của mình, đánh dấu "đã sửa" từng góp ý trong commit message hoặc báo lại trong nhóm chat.
+7. **Chỉ mở PR khi đạt điều kiện merge:** không còn góp ý "cần sửa" nào chưa xử lý, đã kéo `dev` mới nhất về nhánh
+   (`git pull origin dev`) và hết xung đột, PR code đã qua `npm run lint` và `npm test` ở máy mình. Mô tả PR theo template
+   `.github/pull_request_template.md` và ghi "Đã xử lý góp ý ngày …" kèm link file cá nhân.
+8. PR không đạt điều kiện merge sẽ bị đóng, quay lại bước 4. Không mở PR mới cho cùng một việc khi PR cũ còn mở.
+9. Sau khi được approve và CI xanh, **Duong merge** bằng **squash merge**, rồi xóa nhánh. Người mở PR không tự merge.
+10. Thứ 2 hằng tuần, TV1 mở PR `dev` → `main` và merge bằng **merge commit** (không squash) để giữ commit và tên tác giả của
+    từng người.
 
 ### Review
 
@@ -105,13 +119,17 @@ Danh sách nhánh của từng tuần ghi trong `docs/progress/tuan-NN/README.md
 | TV3 – hạ tầng, CI/CD, IaC, ADR cloud | TV1 |
 | TV4 – ca kiểm thử, biên bản kiểm thử | TV2 và TV1 |
 
-- Mỗi PR ít nhất 1 người approve. Review trong vòng 24 giờ.
+- Mỗi PR ít nhất 1 người approve, trong đó bắt buộc có approve của TV1 (Duong, code owner). Review (bước 4–5) trong vòng 24 giờ
+  kể từ khi nhận link nhánh.
 - Góp ý bắt buộc sửa ghi rõ "cần sửa"; góp ý tùy chọn ghi "nit:".
 
 ### Quy tắc chung
 
-- Ai làm việc nào thì tự commit và mở PR bằng **tài khoản GitHub của mình**. Không commit hộ người khác.
-- Branch protection (TV1 bật khi CI đã chạy được): `main` và `dev` bắt buộc qua PR, CI phải xanh, ít nhất 1 approve.
+- Ai làm việc nào thì tự commit và mở PR bằng **tài khoản GitHub của mình**. Không commit hộ người khác. Khi nhóm trưởng
+  quyết định làm thay một việc trễ hạn, PR ghi rõ việc đó của ai và lý do làm thay.
+- Kết quả kiểm thử, biên bản và issue chỉ ghi những gì đã chạy thật: ghi ngày, môi trường, commit; chưa chạy được thì ghi
+  vào mục "chưa kiểm", không ghi Đạt/Không đạt.
+- Branch protection (ruleset trên GitHub): `main` và `dev` bắt buộc qua PR, có approve của Duong, cấm force push và xóa nhánh, chỉ Duong merge được. Khi CI chạy được thì thêm điều kiện CI phải xanh.
 - Không sửa lịch sử của nhánh người khác (không force push lên nhánh không phải của mình, không bao giờ force push `dev`, `main`).
 
 ## 7. Test

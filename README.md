@@ -50,6 +50,8 @@ docker compose logs -f seed      # chờ dòng "Seed xong: ... 2000 nhân viên"
 | API | http://localhost:3000/api/v1 |
 | Swagger (thử API trên trình duyệt) | http://localhost:3000/api/docs |
 | Keycloak admin | http://localhost:8080 (admin / admin) |
+| RabbitMQ Management | http://localhost:15672 (hr / hr) |
+| Mailpit (Web UI xem email) | http://localhost:8025 |
 
 Tài khoản demo (mật khẩu chung `Passw0rd!`):
 
@@ -64,10 +66,10 @@ Xóa sạch dữ liệu và làm lại: `docker compose down -v && docker compos
 
 ## Chạy từng phần để phát triển (hot reload)
 
-Cần: Node.js 20+, Docker Desktop (cho PostgreSQL và Keycloak).
+Cần: Node.js 20+, Docker Desktop (cho PostgreSQL, Keycloak, RabbitMQ và Mailpit).
 
 ```bash
-docker compose up -d db keycloak
+docker compose up -d db keycloak rabbitmq mailpit
 
 cd backend
 cp .env.example .env
@@ -75,6 +77,7 @@ npm install
 npm run migration:run
 npm run seed                 # thêm "-- --reset" để tạo lại từ đầu
 npm run start:dev            # http://localhost:3000/api/docs
+npm run start:worker         # (terminal khác) worker gửi email thông báo nghỉ phép qua Mailpit
 
 cd ../frontend
 cp .env.example .env.local

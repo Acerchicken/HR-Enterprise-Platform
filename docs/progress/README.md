@@ -11,14 +11,16 @@ Thư mục này lưu kế hoạch 10 tuần và báo cáo tiến độ hàng tu�
 | 5 | 5/10 – 12/10 | P1 – Business, Requirements & Cloud Architecture | [tuan-05/](tuan-05/README.md) |
 | 6 | 12/10 – 19/10 | P2 – Application, Data & Integration Architecture | [tuan-06/](tuan-06/README.md) |
 | 7 | 19/10 – 26/10 | Implementation 1 – Nền tảng (code) | [tuan-07/](tuan-07/README.md) |
-| 8 | 26/10 – 2/11 | Implementation 2 – Workflow nghỉ phép (kế hoạch, điền kết quả cuối tuần) | [tuan-08/](tuan-08/README.md) |
+| 8 | 26/10 – 2/11 | Implementation 2 – Workflow nghỉ phép | [tuan-08/](tuan-08/README.md) |
+| 9 | 2/11 – 9/11 | P3 – Security & DevOps (kế hoạch, điền kết quả cuối tuần) | [tuan-09/](tuan-09/README.md) |
 
 ## Cách tổ chức
 
 - `tuan-04-ke-hoach-tong.md`: kế hoạch tổng của cả dự án, phân vai, phạm vi MVP.
 - Mỗi tuần từ tuần 5 là một thư mục:
   - `README.md`: bảng tóm tắt việc đã hoàn thành, tóm tắt kế hoạch tuần sau, các quyết định quan trọng của tuần.
-  - `Duong_TV1.md` … `Duy_TV4.md`: chi tiết phần việc và output của từng thành viên.
+  - `TV1_Duong.md` … `TV4_Duy.md`: chi tiết phần việc và output của từng thành viên. Từ tuần 9 mỗi file có thêm mục
+    "Góp ý review" để ghi góp ý trước khi mở PR.
 - Mỗi quyết định quan trọng ghi theo cùng một khung:
   1. **Bối cảnh**: vấn đề và ràng buộc.
   2. **Các giải pháp** đã cân nhắc.
@@ -68,6 +70,7 @@ ADR (Architecture Decision Record) là bản ghi một quyết định kiến tr
 | ADR-09 | Audit log append-only khóa ở mức database | 7 |
 | ADR-10 | Role MANAGER suy ra từ sơ đồ tổ chức | 7 |
 | ADR-11 | Điều chỉnh phân vai cho giai đoạn code | 7 |
+| ADR-12 | Chọn cloud provider (AWS, đang hoàn tất) | 9 |
 
 ADR-00 → ADR-04 được đánh số ngay khi ra quyết định. ADR-05 → ADR-11 là các quyết định được ghi lại sau theo cùng khung,
 nên số thứ tự không trùng với thứ tự tuần. ADR tiếp theo bắt đầu từ ADR-12.
