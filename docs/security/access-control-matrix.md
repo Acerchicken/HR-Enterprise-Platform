@@ -73,18 +73,16 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 | Đơn nghỉ phép | Hủy | `POST /api/v1/leave-requests/{id}/cancel` | ✓ | ✓ | ✓ | ✓ | Chỉ chủ đơn; đơn phải ở `SUBMITTED`. Role không thay thế điều kiện sở hữu; không tự hủy đơn đã duyệt. | BR-07, BR-08 |
 | Đơn nghỉ phép | HR hoàn tất | `POST /api/v1/leave-requests/{id}/complete` | — | — | ✓ | — | Role HR; đơn phải ở `APPROVED`; thay đổi trạng thái yêu cầu `version` hiện tại. Chỉ HR được hoàn tất. | BR-10, BR-11 |
 
-## Điểm lệch và câu hỏi cần review
+## Điểm lệch và quyết định nghiệp vụ
 
-Các điểm dưới đây mô tả code hiện tại để reviewer thống nhất trước khi ma trận trở thành hợp đồng kiểm thử:
+Các mục dưới đây ghi nhận quyết định nghiệp vụ đã thống nhất và các phần chưa được triển khai trong code:
 
 1. **`GET /employees/{id}/direct-reports` và `GET /departments/{id}/members`:** mọi tài khoản đã đăng nhập có thể truy vấn
-   danh sách, không cần là người quản lý hay thành viên của phạm vi đó. Cần xác nhận đây là danh bạ toàn tổ chức theo UC2,
-   hay phải giới hạn role/phạm vi.
+   danh sách, không cần là người quản lý hay thành viên của phạm vi đó. Quyết định: giữ nguyên danh bạ toàn tổ chức cho mọi tài khoản đã đăng nhập theo UC2; đây là chủ ý nghiệp vụ, không phải điểm chờ xác nhận.
 2. **`GET /employees`:** mọi role đã đăng nhập, gồm ADMIN, nhận được số điện thoại và thông tin danh bạ của tất cả nhân viên
-   không TERMINATED; bộ lọc phòng ban là do người gọi chọn. Cần xác nhận các trường và phạm vi này phù hợp với nguyên tắc
-   ADMIN là quản trị kỹ thuật và yêu cầu tối thiểu hóa dữ liệu.
+   không TERMINATED; bộ lọc phòng ban là do người gọi chọn. Quyết định: giữ nguyên các trường danh bạ và phạm vi tra cứu hiện tại cho mọi tài khoản đã đăng nhập theo UC2; phạm vi này được chấp nhận cho danh bạ nội bộ và không mở quyền đọc trường nhạy cảm.
 3. **Đọc tổ chức/chức danh và loại phép/ngày lễ:** hiện mở cho mọi role đã đăng nhập. Ma trận ghi nhận hành vi code; các
-   bảng này không phải hồ sơ cá nhân nhưng cần TV1/TV4 xác nhận mức hiển thị.
+   bảng này không phải hồ sơ cá nhân theo UC2 và UC6; đây là phạm vi đọc công khai cho người dùng đã đăng nhập và là quyết định có chủ ý.
 4. **BR-06 chưa được triển khai:** ma trận hiện chỉ cho quản lý trực tiếp duyệt/từ chối; chưa có quan hệ ủy quyền để mở
    quyền cho người duyệt thay. Cập nhật ma trận sau khi nghiệp vụ và code được chốt ở nhánh `docs/leave-rules-br06`.
 5. **UC5 (Document repository) và các API tài liệu/tìm kiếm chưa xuất hiện trong `docs/openapi.yaml`:** không có endpoint
