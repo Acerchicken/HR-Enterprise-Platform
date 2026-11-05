@@ -111,9 +111,9 @@ _TV1 ghi góp ý vào đây trước khi bạn mở PR. Mỗi dòng: ngày, nhá
 
 | Ngày | Nhánh | Người góp ý | Góp ý | Trạng thái |
 |---|---|---|---|---|
-| 30/10 | `docs/adr-12-cloud-provider` | TV1 | Cần sửa: mạng ra của App Runner khi gắn VPC Connector phải qua NAT hoặc VPC endpoint; cộng chi phí | Chưa sửa |
-| 30/10 | `docs/adr-12-cloud-provider` | TV1 | Cần sửa: chuyển sang Cognito cần sửa module identity (`azp` → `client_id`, `cognito:groups`) | Chưa sửa |
-| 30/10 | `docs/adr-12-cloud-provider` | TV1 | nit: thêm chi phí public IPv4 cho Fargate; xác nhận Thanh đồng ý dùng tài khoản Azure | Chưa sửa |
+| 30/10 | `docs/adr-12-cloud-provider` | TV1 | Cần sửa: mạng ra của App Runner khi gắn VPC Connector phải qua NAT hoặc VPC endpoint; cộng chi phí | Đã sửa |
+| 30/10 | `docs/adr-12-cloud-provider` | TV1 | Cần sửa: chuyển sang Cognito cần sửa module identity (`azp` → `client_id`, `cognito:groups`) | Đã sửa |
+| 30/10 | `docs/adr-12-cloud-provider` | TV1 | nit: thêm chi phí public IPv4 cho Fargate; xác nhận Thanh đồng ý dùng tài khoản Azure | Đã sửa |
 
 ## Việc đã làm
 
