@@ -17,7 +17,7 @@ resource "aws_db_parameter_group" "pg16" {
 
   parameter {
     name  = "rds.force_ssl"
-    value = "0" # Allows flexible local/staging dev while transit is secured via private VPC
+    value = "1" # Enforce TLS encryption in transit for database connections per security requirement
   }
 
   tags = {

@@ -68,20 +68,25 @@ terraform {
 > [!IMPORTANT]
 > **Quy ước nhóm:** Chỉ chạy `terraform apply` sau khi Trưởng nhóm (TV1) duyệt kết quả `terraform plan`. Không tự ý apply trực tiếp.
 
+### 3.1. Lưu ý quan trọng cho lần triển khai đầu tiên (Bootstrap Deployment)
+Do **AWS App Runner** và **ECS Fargate Task Definition** yêu cầu image container đã tồn tại trong ECR (`hr-api:latest`), trong khi ECR repository mới được tạo lần đầu còn rỗng, quy trình triển khai lần đầu cần thực hiện theo 3 bước:
+
 ```bash
 cd infra/staging
-
-# 1. Khởi tạo Terraform và tải các provider
 terraform init
 
-# 2. Định dạng và kiểm tra cú pháp mã nguồn
-terraform fmt -check
-terraform validate
+# Bước 1: Tạo trước ECR Repositories bằng -target
+terraform apply -target=aws_ecr_repository.api -target=aws_ecr_repository.web -auto-approve
 
-# 3. Tạo plan triển khai và xuất ra file
+# Bước 2: Đăng nhập ECR và push image ban đầu (:latest)
+aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com
+docker build -t <aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com/hr-api:latest ./backend
+docker push <aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com/hr-api:latest
+
+# Bước 3: Tạo plan toàn bộ tài nguyên còn lại và gửi TV1 duyệt
 terraform plan -out plan.tfplan
 
-# 4. Khi TV1 đã duyệt: Áp dụng thay đổi
+# Bước 4: Áp dụng toàn bộ sau khi TV1 phê duyệt
 terraform apply plan.tfplan
 ```
 
@@ -139,3 +144,21 @@ Khi không có lịch demo hoặc ngoài giờ làm việc, thực hiện các t
    cd infra/staging
    terraform destroy
    ```
+
+---
+
+## 6. Danh sách GitHub Secrets & Variables phục vụ CI/CD Staging
+
+Sau khi chạy `terraform apply`, lấy các giá trị từ `terraform output` để cấu hình trong repository Settings (mục **Secrets and variables -> Actions**):
+
+| Tên biến / Secret | Loại | Giá trị lấy từ Terraform Output | Mục đích sử dụng |
+|---|---|---|---|
+| `AWS_DEPLOY_ROLE_ARN` | Secret | `github_actions_role_arn` | IAM Role ARN để GitHub Actions assume qua OIDC |
+| `AWS_REGION` | Variable | `ap-southeast-1` (hoặc biến cấu hình) | AWS Region của staging |
+| `STAGING_API_BASE_URL` | Variable | `app_runner_service_url` (bỏ path `/api/v1`) | Base URL của App Runner API phục vụ health check |
+| `STAGING_API_URL` | Variable | `app_runner_service_url` + `/api/v1` | Endpoint API REST cung cấp cho Web bundle (`VITE_API_URL`) |
+| `STAGING_OIDC_AUTHORITY` | Variable | `cognito_user_pool_endpoint` | URL OIDC Issuer của Cognito cung cấp cho Web (`VITE_OIDC_AUTHORITY`) |
+| `STAGING_OIDC_CLIENT_ID` | Variable | `cognito_client_id` | Cognito Web Client ID (`VITE_OIDC_CLIENT_ID`) |
+| `VITE_OIDC_LOGOUT_URL` | Variable | `oidc_logout_url` | URL đăng xuất Cognito Hosted UI |
+| `S3_WEB_BUCKET` | Variable | `s3_web_bucket` | Tên S3 Bucket lưu trữ mã tĩnh frontend Web SPA |
+| `CLOUDFRONT_DISTRIBUTION_ID` | Variable | ID từ `aws_cloudfront_distribution.web` | ID CDN CloudFront cần xóa cache (invalidation) khi deploy |

@@ -29,6 +29,12 @@ resource "aws_cognito_user_pool" "main" {
   }
 }
 
+# Cognito Hosted Domain for OIDC endpoints (/oauth2/userInfo, /logout)
+resource "aws_cognito_user_pool_domain" "main" {
+  domain       = "${var.project_name}-${var.environment}-${random_string.suffix.result}"
+  user_pool_id = aws_cognito_user_pool.main.id
+}
+
 # Cognito App Client for Web SPA (Authorization Code Grant with PKCE, public client)
 resource "aws_cognito_user_pool_client" "web" {
   name         = "${var.project_name}-${var.environment}-web-client"

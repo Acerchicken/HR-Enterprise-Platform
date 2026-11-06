@@ -90,6 +90,26 @@ output "cognito_client_id" {
   value       = aws_cognito_user_pool_client.web.id
 }
 
+output "cognito_domain" {
+  description = "Cognito Hosted Domain prefix"
+  value       = aws_cognito_user_pool_domain.main.domain
+}
+
+output "oidc_jwks_uri" {
+  description = "Cognito JWKS URI for token signature verification"
+  value       = "https://${aws_cognito_user_pool.main.endpoint}/.well-known/jwks.json"
+}
+
+output "oidc_userinfo_url" {
+  description = "Cognito UserInfo endpoint URL"
+  value       = "https://${aws_cognito_user_pool_domain.main.domain}.auth.${var.aws_region}.amazoncognito.com/oauth2/userInfo"
+}
+
+output "oidc_logout_url" {
+  description = "Cognito Logout endpoint URL for Web SPA"
+  value       = "https://${aws_cognito_user_pool_domain.main.domain}.auth.${var.aws_region}.amazoncognito.com/logout?client_id=${aws_cognito_user_pool_client.web.id}&logout_uri=https://${aws_cloudfront_distribution.web.domain_name}"
+}
+
 # SQS Worker Outputs
 output "sqs_queue_url" {
   description = "URL of the primary SQS Queue for Outbox Notification Worker"
