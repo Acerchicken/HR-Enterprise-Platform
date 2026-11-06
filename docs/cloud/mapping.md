@@ -11,7 +11,7 @@ Hệ thống tuân thủ nguyên tắc không bị khóa chặt vào nhà cung c
 | # | Năng lực (Capability) | Thành phần hệ thống | Dịch vụ Local (Docker) | Dịch vụ Cloud (AWS) | Lý do lựa chọn & Cấu hình |
 |---|---|---|---|---|---|
 | **1a** | **API Hosting & Compute** | Backend API (Modular Monolith) | Node.js container (`Dockerfile`) | **AWS App Runner** | Fully-managed container service cho HTTP workloads, tự động tích hợp Load Balancer và HTTPS certificate miễn phí; tự động scale theo số lượng HTTP request. Cấu hình: 0.5 vCPU, 1 GB RAM, auto-scaling 1–2 instances (ADR-06). |
-| **1b** | **Worker Compute** | Notification & Outbox Worker | Node.js worker (`worker/`) | **Amazon ECS Fargate** | Worker cần chạy ngầm liên tục để polling message từ queue SQS. App Runner sẽ tự động giảm (throttle) CPU khi không có request HTTP đến, nên không phù hợp cho worker. ECS Fargate chạy 1 Task độc lập 24/7 với chi phí cố định thấp. Cấu hình: 0.25 vCPU, 0.5 GB RAM. |
+| **1b** | **Worker Compute** | Notification & Outbox Worker | Node.js worker (`worker/`) | **Amazon ECS Fargate** | Worker cần chạy ngầm liên tục để polling message từ queue SQS. App Runner sẽ tự động giảm (throttle) CPU khi không có request HTTP đến, nên không phù hợp cho worker. ECS Fargate chạy 1 Task độc lập 24/7 đặt trong Private Subnet với chi phí cố định thấp. Cấu hình: 0.25 vCPU, 0.5 GB RAM. |
 | **2** | **Relational Database** | Dữ liệu nhân sự, tổ chức, đơn nghỉ phép, số dư, audit | PostgreSQL 16 container (`postgres:16-alpine`) | **Amazon RDS for PostgreSQL 16** | Dịch vụ CSDL quan hệ managed hoàn toàn; hỗ trợ extension `pgvector` cho RAG ở tuần 12; tự động sao lưu hàng ngày (Automated Backup) và khôi phục về điểm thời gian bất kỳ (PITR) đáp ứng RPO ≤ 1 giờ, RTO ≤ 4 giờ (ADR-00). Cấu hình: `db.t4g.micro`, 20 GB SSD gp3, Single-AZ đặt trong Private Subnet. |
 | **3** | **Object Storage** | Kho tài liệu chính sách HR & hồ sơ nhân viên | MinIO / Local disk mô phỏng | **Amazon Simple Storage Service (S3)** | Độ bền 99.999999999% (11 9's), mã hóa at-rest SSE-S3 mặc định. Frontend sử dụng Presigned URL để tải và xem tài liệu trực tiếp, giảm tải cho API backend. Cấu hình: Bucket `hr-documents-storage`, Private access, Block Public Access bật 100%. |
 | **4** | **Identity & Access Management (OIDC)** | Xác thực người dùng, cấp phát JWT, vai trò người dùng | Keycloak container (`quay.io/keycloak/keycloak:26.0.7`) | **Amazon Cognito User Pool** | Tuân thủ chuẩn OpenID Connect (OIDC) với Authorization Code Grant + PKCE. Miễn phí vĩnh viễn cho 50,000 người dùng hàng tháng (MAU). **Lưu ý kỹ thuật:** Access token của Cognito không có claim `azp` mà sử dụng `client_id`, nhóm người dùng nằm trong mảng `cognito:groups` (thay vì `realm_access.roles`). Module identity của backend được TV1 cập nhật tương thích ở nhánh `feat/auth-cognito` (tuần 9) để chạy linh hoạt cả Keycloak (local) và Cognito (staging). |
@@ -32,16 +32,15 @@ API Backend cần gọi ra các dịch vụ phụ trợ:
 
 ### Phân tích và lựa chọn giải pháp:
 - *Phương án A (Chỉ dùng VPC Endpoints):* Tiết kiệm chi phí NAT, nhưng API không thể gọi Cognito JWKS vì Cognito không có VPC Endpoint private. Nếu dùng phương án này thì bắt buộc phải cấu hình cache JWKS vĩnh viễn hoặc tải sẵn file certs tĩnh vào image, phá vỡ tính năng xoay vòng khóa tự động (key rotation) của OIDC.
-- *Phương án B (1 NAT Gateway Single-AZ đặt tại Public Subnet):* Cung cấp kết nối Internet ra ngoài an toàn cho Private Subnet chứa VPC Connector. API App Runner gọi được cả Cognito JWKS, Secrets Manager, SQS và SMTP ngoài một cách liền mạch, chuẩn enterprise. Chi phí: ~$0.045/h ≈ $32.40/tháng + phí dữ liệu (~$0.045/GB).
+- *Phương án B1 (AWS NAT Gateway Managed):* Chi phí cố định ~$32.40/tháng + phí dữ liệu, làm tổng chi phí vượt quá hạn mức thanh toán thẻ (~60 USD).
+- *Phương án B2 (NAT Instance `t4g.nano` đặt tại Public Subnet):* Cung cấp kết nối Internet ra ngoài an toàn cho Private Subnet chứa VPC Connector và ECS Worker. API App Runner và Worker gọi được cả Cognito JWKS, Secrets Manager, SQS và SMTP ngoài một cách liền mạch, chuẩn enterprise. Chi phí chỉ ~$0.0042/h ≈ **$3.50/tháng** (bao gồm cả data transfer). Ngoài ra có thể kết hợp tắt NAT ngoài giờ demo để tối ưu thêm.
 
-=> **Quyết định:** Nhóm chọn **Phương án B (1 NAT Gateway Single-AZ)** cho môi trường Staging nhằm đảm bảo tính ổn định, đúng chuẩn kiến trúc OIDC và không phát sinh lỗi chặn kết nối ra ngoài.
+=> **Quyết định:** Nhóm chọn **Phương án B2 (NAT Instance `t4g.nano` / Single-AZ NAT tối ưu chi phí)** cho môi trường Staging nhằm đảm bảo tính ổn định, đúng chuẩn kiến trúc OIDC và giữ tổng chi phí hàng tháng dưới 60 USD.
 
 ### Cấu hình chi tiết các thành phần mạng:
-1. **Amazon RDS for PostgreSQL:** Nằm trong **Private Subnet** (không gán Public IP), chỉ nhận traffic cổng 5432 từ Security Group của App Runner và ECS Fargate.
-2. **Backend API (AWS App Runner):** Kết nối VPC qua **App Runner VPC Connector** gắn vào Private Subnet. Toàn bộ outbound traffic đi qua NAT Gateway để ra Internet gọi Cognito JWKS, Secrets Manager, SQS.
-3. **Notification Worker (Amazon ECS Fargate):** Triển khai trong **Public Subnet** với `Assign Public IP = ENABLED`. 
-   - **Bảo mật:** Security Group của Worker đặt **Inbound Rules: DENY ALL** (chặn 100% kết nối từ ngoài vào container). Outbound cho phép cổng 443 đi qua Internet Gateway miễn phí ($0.00) để gọi SQS và SMTP server.
-   - **Chi phí Public IPv4:** Theo chính sách của AWS (áp dụng từ 02/2024), mỗi Public IPv4 được tính phí $0.005/h (1 Task Fargate 24/7 = **~$3.65/tháng**).
+1. **Amazon RDS for PostgreSQL:** Nằm trong **Private Subnet** (không gán Public IP), chỉ nhận traffic cổng 5432 từ Security Group của App Runner VPC Connector và ECS Fargate Worker.
+2. **Backend API (AWS App Runner):** Kết nối VPC qua **App Runner VPC Connector** gắn vào Private Subnet. Toàn bộ outbound traffic đi qua NAT để ra Internet gọi Cognito JWKS, Secrets Manager, SQS.
+3. **Notification Worker (Amazon ECS Fargate):** Triển khai trong **Private Subnet** với `Assign Public IP = DISABLED`. Toàn bộ outbound traffic đi qua NAT chung với App Runner. Phương án này an toàn hơn (container không có Public IP) và **tiết kiệm hoàn toàn phí Public IPv4** ($0.00/tháng thay vì $3.65/tháng).
 4. **Amazon S3:** Kết nối qua **Gateway VPC Endpoint** miễn phí ($0.00).
 
 ---
@@ -58,9 +57,9 @@ Bảng dự toán chi phí ước tính tại region **ap-southeast-1 (Singapore
 | Dịch vụ AWS | Cấu hình & Thông số sử dụng | Chi phí dự kiến / tháng | Ghi chú tối ưu |
 |---|---|---|---|
 | **AWS App Runner** (API Backend) | 0.5 vCPU, 1 GB RAM; active trong giờ hành chính (~176h) + memory provisioned giữ ấm 24/7 | **$13.50** | Đã bao gồm Application Load Balancer và chứng chỉ HTTPS tự động |
-| **Amazon ECS Fargate** (Worker) | 1 Task chạy liên tục 24/7 (0.25 vCPU, 0.5 GB RAM) | **$10.50** | Task độc lập chuyên xử lý outbox queue (nếu dùng Fargate Spot giảm còn ~$3.50) |
-| **AWS Public IPv4** (cho ECS Task) | 1 IPv4 public cho Fargate worker task (730 giờ × $0.005/h) | **$3.65** | Phí Public IPv4 của AWS áp dụng từ 02/2024 |
-| **AWS NAT Gateway** (Single-AZ) | 1 NAT Gateway trong Public Subnet (730 giờ × $0.045/h + ~10 GB data) | **$32.50** | Cung cấp đường ra Internet cho App Runner VPC Connector gọi Cognito JWKS |
+| **Amazon ECS Fargate** (Worker) | 1 Task chạy liên tục 24/7 (0.25 vCPU, 0.5 GB RAM) trong Private Subnet | **$10.50** | Task độc lập chuyên xử lý outbox queue (nếu dùng Fargate Spot giảm còn ~$3.50) |
+| **AWS Public IPv4** (cho ECS Task) | 0 IPv4 public (Worker đặt trong Private Subnet, đi qua NAT) | **$0.00** | Tiết kiệm $3.65/tháng so với phương án đặt ở Public Subnet |
+| **NAT Egress** (Single-AZ) | NAT Instance `t4g.nano` trong Public Subnet (730 giờ × $0.0042/h + ~10 GB data) | **$3.50** | Cung cấp đường ra Internet cho App Runner VPC Connector gọi Cognito JWKS và Worker |
 | **Amazon RDS for PostgreSQL** | Instance `db.t4g.micro`, 20 GB Storage gp3, backup lưu 7 ngày | **$18.00** | CSDL quan hệ chính; nằm trong Free Tier 12 tháng nếu dùng tài khoản mới |
 | **Amazon Cognito User Pool** | Quản lý định danh OIDC cho ~1,200 active users | **$0.00** | Miễn phí trong gói Always Free cho tối đa 50,000 MAU |
 | **Amazon S3** (Kho tài liệu HR & Web SPA) | ~5 GB lưu trữ tài liệu + 20,000 requests PUT/GET | **$0.00** | Miễn phí 5 GB trong 12 tháng đầu (sau Free Tier là ~$0.25/tháng) |
@@ -69,15 +68,16 @@ Bảng dự toán chi phí ước tính tại region **ap-southeast-1 (Singapore
 | **Amazon CloudWatch** | 5 GB Logs ingestion + 5 CloudWatch Alarms (retention 14 ngày) | **$3.50** | 5 GB log đầu tiên được miễn phí |
 | **AWS Secrets Manager & KMS** | 2 secrets (DB credentials, Encryption key) + 1 KMS Customer Managed Key | **$2.00** | $0.40/secret/tháng + $1.00/KMS key + $0.20 API calls |
 | **Chi phí truyền dữ liệu (Data Transfer)** | Data Transfer Out ra ngoài Internet (~10 GB) | **$1.00** | – |
-| **TỔNG CỘNG DỰ TOÁN** | | **~$84.65 / tháng** *(dao động 80–88 USD)* | **Thỏa mãn trần ngân sách môn học (< $100 / tháng)** |
+| **TỔNG CỘNG DỰ TOÁN** | | **~$52.00 / tháng** *(dao động 48–55 USD)* | **Thỏa mãn mục tiêu ngân sách (~50 USD) và dưới hạn mức thẻ 1.500.000 VNĐ (~60 USD)** |
 
 > [!NOTE]
 > **Giải trình về ngân sách:**
-> Mức chi phí dự toán là **~$84.65 USD/tháng**, hoàn toàn nằm trong trần ngân sách cho phép của đề án môn học (< 100 USD/tháng theo ADR-00). Mức này cao hơn mục tiêu tiết kiệm nội bộ ban đầu (50 USD/tháng) do phát sinh 2 khoản phí hạ tầng bắt buộc của AWS:
-> 1. NAT Gateway (~$32.50/tháng) để giải quyết bài toán egress của App Runner khi gọi Cognito JWKS.
-> 2. Phí Public IPv4 (~$3.65/tháng) của Task Fargate.
+> Mức chi phí dự toán là **~$52.00 USD/tháng**, hoàn toàn nằm trong trần ngân sách cho phép của đề án môn học (< 100 USD/tháng theo ADR-00) và **thấp hơn hạn mức thẻ thanh toán quốc tế của TV3 Bảo (1.500.000 VNĐ ~ 60 USD)**. 
 > 
-> **Phương án tối ưu trong quá trình triển khai:** Nhóm có thể chạy script tắt NAT Gateway ngoài giờ demo/kiểm thử, hoặc thay thế bằng NAT Instance `t4g.nano` (~$3.50/tháng) để đưa chi phí thực tế về mức dưới 50 USD/tháng.
+> **Các giải pháp tối ưu đã áp dụng:**
+> 1. Dùng NAT Instance `t4g.nano` (~$3.50/tháng) thay cho NAT Gateway (~$32.50/tháng) để giải quyết bài toán egress của App Runner gọi Cognito JWKS.
+> 2. Đặt ECS Worker trong Private Subnet, loại bỏ hoàn toàn phí Public IPv4 ($3.65/tháng).
+> 3. Tắt instance hoặc container ngoài giờ demo/kiểm thử để đưa chi phí thực tế xuống thấp hơn nữa.
 
 ---
 
@@ -90,10 +90,10 @@ Bảng dự toán chi phí ước tính tại region **ap-southeast-1 (Singapore
    * Nhóm đăng ký gói **AWS Educate / GitHub Student Developer Pack** (tài khoản `bao1022004`) để bổ sung credit hỗ trợ.
 
 2. **Thiết lập cảnh báo ngân sách tự động (AWS Budgets):**
-   * Ngưỡng 1 (**$40.00 USD - ~50% ngân sách**): Gửi email cảnh báo sớm cho TV3 (Bảo) và TV1 (Dương) để kiểm tra dung lượng log và lưu lượng.
-   * Ngưỡng 2 (**$70.00 USD - ~85% dự toán**): Cảnh báo khẩn cấp để rà soát các tài nguyên nhàn rỗi, lưu lượng NAT Gateway hoặc task chạy thừa.
-   * Ngưỡng 3 (**$85.00 USD - trần dự toán**): Kích hoạt quy trình hạ cấu hình hoặc tạm tắt container ngoài giờ demo.
+   * Ngưỡng 1 (**$25.00 USD - 50% ngân sách**): Gửi email cảnh báo sớm cho TV3 (Bảo) và TV1 (Dương) để kiểm tra dung lượng log và lưu lượng.
+   * Ngưỡng 2 (**$40.00 USD - 80% ngân sách**): Cảnh báo khẩn cấp để rà soát các tài nguyên nhàn rỗi, lưu lượng NAT hoặc task chạy thừa.
+   * Ngưỡng 3 (**$50.00 USD - 100% ngân sách**): Kích hoạt quy trình hạ cấu hình hoặc tạm tắt container ngoài giờ demo.
 
 3. **Phương án dự phòng kỹ thuật (Fallback Plan):**
-   * Nhóm đã trao đổi và được sự xác nhận đồng ý của **TV2 (Thanh - email `22025543@vnu.edu.vn`)** về việc sử dụng tài khoản **Azure for Students ($100 credit miễn phí không cần thẻ tín dụng)** làm phương án dự phòng chính thức.
+   * Nhóm đã trao đổi và được sự xác nhận đồng ý của **TV2 (Thanh)** về việc sử dụng tài khoản **Azure for Students ($100 credit miễn phí không cần thẻ tín dụng)** làm phương án dự phòng chính thức.
    * Nếu tài khoản AWS gặp sự cố thanh toán thẻ hoặc bị giới hạn quota trong tuần 9, nhóm sẽ kích hoạt ngay tài khoản Azure của TV2 và triển khai hệ thống lên **Azure Container Apps + Azure Database for PostgreSQL Flexible Server** mà không phải sửa mã nguồn ứng dụng.

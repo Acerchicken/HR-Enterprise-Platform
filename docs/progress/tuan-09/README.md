@@ -81,6 +81,10 @@ _Điền cuối tuần._
 _Điền cuối tuần. Dự kiến theo kế hoạch tổng: hoàn thiện chức năng (kho tài liệu HR, self-service search, chặn truy cập trái
 phép, deploy/rollback, logging/metrics cơ bản)._
 
+Đã chốt thêm trong tuần 9 (đưa vào kế hoạch tuần 10):
+- TV1: màn hình HR tạo và sửa hồ sơ nhân viên (`feat/hr-employee-form`, chi tiết trong [TV1_Duong.md](TV1_Duong.md#chuẩn-bị-cho-tuần-10-đã-chốt-511-đưa-vào-kế-hoạch-tuần-10));
+  code BR-06 (người duyệt thay), BR-12 (HR, quản lý tạo đơn hộ) và quyết định issue #22.
+
 ## 3. Quyết định quan trọng
 
 ### ADR-12 – Chọn cloud provider
@@ -120,23 +124,23 @@ Lý do:
 3. **Database & AI:** Amazon RDS for PostgreSQL 16 hỗ trợ sẵn extension `pgvector` phục vụ tính năng RAG ở tuần 12, cùng cơ chế backup tự động và khôi phục point-in-time đáp ứng RPO ≤ 1 giờ, RTO ≤ 4 giờ (ADR-00).
 4. **Identity & Storage managed:** Sử dụng **Amazon Cognito User Pool** (chuẩn OIDC, miễn phí vĩnh viễn cho 50,000 MAU) và **Amazon S3** (presigned URL cho tải tài liệu trực tiếp). *Lưu ý kỹ thuật:* Token của Cognito dùng `client_id` thay vì `azp`, vai trò nằm trong `cognito:groups`. TV1 cập nhật module identity ở nhánh `feat/auth-cognito` tuần 9 để hỗ trợ cả Keycloak (local) và Cognito (staging).
 5. **Message Queue:** Sử dụng **Amazon SQS** (serverless, miễn phí 1 triệu requests/tháng). Module outbox/worker của backend sử dụng interface trừu tượng `QueueService` (local dùng adapter RabbitMQ, cloud dùng adapter SQS), giúp đổi môi trường mà không ảnh hưởng tới business logic.
-6. **Mạng ra (Egress) của App Runner:** Khi gắn VPC Connector vào Private Subnet, toàn bộ outbound traffic của API đi qua VPC. Do Cognito JWKS là public endpoint không hỗ trợ Interface VPC Endpoint (PrivateLink), nhóm triển khai **1 NAT Gateway Single-AZ** tại Public Subnet để API gọi được Cognito JWKS, Secrets Manager, SQS và SMTP.
-7. **Chi phí:** Dự toán chi phí thực tế hàng tháng là **~$84.65 USD/tháng** (dao động 80–88 USD), hoàn toàn nằm trong trần ngân sách cho phép của đề án môn học (< 100 USD/tháng). Mức này cao hơn mục tiêu nội bộ 50 USD/tháng do phát sinh chi phí NAT Gateway (~$32.50/tháng) và phí Public IPv4 cho task Fargate (~$3.65/tháng).
+6. **Mạng ra (Egress) của App Runner & Worker:** Khi gắn VPC Connector vào Private Subnet, toàn bộ outbound traffic của API đi qua VPC. Do Cognito JWKS là public endpoint không hỗ trợ Interface VPC Endpoint (PrivateLink), nhóm triển khai **NAT Instance `t4g.nano`** (~$3.50/tháng) tại Public Subnet (hoặc script tắt NAT ngoài giờ demo) để API và Worker gọi được Cognito JWKS, Secrets Manager, SQS và SMTP mà vẫn giữ chi phí thấp.
+7. **Chi phí:** Dự toán chi phí thực tế hàng tháng là **~$52.00 USD/tháng** (dao động 48–55 USD), hoàn toàn nằm dưới hạn mức thẻ 1.500.000 VNĐ (~60 USD) của TV3 Bảo và trần môn học (< 100 USD/tháng). Worker chạy trong Private Subnet qua NAT (không tốn phí Public IPv4 $3.65/tháng).
 
 **Trade-off & Kế hoạch quản trị rủi ro:**
 1. **Tài khoản và thẻ thanh toán:** AWS yêu cầu thẻ thanh toán quốc tế. Nhóm sử dụng tài khoản AWS cá nhân của TV3 (Bảo) liên kết thẻ Debit đã cài hạn mức chi tiêu tối đa 1.500.000 VNĐ (~60 USD), kết hợp đăng ký gói credit sinh viên qua AWS Educate / GitHub Student Developer Pack.
-2. **Kiểm soát chi phí:** Thiết lập AWS Budgets gửi email cảnh báo tự động về nhóm ở 3 mốc:
-   - **40 USD (~50% ngân sách trần)**: Cảnh báo sớm để rà soát log và lưu lượng.
-   - **70 USD (~85% dự toán)**: Cảnh báo khẩn cấp để kiểm tra các tài nguyên nhàn rỗi hoặc lưu lượng NAT Gateway.
-   - **85 USD (trần dự toán)**: Kích hoạt quy trình hạ cấu hình hoặc tạm tắt container ngoài giờ demo.
+2. **Kiểm soát chi phí:** Thiết lập AWS Budgets gửi email cảnh báo tự động về nhóm ở 3 mốc (ngân sách 50 USD/tháng):
+   - **25 USD (50% ngân sách)**: Cảnh báo sớm để rà soát log và lưu lượng.
+   - **40 USD (80% ngân sách)**: Cảnh báo khẩn cấp để kiểm tra các tài nguyên nhàn rỗi hoặc lưu lượng NAT.
+   - **50 USD (100% ngân sách)**: Kích hoạt quy trình hạ cấu hình hoặc tạm tắt container ngoài giờ demo.
 3. **Phương án dự phòng (Fallback Plan):**
-   - Đã trao đổi và được **TV2 (Thanh - email `22025543@vnu.edu.vn`) xác nhận đồng ý** cung cấp tài khoản **Azure for Students ($100 credit miễn phí không cần thẻ tín dụng)** làm phương án dự phòng chính thức.
+   - Đã trao đổi và được **TV2 (Thanh) xác nhận đồng ý** cung cấp tài khoản **Azure for Students ($100 credit miễn phí không cần thẻ tín dụng)** làm phương án dự phòng chính thức.
    - Nếu tài khoản AWS gặp sự cố hạn mức hoặc thẻ thanh toán trong tuần 9, nhóm chuyển ngay sang **Microsoft Azure** (Azure Container Apps + Azure Database for PostgreSQL Flexible Server) theo phương án B mà không phải sửa code ứng dụng nhờ tính tương thích của container OCI và PostgreSQL.
 
 **Tiêu chí nghiệm thu:**
-- Tài khoản AWS được kích hoạt và cài đặt AWS Budget cảnh báo ở 40 USD, 70 USD, 85 USD.
+- Tài khoản AWS được kích hoạt và cài đặt AWS Budget cảnh báo ở 25 USD, 40 USD, 50 USD.
 - Bảng mapping 7 capability sang dịch vụ AWS cụ thể được phê duyệt trong `docs/cloud/mapping.md`.
-- Dự toán chi phí chi tiết đồng bộ ở mức 80–88 USD/tháng (thỏa mãn trần ngân sách < 100 USD/tháng).
+- Dự toán chi phí chi tiết đồng bộ ở mức ~52 USD/tháng (thỏa mãn mục tiêu ngân sách 50 USD/tháng và dưới hạn mức thẻ 60 USD).
 - Viết được mã Terraform (IaC) dựng lại toàn bộ hạ tầng staging trên AWS trong tuần 9.
 
 **Khi nào xem lại:**

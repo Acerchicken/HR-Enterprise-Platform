@@ -119,6 +119,9 @@ _TV1 ghi góp ý vào đây trước khi bạn mở PR. Mỗi dòng: ngày, nhá
 
 | Ngày | Nhánh | Người góp ý | Góp ý | Trạng thái |
 |---|---|---|---|---|
+| 5/11 | `docs/test-report-leave` | TV1 | **Trễ hạn:** hạn gửi link là 3/11 21:00, đến 5/11 chưa có nhánh mới; nhánh `docs/test-report-leave` cũ vẫn là bản 1/11 (PR #20 đã đóng). Tách nhánh mới từ `dev` hoặc `git pull origin dev` rồi làm lại theo mục 1 của file này; báo TV1 hạn mới có thể làm được | Chưa làm |
+| 5/11 | issue #18, #19 | TV1 | Chưa chạy lại và cập nhật theo mục 1, bước 6 | Chưa làm |
+| 5/11 | L-01, L-02 | TV1 | Chưa mở issue riêng cho 2 lỗi dữ liệu theo mục 1, bước 7 | Chưa làm |
 
 ## Việc đã làm
 
