@@ -147,7 +147,7 @@ services:
         VITE_OIDC_AUTHORITY: http://localhost:8080/realms/hr
         VITE_OIDC_CLIENT_ID: hr-web
     ports:
-      - "5173:80"
+      - "5173:8080"
     depends_on:
       - api
 
