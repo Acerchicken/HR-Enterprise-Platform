@@ -2,7 +2,7 @@
   "name": "hr-platform-api",
   "version": "0.1.0",
   "private": true,
-  "description": "Enterprise HR Platform - backend (NestJS modular monolith)",
+  "description": "HRHelper (HR Enterprise Platform) - backend (NestJS modular monolith)",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",

@@ -10,7 +10,7 @@ export function Layout() {
   return (
     <div className="shell">
       <header className="topbar">
-        <strong className="brand">HR Platform</strong>
+        <strong className="brand" title="HR Enterprise Platform">HRHelper</strong>
         <nav>
           <NavLink to="/" end>Hồ sơ của tôi</NavLink>
           <NavLink to="/directory">Danh bạ</NavLink>

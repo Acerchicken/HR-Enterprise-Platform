@@ -1,6 +1,6 @@
 # Danh mục loại phép và ngày nghỉ lễ năm 2026
 
-Tài liệu này quy định các loại nghỉ phép dùng trong hệ thống Enterprise HR Platform và danh sách ngày nghỉ lễ năm 2026.
+Tài liệu này quy định các loại nghỉ phép dùng trong hệ thống HRHelper và danh sách ngày nghỉ lễ năm 2026.
 Căn cứ chính: Bộ luật Lao động 2019 (Điều 111–115) và Luật Bảo hiểm xã hội 2024 (hiệu lực từ 1/7/2025).
 
 ## 1. Danh mục loại phép
