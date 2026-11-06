@@ -100,6 +100,14 @@ _TV1 ghi góp ý vào đây trước khi bạn mở PR. Mỗi dòng: ngày, nhá
 
 | Ngày | Nhánh | Người góp ý | Góp ý | Trạng thái |
 |---|---|---|---|---|
+| 5/11 | `docs/week8-tv2-report` | TV1 | Đạt: đã bỏ 2 dòng review không có dấu vết, gửi đúng hạn 3/11. Mở PR được | Chờ mở PR |
+| 5/11 | `docs/access-control-matrix` | TV1 | Đạt, gửi đúng hạn 4/11: phủ 27/27 operation, đối chiếu `@Roles` và service chính xác (TV1 đã kiểm từng controller). Mở PR được | Chờ mở PR |
+| 5/11 | `docs/access-control-matrix` | TV1 | Trả lời câu hỏi 1–3 ở mục "Điểm lệch": TV1 đề xuất **giữ nguyên** (danh bạ, cấp dưới trực tiếp, thành viên phòng ban, danh mục tổ chức/loại phép/ngày lễ mở cho mọi người đã đăng nhập theo UC2, UC6). Ghi vào ma trận là quyết định có chủ ý thay vì "cần xác nhận" | Chờ sửa |
+| 5/11 | `docs/access-control-matrix` | TV1 | nit: sau khi `docs/leave-rules-br06` merge, sửa dòng Duyệt/Từ chối: "HR nếu chủ đơn là CEO" và người duyệt thay theo BR-06 (ghi là chưa có trong code) | Chờ sửa |
+| 5/11 | `docs/leave-rules-br06` | TV1 | Đạt, gửi đúng hạn 5/11: quyết định #21, #22, BR-06 rõ, khớp seed (có đúng một nhân viên chức danh `CEO`, không có quản lý). Mở PR được | Chờ mở PR |
+| 5/11 | `docs/leave-rules-br06` | TV1 | nit: file `tuan-05/TV2_Thanh.md` là báo cáo tuần 5; thêm một dòng ghi chú dưới bảng FR "Cập nhật 5/11/2026 theo issue #21, #22" để người đọc biết FR đã đổi | Chờ sửa |
+| 5/11 | `docs/leave-rules-br06` | TV1 (theo quyết định của Duong) | **Cần thêm BR-12 – Tạo đơn hộ nhân viên** trên cùng nhánh: (1) HR tạo hộ được cho mọi nhân viên; quản lý chỉ tạo hộ được cho cấp dưới trực tiếp của mình (và nhân viên mình đang duyệt thay theo BR-06 nếu thấy hợp lý, ghi rõ); (2) đơn tạo hộ áp dụng đủ BR-01 → BR-04, chủ đơn và số dư là của nhân viên, không phải của người tạo; (3) đơn vẫn đi qua quản lý trực tiếp duyệt bình thường (BR-05, BR-06), kể cả khi người tạo hộ chính là quản lý đó: ghi rõ đây là trade-off chấp nhận, bù lại bằng lịch sử/audit ghi người tạo hộ khác chủ đơn; (4) nhân viên nhận email khi có đơn tạo hộ và vẫn tự hủy được khi đơn còn `SUBMITTED` (BR-07); (5) lịch sử và audit ghi \"người tạo\" và \"chủ đơn\" riêng. Cập nhật sơ đồ quy trình, mục \"Đối chiếu với hiện thực\" (chưa có trong code, TV1 làm tuần 10) và dòng \"Đơn nghỉ phép – Tạo\" trong ma trận phân quyền | Chưa sửa |
+| 5/11 | `docs/leave-rules-br06` | TV1 | Sau khi merge: comment quyết định vào issue #21 (đóng luôn vì chỉ sửa FR) và #22 (để mở, TV1 code tuần 10) | Chờ làm |
 
 ## Việc đã làm
 
