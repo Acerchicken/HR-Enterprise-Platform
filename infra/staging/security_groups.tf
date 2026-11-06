@@ -5,7 +5,7 @@ resource "aws_security_group" "apprunner_connector" {
   vpc_id      = aws_vpc.main.id
 
   egress {
-    description = "Allow all outbound traffic to VPC and NAT Gateway"
+    description = "Allow all outbound traffic to VPC and NAT instance"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -24,7 +24,7 @@ resource "aws_security_group" "worker" {
   vpc_id      = aws_vpc.main.id
 
   egress {
-    description = "Allow worker outbound traffic to RDS and NAT Gateway (SQS, Cognito, CloudWatch)"
+    description = "Allow worker outbound traffic to RDS and NAT instance (SQS, Cognito, CloudWatch)"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

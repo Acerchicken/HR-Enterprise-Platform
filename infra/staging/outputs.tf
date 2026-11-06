@@ -126,3 +126,8 @@ output "github_actions_role_arn" {
   description = "IAM Role ARN to be assumed by GitHub Actions via OIDC"
   value       = aws_iam_role.github_actions_deploy.arn
 }
+
+output "nat_instance_id" {
+  description = "ID of the NAT instance (stop outside demo hours to save cost)"
+  value       = aws_instance.nat.id
+}

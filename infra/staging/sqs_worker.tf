@@ -221,7 +221,7 @@ resource "aws_ecs_service" "worker" {
   network_configuration {
     subnets          = aws_subnet.private[*].id
     security_groups  = [aws_security_group.worker.id]
-    assign_public_ip = false # In private subnets, egress routed through NAT Gateway
+    assign_public_ip = false # In private subnets, egress routed through NAT instance
   }
 
   tags = {

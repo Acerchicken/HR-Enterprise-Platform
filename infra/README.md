@@ -19,7 +19,7 @@ infra/
     ├── variables.tf         # Khai báo biến đầu vào
     ├── terraform.tfvars.example # File mẫu cấu hình biến
     ├── outputs.tf           # Các đầu ra (URLs, IDs, ARNs - không lộ secret)
-    ├── network.tf           # VPC, 2 Public Subnets, 2 Private Subnets, IGW, NAT Gateway
+    ├── network.tf           # VPC, 2 Public Subnets, 2 Private Subnets, IGW, NAT instance t4g.nano
     ├── security_groups.tf   # Security Groups cho App Runner, RDS, ECS Worker
     ├── kms_secrets.tf       # KMS Key, random DB password, random FIELD_ENCRYPTION_KEY, Secrets Manager
     ├── rds.tf               # RDS PostgreSQL 16 db.t4g.micro, automated backup 7 ngày
@@ -75,7 +75,7 @@ Do **AWS App Runner** và **ECS Fargate Task Definition** yêu cầu image conta
 cd infra/staging
 terraform init
 
-# Bước 1: Tạo trước ECR Repositories bằng -target
+# Bước 1 (chỉ làm sau khi TV1 đã duyệt plan): tạo trước ECR Repositories bằng -target
 terraform apply -target=aws_ecr_repository.api -target=aws_ecr_repository.web -auto-approve
 
 # Bước 2: Đăng nhập ECR và push image ban đầu (:latest)
@@ -96,7 +96,7 @@ terraform apply plan.tfplan
 
 | Tài nguyên | Dịch vụ AWS | Cấu hình & Ghi chú |
 |---|---|---|
-| **Mạng (Network)** | VPC, Subnets, IGW, NAT | 1 VPC (`10.0.0.0/16`), 2 Public Subnets, 2 Private Subnets. 1 NAT Gateway Single-AZ tại Public Subnet 1 (cho App Runner VPC Connector gọi Cognito JWKS & Fargate worker ra ngoài). |
+| **Mạng (Network)** | VPC, Subnets, IGW, NAT | 1 VPC (`10.0.0.0/16`), 2 Public Subnets, 2 Private Subnets. 1 NAT instance `t4g.nano` (Amazon Linux 2023 ARM, IMDSv2, không SSH key) tại Public Subnet 1 thay cho NAT Gateway để giữ chi phí dưới hạn mức (ADR-12, phương án B2); cho App Runner VPC Connector gọi Cognito JWKS, Secrets Manager, SQS và Fargate worker ra ngoài. |
 | **Cơ sở dữ liệu** | RDS PostgreSQL 16 | Instance `db.t4g.micro`, 20 GB gp3 SSD, Single-AZ trong Private Subnet, Backup tự động lưu 7 ngày. |
 | **Quản lý khóa & bí mật** | Secrets Manager & KMS | 1 Customer Managed KMS Key. Mật khẩu DB và khóa `FIELD_ENCRYPTION_KEY` (32 bytes base64) sinh ngẫu nhiên bảo mật, lưu trực tiếp vào Secrets Manager. |
 | **Container Registry** | Amazon ECR | 2 Repositories: `hr-api` và `hr-web`, bật scan lỗ hổng khi push image, giữ tối đa 10 tags mới nhất. |
@@ -139,7 +139,11 @@ Khi không có lịch demo hoặc ngoài giờ làm việc, thực hiện các t
    ```bash
    aws rds stop-db-instance --db-instance-identifier hr-platform-staging-db
    ```
-4. **Xóa toàn bộ hạ tầng (khi hoàn thành môn học):**
+4. **Tạm dừng NAT instance** (sau khi đã dừng API và worker; public IP tự cấp được giải phóng nên không tính phí IPv4 khi dừng):
+   ```bash
+   aws ec2 stop-instances --instance-ids $(terraform output -raw nat_instance_id)
+   ```
+5. **Xóa toàn bộ hạ tầng (khi hoàn thành môn học):**
    ```bash
    cd infra/staging
    terraform destroy
