@@ -81,6 +81,10 @@ _Điền cuối tuần._
 _Điền cuối tuần. Dự kiến theo kế hoạch tổng: hoàn thiện chức năng (kho tài liệu HR, self-service search, chặn truy cập trái
 phép, deploy/rollback, logging/metrics cơ bản)._
 
+Đã chốt thêm trong tuần 9 (đưa vào kế hoạch tuần 10):
+- TV1: màn hình HR tạo và sửa hồ sơ nhân viên (`feat/hr-employee-form`, chi tiết trong [TV1_Duong.md](TV1_Duong.md#chuẩn-bị-cho-tuần-10-đã-chốt-511-đưa-vào-kế-hoạch-tuần-10));
+  code BR-06 (người duyệt thay), BR-12 (HR, quản lý tạo đơn hộ) và quyết định issue #22.
+
 ## 3. Quyết định quan trọng
 
 ### ADR-12 – Chọn cloud provider
