@@ -33,7 +33,7 @@ API Backend cần gọi ra các dịch vụ phụ trợ:
 ### Phân tích và lựa chọn giải pháp:
 - *Phương án A (Chỉ dùng VPC Endpoints):* Tiết kiệm chi phí NAT, nhưng API không thể gọi Cognito JWKS vì Cognito không có VPC Endpoint private. Nếu dùng phương án này thì bắt buộc phải cấu hình cache JWKS vĩnh viễn hoặc tải sẵn file certs tĩnh vào image, phá vỡ tính năng xoay vòng khóa tự động (key rotation) của OIDC.
 - *Phương án B1 (AWS NAT Gateway Managed):* Chi phí cố định ~$32.40/tháng + phí dữ liệu, làm tổng chi phí vượt quá hạn mức thanh toán thẻ (~60 USD).
-- *Phương án B2 (NAT Instance `t4g.nano` đặt tại Public Subnet):* Cung cấp kết nối Internet ra ngoài an toàn cho Private Subnet chứa VPC Connector và ECS Worker. API App Runner và Worker gọi được cả Cognito JWKS, Secrets Manager, SQS và SMTP ngoài một cách liền mạch, chuẩn enterprise. Chi phí chỉ ~$0.0042/h ≈ **$3.50/tháng** (bao gồm cả data transfer). Ngoài ra có thể kết hợp tắt NAT ngoài giờ demo để tối ưu thêm.
+- *Phương án B2 (NAT Instance `t4g.nano` đặt tại Public Subnet):* Cung cấp kết nối Internet ra ngoài an toàn cho Private Subnet chứa VPC Connector và ECS Worker. API App Runner và Worker gọi được cả Cognito JWKS, Secrets Manager, SQS và SMTP ngoài một cách liền mạch, chuẩn enterprise. Chi phí ~$0.0053/h × 730h ≈ $3.87 + ổ gp3 8 GB ≈ $0.77 + **1 public IPv4 của chính NAT instance $3.65** ≈ **$8.30/tháng**. Dùng public IP tự cấp (không Elastic IP) nên khi stop NAT ngoài giờ demo thì không bị tính phí instance lẫn IPv4.
 
 => **Quyết định:** Nhóm chọn **Phương án B2 (NAT Instance `t4g.nano` / Single-AZ NAT tối ưu chi phí)** cho môi trường Staging nhằm đảm bảo tính ổn định, đúng chuẩn kiến trúc OIDC và giữ tổng chi phí hàng tháng dưới 60 USD.
 
@@ -59,7 +59,7 @@ Bảng dự toán chi phí ước tính tại region **ap-southeast-1 (Singapore
 | **AWS App Runner** (API Backend) | 0.5 vCPU, 1 GB RAM; active trong giờ hành chính (~176h) + memory provisioned giữ ấm 24/7 | **$13.50** | Đã bao gồm Application Load Balancer và chứng chỉ HTTPS tự động |
 | **Amazon ECS Fargate** (Worker) | 1 Task chạy liên tục 24/7 (0.25 vCPU, 0.5 GB RAM) trong Private Subnet | **$10.50** | Task độc lập chuyên xử lý outbox queue (nếu dùng Fargate Spot giảm còn ~$3.50) |
 | **AWS Public IPv4** (cho ECS Task) | 0 IPv4 public (Worker đặt trong Private Subnet, đi qua NAT) | **$0.00** | Tiết kiệm $3.65/tháng so với phương án đặt ở Public Subnet |
-| **NAT Egress** (Single-AZ) | NAT Instance `t4g.nano` trong Public Subnet (730 giờ × $0.0042/h + ~10 GB data) | **$3.50** | Cung cấp đường ra Internet cho App Runner VPC Connector gọi Cognito JWKS và Worker |
+| **NAT Egress** (Single-AZ) | NAT Instance `t4g.nano` trong Public Subnet (730 giờ × ~$0.0053/h ≈ $3.87 + gp3 8 GB ≈ $0.77 + 1 public IPv4 $3.65); data ra Internet tính ở dòng Data Transfer | **$8.30** | Thay NAT Gateway (~$32.40). Khớp `infra/staging/network.tf` (`aws_instance.nat`) |
 | **Amazon RDS for PostgreSQL** | Instance `db.t4g.micro`, 20 GB Storage gp3, backup lưu 7 ngày | **$18.00** | CSDL quan hệ chính; nằm trong Free Tier 12 tháng nếu dùng tài khoản mới |
 | **Amazon Cognito User Pool** | Quản lý định danh OIDC cho ~1,200 active users | **$0.00** | Miễn phí trong gói Always Free cho tối đa 50,000 MAU |
 | **Amazon S3** (Kho tài liệu HR & Web SPA) | ~5 GB lưu trữ tài liệu + 20,000 requests PUT/GET | **$0.00** | Miễn phí 5 GB trong 12 tháng đầu (sau Free Tier là ~$0.25/tháng) |
@@ -68,15 +68,15 @@ Bảng dự toán chi phí ước tính tại region **ap-southeast-1 (Singapore
 | **Amazon CloudWatch** | 5 GB Logs ingestion + 5 CloudWatch Alarms (retention 14 ngày) | **$3.50** | 5 GB log đầu tiên được miễn phí |
 | **AWS Secrets Manager & KMS** | 2 secrets (DB credentials, Encryption key) + 1 KMS Customer Managed Key | **$2.00** | $0.40/secret/tháng + $1.00/KMS key + $0.20 API calls |
 | **Chi phí truyền dữ liệu (Data Transfer)** | Data Transfer Out ra ngoài Internet (~10 GB) | **$1.00** | – |
-| **TỔNG CỘNG DỰ TOÁN** | | **~$52.00 / tháng** *(dao động 48–55 USD)* | **Thỏa mãn mục tiêu ngân sách (~50 USD) và dưới hạn mức thẻ 1.500.000 VNĐ (~60 USD)** |
+| **TỔNG CỘNG DỰ TOÁN** | | **~$56.80 / tháng** *(chạy 24/7; dao động 54–59 USD)* | **Dưới hạn mức thẻ 1.500.000 VNĐ (~60 USD)**; tắt NAT + worker ngoài giờ demo để xuống dưới ngưỡng Budgets 50 USD |
 
 > [!NOTE]
 > **Giải trình về ngân sách:**
-> Mức chi phí dự toán là **~$52.00 USD/tháng**, hoàn toàn nằm trong trần ngân sách cho phép của đề án môn học (< 100 USD/tháng theo ADR-00) và **thấp hơn hạn mức thẻ thanh toán quốc tế của TV3 Bảo (1.500.000 VNĐ ~ 60 USD)**. 
+> Mức chi phí dự toán khi chạy 24/7 là **~$56.80 USD/tháng**, nằm trong trần ngân sách đề án môn học (< 100 USD/tháng theo ADR-00) và **thấp hơn hạn mức thẻ thanh toán quốc tế của TV3 Bảo (1.500.000 VNĐ ~ 60 USD)**. Biên an toàn chỉ ~3 USD nên bắt buộc tắt tài nguyên ngoài giờ demo (`infra/README.md` mục 5.3) và theo dõi AWS Budgets 25/40/50 USD.
 > 
 > **Các giải pháp tối ưu đã áp dụng:**
-> 1. Dùng NAT Instance `t4g.nano` (~$3.50/tháng) thay cho NAT Gateway (~$32.50/tháng) để giải quyết bài toán egress của App Runner gọi Cognito JWKS.
-> 2. Đặt ECS Worker trong Private Subnet, loại bỏ hoàn toàn phí Public IPv4 ($3.65/tháng).
+> 1. Dùng NAT Instance `t4g.nano` (~$8.30/tháng, đã gồm public IPv4) thay cho NAT Gateway (~$32.40/tháng) để giải quyết bài toán egress của App Runner gọi Cognito JWKS.
+> 2. Đặt ECS Worker trong Private Subnet, không gán public IP cho task (tiết kiệm $3.65/tháng).
 > 3. Tắt instance hoặc container ngoài giờ demo/kiểm thử để đưa chi phí thực tế xuống thấp hơn nữa.
 
 ---
