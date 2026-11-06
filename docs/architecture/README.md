@@ -1,4 +1,4 @@
-# Kiến trúc – Enterprise HR Platform
+# Kiến trúc – HRHelper (HR Enterprise Platform)
 
 Hai tài liệu, hai góc nhìn:
 

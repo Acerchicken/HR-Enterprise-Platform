@@ -1,8 +1,8 @@
-# Business Requirement Description (BRD) – Enterprise HR Platform
+# Business Requirement Description (BRD) – HRHelper (HR Enterprise Platform)
 
 | Mục | Nội dung |
 |---|---|
-| Dự án | Enterprise HR Platform – môn Cloud Application Development |
+| Dự án | HRHelper – HR Enterprise Platform (trước tuần 9 gọi là Enterprise HR Platform) – môn Cloud Application Development |
 | Phiên bản tài liệu | 1.0 |
 | Ngày | 6/11/2026 (tuần 9) |
 | Người soạn | TV1 (Dương), tổng hợp từ tài liệu của cả nhóm tuần 4–9 |
@@ -26,7 +26,7 @@ case, `NFR-n` là yêu cầu phi chức năng, `BR-nn` là business rule chi ti�
 Doanh nghiệp (giả định) khoảng 2.000 nhân viên đang quản lý hồ sơ nhân sự bằng Excel và duyệt đơn nghỉ phép qua email. Hồ
 sơ phân tán, đơn từ thất lạc, việc duyệt chậm và không truy vết được ai đã xem hay sửa dữ liệu nhạy cảm.
 
-Enterprise HR Platform là ứng dụng web nội bộ chạy trên cloud, tập trung **hồ sơ nhân viên, sơ đồ tổ chức, quy trình nghỉ
+HRHelper (HR Enterprise Platform) là ứng dụng web nội bộ chạy trên cloud, tập trung **hồ sơ nhân viên, sơ đồ tổ chức, quy trình nghỉ
 phép, kho tài liệu chính sách và lịch sử thao tác** vào một nơi, có phân quyền theo vai trò và theo quan hệ quản lý, mã hóa
 dữ liệu nhạy cảm và ghi audit mọi thao tác quan trọng.
 

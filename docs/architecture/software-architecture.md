@@ -1,4 +1,4 @@
-# Kiến trúc phần mềm – Enterprise HR Platform
+# Kiến trúc phần mềm – HRHelper (HR Enterprise Platform)
 
 Tài liệu mô tả **bên trong** các khối của hệ thống: cách tổ chức code, module, luồng xử lý một request, dữ liệu, các pattern
 dùng để đảm bảo đúng nghiệp vụ, giao diện web và cách kiểm thử. Các khối chạy ở đâu, mạng, hạ tầng nằm ở
