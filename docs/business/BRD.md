@@ -7,7 +7,7 @@
 | Ngày | 6/11/2026 (tuần 9) |
 | Người soạn | TV1 (Dương), tổng hợp từ tài liệu của cả nhóm tuần 4–9 |
 | Trạng thái | Bản nộp, chờ nhóm và giảng viên góp ý |
-| Tài liệu liên quan | [Kiến trúc tổng quan](../architecture.md) · [Business rule nghỉ phép](leave-rules.md) · [Danh mục loại phép, ngày lễ](leave-types-holidays.md) · [Ma trận phân quyền](../security/access-control-matrix.md) · [Ca kiểm thử](leave-test-cases.md) · [API](../openapi.yaml) |
+| Tài liệu liên quan | [Kiến trúc hệ thống](../architecture/system-architecture.md) · [Kiến trúc phần mềm](../architecture/software-architecture.md) · [Business rule nghỉ phép](leave-rules.md) · [Danh mục loại phép, ngày lễ](leave-types-holidays.md) · [Ma trận phân quyền](../security/access-control-matrix.md) · [Ca kiểm thử](leave-test-cases.md) · [API](../openapi.yaml) |
 
 **Lịch sử thay đổi**
 

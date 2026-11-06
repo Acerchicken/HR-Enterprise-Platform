@@ -8,7 +8,7 @@ model + state machine của Leave, dữ liệu mẫu 2,000 nhân viên, frontend
 
 ## Kiến trúc (tóm tắt)
 
-Kiến trúc đầy đủ (sơ đồ tổng quan, thành phần, luồng nghỉ phép, môi trường, phần chưa quyết định): [`docs/architecture.md`](docs/architecture.md).
+Kiến trúc đầy đủ: [kiến trúc hệ thống](docs/architecture/system-architecture.md) (khối, hạ tầng, NFR, CI/CD) và [kiến trúc phần mềm](docs/architecture/software-architecture.md) (module, code, pattern) – mục lục ở [`docs/architecture/`](docs/architecture/README.md).
 
 - **Modular monolith** (ADR-01): một API NestJS, mỗi module một thư mục và một schema PostgreSQL.
 - **PostgreSQL** (ADR-02): schema `org`, `employee`, `iam`, `leave`, `audit`. Không có foreign key chéo schema.
