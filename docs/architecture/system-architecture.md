@@ -1,4 +1,4 @@
-# Kiến trúc hệ thống – Enterprise HR Platform
+# Kiến trúc hệ thống – HRHelper (HR Enterprise Platform)
 
 Tài liệu mô tả hệ thống **nhìn từ bên ngoài**: hệ thống gồm những khối chạy riêng (container) nào, nói chuyện với ai, chạy ở
 đâu, mạng, bảo mật hạ tầng, sẵn sàng, phục hồi, quan sát, CI/CD và chi phí. Bên trong từng khối được viết ở
@@ -31,7 +31,7 @@ flowchart TB
   hr([HR ~15])
   adm([Quản trị hệ thống 2–3])
 
-  sys[[Enterprise HR Platform]]
+  sys[[HRHelper<br/>HR Enterprise Platform]]
 
   idp[Identity provider OIDC]
   mail[Dịch vụ gửi email]

@@ -1,4 +1,6 @@
-# Enterprise HR Platform
+# HRHelper – HR Enterprise Platform
+
+> **HRHelper** là tên dự án từ tuần 9 (trước đó gọi là Enterprise HR Platform); "HR Enterprise Platform" là chú giải đi kèm.
 
 Đồ án môn Cloud Application Development – đề tài số 3. Hệ thống HR nội bộ cho doanh nghiệp ~2,000 nhân viên:
 hồ sơ nhân viên, sơ đồ tổ chức, đơn nghỉ phép có duyệt, kho tài liệu chính sách, tìm kiếm, audit.

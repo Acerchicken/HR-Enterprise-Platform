@@ -59,5 +59,5 @@ export function buildEmail(type: LeaveEventType, p: LeaveEventPayload, employeeN
   ];
   if (p.comment) lines.push(`Ghi chú: ${p.comment}`);
   lines.push('', `Mã đơn: ${p.requestId}`);
-  return { subject: `[HR] ${TITLE[type]} – ${employeeName}, ${period}`, text: lines.join('\n') };
+  return { subject: `[HRHelper] ${TITLE[type]} – ${employeeName}, ${period}`, text: lines.join('\n') };
 }

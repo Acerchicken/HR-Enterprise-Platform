@@ -63,7 +63,7 @@ Phải có dòng: `Seed xong: 25 phòng ban, 9 chức danh, 2000 nhân viên (14
 | http://localhost:3000/api/v1/health | `{"status":"ok"}` |
 | http://localhost:3000/api/docs | Trang Swagger liệt kê các API |
 | http://localhost:8080 | Trang Keycloak, đăng nhập `admin` / `admin` được; có realm **hr** |
-| http://localhost:5173 | Trang web HR Platform, có nút đăng nhập |
+| http://localhost:5173 | Trang web HRHelper, có nút đăng nhập |
 
 ## Bước 3 – Đăng nhập bằng 4 tài khoản demo
 
