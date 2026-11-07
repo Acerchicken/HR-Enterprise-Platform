@@ -3,6 +3,7 @@
  * Xem .env.example ở thư mục backend để biết giá trị mặc định khi chạy local.
  */
 export type AuthMode = 'oidc' | 'dev';
+export type QueueDriver = 'rabbitmq' | 'sqs' | 'none';
 /** off: không TLS (local) · require: mã hóa, không kiểm tra chứng chỉ · verify: mã hóa và kiểm tra theo CA trong DB_SSL_CA_FILE. */
 export type DbSslMode = 'off' | 'require' | 'verify';
 
@@ -37,8 +38,16 @@ export interface AppConfig {
   };
   /** Khóa AES-256 (32 byte, base64) để mã hóa trường nhạy cảm ở tầng ứng dụng. */
   fieldEncryptionKey: string;
-  /** RabbitMQ cho outbox publisher và worker. Để trống thì API không đẩy event (vd khi chạy test). */
-  rabbitmqUrl: string | null;
+  /**
+   * Queue cho outbox publisher và worker. QUEUE_DRIVER=rabbitmq (local) hoặc sqs (AWS); không đặt thì suy ra:
+   * có RABBITMQ_URL → rabbitmq, có SQS_QUEUE_URL → sqs, không có gì → none (API không đẩy event, vd khi chạy test).
+   */
+  queue: {
+    driver: QueueDriver;
+    rabbitmqUrl: string | null;
+    sqsQueueUrl: string | null;
+    awsRegion: string | null;
+  };
   smtp: {
     host: string;
     port: number;
@@ -57,6 +66,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
   if (mode === 'dev' && nodeEnv === 'production') {
     throw new Error('AUTH_MODE=dev không được phép khi NODE_ENV=production');
   }
+  const queue = loadQueue(env);
   const issuer = env.OIDC_ISSUER ?? 'http://localhost:8080/realms/hr';
   const cfg: AppConfig = {
     nodeEnv,
@@ -81,7 +91,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
       userinfoUrl: env.OIDC_USERINFO_URL || null,
     },
     fieldEncryptionKey: env.FIELD_ENCRYPTION_KEY ?? DEV_FIELD_ENCRYPTION_KEY,
-    rabbitmqUrl: env.RABBITMQ_URL || null,
+    queue,
     smtp: {
       host: env.SMTP_HOST ?? 'localhost',
       port: Number(env.SMTP_PORT ?? 1025),
@@ -112,6 +122,21 @@ function assertValid(cfg: AppConfig, env: NodeJS.ProcessEnv, needsAuth: boolean)
     if (needsAuth && cfg.auth.mode === 'oidc' && !env.OIDC_ISSUER) problems.push('thiếu OIDC_ISSUER');
   }
   if (problems.length) throw new Error(`Cấu hình không hợp lệ: ${problems.join('; ')}`);
+}
+
+function loadQueue(env: NodeJS.ProcessEnv): AppConfig['queue'] {
+  const rabbitmqUrl = env.RABBITMQ_URL || null;
+  const sqsQueueUrl = env.SQS_QUEUE_URL || null;
+  const awsRegion = env.AWS_REGION || null;
+  const driver = (env.QUEUE_DRIVER || (rabbitmqUrl ? 'rabbitmq' : sqsQueueUrl ? 'sqs' : 'none')) as QueueDriver;
+  if (!['rabbitmq', 'sqs', 'none'].includes(driver)) {
+    throw new Error(`QUEUE_DRIVER không hợp lệ: ${driver} (chỉ nhận rabbitmq, sqs, none)`);
+  }
+  if (driver === 'rabbitmq' && !rabbitmqUrl) throw new Error('QUEUE_DRIVER=rabbitmq cần RABBITMQ_URL');
+  if (driver === 'sqs' && (!sqsQueueUrl || !awsRegion)) {
+    throw new Error('QUEUE_DRIVER=sqs cần SQS_QUEUE_URL và AWS_REGION');
+  }
+  return { driver, rabbitmqUrl, sqsQueueUrl, awsRegion };
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
