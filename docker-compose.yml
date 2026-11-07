@@ -69,6 +69,7 @@ services:
     build: ./backend
     environment:
       NODE_ENV: production
+      ALLOW_DEV_SECRETS: "true"   # chỉ cho local: cho phép khóa dev; staging/production phải có secret thật
       PORT: 3000
       CORS_ORIGIN: http://localhost:5173
       DB_HOST: db
@@ -106,6 +107,7 @@ services:
     command: ["node", "dist/worker/main.js"]
     environment:
       NODE_ENV: production
+      ALLOW_DEV_SECRETS: "true"   # chỉ cho local: cho phép khóa dev; staging/production phải có secret thật
       DB_HOST: db
       DB_USER: hr
       DB_PASSWORD: hr
@@ -131,6 +133,7 @@ services:
     command: ["node", "dist/database/seed.js"]
     environment:
       NODE_ENV: production
+      ALLOW_DEV_SECRETS: "true"   # chỉ cho local: cho phép khóa dev; staging/production phải có secret thật
       DB_HOST: db
       DB_USER: hr
       DB_PASSWORD: hr
