@@ -31,16 +31,20 @@ flowchart TD
     B -- Không --> X2[Từ chối gửi đơn; không giữ chỗ]
     B -- Có --> C[SUBMITTED: giữ chỗ pending của chủ đơn; ghi riêng người tạo và chủ đơn; gửi email cho nhân viên]
     C --> G{Nhân viên hủy trước khi có quyết định?}
-    G -- Có --> H[CANCELLED: trả pending]
-    G -- Không --> D{Có quản lý trực tiếp hoặc người duyệt thay hợp lệ?}
-    D -- Chưa có --> W[Chờ người duyệt hợp lệ]
+    G -- Có --> CXL[CANCELLED: trả pending]
+    G -- Không --> D{Chủ đơn là CEO?}
+    D -- Có --> E[HR duyệt đơn CEO]
+    D -- Không --> F{Có quản lý trực tiếp hoặc người duyệt thay hợp lệ?}
+    F -- Chưa có --> W[Chờ người duyệt hợp lệ]
     W --> G
-    D -- Có --> E{Quản lý/người thay quyết định; HR nếu chủ đơn là CEO}
-    E -- Từ chối --> R[REJECTED: trả pending]
-    E -- Duyệt --> F[APPROVED]
-    F --> I[HR kiểm tra và hoàn tất]
-    I --> J[COMPLETED: pending chuyển sang used]
-    F -. Nhân viên yêu cầu hủy sau duyệt .-> K[Không tự hủy; HR xử lý ngoại lệ ngoài MVP]
+    F -- Có --> MGR{Quản lý/người thay quyết định}
+    E --> I{Kết quả quyết định}
+    MGR --> I
+    I -- Từ chối --> R[REJECTED: trả pending]
+    I -- Duyệt --> J[APPROVED]
+    J --> L[HR kiểm tra và hoàn tất]
+    L --> M[COMPLETED: pending chuyển sang used]
+    J -. Nhân viên yêu cầu hủy sau duyệt .-> K[Không tự hủy; HR xử lý ngoại lệ ngoài MVP]
 ```
 
 Ghi chú: thao tác lặp cùng quyết định trên đơn đã ở trạng thái đích là idempotent, không đổi số dư; quyết định ngược lại bị chặn do xung đột trạng thái (BR-05, BR-11).
