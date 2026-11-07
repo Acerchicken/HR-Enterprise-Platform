@@ -56,16 +56,43 @@ export class RabbitMqEventBus implements EventBus {
   }
 }
 
-/** Nghe queue `notification.leave` (bind `leave.*`); handler lỗi thì nack không requeue → DLQ. */
+/**
+ * Nghe queue `notification.leave` (bind `leave.*`); handler lỗi thì nack không requeue → DLQ.
+ * Message nằm trong queue durable nên worker kết nối lại vẫn nhận được event gửi lúc mất kết nối.
+ */
 export class RabbitMqEventConsumer implements EventConsumer {
   private readonly logger = new Logger(RabbitMqEventConsumer.name);
   private connection: amqp.ChannelModel | null = null;
+  private closing = false;
 
-  constructor(private readonly url: string) {}
+  constructor(
+    private readonly url: string,
+    private readonly retryMs = 5000,
+  ) {}
 
+  /** Kết nối lần đầu phải thành công (lỗi thì process dừng); mất kết nối sau đó thì tự kết nối lại. */
   async start(handler: EventHandler): Promise<void> {
-    this.connection = await amqp.connect(this.url);
-    const ch = await this.connection.createChannel();
+    this.closing = false;
+    await this.connect(handler);
+  }
+
+  async close(): Promise<void> {
+    this.closing = true;
+    await this.connection?.close().catch(() => undefined);
+    this.connection = null;
+  }
+
+  private async connect(handler: EventHandler) {
+    const connection = await amqp.connect(this.url);
+    connection.on('error', () => undefined);
+    connection.on('close', () => {
+      this.connection = null;
+      if (this.closing) return;
+      this.logger.warn(`Mất kết nối RabbitMQ, thử lại sau ${this.retryMs / 1000} giây`);
+      this.reconnect(handler);
+    });
+    this.connection = connection;
+    const ch = await connection.createChannel();
     await ch.assertExchange(EVENTS_EXCHANGE, 'topic', { durable: true });
     await ch.assertQueue(DEAD_LETTER_QUEUE, { durable: true });
     await ch.assertQueue(QUEUE, { durable: true, deadLetterExchange: '', deadLetterRoutingKey: DEAD_LETTER_QUEUE });
@@ -85,8 +112,13 @@ export class RabbitMqEventConsumer implements EventConsumer {
     this.logger.log(`Đang nghe hàng đợi RabbitMQ ${QUEUE}`);
   }
 
-  async close(): Promise<void> {
-    await this.connection?.close().catch(() => undefined);
-    this.connection = null;
+  private reconnect(handler: EventHandler) {
+    setTimeout(() => {
+      if (this.closing) return;
+      this.connect(handler).catch((e) => {
+        this.logger.warn(`Chưa kết nối lại được RabbitMQ: ${e instanceof Error ? e.message : e}`);
+        this.reconnect(handler);
+      });
+    }, this.retryMs);
   }
 }
