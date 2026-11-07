@@ -451,7 +451,7 @@ paths:
       tags: *a5
       security: *a6
 info:
-  title: Enterprise HR Platform API
+  title: HRHelper API (HR Enterprise Platform)
   description: "REST API /api/v1. Xác thực: Bearer JWT do Keycloak (OIDC) cấp.
     Lỗi: {code, message, traceId}."
   version: 0.1.0 (tuần 7)
