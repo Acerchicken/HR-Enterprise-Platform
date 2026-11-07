@@ -40,7 +40,12 @@ export interface AppConfig {
   };
 }
 
-export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+export interface LoadOptions {
+  /** false cho process worker: worker không xác thực token nên không bắt buộc OIDC_ISSUER. */
+  needsAuth?: boolean;
+}
+
+export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptions = {}): AppConfig {
   const nodeEnv = env.NODE_ENV ?? 'development';
   const mode = (env.AUTH_MODE ?? 'oidc') as AuthMode;
   if (mode === 'dev' && nodeEnv === 'production') {
@@ -74,7 +79,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       from: env.SMTP_FROM ?? 'no-reply@hr.local',
     },
   };
-  assertValid(cfg, env);
+  assertValid(cfg, env, opts.needsAuth ?? true);
   return cfg;
 }
 
@@ -83,7 +88,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
  * Production (NODE_ENV=production) bắt buộc có secret thật; chỉ docker-compose local được bỏ qua bằng ALLOW_DEV_SECRETS=true.
  * Thông báo lỗi chỉ nêu tên biến, không in giá trị.
  */
-function assertValid(cfg: AppConfig, env: NodeJS.ProcessEnv) {
+function assertValid(cfg: AppConfig, env: NodeJS.ProcessEnv, needsAuth: boolean) {
   const problems: string[] = [];
   if (Buffer.from(cfg.fieldEncryptionKey, 'base64').length !== 32) {
     problems.push('FIELD_ENCRYPTION_KEY phải là 32 byte mã hóa base64');
@@ -95,7 +100,7 @@ function assertValid(cfg: AppConfig, env: NodeJS.ProcessEnv) {
     if (!env.FIELD_ENCRYPTION_KEY) problems.push('thiếu FIELD_ENCRYPTION_KEY');
     else if (env.FIELD_ENCRYPTION_KEY === DEV_FIELD_ENCRYPTION_KEY) problems.push('FIELD_ENCRYPTION_KEY đang là khóa dev');
     if (!env.DB_PASSWORD) problems.push('thiếu DB_PASSWORD');
-    if (cfg.auth.mode === 'oidc' && !env.OIDC_ISSUER) problems.push('thiếu OIDC_ISSUER');
+    if (needsAuth && cfg.auth.mode === 'oidc' && !env.OIDC_ISSUER) problems.push('thiếu OIDC_ISSUER');
   }
   if (problems.length) throw new Error(`Cấu hình không hợp lệ: ${problems.join('; ')}`);
 }

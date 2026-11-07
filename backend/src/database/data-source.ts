@@ -3,7 +3,8 @@ import { readFileSync } from 'fs';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { loadConfig } from '../config/config';
 
-const cfg = loadConfig();
+// Chỉ cần phần database; không kiểm tra cấu hình xác thực (file này dùng chung cho API, worker, migration).
+const cfg = loadConfig(process.env, { needsAuth: false });
 
 /** Dùng chung cho app (TypeOrmModule) và CLI migration/seed. */
 export const dataSourceOptions: DataSourceOptions = {

@@ -25,6 +25,11 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ ...prod, DB_PASSWORD: undefined })).not.toThrow(/secret/);
   });
 
+  it('worker không xác thực token nên không bắt buộc OIDC_ISSUER, vẫn bắt buộc secret', () => {
+    expect(() => loadConfig({ ...prod, OIDC_ISSUER: undefined }, { needsAuth: false })).not.toThrow();
+    expect(() => loadConfig({ ...prod, DB_PASSWORD: undefined }, { needsAuth: false })).toThrow('thiếu DB_PASSWORD');
+  });
+
   it('docker-compose local được dùng khóa dev khi đặt ALLOW_DEV_SECRETS=true', () => {
     expect(() => loadConfig({ NODE_ENV: 'production', ALLOW_DEV_SECRETS: 'true' })).not.toThrow();
   });
