@@ -26,8 +26,14 @@ export interface AppConfig {
     mode: AuthMode;
     issuer: string;
     jwksUri: string;
-    /** Các client (claim azp) được phép gọi API, ví dụ hr-web (SPA) và hr-api-test (curl/Postman). */
+    /** Các client được phép gọi API, ví dụ hr-web (SPA) và hr-api-test (curl/Postman). */
     allowedClients: string[];
+    /** Claim chứa client id: `azp` (Keycloak) hoặc `client_id` (access token Cognito). */
+    clientClaim: string;
+    /** Đường dẫn claim chứa danh sách role: `realm_access.roles` (Keycloak) hoặc `cognito:groups` (Cognito). */
+    rolesClaim: string;
+    /** Endpoint userinfo của IdP; dùng khi access token không có email (Cognito). */
+    userinfoUrl: string | null;
   };
   /** Khóa AES-256 (32 byte, base64) để mã hóa trường nhạy cảm ở tầng ứng dụng. */
   fieldEncryptionKey: string;
@@ -70,6 +76,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
       issuer,
       jwksUri: env.OIDC_JWKS_URI ?? `${issuer}/protocol/openid-connect/certs`,
       allowedClients: (env.OIDC_ALLOWED_CLIENTS ?? 'hr-web').split(',').map((c) => c.trim()),
+      clientClaim: env.OIDC_CLIENT_CLAIM ?? 'azp',
+      rolesClaim: env.OIDC_ROLES_CLAIM ?? 'realm_access.roles',
+      userinfoUrl: env.OIDC_USERINFO_URL || null,
     },
     fieldEncryptionKey: env.FIELD_ENCRYPTION_KEY ?? DEV_FIELD_ENCRYPTION_KEY,
     rabbitmqUrl: env.RABBITMQ_URL || null,
