@@ -3,6 +3,11 @@
  * Xem .env.example ở thư mục backend để biết giá trị mặc định khi chạy local.
  */
 export type AuthMode = 'oidc' | 'dev';
+/** off: không TLS (local) · require: mã hóa, không kiểm tra chứng chỉ · verify: mã hóa và kiểm tra theo CA trong DB_SSL_CA_FILE. */
+export type DbSslMode = 'off' | 'require' | 'verify';
+
+/** Khóa chỉ dùng cho dev/test; production dùng khóa này là lỗi (xem assertProductionSecrets). */
+export const DEV_FIELD_ENCRYPTION_KEY = 'ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=';
 
 export interface AppConfig {
   nodeEnv: string;
@@ -14,6 +19,8 @@ export interface AppConfig {
     user: string;
     password: string;
     database: string;
+    ssl: DbSslMode;
+    sslCaFile: string | null;
   };
   auth: {
     mode: AuthMode;
@@ -39,14 +46,19 @@ export interface AppConfig {
   };
 }
 
-export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+export interface LoadOptions {
+  /** false cho process worker: worker không xác thực token nên không bắt buộc OIDC_ISSUER. */
+  needsAuth?: boolean;
+}
+
+export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptions = {}): AppConfig {
   const nodeEnv = env.NODE_ENV ?? 'development';
   const mode = (env.AUTH_MODE ?? 'oidc') as AuthMode;
   if (mode === 'dev' && nodeEnv === 'production') {
     throw new Error('AUTH_MODE=dev không được phép khi NODE_ENV=production');
   }
   const issuer = env.OIDC_ISSUER ?? 'http://localhost:8080/realms/hr';
-  return {
+  const cfg: AppConfig = {
     nodeEnv,
     port: Number(env.PORT ?? 3000),
     corsOrigin: env.CORS_ORIGIN ?? 'http://localhost:5173',
@@ -56,6 +68,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       user: env.DB_USER ?? 'hr',
       password: env.DB_PASSWORD ?? 'hr',
       database: env.DB_NAME ?? 'hr',
+      ssl: (env.DB_SSL ?? 'off') as DbSslMode,
+      sslCaFile: env.DB_SSL_CA_FILE || null,
     },
     auth: {
       mode,
@@ -66,8 +80,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       rolesClaim: env.OIDC_ROLES_CLAIM ?? 'realm_access.roles',
       userinfoUrl: env.OIDC_USERINFO_URL || null,
     },
-    fieldEncryptionKey:
-      env.FIELD_ENCRYPTION_KEY ?? 'ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=',
+    fieldEncryptionKey: env.FIELD_ENCRYPTION_KEY ?? DEV_FIELD_ENCRYPTION_KEY,
     rabbitmqUrl: env.RABBITMQ_URL || null,
     smtp: {
       host: env.SMTP_HOST ?? 'localhost',
@@ -75,6 +88,30 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       from: env.SMTP_FROM ?? 'no-reply@hr.local',
     },
   };
+  assertValid(cfg, env, opts.needsAuth ?? true);
+  return cfg;
+}
+
+/**
+ * Kiểm tra cấu hình khi khởi động để lỗi hiện ngay, không đợi tới request đầu tiên.
+ * Production (NODE_ENV=production) bắt buộc có secret thật; chỉ docker-compose local được bỏ qua bằng ALLOW_DEV_SECRETS=true.
+ * Thông báo lỗi chỉ nêu tên biến, không in giá trị.
+ */
+function assertValid(cfg: AppConfig, env: NodeJS.ProcessEnv, needsAuth: boolean) {
+  const problems: string[] = [];
+  if (Buffer.from(cfg.fieldEncryptionKey, 'base64').length !== 32) {
+    problems.push('FIELD_ENCRYPTION_KEY phải là 32 byte mã hóa base64');
+  }
+  if (!['off', 'require', 'verify'].includes(cfg.db.ssl)) problems.push('DB_SSL phải là off, require hoặc verify');
+  if (cfg.db.ssl === 'verify' && !cfg.db.sslCaFile) problems.push('DB_SSL=verify cần DB_SSL_CA_FILE');
+
+  if (cfg.nodeEnv === 'production' && env.ALLOW_DEV_SECRETS !== 'true') {
+    if (!env.FIELD_ENCRYPTION_KEY) problems.push('thiếu FIELD_ENCRYPTION_KEY');
+    else if (env.FIELD_ENCRYPTION_KEY === DEV_FIELD_ENCRYPTION_KEY) problems.push('FIELD_ENCRYPTION_KEY đang là khóa dev');
+    if (!env.DB_PASSWORD) problems.push('thiếu DB_PASSWORD');
+    if (needsAuth && cfg.auth.mode === 'oidc' && !env.OIDC_ISSUER) problems.push('thiếu OIDC_ISSUER');
+  }
+  if (problems.length) throw new Error(`Cấu hình không hợp lệ: ${problems.join('; ')}`);
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
