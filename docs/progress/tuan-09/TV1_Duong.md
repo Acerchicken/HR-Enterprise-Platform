@@ -65,6 +65,57 @@ Vai trò: code chính, review trên nhánh và ghi góp ý vào file cá nhân c
   cho `apply`.
 - T2 (9/11): điền báo cáo, PR `dev` → `main` bằng merge commit, tag `week-09` và tạo Release.
 
+## Chuẩn bị cho tuần 10 (đã chốt 5/11, đưa vào kế hoạch tuần 10)
+
+### `feat/hr-employee-form` – HR tạo và sửa hồ sơ nhân viên trên giao diện
+
+Hiện API đã có (`POST /employees`, `PATCH /employees/{id}`, chỉ HR sửa mọi trường) nhưng giao diện chỉ cho xem. Việc này hoàn
+thiện phần "HR cập nhật hồ sơ" của UC1.
+
+**Màn hình (chỉ HR):**
+- `/employees/new`: tạo nhân viên. Nút "Tạo nhân viên" ở trang Danh bạ.
+- `/employees/:id/edit`: sửa hồ sơ, **dùng chung một form** với màn hình tạo. Nút "Sửa hồ sơ" ở trang chi tiết.
+- Trang "Hồ sơ của tôi" của nhân viên giữ form rút gọn (điện thoại, địa chỉ) nhưng dùng cùng bộ mô tả trường bên dưới.
+
+**Trường, chia nhóm:**
+- Cơ bản: mã nhân viên, họ tên, email công ty, điện thoại, ngày sinh, địa chỉ.
+- Công việc:
+  - Phòng ban (chọn từ `GET /departments`), chức danh (chọn từ `GET /positions`), ngày vào làm; trạng thái chỉ hiện khi sửa.
+  - **Quản lý trực tiếp:** ô tìm kiếm gợi ý từ `GET /employees?q=`, bỏ nhân viên `TERMINATED`, gợi ý sẵn trưởng phòng của
+    phòng ban vừa chọn.
+  - Bắt buộc chọn quản lý, trừ chức danh CEO (quyết định issue #22). Lỗi vòng lặp quản lý (backend đã chặn) hiện ngay dưới ô.
+- Nhạy cảm (nhóm riêng, chỉ HR): CCCD, số tài khoản, lương. Cần mở rộng `CreateEmployeeDto` để nhận các trường này khi tạo
+  (hiện chỉ `PATCH` nhận); audit chỉ ghi tên trường, không ghi giá trị như khi sửa.
+
+**Thiết kế để sau này thêm trường hồ sơ ít phải sửa code:**
+1. **Một nguồn mô tả trường duy nhất ở frontend:** `frontend/src/pages/employee/employee-fields.ts`, là mảng
+   `FieldDef { key, label, group, type, required, sensitive, editableBy, showOnCreate, options? }`. Giá trị `type` gồm
+   `text`, `email`, `date`, `select`, `employee`, `money`… Form tạo/sửa, trang chi tiết và form rút gọn đều render từ mảng này.
+   Thêm một trường thường chỉ cần thêm một dòng `FieldDef`.
+2. **Component input theo `type`** (`FieldInput`), không viết JSX riêng cho từng trường. Loại input mới, ví dụ upload file,
+   chỉ thêm một nhánh ở đây.
+3. **Kiểu dữ liệu sinh từ OpenAPI:** dùng `openapi-typescript` sinh type từ `docs/openapi.yaml` (script `npm run gen:api`),
+   thay cho interface viết tay trong `client.ts`. Thêm trường ở DTO backend → `npm run openapi` → `npm run gen:api` →
+   TypeScript báo các chỗ chưa xử lý.
+4. **Backend vẫn là nơi validate** (class-validator trong DTO), frontend chỉ kiểm tra cơ bản (bắt buộc, định dạng).
+   `ApiErrorFilter` trả thêm `fields: { <tên trường>: <lỗi> }` cho lỗi validation để form hiện lỗi đúng ô.
+5. **Quyền sửa theo vai trò để ở một chỗ:** `employee-access.ts` (`SELF_EDITABLE`, trường nhạy cảm) là nguồn chuẩn.
+   Unit test kiểm `editableBy` trong `FieldDef` khớp với `employee-access.ts`, để hai bên không lệch.
+6. **Checklist "thêm một trường hồ sơ"** ghi vào `CONVENTIONS.md`: migration + entity + DTO + `FieldDef` + `npm run openapi` /
+   `gen:api` + dòng trong ma trận phân quyền (TV2) + ca kiểm thử (TV4). Trường nhạy cảm thêm bước `FieldCrypto`.
+
+**Kiểm thử:**
+- e2e:
+  - HR tạo nhân viên có quản lý → 201.
+  - Nhân viên thường gọi `POST /employees` → 403.
+  - Chức danh khác CEO mà không có quản lý → 400 (sau khi code quyết định issue #22).
+  - Tạo kèm trường nhạy cảm: audit chỉ ghi tên trường.
+- Chạy thử giao diện với `hr`, `employee` và `admin`: `employee` và `admin` không thấy nút tạo/sửa, và gọi thẳng URL thì
+  bị chặn.
+
+**Phụ thuộc:** quyết định issue #22 (nhánh `docs/leave-rules-br06` của TV2); TV2 cập nhật ma trận phân quyền; TV4 viết ca
+kiểm thử cho màn hình mới.
+
 ## Cách làm trên git (quy trình mới)
 
 ```bash
