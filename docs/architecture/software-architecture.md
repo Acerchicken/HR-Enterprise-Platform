@@ -25,7 +25,7 @@ Cập nhật: 6/11/2026 (tuần 9), theo code trên nhánh `dev`. Trạng thái:
 | Xác thực | `jose` (kiểm JWT bằng JWKS) | OIDC resource server |
 | Kiểm tra dữ liệu vào | `class-validator`, `class-transformer` | DTO, `ValidationPipe` |
 | Tài liệu API | `@nestjs/swagger` → `docs/openapi.yaml` | Sinh từ code (`npm run openapi`) |
-| Queue, email | `amqplib` (RabbitMQ), `nodemailer` (SMTP) | Publisher outbox, worker |
+| Queue, email | `amqplib` (RabbitMQ, local), `@aws-sdk/client-sqs` (SQS, AWS) chọn bằng `QUEUE_DRIVER` qua `src/messaging/`; `nodemailer` (SMTP) | Publisher outbox, worker |
 | Frontend | React 18, React Router 6, Vite 5 | SPA |
 | Đăng nhập web | `oidc-client-ts` | Authorization Code + PKCE |
 | Kiểm thử | Jest, Supertest | Unit test, e2e với database thật |
