@@ -15,6 +15,9 @@ trong luồng được đánh giá.
 flowchart LR
     subgraph Internet["Ranh giới không tin cậy: trình duyệt và Internet"]
         Browser["Trình duyệt / SPA"]
+    end
+
+    subgraph IdentityBoundary["Ranh giới dịch vụ định danh bên ngoài"]
         IdP["Keycloak (local)"]
         Cognito["Cognito (đích cloud, chưa triển khai)"]
     end
@@ -50,9 +53,10 @@ flowchart LR
     SQS -. "Event nghỉ phép trên cloud" .-> Worker
 ```
 
-Ranh giới cần bảo vệ: client Internet → API công khai; API/publisher → PostgreSQL; publisher → broker; worker → PostgreSQL
-và SMTP. Mũi tên nét đứt là thành phần tương lai, không phải đường đi đang chạy. DFD không hàm ý giao tiếp local hiện có
-TLS; cấu hình local dùng HTTP và SMTP không mã hóa.
+Ranh giới cần bảo vệ: client Internet → API công khai; trình duyệt ↔ dịch vụ định danh; API/publisher → PostgreSQL;
+publisher → broker; worker → PostgreSQL và SMTP. IdP là dịch vụ định danh bên ngoài, có ranh giới tin cậy riêng (không
+đồng nghĩa với tin cậy tuyệt đối). Mũi tên nét đứt là thành phần tương lai, không phải đường đi đang chạy. DFD không hàm ý
+giao tiếp local hiện có TLS; cấu hình local dùng HTTP và SMTP không mã hóa.
 
 ## Biện pháp hiện có
 
@@ -84,7 +88,7 @@ TV1 (API/web/worker), TV3 (cloud/IaC/CI), TV2 (nghiệp vụ).
 | T-05 | Đăng nhập | Denial of service | Flood request đăng nhập/API hoặc làm IdP/JWKS/DB quá tải; mỗi request xác thực còn resolve tài khoản và role từ DB. Tài sản: khả dụng của API và đăng nhập. | JWKS được cache; lỗi token bị trả Unauthorized; pool/dependency health được cấu hình trong local compose. | Chưa thấy rate limit, giới hạn concurrency, hoặc bảo vệ ingress trong ứng dụng. Đặt throttling/WAF tại edge, giới hạn request/body và theo dõi độ trễ IdP/DB. | Trung bình | TV1, TV3 |
 | T-06 | Đăng nhập | Elevation of privilege | Gán nhầm role HR/ADMIN trong IdP hoặc `role_assignment` sẽ trao quyền đọc dữ liệu HR hoặc sửa tổ chức. | Chỉ nhận role thuộc danh sách cho phép; role trong token phải qua xác minh chữ ký; `@Roles` chặn endpoint. | Không thấy quy trình phê duyệt/review cấp role trong luồng runtime. Hạn chế người được cấp role đặc quyền, audit mọi thay đổi role và kiểm thử sai cấu hình claim/assignment. | Cao | TV1, TV3 |
 | T-07 | Xem/sửa hồ sơ | Spoofing | Kẻ mạo danh chủ hồ sơ hoặc HR có thể đọc/sửa thông tin cá nhân và trường nhạy cảm. | Bearer token xác minh; `viewLevel` và `forbiddenFields` giới hạn hồ sơ theo actor, chủ hồ sơ, quản lý trực tiếp và HR. | Rủi ro token bị chiếm đoạt như T-01 vẫn áp dụng; thêm TLS, bảo vệ phiên HR và MFA/conditional access tại IdP nếu được hỗ trợ. | Cao | TV1, TV3 |
-| T-08 | Xem/sửa hồ sơ | Tampering | Người gọi sửa ID hồ sơ, field hoặc `version` để vượt quyền hoặc ghi đè cập nhật đồng thời. | DTO whitelist/forbid field lạ; service kiểm tra quyền theo target; transaction khóa dòng; version sai bị từ chối nếu gửi. | `version` là tùy chọn nên client bỏ qua có thể ghi trên dữ liệu mới hơn mà không phát hiện xung đột. Bắt buộc version cho cập nhật nhạy cảm/đồng thời và test đổi target ID, field bị cấm, `managerId: null`. | Trung bình | TV1 |
+| T-08 | Xem/sửa hồ sơ | Tampering | Người gọi sửa ID hồ sơ hoặc field để thử cập nhật hồ sơ ngoài quyền; nếu cập nhật đồng thời mà không gửi `version`, thay đổi mới hơn có thể bị ghi đè mà không phát hiện xung đột. | DTO whitelist/forbid field lạ; service kiểm tra quyền theo target; transaction khóa dòng; version sai bị từ chối nếu gửi. | `version` là tùy chọn, nên chỉ kiểm soát xung đột khi client gửi giá trị hiện hành. Đây là rủi ro mất cập nhật, không phải vượt quyền. Bắt buộc version ở các luồng cần optimistic concurrency và test đổi target ID, field bị cấm, version cũ, `managerId: null`. | Trung bình | TV1 |
 | T-09 | Xem/sửa hồ sơ | Repudiation | Người dùng phủ nhận đã đọc hoặc sửa hồ sơ. Tài sản: bằng chứng truy cập và lịch sử thay đổi. | Cập nhật và HR đọc trường nhạy cảm có audit; cập nhật ghi cùng transaction; audit append-only ở DB. | Đọc hồ sơ/danh bạ thường không audit; audit trigger không chống DB superuser; `X-Trace-Id` do client cung cấp có thể bị tự chọn. Xác định trường hợp cần audit đọc, dùng trace ID server-generated/chuẩn hóa và sao chép audit bất biến nếu cần chống DBA. | Trung bình | TV1, TV3 |
 | T-10 | Xem/sửa hồ sơ | Information disclosure | Trường CCCD/tài khoản/lương hoặc PII có thể lộ qua DB, audit hoặc API. Tài sản: dữ liệu cá nhân và dữ liệu nhân sự. | Trường nhạy cảm mã hóa AES-256-GCM; chỉ HR được giải mã qua API; audit che giá trị trường nhạy cảm; matrix quy định phạm vi danh bạ. | Cấu hình hiện có khóa mã hóa mặc định dùng chung trong code/config local; audit cập nhật vẫn ghi một số PII thường như địa chỉ/ngày sinh, và HR/ADMIN có thể đọc audit. Thay khóa bằng secret manager/KMS, không dùng khóa mặc định, giảm/mask PII trong audit và xác nhận quyền đọc audit. | Cao | TV1, TV3 |
 | T-11 | Xem/sửa hồ sơ | Denial of service | Truy vấn danh bạ/phòng ban liên tục hoặc quét trang có thể tiêu thụ DB và làm API chậm. Tài sản: khả dụng DB/API. | Danh bạ phân trang, giới hạn `size` tối đa 100; truy vấn lọc trạng thái và có thứ tự ổn định. | Chưa thấy rate limit, query timeout hoặc kiểm soát tần suất tìm kiếm. Thêm throttling, timeout/index phù hợp và cảnh báo tải truy vấn. | Trung bình | TV1 |
