@@ -13,15 +13,18 @@ Phân vai theo ADR-11: TV1 Duong code, TV2 Thanh nghiệp vụ + bảo mật ngh
 
 ## Quy trình tuần này (mới)
 
-Áp dụng [`CONVENTIONS.md` mục 6](../../CONVENTIONS.md#quy-trình-cho-một-việc-từ-tuần-9):
+Áp dụng [`CONVENTIONS.md` mục 6](../../CONVENTIONS.md#quy-trình-cho-một-việc):
 
-1. Tách nhánh từ `dev`, làm xong thì push nhánh và **gửi link so sánh** vào nhóm chat:
-   `https://github.com/Acerchicken/HR-Enterprise-Platform/compare/dev...<tên-nhánh>`. Chưa mở PR.
-2. Người review ghi góp ý vào mục **"Góp ý review"** ở cuối file cá nhân của người làm (TV1 cập nhật lên `dev`).
-3. Sửa trên nhánh cho tới khi không còn góp ý "cần sửa", rồi mới **mở PR** vào `dev`. PR mở ra là phải merge được.
-4. PR không đạt sẽ bị đóng. Không mở PR thứ hai cho cùng một việc.
+1. Tách nhánh từ `dev`, làm xong thì push nhánh và **mở PR** vào `dev` (chưa xong mà muốn xem sớm thì mở Draft PR).
+2. Người review góp ý **trên PR** ("Request changes" nếu có góp ý "cần sửa").
+3. Người làm sửa trên cùng nhánh, `git push` là PR tự cập nhật, rồi bấm "Re-request review". Lặp tới khi được approve,
+   Duong squash merge.
+4. Mỗi việc một PR. Không đóng PR chưa đạt để mở PR mới; chỉ đóng khi việc bị hủy, làm sai hướng hoàn toàn hoặc PR trùng.
 
-Trong bảng dưới, **"Gửi review"** là hạn gửi link nhánh, **"Merge"** là hạn PR đạt và được merge (có 1 ngày để sửa theo góp ý).
+> Đổi ngày 7/11: từ 2/11 tới 7/11 nhóm thử review trên nhánh và ghi góp ý vào file cá nhân trước khi mở PR. Từ 7/11 quay lại
+> review trên PR như trên. Góp ý cũ trong mục "Góp ý review" của file cá nhân giữ làm lịch sử.
+
+Trong bảng dưới, **"Gửi review"** là hạn mở PR, **"Merge"** là hạn PR được approve và merge (có 1 ngày để sửa theo góp ý).
 
 ## Kế hoạch tuần 9 theo nhánh
 

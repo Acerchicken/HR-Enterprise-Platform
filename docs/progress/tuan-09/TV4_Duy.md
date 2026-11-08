@@ -22,13 +22,13 @@ Mẫu: mục 1 của [`docs/business/test-report-tuan-08.md`](../../business/tes
 
 | Hạn | Việc |
 |---|---|
-| **T3 (3/11), 21:00** | Gửi link nhánh `docs/test-report-leave` (kiểm thử màn hình nghỉ phép) |
-| T4 (4/11) | Sửa theo góp ý, mở PR, được merge |
+| **T3 (3/11), 21:00** | Mở PR nhánh `docs/test-report-leave` (kiểm thử màn hình nghỉ phép) |
+| T4 (4/11) | Sửa theo góp ý trên PR, được merge |
 | T5 (5/11) | Đọc ma trận phân quyền của TV2 (sau khi được merge), góp ý nếu thấy dòng nào không kiểm thử được |
-| **T6 (6/11), 21:00** | Gửi link nhánh `docs/security-test-cases` (ca kiểm thử phân quyền + kết quả chạy trên local) |
-| T7 (7/11) | Sửa theo góp ý, mở PR, được merge |
-| **CN (8/11), 21:00** | Gửi link nhánh `docs/test-report-staging` (smoke test staging), nếu staging đã lên lúc 12:00 |
-| Trong 24 giờ kể từ khi nhận link | Review nhánh `test/access-control-e2e` của TV1 và `docs/access-control-matrix`, `docs/leave-rules-br06` của TV2 |
+| **T6 (6/11), 21:00** | Mở PR nhánh `docs/security-test-cases` (ca kiểm thử phân quyền + kết quả chạy trên local) |
+| T7 (7/11) | Sửa theo góp ý trên PR, được merge |
+| **CN (8/11), 21:00** | Mở PR nhánh `docs/test-report-staging` (smoke test staging), nếu staging đã lên lúc 12:00 |
+| Trong 24 giờ kể từ khi PR mở | Review nhánh `test/access-control-e2e` của TV1 và `docs/access-control-matrix`, `docs/leave-rules-br06` của TV2 |
 | **T2 (9/11), 9:00** | Điền mục "Việc đã làm" ở cuối file này |
 
 ## Chuẩn bị môi trường
@@ -107,15 +107,15 @@ git commit -m "docs(testing): add leave screens test results"
 git push -u origin docs/test-report-leave
 ```
 
-Sau đó **chưa mở PR**: gửi link `https://github.com/Acerchicken/HR-Enterprise-Platform/compare/dev...docs/test-report-leave`
-vào nhóm chat. Đợi góp ý ở mục "Góp ý review" bên dưới, sửa trên cùng nhánh (commit thêm, không tạo nhánh mới), hết góp ý
-"cần sửa" thì `git pull origin dev`, rồi mới mở PR vào `dev`.
+Sau đó **mở PR** từ `docs/test-report-leave` vào `dev` (base = `dev`, kiểm tra kỹ trước khi bấm Create; chưa xong thì mở Draft PR).
+Người review góp ý trên PR; sửa trên cùng nhánh, commit, `git push` là PR tự cập nhật, rồi bấm "Re-request review".
+Không đóng PR để mở PR mới.
 
 Mỗi việc một nhánh mới tách từ `dev`. Không dùng lại nhánh `docs/leave-test-cases` cũ.
 
 ## Góp ý review
 
-_TV1 ghi góp ý vào đây trước khi bạn mở PR. Mỗi dòng: ngày, nhánh, người góp ý, nội dung ("cần sửa" hoặc "nit:"), trạng thái._
+_Từ 7/11 góp ý ghi trực tiếp trên PR (CONVENTIONS mục 6). Bảng dưới là góp ý trước 7/11, giữ làm lịch sử; mục "Cần sửa" nào còn mở thì người làm xử lý trên PR của nhánh đó._
 
 | Ngày | Nhánh | Người góp ý | Góp ý | Trạng thái |
 |---|---|---|---|---|

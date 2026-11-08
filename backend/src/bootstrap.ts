@@ -14,7 +14,7 @@ export function configureApp(app: INestApplication, cfg: AppConfig) {
 
 export function buildOpenApi(app: INestApplication): OpenAPIObject {
   const doc = new DocumentBuilder()
-    .setTitle('Enterprise HR Platform API')
+    .setTitle('HRHelper API (HR Enterprise Platform)')
     .setDescription('REST API /api/v1. Xác thực: Bearer JWT do Keycloak (OIDC) cấp. Lỗi: {code, message, traceId}.')
     .setVersion('0.1.0 (tuần 7)')
     .addBearerAuth()
