@@ -17,7 +17,7 @@ const MANAGER = as('manager@hr.local');
 const HR = as('hr@hr.local');
 const ADMIN = as('admin@hr.local');
 
-describe('HR Platform API (e2e)', () => {
+describe('HRHelper API (e2e)', () => {
   let app: INestApplication;
   let http: ReturnType<typeof request>;
   let employeeId: string;

@@ -1,4 +1,4 @@
-# Kế hoạch và tiến độ – Enterprise HR Platform
+# Kế hoạch và tiến độ – HRHelper (HR Enterprise Platform)
 
 Thư mục này lưu kế hoạch 10 tuần và báo cáo tiến độ hàng tuần của nhóm. Mỗi báo cáo thứ 2 đăng lên thread
 `[Tên nhóm]_Enterprise HR Platform` trên Discussions được lấy từ file `README.md` của tuần tương ứng.
