@@ -126,7 +126,7 @@ Lý do:
    - Notification Worker chạy trên **Amazon ECS Fargate** (task độc lập, liên tục polling queue SQS mà không bị throttle CPU như App Runner).
 3. **Database & AI:** Amazon RDS for PostgreSQL 16 hỗ trợ sẵn extension `pgvector` phục vụ tính năng RAG ở tuần 12, cùng cơ chế backup tự động và khôi phục point-in-time đáp ứng RPO ≤ 1 giờ, RTO ≤ 4 giờ (ADR-00).
 4. **Identity & Storage managed:** Sử dụng **Amazon Cognito User Pool** (chuẩn OIDC, miễn phí vĩnh viễn cho 50,000 MAU) và **Amazon S3** (presigned URL cho tải tài liệu trực tiếp). *Lưu ý kỹ thuật:* Token của Cognito dùng `client_id` thay vì `azp`, vai trò nằm trong `cognito:groups`. TV1 cập nhật module identity ở nhánh `feat/auth-cognito` tuần 9 để hỗ trợ cả Keycloak (local) và Cognito (staging).
-5. **Message Queue:** Sử dụng **Amazon SQS** (serverless, miễn phí 1 triệu requests/tháng). Module outbox/worker của backend sử dụng interface trừu tượng `QueueService` (local dùng adapter RabbitMQ, cloud dùng adapter SQS), giúp đổi môi trường mà không ảnh hưởng tới business logic.
+5. **Message Queue:** Sử dụng **Amazon SQS** (serverless, miễn phí 1 triệu requests/tháng). Module outbox/worker của backend sử dụng interface trừu tượng `EventBus` (publish) và `EventConsumer` (consume) trong `src/messaging/` (chọn driver qua biến `QUEUE_DRIVER=rabbitmq|sqs`), giúp đổi môi trường mà không ảnh hưởng tới business logic.
 6. **Mạng ra (Egress) của App Runner & Worker:** Khi gắn VPC Connector vào Private Subnet, toàn bộ outbound traffic của API đi qua VPC. Do Cognito JWKS là public endpoint không hỗ trợ Interface VPC Endpoint (PrivateLink), nhóm triển khai **NAT Instance `t4g.nano`** (~$8.30/tháng, đã gồm public IPv4 của NAT instance) tại Public Subnet, tắt ngoài giờ demo, để API và Worker gọi được Cognito JWKS, Secrets Manager, SQS và SMTP mà vẫn giữ chi phí thấp.
 7. **Chi phí:** Dự toán khi chạy 24/7 là **~$56.80 USD/tháng** (dao động 54–59 USD), dưới hạn mức thẻ 1.500.000 VNĐ (~60 USD) của TV3 Bảo và trần môn học (< 100 USD/tháng). Biên an toàn chỉ ~3 USD nên tắt NAT, worker, API và RDS ngoài giờ demo (`infra/README.md` mục 5.3). Worker chạy trong Private Subnet qua NAT, không gán public IP cho task.
 
@@ -147,4 +147,4 @@ Lý do:
 - Viết được mã Terraform (IaC) dựng lại toàn bộ hạ tầng staging trên AWS trong tuần 9.
 
 **Khi nào xem lại:**
-Nếu tài khoản AWS bị giới hạn quota hoặc chi phí thực tế tuần 9 vượt quá 88 USD, nhóm sẽ chuyển đổi hạ tầng sang Microsoft Azure theo phương án dự phòng B.
+Nếu tài khoản AWS bị giới hạn quota hoặc chi phí thực tế tuần 9 vượt quá 50 USD/tháng (ngân sách AWS Budgets) hoặc chạm ngưỡng 60 USD (hạn mức thẻ thanh toán 1.500.000 VNĐ của TV3 Bảo), nhóm sẽ chuyển đổi hạ tầng sang Microsoft Azure theo phương án dự phòng B.
