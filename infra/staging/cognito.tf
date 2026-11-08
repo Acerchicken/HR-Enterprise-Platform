@@ -94,60 +94,85 @@ resource "aws_cognito_user_group" "admin" {
   precedence   = 10
 }
 
-# 4 Demo Users
+# Random passwords for Demo Users (length 16, upper, lower, numbers, special characters)
+resource "random_password" "demo_employee" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "random_password" "demo_manager" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "random_password" "demo_hr" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "random_password" "demo_admin" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+# 4 Demo Users aligned with backend seed data (@hr.local)
 resource "aws_cognito_user" "employee" {
   user_pool_id = aws_cognito_user_pool.main.id
-  username     = "employee@example.com"
+  username     = "employee@hr.local"
 
   attributes = {
-    email          = "employee@example.com"
+    email          = "employee@hr.local"
     email_verified = "true"
     name           = "Demo Employee"
   }
 
-  password       = "Employee123!"
+  password       = random_password.demo_employee.result
   message_action = "SUPPRESS"
 }
 
 resource "aws_cognito_user" "manager" {
   user_pool_id = aws_cognito_user_pool.main.id
-  username     = "manager@example.com"
+  username     = "manager@hr.local"
 
   attributes = {
-    email          = "manager@example.com"
+    email          = "manager@hr.local"
     email_verified = "true"
     name           = "Demo Manager"
   }
 
-  password       = "Manager123!"
+  password       = random_password.demo_manager.result
   message_action = "SUPPRESS"
 }
 
 resource "aws_cognito_user" "hr" {
   user_pool_id = aws_cognito_user_pool.main.id
-  username     = "hr@example.com"
+  username     = "hr@hr.local"
 
   attributes = {
-    email          = "hr@example.com"
+    email          = "hr@hr.local"
     email_verified = "true"
     name           = "Demo HR"
   }
 
-  password       = "HrStaff123!"
+  password       = random_password.demo_hr.result
   message_action = "SUPPRESS"
 }
 
 resource "aws_cognito_user" "admin" {
   user_pool_id = aws_cognito_user_pool.main.id
-  username     = "admin@example.com"
+  username     = "admin@hr.local"
 
   attributes = {
-    email          = "admin@example.com"
+    email          = "admin@hr.local"
     email_verified = "true"
     name           = "Demo Administrator"
   }
 
-  password       = "Admin123!"
+  password       = random_password.demo_admin.result
   message_action = "SUPPRESS"
 }
 
@@ -174,4 +199,38 @@ resource "aws_cognito_user_in_group" "admin" {
   user_pool_id = aws_cognito_user_pool.main.id
   group_name   = aws_cognito_user_group.admin.name
   username     = aws_cognito_user.admin.username
+}
+
+# Store demo user credentials securely in Secrets Manager (never in plaintext or outputs)
+resource "aws_secretsmanager_secret" "cognito_demo_credentials" {
+  name                    = "${var.project_name}/${var.environment}/cognito-demo-credentials"
+  description             = "Auto-generated demo account credentials for ${var.project_name} staging"
+  kms_key_id              = aws_kms_key.main.arn
+  recovery_window_in_days = 0
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-cognito-demo-credentials"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "cognito_demo_credentials" {
+  secret_id = aws_secretsmanager_secret.cognito_demo_credentials.id
+  secret_string = jsonencode({
+    employee = {
+      username = aws_cognito_user.employee.username
+      password = random_password.demo_employee.result
+    }
+    manager = {
+      username = aws_cognito_user.manager.username
+      password = random_password.demo_manager.result
+    }
+    hr = {
+      username = aws_cognito_user.hr.username
+      password = random_password.demo_hr.result
+    }
+    admin = {
+      username = aws_cognito_user.admin.username
+      password = random_password.demo_admin.result
+    }
+  })
 }

@@ -1,3 +1,12 @@
+# ==============================================================================
+# GHI CHÚ VỀ EMAIL VÀ OUTBOX WORKER TRÊN STAGING:
+# Trong tuần 9, ECS Worker chỉ xử lý outbox queue từ SQS và ghi nhận idempotent
+# processing vào database (consumer xử lý message và ghi log). Để giữ chi phí Staging
+# dưới $50-60 USD (hạn mức ngân sách và thẻ thanh toán), dịch vụ gửi email thực tế ra
+# ngoài (Amazon SES / SMTP relay) được chuyển sang triển khai ở tuần 10.
+# Do đó chưa cấu hình các biến SMTP_* / SES credentials tại staging tuần 9.
+# ==============================================================================
+
 # Dead-Letter Queue (DLQ) for failed notification jobs
 resource "aws_sqs_queue" "worker_dlq" {
   name                      = "${var.project_name}-${var.environment}-leave-notifications-dlq"

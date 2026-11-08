@@ -41,15 +41,15 @@ output "app_secrets_arn" {
   value       = aws_secretsmanager_secret.app_secrets.arn
 }
 
+output "cognito_demo_credentials_secret_arn" {
+  description = "ARN of Secrets Manager secret storing Cognito demo user credentials (never logs raw passwords)"
+  value       = aws_secretsmanager_secret.cognito_demo_credentials.arn
+}
+
 # ECR Outputs
 output "ecr_api_repository_url" {
   description = "ECR Repository URL for Backend API & Worker"
   value       = aws_ecr_repository.api.repository_url
-}
-
-output "ecr_web_repository_url" {
-  description = "ECR Repository URL for Frontend Web SPA"
-  value       = aws_ecr_repository.web.repository_url
 }
 
 # App Runner API Output

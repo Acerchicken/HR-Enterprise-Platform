@@ -67,9 +67,16 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
           "ecr:CompleteLayerUpload"
         ]
         Resource = [
-          aws_ecr_repository.api.arn,
-          aws_ecr_repository.web.arn
+          aws_ecr_repository.api.arn
         ]
+      },
+      {
+        Sid    = "AppRunnerList"
+        Effect = "Allow"
+        Action = [
+          "apprunner:ListServices"
+        ]
+        Resource = "*"
       },
       {
         Sid    = "AppRunnerDeploy"
@@ -80,6 +87,15 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
           "apprunner:StartDeployment"
         ]
         Resource = aws_apprunner_service.api.arn
+      },
+      {
+        Sid    = "EC2NetworkDiscovery"
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeSubnets",
+          "ec2:DescribeSecurityGroups"
+        ]
+        Resource = "*"
       },
       {
         Sid    = "ECSDeployAndRunMigration"
