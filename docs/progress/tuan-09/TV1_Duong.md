@@ -6,10 +6,10 @@ Vai trò: code chính, review trên nhánh và ghi góp ý vào file cá nhân c
 
 | Hạn | Việc |
 |---|---|
-| Trong 24 giờ kể từ khi nhận link | Review nhánh của TV2, TV3, TV4; ghi góp ý vào mục "Góp ý review" trong file của người đó trên `dev` |
-| **T4 (4/11)** | Gửi link nhánh `feat/secret-config` cho TV3 review |
-| **T5 (5/11)** | Gửi link nhánh `feat/auth-cognito` (sau khi ADR-12 chốt Cognito) |
-| **T6 (6/11)** | Gửi link nhánh `feat/queue-adapter` và `test/access-control-e2e` (sau khi ma trận của TV2 merge T5) |
+| Trong 24 giờ kể từ khi PR mở | Review PR của TV2, TV3, TV4, góp ý ngay trên PR |
+| **T4 (4/11)** | Mở PR nhánh `feat/secret-config` cho TV3 review |
+| **T5 (5/11)** | Mở PR nhánh `feat/auth-cognito` (sau khi ADR-12 chốt Cognito) |
+| **T6 (6/11)** | Mở PR nhánh `feat/queue-adapter` và `test/access-control-e2e` (sau khi ma trận của TV2 merge T5) |
 | **T7 (7/11)** | Duyệt `terraform plan` của TV3 trước khi `apply` |
 | **T2 (9/11)** | Báo cáo tuần 9 (mục 1–3 `README.md`), tạo thư mục tuần 10, PR `dev` → `main` (merge commit), tag `week-09` |
 
@@ -58,9 +58,9 @@ Vai trò: code chính, review trên nhánh và ghi góp ý vào file cá nhân c
 
 ### 5. Việc của nhóm trưởng
 
-- Review trên nhánh theo quy trình mới: đọc link compare, ghi góp ý vào mục "Góp ý review" của file cá nhân người làm (commit
-  thẳng lên `dev`, chỉ sửa `docs/progress/`), cập nhật trạng thái khi người làm báo đã sửa.
-- Chỉ approve PR khi mọi góp ý "cần sửa" đã xử lý; PR không đạt thì đóng.
+- Review trên PR: comment theo dòng, "Request changes" khi có góp ý "cần sửa"; xem lại khi người làm bấm "Re-request review".
+- Chỉ approve PR khi mọi góp ý "cần sửa" đã xử lý. PR chưa đạt thì để mở cho người làm sửa tiếp; chỉ đóng khi việc bị hủy,
+  hướng làm sai hoàn toàn hoặc PR trùng.
 - T7: đọc `terraform plan` của TV3 (không mở port DB ra internet, không có secret trong code/output, IAM tối thiểu) trước khi
   cho `apply`.
 - T2 (9/11): điền báo cáo, PR `dev` → `main` bằng merge commit, tag `week-09` và tạo Release.
@@ -125,13 +125,12 @@ git checkout -b feat/secret-config
 git push -u origin feat/secret-config
 ```
 
-Gửi link `https://github.com/Acerchicken/HR-Enterprise-Platform/compare/dev...feat/secret-config` cho người review trong nhóm
-chat. Hết góp ý "cần sửa" mới mở PR; PR của TV1 merge bằng quyền bypass sau khi CI xanh.
+Mở PR vào `dev`, người review góp ý trên PR, sửa trên cùng nhánh tới khi đạt. PR của TV1 merge bằng quyền bypass sau khi CI
+xanh và người review đã xem.
 
 ## Góp ý review
 
-_Người review gửi góp ý cho TV1 trong nhóm chat; TV1 ghi lại vào đây. Mỗi dòng: ngày, nhánh, người góp ý, nội dung ("cần sửa"
-hoặc "nit:"), trạng thái._
+_Từ 7/11 góp ý ghi trực tiếp trên PR (CONVENTIONS mục 6). Bảng dưới là góp ý trước 7/11, giữ làm lịch sử; mục "Cần sửa" nào còn mở thì người làm xử lý trên PR của nhánh đó._
 
 | Ngày | Nhánh | Người góp ý | Góp ý | Trạng thái |
 |---|---|---|---|---|

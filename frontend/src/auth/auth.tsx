@@ -11,12 +11,16 @@ export const DEMO_ACCOUNTS = [
 ];
 
 /**
- * Đăng nhập OIDC Authorization Code + PKCE (client public "hr-web" trên Keycloak).
+ * Đăng nhập OIDC Authorization Code + PKCE (client public "hr-web" trên Keycloak khi chạy local, app client của Cognito trên staging).
  * Token giữ trong sessionStorage (mất khi đóng tab) và tự gia hạn trước khi hết hạn.
  */
+const OIDC_CLIENT_ID = import.meta.env.VITE_OIDC_CLIENT_ID ?? 'hr-web';
+/** Chỉ đặt khi dùng Cognito, ví dụ https://<domain>.auth.ap-southeast-1.amazoncognito.com/logout */
+const LOGOUT_URL: string | undefined = import.meta.env.VITE_OIDC_LOGOUT_URL || undefined;
+
 export const userManager = new UserManager({
   authority: import.meta.env.VITE_OIDC_AUTHORITY ?? 'http://localhost:8080/realms/hr',
-  client_id: import.meta.env.VITE_OIDC_CLIENT_ID ?? 'hr-web',
+  client_id: OIDC_CLIENT_ID,
   redirect_uri: `${window.location.origin}/callback`,
   post_logout_redirect_uri: window.location.origin,
   response_type: 'code',
@@ -86,6 +90,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         apply(null);
         if (AUTH_MODE === 'dev') {
           sessionStorage.removeItem(DEV_KEY);
+          return;
+        }
+        // Cognito không khai báo end_session_endpoint trong discovery: đăng xuất qua /logout của Hosted UI.
+        if (LOGOUT_URL) {
+          await userManager.removeUser();
+          const q = new URLSearchParams({ client_id: OIDC_CLIENT_ID, logout_uri: window.location.origin });
+          window.location.assign(`${LOGOUT_URL}?${q}`);
           return;
         }
         await userManager.signoutRedirect();

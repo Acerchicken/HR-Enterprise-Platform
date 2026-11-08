@@ -85,30 +85,35 @@ Tên nhánh việc theo loại việc:
 
 Danh sách nhánh của từng tuần ghi trong `docs/progress/tuan-NN/README.md`.
 
-### Quy trình cho một việc (từ tuần 9)
+### Quy trình cho một việc
 
-Từ tuần 9 nhóm **review trên nhánh trước, chỉ mở PR khi đã đạt điều kiện merge**, để mỗi việc chỉ có một PR và PR mở ra
-là merge được ngay (tránh tình trạng một việc mở 2–3 PR rồi đóng như tuần 8).
+Mỗi việc một nhánh, mỗi nhánh **một PR duy nhất**. Review diễn ra ngay trên PR: chưa đạt thì sửa tiếp trên cùng nhánh, PR tự
+cập nhật, không đóng PR để mở PR mới. Lịch sử thảo luận và các lần sửa nằm hết trong PR đó.
 
 1. Tách nhánh từ `dev` mới nhất: `git checkout dev && git pull && git checkout -b <nhánh>`.
-2. Mỗi nhánh **chỉ một việc**, sống tối đa vài ngày. Việc lớn thì chia thành nhiều nhánh nối tiếp nhau.
+2. Mỗi nhánh **chỉ một việc**, sống tối đa vài ngày. Việc lớn thì chia thành nhiều nhánh nối tiếp nhau, mỗi nhánh một PR nhỏ.
 3. Commit theo Conventional Commits: `feat(leave): add approve endpoint`, `fix(employee): ...`, `docs(business): ...`,
    `chore(infra): ...`, `ci: ...`, `test: ...`.
-4. **Xin review trước khi mở PR:** push nhánh, gửi link so sánh
-   `https://github.com/Acerchicken/HR-Enterprise-Platform/compare/dev...<nhánh>` vào nhóm chat cho người review (bảng Review bên
-   dưới). Chưa mở PR ở bước này.
-5. **Góp ý ghi trong file cá nhân:** người review ghi góp ý vào mục **"Góp ý review"** trong file cá nhân tuần đó của người làm
-   (`docs/progress/tuan-NN/TVn_Ten.md`), mỗi góp ý một dòng: ngày, nhánh, người góp ý, nội dung, ghi rõ "cần sửa" hoặc "nit:".
-   TV1 là người cập nhật mục này lên `dev` (ngoại lệ duy nhất được ghi thẳng vào `dev`, chỉ cho file `docs/progress/`);
-   người review khác gửi nội dung cho TV1.
-6. Người làm sửa trên nhánh của mình, đánh dấu "đã sửa" từng góp ý trong commit message hoặc báo lại trong nhóm chat.
-7. **Chỉ mở PR khi đạt điều kiện merge:** không còn góp ý "cần sửa" nào chưa xử lý, đã kéo `dev` mới nhất về nhánh
-   (`git pull origin dev`) và hết xung đột, PR code đã qua `npm run lint` và `npm test` ở máy mình. Mô tả PR theo template
-   `.github/pull_request_template.md` và ghi "Đã xử lý góp ý ngày …" kèm link file cá nhân.
-8. PR không đạt điều kiện merge sẽ bị đóng, quay lại bước 4. Không mở PR mới cho cùng một việc khi PR cũ còn mở.
-9. Sau khi được approve và CI xanh, **Duong merge** bằng **squash merge**, rồi xóa nhánh. Người mở PR không tự merge.
-10. Thứ 2 hằng tuần, TV1 mở PR `dev` → `main` và merge bằng **merge commit** (không squash) để giữ commit và tên tác giả của
-    từng người.
+4. **Push và mở PR vào `dev`** (base = `dev`, kiểm tra kỹ trước khi bấm Create). Mô tả PR theo template
+   `.github/pull_request_template.md`. Chưa xong mà muốn người khác xem sớm thì mở **Draft PR**, xong thì bấm
+   "Ready for review".
+5. **Người review góp ý trên PR** (bảng Review bên dưới): comment theo dòng hoặc review chung, chọn "Request changes" nếu có
+   góp ý bắt buộc sửa. Góp ý bắt buộc ghi rõ "cần sửa"; góp ý tùy chọn ghi "nit:".
+6. **Người làm sửa trên chính nhánh đó**, commit rồi `git push`. PR tự thêm commit mới. Trả lời từng comment ("đã sửa ở
+   <commit>") hoặc bấm "Resolve conversation", rồi bấm "Re-request review". Lặp lại bước 5–6 tới khi được approve.
+7. Trước khi merge: đã kéo `dev` mới nhất về nhánh (`git pull origin dev`) và hết xung đột; PR code thì CI xanh
+   (lint, test, build).
+8. Sau khi được approve và CI xanh, **Duong merge** bằng **squash merge** (các commit sửa gộp thành một, lịch sử `dev` vẫn
+   gọn), rồi xóa nhánh. Người mở PR không tự merge.
+9. Thứ 2 hằng tuần, TV1 mở PR `dev` → `main` và merge bằng **merge commit** (không squash) để giữ commit và tên tác giả của
+   từng người.
+
+**Khi nào mới đóng PR:** việc bị hủy, không làm nữa; hướng làm sai hoàn toàn, phải viết lại từ đầu; PR trùng với một PR khác.
+Ngoài 3 trường hợp này, PR chưa đạt thì để mở và sửa tiếp. Không mở PR thứ hai cho cùng một việc.
+
+> Tuần 9 (2/11 – 7/11) nhóm thử cách "review trên nhánh, ghi góp ý vào file cá nhân, đạt mới mở PR". Từ 7/11 bỏ cách này và
+> quay lại review trên PR như trên, vì góp ý tách khỏi PR thì mất ngữ cảnh review. Mục "Góp ý review" trong các file tuần 9
+> giữ lại làm lịch sử, góp ý mới ghi trên PR.
 
 ### Review
 
@@ -119,9 +124,10 @@ là merge được ngay (tránh tình trạng một việc mở 2–3 PR rồi �
 | TV3 – hạ tầng, CI/CD, IaC, ADR cloud | TV1 |
 | TV4 – ca kiểm thử, biên bản kiểm thử | TV2 và TV1 |
 
-- Mỗi PR ít nhất 1 người approve, trong đó bắt buộc có approve của TV1 (Duong, code owner). Review (bước 4–5) trong vòng 24 giờ
-  kể từ khi nhận link nhánh.
-- Góp ý bắt buộc sửa ghi rõ "cần sửa"; góp ý tùy chọn ghi "nit:".
+- Mỗi PR ít nhất 1 người approve, trong đó bắt buộc có approve của TV1 (Duong, code owner). Người review phản hồi trong vòng
+  24 giờ kể từ khi PR mở hoặc được "Re-request review".
+- Review phải để lại dấu vết trên GitHub (comment hoặc review trên PR). Review chỉ nói trong nhóm chat thì không tính.
+- PR của TV1 merge bằng quyền bypass sau khi CI xanh và người review trong bảng đã xem.
 
 ### Quy tắc chung
 

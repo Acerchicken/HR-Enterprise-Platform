@@ -105,6 +105,14 @@ curl -H "Authorization: Bearer $TOKEN" "http://localhost:3000/api/v1/employees?q
 
 Client `hr-api-test` (password grant) chỉ dùng cho test local, sẽ bỏ khi deploy.
 
+## Secret khi chạy staging/production
+
+- `NODE_ENV=production` thì API, worker, seed **không khởi động** nếu thiếu `FIELD_ENCRYPTION_KEY`, `DB_PASSWORD`, `OIDC_ISSUER`
+  (khi `AUTH_MODE=oidc`) hoặc `FIELD_ENCRYPTION_KEY` còn là khóa dev. Lỗi chỉ nêu tên biến, không in giá trị.
+- `docker-compose.yml` đặt `ALLOW_DEV_SECRETS=true` để chạy local bằng khóa dev; staging/production **không** đặt biến này,
+  secret lấy từ AWS Secrets Manager (Terraform trong `infra/`).
+- TLS tới PostgreSQL: `DB_SSL=require` (mã hóa) hoặc `DB_SSL=verify` + `DB_SSL_CA_FILE` (kiểm tra chứng chỉ RDS). Local để `off`.
+
 ## Test
 
 ```bash

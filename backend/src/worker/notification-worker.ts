@@ -1,30 +1,23 @@
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import * as amqp from 'amqplib';
 import { createTransport, Transporter } from 'nodemailer';
 import { DataSource } from 'typeorm';
 import { APP_CONFIG, AppConfig } from '../config/config';
 import { EmployeeService } from '../modules/employee/employee.service';
-import {
-  buildEmail,
-  EVENTS_EXCHANGE,
-  LeaveEventPayload,
-  LeaveEventType,
-  recipientOf,
-} from '../modules/leave/outbox/leave-events';
-
-export const QUEUE = 'notification.leave';
-export const DEAD_LETTER_QUEUE = 'notification.leave.dlq';
+import { EventConsumer } from '../messaging/event-bus';
+import { createEventConsumer } from '../messaging/factory';
+import { buildEmail, LeaveEventPayload, LeaveEventType, recipientOf } from '../modules/leave/outbox/leave-events';
 
 /**
- * Worker nhận event nghỉ phép từ RabbitMQ và gửi email (local: Mailpit).
- * Chống trùng: messageId (= id dòng outbox) được ghi vào notification.processed_event sau khi gửi;
- * gặp lại messageId đã xử lý thì chỉ ack. Lỗi gửi → đưa vào hàng đợi chết (DLQ) để xem lại, không lặp vô hạn.
+ * Worker nhận event nghỉ phép từ queue (RabbitMQ khi local, SQS trên AWS) và gửi email (local: Mailpit).
+ * Chống trùng: id event (= id dòng outbox) được ghi vào notification.processed_event sau khi gửi;
+ * gặp lại id đã xử lý thì bỏ qua. Lỗi gửi → DLQ để xem lại, không lặp vô hạn
+ * (RabbitMQ: nack ngay; SQS: sau maxReceiveCount lần).
  */
 @Injectable()
 export class NotificationWorker implements OnApplicationShutdown {
   private readonly logger = new Logger(NotificationWorker.name);
-  private connection: amqp.ChannelModel | null = null;
+  private consumer: EventConsumer | null = null;
   private readonly mailer: Transporter;
 
   constructor(
@@ -35,25 +28,9 @@ export class NotificationWorker implements OnApplicationShutdown {
     this.mailer = createTransport({ host: cfg.smtp.host, port: cfg.smtp.port, secure: false });
   }
 
-  async start() {
-    if (!this.cfg.rabbitmqUrl) throw new Error('Worker cần RABBITMQ_URL');
-    this.connection = await amqp.connect(this.cfg.rabbitmqUrl);
-    const ch = await this.connection.createChannel();
-    await ch.assertExchange(EVENTS_EXCHANGE, 'topic', { durable: true });
-    await ch.assertQueue(DEAD_LETTER_QUEUE, { durable: true });
-    await ch.assertQueue(QUEUE, { durable: true, deadLetterExchange: '', deadLetterRoutingKey: DEAD_LETTER_QUEUE });
-    await ch.bindQueue(QUEUE, EVENTS_EXCHANGE, 'leave.*');
-    await ch.prefetch(10);
-    await ch.consume(QUEUE, (msg) => {
-      if (!msg) return;
-      this.handle(msg.properties.messageId, msg.properties.type, JSON.parse(msg.content.toString()))
-        .then(() => ch.ack(msg))
-        .catch((e) => {
-          this.logger.error(`Event ${msg.properties.messageId} lỗi, chuyển DLQ: ${e instanceof Error ? e.message : e}`);
-          ch.nack(msg, false, false);
-        });
-    });
-    this.logger.log(`Đang nghe hàng đợi ${QUEUE}`);
+  async start(consumer: EventConsumer = createEventConsumer(this.cfg)) {
+    this.consumer = consumer;
+    await consumer.start((e) => this.handle(e.id, e.type as LeaveEventType, e.payload as LeaveEventPayload).then(() => undefined));
   }
 
   /** Trả về true nếu đã gửi email, false nếu bỏ qua vì trùng. */
@@ -88,6 +65,6 @@ export class NotificationWorker implements OnApplicationShutdown {
   }
 
   async onApplicationShutdown() {
-    await this.connection?.close().catch(() => undefined);
+    await this.consumer?.close().catch(() => undefined);
   }
 }

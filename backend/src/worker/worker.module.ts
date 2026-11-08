@@ -7,7 +7,7 @@ import { NotificationWorker } from './notification-worker';
 
 /** Process riêng của worker: không mở HTTP, chỉ cần DB (tra email qua EmployeeService) và RabbitMQ. */
 @Module({
-  imports: [ConfigModule, TypeOrmModule.forRoot({ ...dataSourceOptions, migrationsRun: false }), EmployeeModule],
+  imports: [ConfigModule.register({ needsAuth: false }), TypeOrmModule.forRoot({ ...dataSourceOptions, migrationsRun: false }), EmployeeModule],
   providers: [NotificationWorker],
 })
 export class WorkerModule {}

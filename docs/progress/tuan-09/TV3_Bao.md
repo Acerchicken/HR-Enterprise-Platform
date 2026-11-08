@@ -7,15 +7,15 @@ pipeline**, không bấm tay trên AWS console (trừ bước tạo tài khoản
 
 | Hạn | Việc |
 |---|---|
-| **T4 (4/11), 21:00** | Gửi link nhánh `docs/adr-12-cloud-provider` đã sửa 2 điểm review (việc đầu tiên, tồn từ tuần 8) |
-| T5 (5/11) | Sửa theo góp ý, mở PR ADR-12, được merge |
-| **T5 (5/11), 21:00** | Gửi link nhánh `ci/docker-images` |
-| T6 (6/11) | Sửa theo góp ý, mở PR, được merge |
-| **T7 (7/11), 12:00** | Gửi link nhánh `infra/terraform-staging` kèm kết quả `terraform plan` |
-| T7 (7/11) | TV1 duyệt plan → `terraform apply` → mở PR, được merge |
+| **T4 (4/11), 21:00** | Mở PR nhánh `docs/adr-12-cloud-provider` đã sửa 2 điểm review (việc đầu tiên, tồn từ tuần 8) |
+| T5 (5/11) | Sửa theo góp ý trên PR ADR-12, được merge |
+| **T5 (5/11), 21:00** | Mở PR nhánh `ci/docker-images` |
+| T6 (6/11) | Sửa theo góp ý trên PR, được merge |
+| **T7 (7/11), 12:00** | Mở PR nhánh `infra/terraform-staging` kèm kết quả `terraform plan` |
+| T7 (7/11) | TV1 duyệt plan trên PR → `terraform apply` → được merge |
 | **T7 (7/11), 21:00** | Nếu thấy không kịp deploy CN: báo TV1 để cắt phạm vi (xem cuối file) |
-| **CN (8/11), 12:00** | Staging chạy được qua pipeline, gửi URL + tài khoản staging cho TV4; gửi link nhánh `ci/deploy-staging` |
-| Trong 24 giờ kể từ khi nhận link | Review nhánh `feat/secret-config`, `feat/auth-cognito`, `feat/queue-adapter` của TV1 (phần cấu hình, hạ tầng) |
+| **CN (8/11), 12:00** | Staging chạy được qua pipeline, gửi URL + tài khoản staging cho TV4; mở PR nhánh `ci/deploy-staging` |
+| Trong 24 giờ kể từ khi PR mở | Review nhánh `feat/secret-config`, `feat/auth-cognito`, `feat/queue-adapter` của TV1 (phần cấu hình, hạ tầng) |
 | **T2 (9/11), 9:00** | Điền mục "Việc đã làm" ở cuối file này |
 
 ## Việc cần làm
@@ -72,7 +72,7 @@ Theo ADR-12 sau khi sửa. Thư mục `infra/` (đặt tên theo `CONVENTIONS.md
    - AWS Budgets cảnh báo 25/40/50 USD;
    - IAM role cho GitHub Actions dùng **OIDC** (không tạo access key lâu dài), chỉ quyền push ECR và deploy.
 3. Chạy `terraform fmt`, `terraform validate`, `terraform plan -out plan.tfplan`; dán phần tóm tắt plan (số tài nguyên tạo
-   mới, không có secret) vào tin nhắn gửi link review. **Chỉ `apply` sau khi TV1 đồng ý.**
+   mới, không có secret) vào mô tả PR. **Chỉ `apply` sau khi TV1 approve plan trên PR.**
 4. Không commit `*.tfstate`, `*.tfvars` có secret, `.terraform/` (thêm `.gitignore`).
 
 ### 4. `ci/deploy-staging` – pipeline deploy staging
@@ -101,13 +101,13 @@ git commit -m "ci: build and scan Docker images on pull requests"
 git push -u origin ci/docker-images
 ```
 
-Sau đó **chưa mở PR**: gửi link `https://github.com/Acerchicken/HR-Enterprise-Platform/compare/dev...ci/docker-images` vào
-nhóm chat. Đợi góp ý ở mục "Góp ý review" bên dưới, sửa trên cùng nhánh, hết góp ý "cần sửa" thì `git pull origin dev`, rồi
-mới mở PR vào `dev` (base = `dev`, kiểm tra kỹ trước khi bấm Create).
+Sau đó **mở PR** từ `ci/docker-images` vào `dev` (base = `dev`, kiểm tra kỹ trước khi bấm Create; chưa xong thì mở Draft PR).
+Người review góp ý trên PR; sửa trên cùng nhánh, commit, `git push` là PR tự cập nhật, rồi bấm "Re-request review".
+Không đóng PR để mở PR mới.
 
 ## Góp ý review
 
-_TV1 ghi góp ý vào đây trước khi bạn mở PR. Mỗi dòng: ngày, nhánh, người góp ý, nội dung ("cần sửa" hoặc "nit:"), trạng thái._
+_Từ 7/11 góp ý ghi trực tiếp trên PR (CONVENTIONS mục 6). Bảng dưới là góp ý trước 7/11, giữ làm lịch sử; mục "Cần sửa" nào còn mở thì người làm xử lý trên PR của nhánh đó._
 
 | Ngày | Nhánh | Người góp ý | Góp ý | Trạng thái |
 |---|---|---|---|---|

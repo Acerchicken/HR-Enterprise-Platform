@@ -62,7 +62,7 @@ dưới đây. Các ca dùng ngày năm 2026.
 
 ## Ghi chú
 
-- Các ca đã có e2e test tương ứng trong `backend/test/app.e2e-spec.ts` (nhóm "workflow nghỉ phép"), trừ TC-04, TC-21 và
-  TC-22 (cần bổ sung e2e).
+- Cả 22 ca đã có e2e test tương ứng trong `backend/test/app.e2e-spec.ts` (nhóm "workflow nghỉ phép"); TC-04, TC-21, TC-22
+  bổ sung ở nhánh `test/access-control-e2e` (tuần 9).
 - BR-06 (người duyệt thay) chưa có trong hệ thống nên chưa có ca kiểm thử.
 - Khi có màn hình nghỉ phép (`feat/leave-ui`), chạy lại các ca trên qua giao diện và ghi kết quả vào `test-report-tuan-08.md`.
