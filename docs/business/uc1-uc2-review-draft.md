@@ -40,16 +40,15 @@
 
 ## Issue #22 — UC2.3: quy tắc quản lý trực tiếp
 
-Đã mở [issue #22](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/22) để thống nhất ngoại lệ người đứng đầu, hành vi khi thiếu/gỡ quản lý và người duyệt đơn nghỉ của người đứng đầu. Issue ghi nhận điểm lệch giữa FR và khả năng hiện tại, đồng thời để quyết định mô hình nghiệp vụ trước khi đề xuất thay đổi schema hoặc validation.
+Đã mở [issue #22](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/22) để thống nhất ngoại lệ người đứng đầu, hành vi khi thiếu/gỡ quản lý và người duyệt đơn nghỉ của người đứng đầu.
+
+**Quyết định nghiệp vụ (tuần 9):** chỉ có một nhân viên giữ chức danh CEO, là gốc duy nhất của sơ đồ và là ngoại lệ duy nhất không có quản lý trực tiếp. Mọi nhân viên khác phải có đúng một quản lý trực tiếp đang làm việc; HR duyệt đơn nghỉ của CEO. Khi code, cần enforce ngoại lệ CEO duy nhất, không cho tạo/gỡ quản lý tùy ý cho nhân viên khác, và chỉ mở quyền HR duyệt đối với đơn của CEO. Code hiện tại chưa enforce các điều kiện này; issue cần TV1 xử lý phần code trước khi đóng.
 
 ## Issue #21 — UC2.2: tra cây theo mã phòng ban
 
 Đã mở [issue #21](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/21) để thống nhất việc bổ sung tra cứu cây con theo `department.code` hay cập nhật FR cho chức năng trả toàn bộ cây.
 
-FR ghi input là “Mã phòng ban”, nhưng endpoint cây hiện trả toàn bộ cây, không nhận code. Cần thống nhất:
-
-- Bổ sung endpoint/parameter tìm cây con theo `department.code`; hoặc
-- Sửa FR để mô tả thao tác xem toàn bộ cây và phân biệt chức năng lọc phòng ban.
+**Quyết định nghiệp vụ (tuần 9):** sửa FR để mô tả đúng chức năng xem toàn bộ sơ đồ tổ chức; không thêm input mã phòng ban cho API cây. UUID phòng ban chỉ dùng khi xem chi tiết hoặc thành viên. Lý do: UC2 yêu cầu xem sơ đồ tổ chức, API hiện có đã trả toàn bộ cây; chưa có yêu cầu nghiệp vụ riêng về cây con theo mã. Xem và lọc danh sách theo phòng ban vẫn dùng các endpoint hiện có.
 
 ## Các điểm làm rõ khác (chưa tách issue)
 
