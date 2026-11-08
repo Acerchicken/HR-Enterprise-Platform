@@ -32,6 +32,9 @@ env:
   ECS_WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE || 'hr-platform-staging-worker' }}
   ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY || 'hr-platform-staging-worker' }}
   ECR_REPOSITORY: hr-api
+  INPUT_IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+  INPUT_RUN_SEED: ${{ github.event.inputs.run_seed }}
+  INPUT_SKIP_MIGRATION: ${{ github.event.inputs.skip_migration }}
 
 jobs:
   deploy:
@@ -55,15 +58,38 @@ jobs:
       - name: Set deployment metadata
         id: meta
         run: |
-          if [ -n "${{ github.event.inputs.image_tag }}" ]; then
-            echo "IMAGE_TAG=${{ github.event.inputs.image_tag }}" >> $GITHUB_ENV
+          if [ -n "$INPUT_IMAGE_TAG" ]; then
+            echo "IMAGE_TAG=${INPUT_IMAGE_TAG}" >> $GITHUB_ENV
             echo "IS_ROLLBACK=true" >> $GITHUB_ENV
-            echo "Using specified image tag: ${{ github.event.inputs.image_tag }} (Rollback mode)"
+            echo "Using specified image tag: ${INPUT_IMAGE_TAG} (Rollback mode)"
           else
-            echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
+            echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_ENV
             echo "IS_ROLLBACK=false" >> $GITHUB_ENV
-            echo "Using commit SHA as image tag: ${{ github.sha }}"
+            echo "Using commit SHA as image tag: ${GITHUB_SHA}"
           fi
+
+      - name: Retag ECR image for Rollback
+        if: env.IS_ROLLBACK == 'true'
+        run: |
+          echo "Rollback requested for image tag: ${IMAGE_TAG}"
+          echo "Fetching image manifest from ECR for tag ${IMAGE_TAG}..."
+          MANIFEST=$(aws ecr batch-get-image \
+            --repository-name "${ECR_REPOSITORY}" \
+            --image-ids imageTag="${IMAGE_TAG}" \
+            --query 'images[0].imageManifest' \
+            --output text)
+
+          if [ -z "$MANIFEST" ] || [ "$MANIFEST" = "None" ]; then
+            echo "::error::Image with tag '${IMAGE_TAG}' not found in ECR repository '${ECR_REPOSITORY}'. Cannot perform rollback."
+            exit 1
+          fi
+
+          echo "Retagging image ${IMAGE_TAG} as :latest on ECR..."
+          aws ecr put-image \
+            --repository-name "${ECR_REPOSITORY}" \
+            --image-tag latest \
+            --image-manifest "$MANIFEST"
+          echo "Successfully retagged ${IMAGE_TAG} -> latest on ECR."
 
       - name: Set up Docker Buildx
         if: env.IS_ROLLBACK != 'true'
@@ -83,7 +109,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Database Migration (ECS One-off Task)
-        if: github.event.inputs.skip_migration != 'true'
+        if: env.INPUT_SKIP_MIGRATION != 'true'
         run: |
           echo "Discovering private network configuration for migration task..."
           SUBNETS=$(aws ec2 describe-subnets \
@@ -91,7 +117,6 @@ jobs:
             --query "Subnets[*].SubnetId" --output text | tr '\t' ',')
           
           if [ -z "$SUBNETS" ]; then
-            # Fallback query if tags differ
             SUBNETS=$(aws ec2 describe-subnets \
               --filters "Name=tag:Tier,Values=Private" \
               --query "Subnets[*].SubnetId" --output text | tr '\t' ',')
@@ -102,40 +127,40 @@ jobs:
             --query "SecurityGroups[0].GroupId" --output text)
 
           if [ -z "$SUBNETS" ] || [ -z "$SECURITY_GROUP" ] || [ "$SECURITY_GROUP" = "None" ]; then
-            echo "Warning: Private subnets or worker security group not found. Skipping migration task."
-            exit 0
+            echo "::error::Private subnets or worker security group not found. Cannot run database migration. Failing job to prevent deploying incompatible state."
+            exit 1
           fi
 
           echo "Running one-off database migration task on ECS Fargate..."
           TASK_ARN=$(aws ecs run-task \
-            --cluster "${{ env.ECS_CLUSTER_NAME }}" \
-            --task-definition "${{ env.ECS_TASK_FAMILY }}" \
+            --cluster "${ECS_CLUSTER_NAME}" \
+            --task-definition "${ECS_TASK_FAMILY}" \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECURITY_GROUP}],assignPublicIp=DISABLED}" \
             --overrides '{"containerOverrides":[{"name":"worker","command":["npx","typeorm","migration:run","-d","dist/database/data-source.js"]}]}' \
             --query "tasks[0].taskArn" --output text)
 
           if [ -z "$TASK_ARN" ] || [ "$TASK_ARN" = "None" ]; then
-            echo "Error: Failed to launch ECS migration task."
+            echo "::error::Failed to launch ECS migration task."
             exit 1
           fi
 
           echo "Waiting for migration task to finish: ${TASK_ARN}..."
-          aws ecs wait tasks-stopped --cluster "${{ env.ECS_CLUSTER_NAME }}" --tasks "${TASK_ARN}"
+          aws ecs wait tasks-stopped --cluster "${ECS_CLUSTER_NAME}" --tasks "${TASK_ARN}"
 
           EXIT_CODE=$(aws ecs describe-tasks \
-            --cluster "${{ env.ECS_CLUSTER_NAME }}" --tasks "${TASK_ARN}" \
+            --cluster "${ECS_CLUSTER_NAME}" --tasks "${TASK_ARN}" \
             --query "tasks[0].containers[0].exitCode" --output text)
 
           if [ "$EXIT_CODE" != "0" ]; then
-            echo "Error: Database migration task failed with exit code ${EXIT_CODE}."
+            echo "::error::Database migration task failed with exit code ${EXIT_CODE}."
             exit 1
           fi
 
           echo "Database migration completed successfully."
 
       - name: Run Database Seed (Optional via workflow_dispatch)
-        if: github.event.inputs.run_seed == 'true'
+        if: env.INPUT_RUN_SEED == 'true'
         run: |
           SUBNETS=$(aws ec2 describe-subnets \
             --filters "Name=tag:Tier,Values=Private" \
@@ -144,24 +169,29 @@ jobs:
             --filters "Name=tag:Name,Values=*worker-sg*" \
             --query "SecurityGroups[0].GroupId" --output text)
 
+          if [ -z "$SUBNETS" ] || [ -z "$SECURITY_GROUP" ] || [ "$SECURITY_GROUP" = "None" ]; then
+            echo "::error::Private subnets or worker security group not found for seed task."
+            exit 1
+          fi
+
           echo "Running one-off database seed task on ECS Fargate..."
           TASK_ARN=$(aws ecs run-task \
-            --cluster "${{ env.ECS_CLUSTER_NAME }}" \
-            --task-definition "${{ env.ECS_TASK_FAMILY }}" \
+            --cluster "${ECS_CLUSTER_NAME}" \
+            --task-definition "${ECS_TASK_FAMILY}" \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECURITY_GROUP}],assignPublicIp=DISABLED}" \
             --overrides '{"containerOverrides":[{"name":"worker","command":["node","dist/database/seed.js"]}]}' \
             --query "tasks[0].taskArn" --output text)
 
           echo "Waiting for seed task to finish: ${TASK_ARN}..."
-          aws ecs wait tasks-stopped --cluster "${{ env.ECS_CLUSTER_NAME }}" --tasks "${TASK_ARN}"
+          aws ecs wait tasks-stopped --cluster "${ECS_CLUSTER_NAME}" --tasks "${TASK_ARN}"
 
           EXIT_CODE=$(aws ecs describe-tasks \
-            --cluster "${{ env.ECS_CLUSTER_NAME }}" --tasks "${TASK_ARN}" \
+            --cluster "${ECS_CLUSTER_NAME}" --tasks "${TASK_ARN}" \
             --query "tasks[0].containers[0].exitCode" --output text)
 
           if [ "$EXIT_CODE" != "0" ]; then
-            echo "Error: Database seed task failed with exit code ${EXIT_CODE}."
+            echo "::error::Database seed task failed with exit code ${EXIT_CODE}."
             exit 1
           fi
 
@@ -169,24 +199,62 @@ jobs:
 
       - name: Update ECS Worker Service
         run: |
-          echo "Updating ECS Worker Service to pull new task revision/image..."
+          echo "Updating ECS Worker Service to pull latest image..."
           aws ecs update-service \
-            --cluster "${{ env.ECS_CLUSTER_NAME }}" \
-            --service "${{ env.ECS_WORKER_SERVICE }}" \
+            --cluster "${ECS_CLUSTER_NAME}" \
+            --service "${ECS_WORKER_SERVICE}" \
             --force-new-deployment
 
       - name: Update App Runner API Service
         run: |
           SERVICE_ARN=$(aws apprunner list-services \
-            --query "ServiceSummaryList[?ServiceName=='${{ env.APP_RUNNER_SERVICE_NAME }}'].ServiceArn | [0]" --output text)
+            --query "ServiceSummaryList[?ServiceName=='${APP_RUNNER_SERVICE_NAME}'].ServiceArn | [0]" --output text)
 
           if [ -n "$SERVICE_ARN" ] && [ "$SERVICE_ARN" != "None" ]; then
+            echo "APP_RUNNER_SERVICE_ARN=${SERVICE_ARN}" >> $GITHUB_ENV
             echo "Triggering App Runner deployment for ${SERVICE_ARN}..."
             OPERATION_ID=$(aws apprunner start-deployment --service-arn "${SERVICE_ARN}" --query "OperationId" --output text)
-            echo "App Runner deployment triggered: ${OPERATION_ID}"
+            echo "App Runner deployment triggered with OperationId: ${OPERATION_ID}"
           else
-            echo "Warning: App Runner service '${{ env.APP_RUNNER_SERVICE_NAME }}' not found. Skipping App Runner update."
+            echo "Warning: App Runner service '${APP_RUNNER_SERVICE_NAME}' not found. Skipping App Runner update."
           fi
+
+      - name: Wait for App Runner Deployment to complete
+        run: |
+          SERVICE_ARN="${APP_RUNNER_SERVICE_ARN}"
+          if [ -z "$SERVICE_ARN" ]; then
+            SERVICE_ARN=$(aws apprunner list-services \
+              --query "ServiceSummaryList[?ServiceName=='${APP_RUNNER_SERVICE_NAME}'].ServiceArn | [0]" --output text)
+          fi
+
+          if [ -z "$SERVICE_ARN" ] || [ "$SERVICE_ARN" = "None" ]; then
+            echo "App Runner service not found. Skipping wait."
+            exit 0
+          fi
+
+          echo "Polling App Runner service status for ${SERVICE_ARN}..."
+          MAX_POLL=40
+          INTERVAL=15
+          DEPLOYMENT_STARTED=false
+
+          for i in $(seq 1 $MAX_POLL); do
+            STATUS=$(aws apprunner describe-service --service-arn "${SERVICE_ARN}" --query "Service.Status" --output text)
+            echo "Poll $i/$MAX_POLL: Current status is '${STATUS}'"
+
+            if [ "$STATUS" = "OPERATION_IN_PROGRESS" ]; then
+              DEPLOYMENT_STARTED=true
+            elif [ "$STATUS" = "RUNNING" ]; then
+              if [ "$DEPLOYMENT_STARTED" = "true" ] || [ $i -ge 4 ]; then
+                echo "App Runner service is RUNNING and ready."
+                break
+              fi
+            elif [ "$STATUS" = "CREATE_FAILED" ] || [ "$STATUS" = "OPERATION_FAILED" ]; then
+              echo "::error::App Runner deployment failed with status '${STATUS}'."
+              exit 1
+            fi
+
+            sleep $INTERVAL
+          done
 
       - name: Set up Node.js 20 for Frontend
         uses: actions/setup-node@v4
@@ -200,21 +268,23 @@ jobs:
         run: npm ci
 
       - name: Validate Staging Frontend Environment Variables
+        env:
+          RAW_STAGING_API_URL: ${{ vars.STAGING_API_URL }}
+          RAW_STAGING_API_BASE_URL: ${{ vars.STAGING_API_BASE_URL }}
+          STAGING_OIDC_AUTHORITY: ${{ vars.STAGING_OIDC_AUTHORITY }}
+          STAGING_OIDC_CLIENT_ID: ${{ vars.STAGING_OIDC_CLIENT_ID }}
+          CUSTOM_LOGOUT_URL: ${{ vars.VITE_OIDC_LOGOUT_URL }}
         run: |
-          API_URL="${{ vars.STAGING_API_URL }}"
-          if [ -z "$API_URL" ] && [ -n "${{ vars.STAGING_API_BASE_URL }}" ]; then
-            BASE="${{ vars.STAGING_API_BASE_URL }}"
-            API_URL="${BASE%/}/api/v1"
+          API_URL="$RAW_STAGING_API_URL"
+          if [ -z "$API_URL" ] && [ -n "$RAW_STAGING_API_BASE_URL" ]; then
+            API_URL="${RAW_STAGING_API_BASE_URL%/}/api/v1"
           fi
-
-          OIDC_AUTHORITY="${{ vars.STAGING_OIDC_AUTHORITY }}"
-          OIDC_CLIENT_ID="${{ vars.STAGING_OIDC_CLIENT_ID }}"
 
           echo "Validating required staging frontend variables..."
           MISSING_VARS=""
           if [ -z "$API_URL" ]; then MISSING_VARS="${MISSING_VARS} STAGING_API_URL (or STAGING_API_BASE_URL)"; fi
-          if [ -z "$OIDC_AUTHORITY" ]; then MISSING_VARS="${MISSING_VARS} STAGING_OIDC_AUTHORITY"; fi
-          if [ -z "$OIDC_CLIENT_ID" ]; then MISSING_VARS="${MISSING_VARS} STAGING_OIDC_CLIENT_ID"; fi
+          if [ -z "$STAGING_OIDC_AUTHORITY" ]; then MISSING_VARS="${MISSING_VARS} STAGING_OIDC_AUTHORITY"; fi
+          if [ -z "$STAGING_OIDC_CLIENT_ID" ]; then MISSING_VARS="${MISSING_VARS} STAGING_OIDC_CLIENT_ID"; fi
 
           if [ -n "$MISSING_VARS" ]; then
             echo "::error::Missing required staging environment variables for frontend build:${MISSING_VARS}. Failing job to prevent deploying a broken web bundle."
@@ -222,11 +292,11 @@ jobs:
           fi
 
           echo "VITE_API_URL=${API_URL}" >> $GITHUB_ENV
-          echo "VITE_OIDC_AUTHORITY=${OIDC_AUTHORITY}" >> $GITHUB_ENV
-          echo "VITE_OIDC_CLIENT_ID=${OIDC_CLIENT_ID}" >> $GITHUB_ENV
+          echo "VITE_OIDC_AUTHORITY=${STAGING_OIDC_AUTHORITY}" >> $GITHUB_ENV
+          echo "VITE_OIDC_CLIENT_ID=${STAGING_OIDC_CLIENT_ID}" >> $GITHUB_ENV
           echo "VITE_AUTH_MODE=oidc" >> $GITHUB_ENV
-          if [ -n "${{ vars.VITE_OIDC_LOGOUT_URL }}" ]; then
-            echo "VITE_OIDC_LOGOUT_URL=${{ vars.VITE_OIDC_LOGOUT_URL }}" >> $GITHUB_ENV
+          if [ -n "$CUSTOM_LOGOUT_URL" ]; then
+            echo "VITE_OIDC_LOGOUT_URL=${CUSTOM_LOGOUT_URL}" >> $GITHUB_ENV
           fi
 
       - name: Build Frontend Web Bundle
@@ -234,8 +304,10 @@ jobs:
         run: npm run build
 
       - name: Deploy Frontend SPA to S3
+        env:
+          CONFIGURED_S3_BUCKET: ${{ vars.S3_WEB_BUCKET || secrets.S3_WEB_BUCKET }}
         run: |
-          S3_BUCKET="${{ vars.S3_WEB_BUCKET || secrets.S3_WEB_BUCKET }}"
+          S3_BUCKET="$CONFIGURED_S3_BUCKET"
           if [ -z "$S3_BUCKET" ]; then
             S3_BUCKET=$(aws s3api list-buckets \
               --query "Buckets[?starts_with(Name, 'hr-platform-staging-web')].Name | [0]" --output text)
@@ -250,8 +322,10 @@ jobs:
           fi
 
       - name: Invalidate CloudFront Cache
+        env:
+          CONFIGURED_DIST_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID || secrets.CLOUDFRONT_DISTRIBUTION_ID }}
         run: |
-          DIST_ID="${{ vars.CLOUDFRONT_DISTRIBUTION_ID || secrets.CLOUDFRONT_DISTRIBUTION_ID }}"
+          DIST_ID="$CONFIGURED_DIST_ID"
           if [ -z "$DIST_ID" ]; then
             DIST_ID=$(aws cloudfront list-distributions \
               --query "DistributionList.Items[?contains(Comment, 'hr-platform')].Id | [0]" --output text)
@@ -265,18 +339,19 @@ jobs:
           fi
 
       - name: Health Check Probe (/api/v1/health)
+        env:
+          CONFIGURED_BASE_URL: ${{ vars.STAGING_API_BASE_URL }}
+          CONFIGURED_API_URL: ${{ vars.STAGING_API_URL }}
         run: |
-          # Use STAGING_API_BASE_URL if available; otherwise derive from STAGING_API_URL by stripping /api/v1
-          BASE_URL="${{ vars.STAGING_API_BASE_URL }}"
-          if [ -z "$BASE_URL" ] && [ -n "${{ vars.STAGING_API_URL }}" ]; then
-            BASE_URL="${{ vars.STAGING_API_URL }}"
-            BASE_URL="${BASE_URL%/api/v1}"
+          BASE_URL="$CONFIGURED_BASE_URL"
+          if [ -z "$BASE_URL" ] && [ -n "$CONFIGURED_API_URL" ]; then
+            BASE_URL="${CONFIGURED_API_URL%/api/v1}"
             BASE_URL="${BASE_URL%/}"
           fi
 
           if [ -z "$BASE_URL" ]; then
             SERVICE_URL=$(aws apprunner list-services \
-              --query "ServiceSummaryList[?ServiceName=='${{ env.APP_RUNNER_SERVICE_NAME }}'].ServiceUrl | [0]" --output text)
+              --query "ServiceSummaryList[?ServiceName=='${APP_RUNNER_SERVICE_NAME}'].ServiceUrl | [0]" --output text)
             if [ -n "$SERVICE_URL" ] && [ "$SERVICE_URL" != "None" ]; then
               BASE_URL="https://${SERVICE_URL}"
             fi
@@ -305,12 +380,12 @@ jobs:
               SUCCESS=true
               break
             else
-              echo "Probe returned HTTP ${HTTP_STATUS}. Waiting ${RETRY_INTERVAL}s for App Runner deployment to complete..."
+              echo "Probe returned HTTP ${HTTP_STATUS}. Waiting ${RETRY_INTERVAL}s for App Runner..."
               sleep $RETRY_INTERVAL
             fi
           done
 
           if [ "$SUCCESS" != "true" ]; then
-            echo "Error: Health check failed after ${MAX_ATTEMPTS} attempts."
+            echo "::error::Health check failed after ${MAX_ATTEMPTS} attempts."
             exit 1
           fi
