@@ -10,19 +10,18 @@ xác nhận với điểm cần làm rõ. Tuần này giữ cách làm đó.
 
 | Hạn | Việc |
 |---|---|
-| **T3 (3/11), 21:00** | Gửi link nhánh `docs/week8-tv2-report` đã sửa (xem cuối mục "Cách làm trên git") |
-| **T4 (4/11), 21:00** | Gửi link nhánh `docs/access-control-matrix` |
-| T5 (5/11) | Sửa theo góp ý, mở PR, được merge (TV1 và TV4 cần để viết test) |
-| **T5 (5/11), 21:00** | Gửi link nhánh `docs/leave-rules-br06` (chốt issue #21, #22, BR-06) |
-| T6 (6/11) | Sửa theo góp ý, mở PR, được merge |
-| **T6 (6/11), 21:00** | Gửi link nhánh `docs/threat-model` |
-| T7 (7/11) | Sửa theo góp ý, mở PR, được merge |
-| Trong 24 giờ kể từ khi nhận link | Review nghiệp vụ nhánh `test/access-control-e2e` của TV1 và `docs/security-test-cases` của TV4 |
+| **T3 (3/11), 21:00** | Mở PR nhánh `docs/week8-tv2-report` đã sửa (xem cuối mục "Cách làm trên git") |
+| **T4 (4/11), 21:00** | Mở PR nhánh `docs/access-control-matrix` |
+| T5 (5/11) | Sửa theo góp ý trên PR, được merge (TV1 và TV4 cần để viết test) |
+| **T5 (5/11), 21:00** | Mở PR nhánh `docs/leave-rules-br06` (chốt issue #21, #22, BR-06) |
+| T6 (6/11) | Sửa theo góp ý trên PR, được merge |
+| **T6 (6/11), 21:00** | Mở PR nhánh `docs/threat-model` |
+| T7 (7/11) | Sửa theo góp ý trên PR, được merge |
+| Trong 24 giờ kể từ khi PR mở | Review nghiệp vụ nhánh `test/access-control-e2e` của TV1 và `docs/security-test-cases` của TV4 |
 | **T2 (9/11), 9:00** | Điền mục "Việc đã làm" ở cuối file này |
 
-**Review phải để lại dấu vết:** tuần 8 trên GitHub không có review nào của TV2 cho PR của TV1. Tuần này góp ý gửi trong nhóm
-chat sẽ được TV1 ghi vào mục "Góp ý review" của người được review, kèm tên người góp ý. Mục "Việc đã làm" chỉ ghi review đã
-có dấu vết đó.
+**Review phải để lại dấu vết:** tuần 8 trên GitHub không có review nào của TV2 cho PR của TV1. Từ 7/11 góp ý ghi trực tiếp trên PR (comment
+hoặc review trên GitHub). Mục "Việc đã làm" chỉ ghi review có dấu vết trên GitHub.
 
 ## Việc cần làm
 
@@ -85,18 +84,18 @@ git commit -m "docs(security): add access control matrix"
 git push -u origin docs/access-control-matrix
 ```
 
-Sau đó **chưa mở PR**: gửi link
-`https://github.com/Acerchicken/HR-Enterprise-Platform/compare/dev...docs/access-control-matrix` vào nhóm chat. Đợi góp ý ở
-mục "Góp ý review" bên dưới, sửa trên cùng nhánh, hết góp ý "cần sửa" thì `git pull origin dev`, rồi mới mở PR vào `dev`.
+Sau đó **mở PR** từ `docs/access-control-matrix` vào `dev` (base = `dev`, kiểm tra kỹ trước khi bấm Create; chưa xong thì mở Draft PR).
+Người review góp ý trên PR; sửa trên cùng nhánh, commit, `git push` là PR tự cập nhật, rồi bấm "Re-request review".
+Không đóng PR để mở PR mới.
 
 **Việc tồn tuần 8:** nhánh `docs/week8-tv2-report` (mục "Việc đã làm" của `tuan-08/TV2_Thanh.md`) chưa vào `dev`. Sửa trên
 chính nhánh đó: bỏ 2 dòng ghi đã review PR của TV1 (API, outbox, giao diện) và PR ca kiểm thử của TV4, vì trên GitHub không có
-review nào của TV2 và lúc đó PR outbox, giao diện chưa tồn tại; chạy `git pull origin dev` rồi gửi link review trước **T3 (3/11),
+review nào của TV2 và lúc đó PR outbox, giao diện chưa tồn tại; chạy `git pull origin dev` rồi mở PR trước **T3 (3/11),
 21:00**.
 
 ## Góp ý review
 
-_TV1 ghi góp ý vào đây trước khi bạn mở PR. Mỗi dòng: ngày, nhánh, người góp ý, nội dung ("cần sửa" hoặc "nit:"), trạng thái._
+_Từ 7/11 góp ý ghi trực tiếp trên PR (CONVENTIONS mục 6). Bảng dưới là góp ý trước 7/11, giữ làm lịch sử; mục "Cần sửa" nào còn mở thì người làm xử lý trên PR của nhánh đó._
 
 | Ngày | Nhánh | Người góp ý | Góp ý | Trạng thái |
 |---|---|---|---|---|
