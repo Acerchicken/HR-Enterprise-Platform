@@ -4,8 +4,8 @@
 - **Commit của dev:** `a191a74`
 - **Môi trường:** Local (Swagger, `AUTH_MODE=dev`)
 - **Người thực hiện:** Duy (TV4)
-- **Phạm vi chưa kiểm:** 
-  - Các ca SEC-21, SEC-41, SEC-51, SEC-53, SEC-55, SEC-57 (với cấu trúc DTO request body chi tiết tùy chỉnh mới) tạm thời đưa vào danh sách kiểm tra bổ sung sau khi xác thực lại schema DTO thực tế trên Swagger.
+- **Chạy bổ sung:** SEC-21, 41, 51, 53, 55, 57 do TV1 (Duong) chạy thay ngày 08/11/2026 trên commit `dc68b37`, cùng môi trường, vì bản trước chưa khớp DTO. Body thực tế ghi ở cột Ghi chú.
+- **Phạm vi chưa kiểm:** Không có.
 
 ## 1. Kết quả thực thi Security Test Cases
 
@@ -31,7 +31,7 @@
 | **SEC-18** | Không token | `GET /api/v1/me` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-19** | `manager` | `GET /api/v1/employees` | 200 OK | HTTP 200 OK, trả về danh sách nhân viên. | Đạt | |
 | **SEC-20** | Không token | `GET /api/v1/employees` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
-| **SEC-21** | `hr` | `POST /api/v1/employees` | 201 Created | HTTP 201 Created, tạo mới hồ sơ thành công. | Chưa kiểm | Đưa vào phạm vi chưa kiểm do cần khớp schema DTO chuẩn thực tế trên Swagger. |
+| **SEC-21** | `hr` | `POST /api/v1/employees` | 201 Created | HTTP 201 Created, trả về hồ sơ E91270. | Đạt | Body gửi: `{"employeeCode":"E91270","fullName":"Nguyen Van Kiem Thu","workEmail":"sec21-e91270@hr.local","departmentId":"<UUID phòng ban>","positionId":"<UUID chức danh>","managerId":"<UUID của manager>","hireDate":"2026-11-01"}` (TV1 chạy thay, commit `dc68b37`) |
 | **SEC-22** | `admin` | `POST /api/v1/employees` | 403 Forbidden | HTTP 403 Forbidden, chặn theo decorator hệ thống. | Đạt | |
 | **SEC-23** | `employee` | `GET /api/v1/employees/{id_khác}` | 200 OK | HTTP 200 OK, chỉ hiển thị trường danh bạ cơ bản. | Đạt | |
 | **SEC-24** | Không token | `GET /api/v1/employees/{id}` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
@@ -43,7 +43,7 @@
 | **SEC-30** | Không token | `GET /api/v1/departments/{id}/members` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-31** | `hr` | `GET /api/v1/employees/{id}?include=sensitive`| 200 OK | HTTP 200 OK, trả về trường nhạy cảm đã giải mã. | Đạt | |
 | **SEC-32** | `admin` | `GET /api/v1/employees/{id}?include=sensitive`| 403 Forbidden | HTTP 403 Forbidden, ADMIN không được đọc dữ liệu nhạy cảm. | Đạt | |
-| **SEC-33** | `hr` | `PATCH /api/v1/employees/{id}` (Body: `{"nationalId": "012345678912"}`) | 200 OK | HTTP 200 OK, cập nhật trường nhạy cảm thành công. | Đạt | Body gửi: `{"nationalId": "012345678912", "version": 1}` |
+| **SEC-33** | `hr` | `PATCH /api/v1/employees/{id}` (Body: `{"nationalId": "012345678912"}`) | 200 OK | HTTP 200 OK, cập nhật trường nhạy cảm thành công. | Đạt | Body gửi: `{"nationalId": "012345678912", "version": <version hiện tại của hồ sơ>}` |
 | **SEC-34** | `manager` | `PATCH /api/v1/employees/{id}` (Body: `{"nationalId": "012345678912"}`) | 403 Forbidden | HTTP 403 Forbidden. | Đạt | |
 | **SEC-35** | `employee` | `GET /api/v1/leave-types` | 200 OK | HTTP 200 OK, hiển thị loại phép. | Đạt | |
 | **SEC-36** | Không token | `GET /api/v1/leave-types` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
@@ -51,7 +51,7 @@
 | **SEC-38** | Không token | `GET /api/v1/leave-holidays` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-39** | `employee` | `GET /api/v1/leave-balances/me` | 200 OK | HTTP 200 OK, trả về số dư cá nhân. | Đạt | |
 | **SEC-40** | Không token | `GET /api/v1/leave-balances/me` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
-| **SEC-41** | `employee` | `POST /api/v1/leave-requests` | 201 Created | HTTP 201 Created, gửi đơn nghỉ phép thành công. | Chưa kiểm | Đưa vào phạm vi chưa kiểm do cần đồng bộ DTO `leaveType`. |
+| **SEC-41** | `employee` | `POST /api/v1/leave-requests` | 201 Created | HTTP 201 Created, đơn `SUBMITTED`. | Đạt | Body gửi: `{"leaveType":"ANNUAL","startDate":"2026-12-14","endDate":"2026-12-14","reason":"Kiem thu phan quyen"}`, header `Idempotency-Key` (TV1 chạy thay, commit `dc68b37`) |
 | **SEC-42** | Không token | `POST /api/v1/leave-requests` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-43** | `employee` | `GET /api/v1/leave-requests/me` | 200 OK | HTTP 200 OK, hiển thị danh sách đơn của mình. | Đạt | |
 | **SEC-44** | Không token | `GET /api/v1/leave-requests/me` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
@@ -61,11 +61,11 @@
 | **SEC-48** | `manager` | `GET /api/v1/leave-requests` | 403 Forbidden | HTTP 403 Forbidden, giới hạn quyền HR. | Đạt | |
 | **SEC-49** | `manager` | `GET /api/v1/leave-requests/{id}` | 200 OK | HTTP 200 OK, quản lý trực tiếp xem chi tiết đơn. | Đạt | |
 | **SEC-50** | `employee` | `GET /api/v1/leave-requests/{id}` | 403 Forbidden | HTTP 403 Forbidden, chặn do không phải chủ đơn. | Đạt | |
-| **SEC-51** | `manager` | `POST /api/v1/leave-requests/{id}/approve` | 200 OK | HTTP 200 OK, đơn chuyển trạng thái APPROVED. | Chưa kiểm | Chuyển sang phạm vi chưa kiểm để đồng bộ body DTO (`comment` chuẩn). |
+| **SEC-51** | `manager` | `POST /api/v1/leave-requests/{id}/approve` | 200 OK | HTTP 200 OK, đơn chuyển `APPROVED`. | Đạt | Body gửi: `{"version":1,"comment":"Dong y duyet"}` (TV1 chạy thay, commit `dc68b37`) |
 | **SEC-52** | `hr` | `POST /api/v1/leave-requests/{id}/approve` | 403 Forbidden | HTTP 403 Forbidden. | Đạt | |
-| **SEC-53** | `manager` | `POST /api/v1/leave-requests/{id}/reject` | 200 OK | HTTP 200 OK, đơn chuyển trạng thái REJECTED. | Chưa kiểm | Chuyển sang phạm vi chưa kiểm để đồng bộ body DTO (`comment` chuẩn). |
+| **SEC-53** | `manager` | `POST /api/v1/leave-requests/{id}/reject` | 200 OK | HTTP 200 OK, đơn chuyển `REJECTED`. | Đạt | Body gửi: `{"version":1,"comment":"Tu choi do trung lich"}` (TV1 chạy thay, commit `dc68b37`) |
 | **SEC-54** | `admin` | `POST /api/v1/leave-requests/{id}/reject` | 403 Forbidden | HTTP 403 Forbidden. | Đạt | |
-| **SEC-55** | `employee` | `POST /api/v1/leave-requests/{id}/cancel` | 200 OK | HTTP 200 OK, chủ đơn hủy thành công. | Chưa kiểm | Chuyển sang phạm vi chưa kiểm để đồng bộ body DTO (`comment` chuẩn). |
+| **SEC-55** | `employee` | `POST /api/v1/leave-requests/{id}/cancel` | 200 OK | HTTP 200 OK, đơn chuyển `CANCELLED`. | Đạt | Body gửi: `{"version":1,"comment":"Da thu xep duoc cong viec"}` (TV1 chạy thay, commit `dc68b37`) |
 | **SEC-56** | `manager` | `POST /api/v1/leave-requests/{id}/cancel` | 403 Forbidden | HTTP 403 Forbidden, chặn quản lý tự hủy. | Đạt | |
-| **SEC-57** | `hr` | `POST /api/v1/leave-requests/{id}/complete`| 200 OK | HTTP 200 OK, đơn chuyển COMPLETED. | Chưa kiểm | Chuyển sang phạm vi chưa kiểm để đồng bộ body DTO (`comment` chuẩn). |
+| **SEC-57** | `hr` | `POST /api/v1/leave-requests/{id}/complete`| 200 OK | HTTP 200 OK, đơn chuyển `COMPLETED`. | Đạt | Body gửi: `{"version":2,"comment":"Da cap nhat he thong"}` (TV1 chạy thay, commit `dc68b37`) |
 | **SEC-58** | `manager` | `POST /api/v1/leave-requests/{id}/complete`| 403 Forbidden | HTTP 403 Forbidden. | Đạt | |

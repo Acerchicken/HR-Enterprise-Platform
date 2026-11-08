@@ -33,7 +33,7 @@
 | **SEC-18** | Hồ sơ - Xem của tôi | Không token | `GET /api/v1/me` | `401 Unauthorized`. |
 | **SEC-19** | Danh bạ - Tìm kiếm | `manager` | `GET /api/v1/employees` | `200 OK`, trả danh sách nhân viên ACTIVE. |
 | **SEC-20** | Danh bạ - Tìm kiếm | Không token | `GET /api/v1/employees` | `401 Unauthorized`. |
-| **SEC-21** | Hồ sơ - Tạo mới | `hr` | `POST /api/v1/employees` (Body: JSON) | `201 Created`, hồ sơ được tạo. |
+| **SEC-21** | Hồ sơ - Tạo mới | `hr` | `POST /api/v1/employees` (Body: `{"employeeCode":"E91270","fullName":"Nguyen Van Kiem Thu","workEmail":"sec21-e91270@hr.local","departmentId":"<UUID phòng ban>","positionId":"<UUID chức danh>","managerId":"<UUID của manager>","hireDate":"2026-11-01"}`) | `201 Created`, hồ sơ được tạo. |
 | **SEC-22** | Hồ sơ - Tạo mới | `admin` | `POST /api/v1/employees` | `403 Forbidden`, admin không được cấp quyền. |
 | **SEC-23** | Hồ sơ - Xem cơ bản | `employee` | `GET /api/v1/employees/{id_khác}` | `200 OK`, chỉ thấy cấp danh bạ. |
 | **SEC-24** | Hồ sơ - Xem cơ bản | Không token | `GET /api/v1/employees/{id}` | `401 Unauthorized`. |
@@ -57,7 +57,7 @@
 | **SEC-38** | Ngày lễ - Xem DS | Không token | `GET /api/v1/leave-holidays` | `401 Unauthorized`. |
 | **SEC-39** | Số dư - Xem của mình | `employee` | `GET /api/v1/leave-balances/me` | `200 OK`. |
 | **SEC-40** | Số dư - Xem của mình | Không token | `GET /api/v1/leave-balances/me` | `401 Unauthorized`. |
-| **SEC-41** | Đơn - Tạo/gửi | `employee` | `POST /api/v1/leave-requests` (Body: JSON) | `201 Created`. |
+| **SEC-41** | Đơn - Tạo/gửi | `employee` | `POST /api/v1/leave-requests` (Body: `{"leaveType":"ANNUAL","startDate":"2026-12-14","endDate":"2026-12-14","reason":"Kiem thu phan quyen"}`, header `Idempotency-Key`) | `201 Created`. |
 | **SEC-42** | Đơn - Tạo/gửi | Không token | `POST /api/v1/leave-requests` | `401 Unauthorized`. |
 | **SEC-43** | Đơn - Xem của mình | `employee` | `GET /api/v1/leave-requests/me` | `200 OK`. |
 | **SEC-44** | Đơn - Xem của mình | Không token | `GET /api/v1/leave-requests/me` | `401 Unauthorized`. |
@@ -67,11 +67,11 @@
 | **SEC-48** | Đơn - DS toàn hệ thống | `manager` | `GET /api/v1/leave-requests` | `403 Forbidden`. |
 | **SEC-49** | Đơn - Xem chi tiết | `manager` (Quản lý trực tiếp) | `GET /api/v1/leave-requests/{id}` | `200 OK`. |
 | **SEC-50** | Đơn - Xem chi tiết | `employee` (Không phải chủ đơn) | `GET /api/v1/leave-requests/{id}` | `403 Forbidden`. |
-| **SEC-51** | Đơn - Duyệt | `manager` (Quản lý trực tiếp) | `POST /api/v1/leave-requests/{id}/approve` | `200 OK`. |
+| **SEC-51** | Đơn - Duyệt | `manager` (Quản lý trực tiếp) | `POST /api/v1/leave-requests/{id}/approve` (Body: `{"version":1,"comment":"Dong y duyet"}`) | `200 OK`. |
 | **SEC-52** | Đơn - Duyệt | `hr` | `POST /api/v1/leave-requests/{id}/approve` | `403 Forbidden`. |
-| **SEC-53** | Đơn - Từ chối | `manager` (Quản lý trực tiếp) | `POST /api/v1/leave-requests/{id}/reject` | `200 OK`. |
+| **SEC-53** | Đơn - Từ chối | `manager` (Quản lý trực tiếp) | `POST /api/v1/leave-requests/{id}/reject` (Body: `{"version":1,"comment":"Tu choi do trung lich"}`) | `200 OK`. |
 | **SEC-54** | Đơn - Từ chối | `admin` | `POST /api/v1/leave-requests/{id}/reject` | `403 Forbidden`. |
-| **SEC-55** | Đơn - Hủy | `employee` (Chủ đơn) | `POST /api/v1/leave-requests/{id}/cancel` | `200 OK`. |
+| **SEC-55** | Đơn - Hủy | `employee` (Chủ đơn) | `POST /api/v1/leave-requests/{id}/cancel` (Body: `{"version":1,"comment":"Da thu xep duoc cong viec"}`) | `200 OK`. |
 | **SEC-56** | Đơn - Hủy | `manager` | `POST /api/v1/leave-requests/{id}/cancel` | `403 Forbidden`. |
-| **SEC-57** | Đơn - HR hoàn tất | `hr` | `POST /api/v1/leave-requests/{id}/complete` | `200 OK`. |
+| **SEC-57** | Đơn - HR hoàn tất | `hr` | `POST /api/v1/leave-requests/{id}/complete` (Body: `{"version":2,"comment":"Da cap nhat he thong"}`) | `200 OK`. |
 | **SEC-58** | Đơn - HR hoàn tất | `manager` | `POST /api/v1/leave-requests/{id}/complete` | `403 Forbidden`. |
