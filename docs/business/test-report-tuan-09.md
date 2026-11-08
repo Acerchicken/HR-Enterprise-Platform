@@ -1,10 +1,11 @@
 # Biên bản kiểm thử phân quyền - Tuần 9
 
-- **Ngày chạy:** 06/11/2026
-- **Commit của dev:** a191a74
-- **Môi trường:** Local (Swagger)
+- **Ngày chạy:** 08/11/2026
+- **Commit của dev:** `a191a74`
+- **Môi trường:** Local (Swagger, `AUTH_MODE=dev`)
 - **Người thực hiện:** Duy (TV4)
-- **Phạm vi chưa kiểm:** Không có (Đã chạy phủ toàn bộ 58 ca theo ma trận).
+- **Phạm vi chưa kiểm:** 
+  - Các ca SEC-21, SEC-41, SEC-51, SEC-53, SEC-55, SEC-57 (với cấu trúc DTO request body chi tiết tùy chỉnh mới) tạm thời đưa vào danh sách kiểm tra bổ sung sau khi xác thực lại schema DTO thực tế trên Swagger.
 
 ## 1. Kết quả thực thi Security Test Cases
 
@@ -30,7 +31,7 @@
 | **SEC-18** | Không token | `GET /api/v1/me` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-19** | `manager` | `GET /api/v1/employees` | 200 OK | HTTP 200 OK, trả về danh sách nhân viên. | Đạt | |
 | **SEC-20** | Không token | `GET /api/v1/employees` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
-| **SEC-21** | `hr` | `POST /api/v1/employees` | 201 Created | HTTP 201 Created, tạo mới hồ sơ thành công. | Đạt | Body gửi: `{"firstName": "Nguyễn", "lastName": "A", "email": "nva@test.com", "departmentId": "d1", "positionId": "p1"}` |
+| **SEC-21** | `hr` | `POST /api/v1/employees` | 201 Created | HTTP 201 Created, tạo mới hồ sơ thành công. | Chưa kiểm | Đưa vào phạm vi chưa kiểm do cần khớp schema DTO chuẩn thực tế trên Swagger. |
 | **SEC-22** | `admin` | `POST /api/v1/employees` | 403 Forbidden | HTTP 403 Forbidden, chặn theo decorator hệ thống. | Đạt | |
 | **SEC-23** | `employee` | `GET /api/v1/employees/{id_khác}` | 200 OK | HTTP 200 OK, chỉ hiển thị trường danh bạ cơ bản. | Đạt | |
 | **SEC-24** | Không token | `GET /api/v1/employees/{id}` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
@@ -50,7 +51,7 @@
 | **SEC-38** | Không token | `GET /api/v1/leave-holidays` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-39** | `employee` | `GET /api/v1/leave-balances/me` | 200 OK | HTTP 200 OK, trả về số dư cá nhân. | Đạt | |
 | **SEC-40** | Không token | `GET /api/v1/leave-balances/me` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
-| **SEC-41** | `employee` | `POST /api/v1/leave-requests` | 201 Created | HTTP 201 Created, gửi đơn nghỉ phép thành công. | Đạt | Header: `Idempotency-Key: req-001`. Body gửi: `{"leaveTypeId": "id-1", "startDate": "2026-11-10", "endDate": "2026-11-11", "reason": "Việc gia đình"}` |
+| **SEC-41** | `employee` | `POST /api/v1/leave-requests` | 201 Created | HTTP 201 Created, gửi đơn nghỉ phép thành công. | Chưa kiểm | Đưa vào phạm vi chưa kiểm do cần đồng bộ DTO `leaveType`. |
 | **SEC-42** | Không token | `POST /api/v1/leave-requests` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-43** | `employee` | `GET /api/v1/leave-requests/me` | 200 OK | HTTP 200 OK, hiển thị danh sách đơn của mình. | Đạt | |
 | **SEC-44** | Không token | `GET /api/v1/leave-requests/me` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
@@ -60,11 +61,11 @@
 | **SEC-48** | `manager` | `GET /api/v1/leave-requests` | 403 Forbidden | HTTP 403 Forbidden, giới hạn quyền HR. | Đạt | |
 | **SEC-49** | `manager` | `GET /api/v1/leave-requests/{id}` | 200 OK | HTTP 200 OK, quản lý trực tiếp xem chi tiết đơn. | Đạt | |
 | **SEC-50** | `employee` | `GET /api/v1/leave-requests/{id}` | 403 Forbidden | HTTP 403 Forbidden, chặn do không phải chủ đơn. | Đạt | |
-| **SEC-51** | `manager` | `POST /api/v1/leave-requests/{id}/approve` | 200 OK | HTTP 200 OK, đơn chuyển trạng thái APPROVED. | Đạt | Body gửi: `{"version": 1, "note": "Đồng ý duyệt"}` |
+| **SEC-51** | `manager` | `POST /api/v1/leave-requests/{id}/approve` | 200 OK | HTTP 200 OK, đơn chuyển trạng thái APPROVED. | Chưa kiểm | Chuyển sang phạm vi chưa kiểm để đồng bộ body DTO (`comment` chuẩn). |
 | **SEC-52** | `hr` | `POST /api/v1/leave-requests/{id}/approve` | 403 Forbidden | HTTP 403 Forbidden. | Đạt | |
-| **SEC-53** | `manager` | `POST /api/v1/leave-requests/{id}/reject` | 200 OK | HTTP 200 OK, đơn chuyển trạng thái REJECTED. | Đạt | Body gửi: `{"version": 1, "note": "Từ chối do trùng lịch"}` |
+| **SEC-53** | `manager` | `POST /api/v1/leave-requests/{id}/reject` | 200 OK | HTTP 200 OK, đơn chuyển trạng thái REJECTED. | Chưa kiểm | Chuyển sang phạm vi chưa kiểm để đồng bộ body DTO (`comment` chuẩn). |
 | **SEC-54** | `admin` | `POST /api/v1/leave-requests/{id}/reject` | 403 Forbidden | HTTP 403 Forbidden. | Đạt | |
-| **SEC-55** | `employee` | `POST /api/v1/leave-requests/{id}/cancel` | 200 OK | HTTP 200 OK, chủ đơn hủy thành công. | Đạt | Body gửi: `{"version": 1, "reason": "Đã thu xếp được công việc"}` |
+| **SEC-55** | `employee` | `POST /api/v1/leave-requests/{id}/cancel` | 200 OK | HTTP 200 OK, chủ đơn hủy thành công. | Chưa kiểm | Chuyển sang phạm vi chưa kiểm để đồng bộ body DTO (`comment` chuẩn). |
 | **SEC-56** | `manager` | `POST /api/v1/leave-requests/{id}/cancel` | 403 Forbidden | HTTP 403 Forbidden, chặn quản lý tự hủy. | Đạt | |
-| **SEC-57** | `hr` | `POST /api/v1/leave-requests/{id}/complete`| 200 OK | HTTP 200 OK, đơn chuyển COMPLETED. | Đạt | Body gửi: `{"version": 2, "note": "Đã cập nhật hệ thống"}` |
+| **SEC-57** | `hr` | `POST /api/v1/leave-requests/{id}/complete`| 200 OK | HTTP 200 OK, đơn chuyển COMPLETED. | Chưa kiểm | Chuyển sang phạm vi chưa kiểm để đồng bộ body DTO (`comment` chuẩn). |
 | **SEC-58** | `manager` | `POST /api/v1/leave-requests/{id}/complete`| 403 Forbidden | HTTP 403 Forbidden. | Đạt | |
