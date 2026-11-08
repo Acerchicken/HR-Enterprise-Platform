@@ -90,6 +90,7 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL'
           scanners: 'vuln'
+          trivyignores: '.trivyignore'
 
   docker-frontend:
     name: Docker Frontend (Build & Scan)
@@ -125,3 +126,4 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL'
           scanners: 'vuln'
+          trivyignores: '.trivyignore'

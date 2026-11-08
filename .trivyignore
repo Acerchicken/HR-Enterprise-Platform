@@ -1,3 +1,6 @@
 # .trivyignore
 # Danh sách các lỗ hổng tạm thời bỏ qua kèm lý do và hạn xem lại
 # Tuân thủ quy ước bảo mật Tuần 9 (TV3 Bảo)
+# CVE-2026-59873: node-tar DoS via crafted gzip bomb trong bundled npm toolchain (không sử dụng trực tiếp trong runtime production).
+# Hạn xem lại: 2026-12-01 (khi base image node:20-alpine cập nhật bản vá npm)
+CVE-2026-59873
