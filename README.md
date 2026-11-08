@@ -1,4 +1,6 @@
-# Enterprise HR Platform
+# HRHelper – HR Enterprise Platform
+
+> **HRHelper** là tên dự án từ tuần 9 (trước đó gọi là Enterprise HR Platform); "HR Enterprise Platform" là chú giải đi kèm.
 
 Đồ án môn Cloud Application Development – đề tài số 3. Hệ thống HR nội bộ cho doanh nghiệp ~2,000 nhân viên:
 hồ sơ nhân viên, sơ đồ tổ chức, đơn nghỉ phép có duyệt, kho tài liệu chính sách, tìm kiếm, audit.
@@ -7,6 +9,8 @@ Trạng thái: **tuần 7 – Implementation 1 (nền tảng)**. Đã có: đăn
 model + state machine của Leave, dữ liệu mẫu 2,000 nhân viên, frontend (hồ sơ, danh bạ, sơ đồ tổ chức).
 
 ## Kiến trúc (tóm tắt)
+
+Kiến trúc đầy đủ: [kiến trúc hệ thống](docs/architecture/system-architecture.md) (khối, hạ tầng, NFR, CI/CD) và [kiến trúc phần mềm](docs/architecture/software-architecture.md) (module, code, pattern) – mục lục ở [`docs/architecture/`](docs/architecture/README.md).
 
 - **Modular monolith** (ADR-01): một API NestJS, mỗi module một thư mục và một schema PostgreSQL.
 - **PostgreSQL** (ADR-02): schema `org`, `employee`, `iam`, `leave`, `audit`. Không có foreign key chéo schema.
@@ -77,6 +81,7 @@ npm install
 npm run migration:run
 npm run seed                 # thêm "-- --reset" để tạo lại từ đầu
 npm run start:dev            # http://localhost:3000/api/docs
+npm run start:worker         # (terminal khác) worker gửi email thông báo nghỉ phép qua Mailpit
 
 cd ../frontend
 cp .env.example .env.local
@@ -99,6 +104,14 @@ curl -H "Authorization: Bearer $TOKEN" "http://localhost:3000/api/v1/employees?q
 ```
 
 Client `hr-api-test` (password grant) chỉ dùng cho test local, sẽ bỏ khi deploy.
+
+## Secret khi chạy staging/production
+
+- `NODE_ENV=production` thì API, worker, seed **không khởi động** nếu thiếu `FIELD_ENCRYPTION_KEY`, `DB_PASSWORD`, `OIDC_ISSUER`
+  (khi `AUTH_MODE=oidc`) hoặc `FIELD_ENCRYPTION_KEY` còn là khóa dev. Lỗi chỉ nêu tên biến, không in giá trị.
+- `docker-compose.yml` đặt `ALLOW_DEV_SECRETS=true` để chạy local bằng khóa dev; staging/production **không** đặt biến này,
+  secret lấy từ AWS Secrets Manager (Terraform trong `infra/`).
+- TLS tới PostgreSQL: `DB_SSL=require` (mã hóa) hoặc `DB_SSL=verify` + `DB_SSL_CA_FILE` (kiểm tra chứng chỉ RDS). Local để `off`.
 
 ## Test
 

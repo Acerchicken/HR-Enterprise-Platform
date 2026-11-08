@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, LeaveBalance, Me } from '../api/client';
 import { useApi } from '../api/useApi';
 import { ErrorBox } from '../components/ErrorBox';
@@ -83,7 +84,7 @@ export function ProfilePage() {
             ))}
           </tbody>
         </table>
-        <p className="muted small">Tạo đơn nghỉ phép: tuần 8.</p>
+        <p className="small"><Link to="/leave/new">Tạo đơn nghỉ phép</Link> · <Link to="/leave">Đơn của tôi</Link></p>
       </section>
     </div>
   );

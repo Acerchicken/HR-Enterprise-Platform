@@ -63,6 +63,12 @@ export class EmployeeService {
     return rows.map((r) => r.id);
   }
 
+  /** Email công việc để gửi thông báo (dùng cho worker). */
+  async contactOf(employeeId: string): Promise<{ email: string; fullName: string } | null> {
+    const e = await this.repo.findOne({ where: { id: employeeId }, select: { id: true, workEmail: true, fullName: true } });
+    return e ? { email: e.workEmail, fullName: e.fullName } : null;
+  }
+
   async namesOf(ids: string[]): Promise<Map<string, string>> {
     if (!ids.length) return new Map();
     const rows = await this.repo.find({ where: { id: In([...new Set(ids)]) }, select: { id: true, fullName: true } });

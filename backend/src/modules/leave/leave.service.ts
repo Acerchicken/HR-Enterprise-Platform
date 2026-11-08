@@ -18,6 +18,8 @@ import { availableDays, isValidDate, leaveDays, overlaps } from './leave-rules';
 import { ActorRelation, BalanceEffect, LeaveAction, LeaveStatus, submitEffect, transition } from './leave-state-machine';
 import { LeaveType } from './leave-type.entity';
 import { CreateLeaveRequestDto, LeaveDecisionDto, LeaveRequestQuery, LeaveRequestView } from './leave.dto';
+import { EVENT_OF_ACTION, LeaveEventType } from './outbox/leave-events';
+import { OutboxEvent } from './outbox/outbox.entity';
 
 const ACTIVE: LeaveStatus[] = ['SUBMITTED', 'APPROVED'];
 
@@ -150,6 +152,7 @@ export class LeaveService {
           },
           m,
         );
+        await this.emit(m, 'LeaveRequested', saved, type.code, employeeId, null);
         return saved.id;
       });
       return this.get(id, actor);
@@ -203,6 +206,8 @@ export class LeaveService {
         },
         m,
       );
+      const type = await m.findOneByOrFail(LeaveType, { id: r.leaveTypeId });
+      await this.emit(m, EVENT_OF_ACTION[action], r, type.code, actor.employeeId!, dto.comment ?? null);
     });
     return this.get(id, actor);
   }
@@ -274,6 +279,26 @@ export class LeaveService {
     if (action === 'complete') return hasRole(actor, 'HR') ? 'HR' : 'OTHER';
     // Duyệt/từ chối: phải là quản lý trực tiếp tại thời điểm xử lý (BR-05).
     return actor.employeeId === (await this.employees.managerIdOf(r.employeeId)) ? 'DIRECT_MANAGER' : 'OTHER';
+  }
+
+  /** Ghi event vào outbox trong cùng transaction; publisher đẩy lên RabbitMQ sau khi commit. */
+  private async emit(m: EntityManager, eventType: LeaveEventType, r: LeaveRequest, leaveType: string, actorId: string, comment: string | null) {
+    await m.insert(OutboxEvent, {
+      eventType,
+      aggregateId: r.id,
+      payload: {
+        requestId: r.id,
+        employeeId: r.employeeId,
+        leaveType,
+        startDate: r.startDate,
+        endDate: r.endDate,
+        halfDay: r.halfDay,
+        days: Number(r.days),
+        actorId,
+        comment,
+        occurredAt: new Date().toISOString(),
+      },
+    });
   }
 
   private async holidaySet(m: EntityManager, from: string, to: string): Promise<Set<string>> {

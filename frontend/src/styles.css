@@ -63,3 +63,14 @@ ul.tree.root { padding-left: 0; }
 ul.tree li { margin: 4px 0; }
 .toggle { display: inline-block; width: 22px; border: none; background: none; padding: 0; color: var(--muted); }
 code { background: #f2f4f7; padding: 1px 4px; border-radius: 4px; }
+button.danger { color: var(--danger); border-color: #fda29b; }
+a.button { display: inline-block; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); white-space: nowrap; }
+a.button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+a.button:hover { text-decoration: none; }
+.actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.actions input { width: auto; flex: 1; min-width: 160px; }
+.status-submitted { background: #fffaeb; color: #b54708; }
+.status-approved { background: #eff8ff; color: #175cd3; }
+.status-completed { background: #ecfdf3; color: var(--ok); }
+.status-rejected { background: #fef3f2; color: var(--danger); }
+.status-cancelled { background: #f2f4f7; color: var(--muted); }

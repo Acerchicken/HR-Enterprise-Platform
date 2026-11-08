@@ -4,7 +4,8 @@ export function LoginPage() {
   const { login } = useAuth();
   return (
     <div className="center card narrow">
-      <h1>Enterprise HR Platform</h1>
+      <h1>HRHelper</h1>
+      <p className="muted">HR Enterprise Platform</p>
       {AUTH_MODE === 'oidc' ? (
         <>
           <p>Đăng nhập bằng tài khoản công ty (SSO qua Keycloak).</p>
