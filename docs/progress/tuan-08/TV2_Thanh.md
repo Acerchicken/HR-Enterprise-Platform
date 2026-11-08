@@ -2,6 +2,18 @@
 
 Vai trò: viết business rule trước khi TV1 code, vẽ quy trình nghiệp vụ, đối chiếu code với requirements.
 
+## Cập nhật 31/10: việc còn lại đến hết tuần
+
+Tình trạng: business rule đã vào `dev` (PR #1). BR-03 được TV1 sửa để trừ ngày lễ (PR #8, đã ghi chú trên PR #1). Nhánh
+`docs/uc1-uc2-review` có bản nháp `docs/business/uc1-uc2-review-draft.md` từ 29/10 nhưng **chưa mở PR và chưa có issue
+nào** trên GitHub (hạn thứ 6 30/10).
+
+| Hạn | Việc | Output |
+|---|---|---|
+| **Thứ 7 (31/10), 21:00** | Mở issue trên GitHub cho từng điểm lệch UC1, UC2 trong bản nháp đối chiếu; mở PR `docs/uc1-uc2-review` vào `dev` (base = `dev`) | Issue (mỗi điểm lệch một issue), PR |
+| Trong 24 giờ kể từ khi được gán | Review nghiệp vụ PR `feat/leave-outbox-worker` và `feat/leave-ui` của TV1: thông báo email và màn hình có đúng BR không | Review trên GitHub |
+| **Thứ 2 (2/11), 9:00** | Điền mục "Việc đã làm" ở cuối file này | |
+
 ## Hạn chót
 
 | Hạn | Việc |
@@ -40,4 +52,5 @@ git push -u origin docs/leave-rules
 
 ## Việc đã làm
 
-_Điền cuối tuần._
+- Hoàn thành bảng business rule BR-01–BR-11 và sơ đồ Mermaid cho luồng nghỉ phép trong `docs/business/leave-rules.md`; cập nhật theo góp ý review. PR #1 (`docs/leave-rules` → `dev`) đã được merge.
+- Đối chiếu UC1/UC2 trong code tuần 7 với functional requirements tuần 5; mở issue #21 về input mã phòng ban và issue #22 về quy tắc quản lý trực tiếp/ngoại lệ người đứng đầu. Đã mở PR #23 (`docs/uc1-uc2-review` → `dev`).

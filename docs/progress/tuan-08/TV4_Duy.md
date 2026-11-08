@@ -2,6 +2,33 @@
 
 Vai trò: danh mục và quy định nhỏ (loại phép, ngày lễ), biến business rule thành ca kiểm thử, kiểm thử chức năng cuối tuần.
 
+## Cập nhật 31/10: việc còn lại đến hết tuần
+
+Tình trạng: danh mục loại phép và ngày lễ đã vào `dev` (PR #5). PR #13 đã đóng; ca kiểm thử và biên bản kiểm thử màn hình
+tuần 7 được TV1 làm lại theo review và đã vào `dev` (PR #14). Nhánh `docs/leave-test-cases` không dùng nữa.
+
+| Hạn | Việc | Output |
+|---|---|---|
+| **Chủ nhật (1/11), 21:00** | Kiểm thử chức năng các màn hình nghỉ phép trên `dev` (sau khi `feat/leave-ui` vào `dev` lúc 12:00) theo đúng các ca TC-01 → TC-22 trong `docs/business/leave-test-cases.md` | Điền mục 2 "Màn hình nghỉ phép" trong `docs/business/test-report-tuan-08.md`, mở PR `docs/test-report-leave` vào `dev` |
+| **Chủ nhật (1/11), 21:00** | Mở issue trên GitHub cho mỗi lỗi tìm thấy, và cho 2 lỗi L-01, L-02 ở mục 1.3 của biên bản | Issue, ghi số issue vào cột "Ghi chú" của biên bản |
+| **Thứ 2 (2/11), 9:00** | Điền mục "Việc đã làm" ở cuối file này | |
+
+Cách ghi biên bản (xem mục 1 của `test-report-tuan-08.md` làm mẫu):
+- Ghi ngày kiểm thử thật, môi trường (commit của `dev` đã chạy), tài khoản đã dùng.
+- Mỗi dòng: mã TC, tài khoản, bước đã làm trên giao diện, kết quả mong đợi (lấy từ ca kiểm thử), **kết quả thực tế quan
+  sát được**, Đạt/Không đạt. Ca nào chưa làm được thì ghi lý do vào mục "Phạm vi chưa kiểm", không ghi Đạt.
+- Ca có thay đổi số dư: chụp lại bảng "Số dư phép" trên trang hồ sơ trước và sau khi thao tác.
+
+```bash
+git checkout dev && git pull
+git checkout -b docs/test-report-leave
+# điền mục 2 trong docs/business/test-report-tuan-08.md, rồi:
+git add docs/business/test-report-tuan-08.md
+git commit -m "docs(testing): add leave screens test report"
+git push -u origin docs/test-report-leave
+# lên GitHub mở PR: base = dev, compare = docs/test-report-leave
+```
+
 ## Hạn chót
 
 | Hạn | Việc |

@@ -5,7 +5,22 @@ thông báo email qua queue), có business rule và ca kiểm thử đi kèm, c�
 
 Phân vai theo ADR-11: TV1 Duong code, TV2 Thanh nghiệp vụ, TV3 Bảo cloud, IaC, CI/CD, TV4 Duy ca kiểm thử + một phần nghiệp vụ.
 
-> File này là kế hoạch đầu tuần. Cuối tuần (thứ 2, 2/11) nhóm điền mục 1–3 để làm báo cáo.
+> Đã chốt ngày 2/11/2026. Bản chốt trên `main` có tag [`week-08`](https://github.com/Acerchicken/HR-Enterprise-Platform/releases/tag/week-08).
+
+## Tóm tắt tuần 8
+
+**Đã làm được:** luồng nghỉ phép chạy end-to-end ở local: nhân viên tạo đơn → quản lý trực tiếp duyệt/từ chối → HR hoàn
+tất, mỗi bước một transaction có audit, trừ ngày lễ, nghỉ nửa ngày, chống gửi trùng; email thông báo đi qua outbox →
+RabbitMQ → worker → Mailpit; 5 màn hình nghỉ phép. Có business rule BR-01 → BR-11, danh mục loại phép và ngày lễ 2026, 22 ca
+kiểm thử, biên bản kiểm thử 5 màn hình tuần 7, đối chiếu UC1/UC2 (issue #21, #22). CI (lint, unit test, build) chạy trên
+mọi PR; `dev`/`main` có ruleset, chỉ nhóm trưởng merge.
+
+**Chưa xong, chuyển sang tuần 9:** ADR-12 (chọn AWS, còn 2 điểm cần sửa); kiểm thử màn hình nghỉ phép theo ca kiểm thử;
+BR-06 (người duyệt thay).
+
+**Tuần 9 (2/11 – 9/11):** P3 – Security & DevOps: ma trận phân quyền, threat model, quản lý secret, image Docker + quét lỗ
+hổng trong CI, Terraform staging trên AWS và deploy staging lần đầu. Chi tiết ở [`tuan-09/README.md`](../tuan-09/README.md).
+Từ tuần 9 áp dụng quy trình review trên nhánh trước khi mở PR.
 
 ## Kế hoạch tuần 8 theo nhánh
 
@@ -35,23 +50,42 @@ Thứ tự phụ thuộc:
 
 ## 1. Các công việc đã hoàn thành
 
-_Điền cuối tuần._
+Số liệu chốt ngày 2/11/2026, tình trạng PR theo GitHub.
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (Duong, nhóm trưởng) | | | [Duong_TV1.md](Duong_TV1.md) |
-| TV2 (Thanh) | | | [Thanh_TV2.md](Thanh_TV2.md) |
-| TV3 (Bảo) | | | [Bao_TV3.md](Bao_TV3.md) |
-| TV4 (Duy) | | | [Duy_TV4.md](Duy_TV4.md) |
+| TV1 (Duong, nhóm trưởng) | API workflow nghỉ phép (tạo, duyệt/từ chối, hủy, HR hoàn tất) trong một transaction, có idempotency, optimistic locking, trừ ngày lễ, nghỉ nửa ngày; outbox + publisher RabbitMQ + worker gửi email; 5 màn hình nghỉ phép; sửa BR-03 (trừ ngày lễ), sửa lỗi Mailpit; làm lại ca kiểm thử và biên bản kiểm thử tuần 7 thay TV4; ruleset bảo vệ `dev`/`main`; review toàn bộ PR | PR #8, #9, #14, #15, #24, #25 (đã merge). Luồng nghỉ phép chạy end-to-end ở local, email tới Mailpit | [TV1_Duong.md](TV1_Duong.md) |
+| TV2 (Thanh) | Business rule BR-01 → BR-11 và sơ đồ quy trình nghỉ phép; đối chiếu UC1/UC2 với code tuần 7, mở 2 issue | PR #1, #23 (đã merge; #23 trễ ~2 ngày); issue #21, #22 | [TV2_Thanh.md](TV2_Thanh.md) |
+| TV3 (Bảo) | RabbitMQ + Mailpit trong docker-compose; CI GitHub Actions (lint, unit test, build); ADR-12 + bảng mapping + chi phí | PR #10, #11 (đã merge, trễ ~1 ngày do lần đầu mở nhầm vào `main`); PR #12 (đã đóng, còn 2 điểm cần sửa) | [TV3_Bao.md](TV3_Bao.md) |
+| TV4 (Duy) | Danh mục loại phép và ngày lễ 2026 (bản cuối do TV1 sửa theo review) | PR #5 (đã merge) | [TV4_Duy.md](TV4_Duy.md) |
+
+**Chưa làm được theo kế hoạch:**
+- **Ca kiểm thử và kiểm thử chức năng của TV4:** PR #13 trễ hạn và không đạt nên được đóng; TV1 làm lại ở PR #14. Các PR nộp lại
+  sau đó (#17, #20) không đạt và đã đóng: #17 ghi đè bản danh mục đã merge; #20 báo kết quả kiểm thử màn hình nghỉ phép trong khi các màn
+  hình này chưa có trên `dev`, issue #18 và #19 không tái hiện được trên API. Kiểm thử màn hình nghỉ phép theo ca kiểm thử
+  chuyển sang đầu tuần 9.
+- **ADR-12 (TV3):** chưa sửa 2 điểm review (mạng của App Runner, Cognito) trước hạn 31/10; PR #12 đã đóng ngày 2/11, chuyển
+  thành việc đầu tiên của TV3 tuần 9 (hạn 4/11).
+- **BR-06 (người duyệt thay khi quản lý vắng mặt):** chưa có mô hình dữ liệu, chưa code; phụ thuộc issue #22.
+- **Review chéo:** TV2, TV3, TV4 chưa để lại review nào trên GitHub cho PR của TV1 (#9, #24, #25).
+- **Tiến độ TV1:** `feat/leave-outbox-worker` và `feat/leave-ui` trễ 2–3 ngày so với hạn 30/10 và 1/11.
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 9: 2/11 – 9/11)
 
-_Điền cuối tuần. Dự kiến theo kế hoạch tổng: P3 – Security & DevOps (threat model, ma trận phân quyền, quản lý secret,
-container, CI/CD, IaC, deploy staging lần đầu)._
+P3 – Security & DevOps. Kế hoạch chi tiết, nhánh và hạn ở [`tuan-09/README.md`](../tuan-09/README.md). Từ tuần 9: review trên
+nhánh, góp ý ghi trong file cá nhân, chỉ mở PR khi đạt điều kiện merge
+([`CONVENTIONS.md`](../../CONVENTIONS.md#quy-trình-cho-một-việc-từ-tuần-9)).
+
+| Thành viên | Công việc | Output |
+|---|---|---|
+| TV1 (Duong, nhóm trưởng) | Quản lý secret ở tầng ứng dụng (production thiếu secret thì không khởi động); hỗ trợ token Cognito; tách queue thành adapter RabbitMQ (local) / SQS (cloud); e2e test theo ma trận phân quyền; báo cáo, merge, PR `dev` → `main` | PR code, e2e test, báo cáo tuần 9 |
+| TV2 (Thanh) | Ma trận phân quyền RBAC/ABAC; chốt issue #21, #22 và BR-06; threat model STRIDE | `docs/security/access-control-matrix.md`, `docs/security/threat-model.md`, cập nhật `leave-rules.md` |
+| TV3 (Bảo) | Sửa xong ADR-12 (việc đầu tiên, hạn 4/11); CI build + quét image Docker; Terraform staging trên AWS; pipeline deploy staging lần đầu | ADR-12, `.github/workflows/`, `infra/`, staging chạy được |
+| TV4 (Duy) | Kiểm thử màn hình nghỉ phép theo TC-01 → TC-22 (chạy thật); ca kiểm thử phân quyền theo ma trận và chạy thử; smoke test staging | Mục 2 `test-report-tuan-08.md`, `security-test-cases.md`, `test-report-tuan-09.md`, issue |
 
 ## 3. Quyết định quan trọng
 
 ### ADR-12 – Chọn cloud provider
 
-_TV3 viết theo khung: bối cảnh, các giải pháp, tiêu chí lựa chọn, giải pháp được chọn, trade-off, tiêu chí nghiệm thu,
-khi nào xem lại._
+_Chưa chốt trong tuần 8: PR #12 đã đóng vì còn 2 điểm cần sửa. TV3 hoàn tất ở tuần 9 (hạn 4/11), ADR được ghi vào mục 3 của
+[`tuan-09/README.md`](../tuan-09/README.md#adr-12--chọn-cloud-provider)._

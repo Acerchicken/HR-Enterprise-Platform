@@ -17,7 +17,7 @@ const MANAGER = as('manager@hr.local');
 const HR = as('hr@hr.local');
 const ADMIN = as('admin@hr.local');
 
-describe('HR Platform API (e2e)', () => {
+describe('HRHelper API (e2e)', () => {
   let app: INestApplication;
   let http: ReturnType<typeof request>;
   let employeeId: string;
@@ -37,7 +37,12 @@ describe('HR Platform API (e2e)', () => {
     strangerId = page.body.items.find((e: any) => e.managerId !== managerId && e.id !== employeeId && e.id !== managerId).id;
   });
 
-  afterAll(() => app.close());
+  // L-01 (biên bản tuần 8): dọn phòng ban do test tạo (mã T-...) để không lẫn vào dữ liệu demo.
+  afterAll(async () => {
+    const { DataSource } = await import('typeorm');
+    await app.get(DataSource).query(`DELETE FROM org.department WHERE code LIKE 'T-%'`);
+    await app.close();
+  });
 
   it('health không cần đăng nhập', async () => {
     await http.get('/api/v1/health').expect(200, { status: 'ok' });
@@ -151,9 +156,271 @@ describe('HR Platform API (e2e)', () => {
     await http.post('/api/v1/departments').set(HR).send(dto).expect(201);
   });
 
+  /**
+   * Ma trận phân quyền (docs/security/access-control-matrix.md): mỗi dòng có ít nhất một ca được phép và một ca bị chặn.
+   * Các dòng đã được kiểm ở test khác trong file này thì không lặp lại.
+   */
+  describe('ma trận phân quyền', () => {
+    const code = () => `T-${Date.now() % 1000000}${Math.floor(Math.random() * 10)}`;
+
+    it('audit log: HR, ADMIN xem được; MANAGER bị chặn', async () => {
+      await http.get('/api/v1/audit-logs?size=1').set(ADMIN).expect(200);
+      await http.get('/api/v1/audit-logs?size=1').set(HR).expect(200);
+      await http.get('/api/v1/audit-logs').set(MANAGER).expect(403);
+    });
+
+    it('đọc tổ chức, chức danh, loại phép, ngày lễ: mọi role đã đăng nhập, chưa đăng nhập thì 401', async () => {
+      const dept = (await http.get('/api/v1/departments').set(ADMIN).expect(200)).body[0];
+      for (const who of [EMPLOYEE, MANAGER, HR, ADMIN]) {
+        await http.get(`/api/v1/departments/${dept.id}`).set(who).expect(200);
+        await http.get('/api/v1/positions').set(who).expect(200);
+        await http.get('/api/v1/leave-types').set(who).expect(200);
+        await http.get('/api/v1/leave-holidays').set(who).expect(200);
+      }
+      await http.get('/api/v1/positions').expect(401);
+      await http.get('/api/v1/leave-types').expect(401);
+    });
+
+    it('tạo, sửa phòng ban: HR và ADMIN; EMPLOYEE, MANAGER bị chặn; không tạo được vòng lặp', async () => {
+      const bod = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code === 'BOD');
+      const dept = (name: string, parentId: string) => ({ code: code(), name, office: 'Hà Nội', parentId });
+      const a = (await http.post('/api/v1/departments').set(ADMIN).send(dept('Phòng test A', bod.id)).expect(201)).body;
+      await http.post('/api/v1/departments').set(MANAGER).send(dept('Phòng test', bod.id)).expect(403);
+      const b = (await http.post('/api/v1/departments').set(HR).send(dept('Phòng test B', a.id)).expect(201)).body;
+
+      await http.patch(`/api/v1/departments/${a.id}`).set(EMPLOYEE).send({ name: 'Đổi tên' }).expect(403);
+      await http.patch(`/api/v1/departments/${a.id}`).set(MANAGER).send({ name: 'Đổi tên' }).expect(403);
+      await http.patch(`/api/v1/departments/${a.id}`).set(HR).send({ name: 'Phòng test A1' }).expect(200);
+      await http.patch(`/api/v1/departments/${a.id}`).set(ADMIN).send({ office: 'Đà Nẵng' }).expect(200);
+      await http.patch(`/api/v1/departments/${a.id}`).set(HR).send({ parentId: b.id }).expect(400);
+    });
+
+    it('tạo nhân viên: chỉ HR (HR qua được phân quyền, dữ liệu thiếu thì 400)', async () => {
+      for (const who of [EMPLOYEE, MANAGER, ADMIN]) {
+        await http.post('/api/v1/employees').set(who).send({}).expect(403);
+      }
+      await http.post('/api/v1/employees').set(HR).send({}).expect(400);
+    });
+
+    it('xem hồ sơ: chủ hồ sơ PERSONAL, HR mức HR, ADMIN chỉ mức danh bạ; nhân viên không xem trường nhạy cảm', async () => {
+      expect((await http.get(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).expect(200)).body.visibility).toBe('PERSONAL');
+      expect((await http.get(`/api/v1/employees/${employeeId}`).set(HR).expect(200)).body.visibility).toBe('HR');
+      const asAdmin = (await http.get(`/api/v1/employees/${employeeId}`).set(ADMIN).expect(200)).body;
+      expect(asAdmin.visibility).toBe('PUBLIC');
+      expect(asAdmin.dateOfBirth).toBeUndefined();
+      await http.get(`/api/v1/employees/${employeeId}?include=sensitive`).set(EMPLOYEE).expect(403);
+    });
+
+    it('sửa hồ sơ: quản lý không sửa hồ sơ cấp dưới; ADMIN không sửa hồ sơ người khác hay trường nhạy cảm', async () => {
+      await http.patch(`/api/v1/employees/${employeeId}`).set(MANAGER).send({ phone: '0912000444' }).expect(403);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(MANAGER).send({ nationalId: '001234567890' }).expect(403);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(ADMIN).send({ phone: '0912000555' }).expect(403);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(ADMIN).send({ salary: '1000' }).expect(403);
+    });
+
+    it('/me và số dư phép của tôi: mọi role, chưa đăng nhập thì 401', async () => {
+      expect((await http.get('/api/v1/me').set(ADMIN).expect(200)).body.roles).toContain('ADMIN');
+      expect((await http.get('/api/v1/leave-balances/me').set(MANAGER).expect(200)).body.length).toBeGreaterThan(0);
+      await http.get('/api/v1/leave-balances/me').expect(401);
+    });
+
+    it('danh sách đơn: chờ duyệt chỉ MANAGER; toàn hệ thống chỉ HR', async () => {
+      await http.get('/api/v1/leave-requests/pending-approval').set(MANAGER).expect(200);
+      for (const who of [EMPLOYEE, HR, ADMIN]) {
+        await http.get('/api/v1/leave-requests/pending-approval').set(who).expect(403);
+      }
+      await http.get('/api/v1/leave-requests').set(HR).expect(200);
+      for (const who of [MANAGER, ADMIN]) {
+        await http.get('/api/v1/leave-requests').set(who).expect(403);
+      }
+    });
+  });
+
   it('số dư phép của tôi', async () => {
     const res = await http.get('/api/v1/leave-balances/me').set(EMPLOYEE).expect(200);
     expect(res.body.map((b: any) => b.leaveType).sort()).toEqual(['ANNUAL', 'SICK']);
+  });
+
+  describe('workflow nghỉ phép', () => {
+    let ds: import('typeorm').DataSource;
+    let savedBalances: { leave_type_id: string; used: string }[];
+    const key = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const annual = async () =>
+      (await http.get('/api/v1/leave-balances/me').set(EMPLOYEE)).body.find((b: any) => b.leaveType === 'ANNUAL');
+    const create = (body: object, k = key()) =>
+      http.post('/api/v1/leave-requests').set(EMPLOYEE).set('Idempotency-Key', k).send(body);
+    const clean = async () => {
+      await ds.query(
+        `DELETE FROM leave.leave_request_history WHERE request_id IN (SELECT id FROM leave.leave_request WHERE employee_id = $1)`,
+        [employeeId],
+      );
+      await ds.query(
+        `DELETE FROM leave.outbox WHERE aggregate_id IN (SELECT id FROM leave.leave_request WHERE employee_id = $1)`,
+        [employeeId],
+      );
+      await ds.query('DELETE FROM leave.leave_request WHERE employee_id = $1', [employeeId]);
+    };
+
+    // Dọn đơn của nhân viên demo và đưa số dư về 0 ngày đã dùng để test chạy lại được; afterAll trả lại số liệu seed.
+    beforeAll(async () => {
+      const { DataSource } = await import('typeorm');
+      ds = app.get(DataSource);
+      savedBalances = await ds.query('SELECT leave_type_id, used FROM leave.leave_balance WHERE employee_id = $1', [employeeId]);
+      await clean();
+      await ds.query('UPDATE leave.leave_balance SET used = 0, pending = 0 WHERE employee_id = $1', [employeeId]);
+    });
+
+    afterAll(async () => {
+      await clean();
+      for (const b of savedBalances) {
+        await ds.query(
+          'UPDATE leave.leave_balance SET used = $3, pending = 0 WHERE employee_id = $1 AND leave_type_id = $2',
+          [employeeId, b.leave_type_id, b.used],
+        );
+      }
+    });
+
+    it('tạo → quản lý duyệt → HR hoàn tất; số dư, lịch sử và audit đúng', async () => {
+      const before = await annual();
+      const k = key();
+      const body = { leaveType: 'ANNUAL', startDate: '2026-11-09', endDate: '2026-11-10', reason: 'Việc gia đình' };
+      const created = await create(body, k).expect(201);
+      expect(created.body).toMatchObject({ status: 'SUBMITTED', days: 2, approverId: null });
+      expect((await annual()).pending).toBe(before.pending + 2);
+
+      // Idempotency-Key: gửi lại cùng nội dung trả về đơn cũ; khác nội dung thì 409.
+      expect((await create(body, k).expect(201)).body.id).toBe(created.body.id);
+      await create({ ...body, endDate: '2026-11-11' }, k).expect(409);
+
+      const id = created.body.id;
+      const v = created.body.version;
+      await http.post(`/api/v1/leave-requests/${id}/approve`).set(EMPLOYEE).send({ version: v }).expect(403);
+      await http.post(`/api/v1/leave-requests/${id}/approve`).set(HR).send({ version: v }).expect(403);
+      await http.post(`/api/v1/leave-requests/${id}/approve`).set(MANAGER).send({ version: v + 5 }).expect(409);
+
+      const queue = await http.get('/api/v1/leave-requests/pending-approval').set(MANAGER).expect(200);
+      expect(queue.body.items.map((r: any) => r.id)).toContain(id);
+
+      const approved = await http.post(`/api/v1/leave-requests/${id}/approve`).set(MANAGER).send({ version: v }).expect(200);
+      expect(approved.body).toMatchObject({ status: 'APPROVED', approverId: managerId });
+      // BR-11: duyệt lặp không đổi gì; quyết định ngược lại bị chặn; nhân viên không tự hủy đơn đã duyệt (BR-08).
+      const again = await http.post(`/api/v1/leave-requests/${id}/approve`).set(MANAGER).send({ version: v }).expect(200);
+      expect(again.body.version).toBe(approved.body.version);
+      await http.post(`/api/v1/leave-requests/${id}/reject`).set(MANAGER).send({ version: approved.body.version }).expect(409);
+      await http.post(`/api/v1/leave-requests/${id}/cancel`).set(EMPLOYEE).send({ version: approved.body.version }).expect(409);
+
+      const hrQueue = await http.get('/api/v1/leave-requests').set(HR).expect(200);
+      expect(hrQueue.body.items.map((r: any) => r.id)).toContain(id);
+      await http.get('/api/v1/leave-requests').set(EMPLOYEE).expect(403);
+
+      const done = await http
+        .post(`/api/v1/leave-requests/${id}/complete`)
+        .set(HR)
+        .send({ version: approved.body.version })
+        .expect(200);
+      expect(done.body.status).toBe('COMPLETED');
+      expect(done.body.history.map((h: any) => h.toStatus)).toEqual(['SUBMITTED', 'APPROVED', 'COMPLETED']);
+      const after = await annual();
+      expect(after.pending).toBe(before.pending);
+      expect(after.used).toBe(before.used + 2);
+
+      const logs = await http.get(`/api/v1/audit-logs?entity=leave_request&entityId=${id}`).set(HR).expect(200);
+      expect(logs.body.items.map((l: any) => l.action).sort()).toEqual(['LEAVE_APPROVE', 'LEAVE_COMPLETE', 'LEAVE_SUBMIT']);
+
+      // Outbox: mỗi thao tác ghi đúng một event trong cùng transaction (lần gửi lặp không ghi thêm).
+      const events = await ds.query('SELECT event_type, payload FROM leave.outbox WHERE aggregate_id = $1 ORDER BY id', [id]);
+      expect(events.map((e: any) => e.event_type)).toEqual(['LeaveRequested', 'LeaveApproved', 'LeaveCompleted']);
+      expect(events[0].payload).toMatchObject({ requestId: id, employeeId, leaveType: 'ANNUAL', days: 2 });
+    });
+
+    it('quản lý từ chối trả lại số ngày đang giữ (BR-09)', async () => {
+      const before = await annual();
+      const r = (await create({ leaveType: 'ANNUAL', startDate: '2026-11-11', endDate: '2026-11-11' }).expect(201)).body;
+      const rejected = await http
+        .post(`/api/v1/leave-requests/${r.id}/reject`)
+        .set(MANAGER)
+        .send({ version: r.version, comment: 'Trùng lịch dự án' })
+        .expect(200);
+      expect(rejected.body.status).toBe('REJECTED');
+      expect(rejected.body.history[1]).toMatchObject({ toStatus: 'REJECTED', comment: 'Trùng lịch dự án' });
+      expect(await annual()).toMatchObject({ pending: before.pending, used: before.used });
+    });
+
+    it('trùng lịch bị chặn; hai nửa ngày khác buổi thì được; hủy trả lại số dư (BR-02, BR-04, BR-07)', async () => {
+      const before = await annual();
+      const am = (await create({ leaveType: 'ANNUAL', startDate: '2026-11-16', endDate: '2026-11-16', halfDay: 'AM' }).expect(201)).body;
+      expect(am.days).toBe(0.5);
+      const pm = (await create({ leaveType: 'ANNUAL', startDate: '2026-11-16', endDate: '2026-11-16', halfDay: 'PM' }).expect(201)).body;
+      await create({ leaveType: 'ANNUAL', startDate: '2026-11-13', endDate: '2026-11-16' }).expect(409);
+      expect((await annual()).pending).toBe(before.pending + 1);
+
+      await http.post(`/api/v1/leave-requests/${am.id}/cancel`).set(MANAGER).send({ version: am.version }).expect(403);
+      for (const r of [am, pm]) {
+        const res = await http.post(`/api/v1/leave-requests/${r.id}/cancel`).set(EMPLOYEE).send({ version: r.version }).expect(200);
+        expect(res.body.status).toBe('CANCELLED');
+      }
+      expect((await annual()).pending).toBe(before.pending);
+      const mine = await http.get('/api/v1/leave-requests/me?status=CANCELLED').set(EMPLOYEE).expect(200);
+      expect(mine.body.total).toBe(2);
+    });
+
+    it('ngày lễ không trừ phép: 29/4–4/5/2026 tính 2 ngày, chỉ ngày nghỉ bù 27/4 bị từ chối (BR-03)', async () => {
+      const r = await create({ leaveType: 'ANNUAL', startDate: '2026-04-29', endDate: '2026-05-04' }).expect(201);
+      expect(r.body.days).toBe(2);
+      await http.post(`/api/v1/leave-requests/${r.body.id}/cancel`).set(EMPLOYEE).send({ version: r.body.version }).expect(200);
+      await create({ leaveType: 'ANNUAL', startDate: '2026-04-27', endDate: '2026-04-27' }).expect(400);
+      await create({ leaveType: 'ANNUAL', startDate: '2026-11-14', endDate: '2026-11-15' }).expect(400); // T7, CN
+    });
+
+    it('không đủ số dư, dữ liệu sai hoặc thiếu Idempotency-Key → 400 (BR-01)', async () => {
+      await create({ leaveType: 'ANNUAL', startDate: '2026-12-01', endDate: '2026-12-31' }).expect(400);
+      await create({ leaveType: 'ANNUAL', startDate: '2026-12-01', endDate: '2026-11-30' }).expect(400);
+      await create({ leaveType: 'ANNUAL', startDate: '2026-12-01', endDate: '2026-12-02', halfDay: 'AM' }).expect(400);
+      await create({ leaveType: 'KHONG_CO', startDate: '2026-12-01', endDate: '2026-12-01' }).expect(400);
+      await http
+        .post('/api/v1/leave-requests')
+        .set(EMPLOYEE)
+        .send({ leaveType: 'ANNUAL', startDate: '2026-12-01', endDate: '2026-12-01' })
+        .expect(400);
+    });
+
+    it('người ngoài không xem được đơn của nhân viên', async () => {
+      const r = (await create({ leaveType: 'ANNUAL', startDate: '2026-12-07', endDate: '2026-12-07' }).expect(201)).body;
+      await http.get(`/api/v1/leave-requests/${r.id}`).set(ADMIN).expect(403);
+      await http.get(`/api/v1/leave-requests/${r.id}`).set(MANAGER).expect(200);
+      await http.post(`/api/v1/leave-requests/${r.id}/cancel`).set(EMPLOYEE).send({ version: r.version }).expect(200);
+    });
+
+    it('trùng lịch với đơn đang chờ → 409 (TC-04, BR-02)', async () => {
+      const r = (await create({ leaveType: 'ANNUAL', startDate: '2026-11-23', endDate: '2026-11-23' }).expect(201)).body;
+      await create({ leaveType: 'ANNUAL', startDate: '2026-11-23', endDate: '2026-11-25' }).expect(409);
+      await http.post(`/api/v1/leave-requests/${r.id}/cancel`).set(EMPLOYEE).send({ version: r.version }).expect(200);
+    });
+
+    it('HR hoàn tất đơn chưa duyệt → 409, đơn giữ SUBMITTED (TC-21, BR-10)', async () => {
+      const r = (await create({ leaveType: 'ANNUAL', startDate: '2026-11-26', endDate: '2026-11-26' }).expect(201)).body;
+      await http.post(`/api/v1/leave-requests/${r.id}/complete`).set(HR).send({ version: r.version }).expect(409);
+      expect((await http.get(`/api/v1/leave-requests/${r.id}`).set(HR).expect(200)).body.status).toBe('SUBMITTED');
+      await http.post(`/api/v1/leave-requests/${r.id}/cancel`).set(EMPLOYEE).send({ version: r.version }).expect(200);
+    });
+
+    it('chỉ quản lý trực tiếp duyệt/từ chối, chỉ HR hoàn tất, chỉ chủ đơn hủy (TC-22, BR-05, BR-07, BR-10)', async () => {
+      const r = (await create({ leaveType: 'ANNUAL', startDate: '2026-11-27', endDate: '2026-11-27' }).expect(201)).body;
+      for (const who of [EMPLOYEE, HR, ADMIN]) {
+        await http.post(`/api/v1/leave-requests/${r.id}/reject`).set(who).send({ version: r.version }).expect(403);
+      }
+      await http.post(`/api/v1/leave-requests/${r.id}/cancel`).set(HR).send({ version: r.version }).expect(403);
+      const ok = (await http.post(`/api/v1/leave-requests/${r.id}/approve`).set(MANAGER).send({ version: r.version }).expect(200)).body;
+      for (const who of [EMPLOYEE, MANAGER, ADMIN]) {
+        await http.post(`/api/v1/leave-requests/${r.id}/complete`).set(who).send({ version: ok.version }).expect(403);
+      }
+      expect((await http.get(`/api/v1/leave-requests/${r.id}`).set(EMPLOYEE).expect(200)).body.status).toBe('APPROVED');
+    });
+
+    it('danh sách ngày lễ 2026', async () => {
+      const res = await http.get('/api/v1/leave-holidays?year=2026').set(EMPLOYEE).expect(200);
+      expect(res.body.map((h: any) => h.date)).toContain('2026-11-24');
+    });
   });
 
   it('audit_log là append-only ở mức database', async () => {

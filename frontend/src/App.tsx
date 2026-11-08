@@ -4,6 +4,9 @@ import { Layout } from './components/Layout';
 import { CallbackPage } from './pages/CallbackPage';
 import { DirectoryPage } from './pages/DirectoryPage';
 import { EmployeePage } from './pages/EmployeePage';
+import { LeaveDetailPage } from './pages/leave/LeaveDetailPage';
+import { LeaveListPage } from './pages/leave/LeaveListPage';
+import { NewLeavePage } from './pages/leave/NewLeavePage';
 import { LoginPage } from './pages/LoginPage';
 import { OrgPage } from './pages/OrgPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -23,6 +26,11 @@ export function App() {
           <Route path="directory" element={<DirectoryPage />} />
           <Route path="employees/:id" element={<EmployeePage />} />
           <Route path="org" element={<OrgPage />} />
+          <Route path="leave" element={<LeaveListPage key="mine" mode="mine" />} />
+          <Route path="leave/new" element={<NewLeavePage />} />
+          <Route path="leave/approvals" element={<LeaveListPage key="approvals" mode="approvals" />} />
+          <Route path="leave/hr" element={<LeaveListPage key="hr" mode="hr" />} />
+          <Route path="leave/:id" element={<LeaveDetailPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       )}
