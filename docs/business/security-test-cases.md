@@ -19,7 +19,7 @@
 | **SEC-08** | Phòng ban - Xem cây | Không token | `GET /api/v1/departments/tree` | `401 Unauthorized`. |
 | **SEC-09** | Phòng ban - Xem chi tiết | `hr` | `GET /api/v1/departments/{id}` | `200 OK`, trả về chi tiết phòng ban. |
 | **SEC-10** | Phòng ban - Xem chi tiết | Không token | `GET /api/v1/departments/{id}` | `401 Unauthorized`. |
-| **SEC-11** | Phòng ban - Tạo | `admin` | `POST /api/v1/departments` (Body: `{"name": "IT"}`) | `201 Created`, tạo thành công. |
+| **SEC-11** | Phòng ban - Tạo | `admin` | `POST /api/v1/departments` (Body: `{"name": "IT", "code": "IT01", "office": "Hanoi"}`) | `201 Created`, tạo thành công. |
 | **SEC-12** | Phòng ban - Tạo | `employee` | `POST /api/v1/departments` | `403 Forbidden`. |
 | **SEC-13** | Phòng ban - Cập nhật | `hr` | `PATCH /api/v1/departments/{id}` (Body: `{"name": "HR"}`) | `200 OK`, cập nhật thành công. |
 | **SEC-14** | Phòng ban - Cập nhật | `manager` | `PATCH /api/v1/departments/{id}` | `403 Forbidden`. |
@@ -37,7 +37,7 @@
 | **SEC-22** | Hồ sơ - Tạo mới | `admin` | `POST /api/v1/employees` | `403 Forbidden`, admin không được cấp quyền. |
 | **SEC-23** | Hồ sơ - Xem cơ bản | `employee` | `GET /api/v1/employees/{id_khác}` | `200 OK`, chỉ thấy cấp danh bạ. |
 | **SEC-24** | Hồ sơ - Xem cơ bản | Không token | `GET /api/v1/employees/{id}` | `401 Unauthorized`. |
-| **SEC-25** | Hồ sơ - Cập nhật | `employee` | `PATCH /api/v1/employees/{id_của_mình}` (Body: `{"phone": "123"}`) | `200 OK`, cập nhật thành công. |
+| **SEC-25** | Hồ sơ - Cập nhật | `employee` | `PATCH /api/v1/employees/{id_của_mình}` (Body: `{"phone": "0912345678"}`) | `200 OK`, cập nhật thành công. |
 | **SEC-26** | Hồ sơ - Cập nhật | `employee` | `PATCH /api/v1/employees/{id_người_khác}` | `403 Forbidden`, không được sửa hồ sơ người khác. |
 | **SEC-27** | Danh bạ - Cấp dưới | `manager` | `GET /api/v1/employees/{id}/direct-reports` | `200 OK`, trả danh sách cấp dưới. |
 | **SEC-28** | Danh bạ - Cấp dưới | Không token | `GET /api/v1/employees/{id}/direct-reports` | `401 Unauthorized`. |
@@ -45,8 +45,8 @@
 | **SEC-30** | Danh bạ - Thành viên PB | Không token | `GET /api/v1/departments/{id}/members` | `401 Unauthorized`. |
 | **SEC-31** | Trường nhạy cảm - Xem | `hr` | `GET /api/v1/employees/{id}?include=sensitive` | `200 OK`, trả về `nationalId`. |
 | **SEC-32** | Trường nhạy cảm - Xem | `admin` | `GET /api/v1/employees/{id}?include=sensitive` | `403 Forbidden`. |
-| **SEC-33** | Trường nhạy cảm - Cập nhật| `hr` | `PATCH /api/v1/employees/{id}` (Body: `{"nationalId": "123"}`) | `200 OK`. |
-| **SEC-34** | Trường nhạy cảm - Cập nhật| `manager` | `PATCH /api/v1/employees/{id}` (Body: `{"nationalId": "123"}`) | `403 Forbidden`. |
+| **SEC-33** | Trường nhạy cảm - Cập nhật| `hr` | `PATCH /api/v1/employees/{id}` (Body: `{"nationalId": "012345678912"}`) | `200 OK`. |
+| **SEC-34** | Trường nhạy cảm - Cập nhật| `manager` | `PATCH /api/v1/employees/{id}` (Body: `{"nationalId": "012345678912"}`) | `403 Forbidden`. |
 
 ## 4. Nghỉ phép
 | Mã TC | Dòng ma trận | Tài khoản | Request (Method + Endpoint + Body) | Kết quả mong đợi |

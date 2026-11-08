@@ -1,8 +1,10 @@
 # Biên bản kiểm thử phân quyền - Tuần 9
 
 - **Ngày chạy:** 06/11/2026
+- **Commit của dev:** a191a74
 - **Môi trường:** Local (Swagger)
 - **Người thực hiện:** Duy (TV4)
+- **Phạm vi chưa kiểm:** Không có (Đã chạy phủ toàn bộ 58 ca theo ma trận).
 
 ## 1. Kết quả thực thi Security Test Cases
 
@@ -18,7 +20,7 @@
 | **SEC-08** | Không token | `GET /api/v1/departments/tree` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-09** | `hr` | `GET /api/v1/departments/{id}` | 200 OK | HTTP 200 OK, trả về chi tiết phòng ban. | Đạt | |
 | **SEC-10** | Không token | `GET /api/v1/departments/{id}` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
-| **SEC-11** | `admin` | `POST /api/v1/departments` | 201 Created | HTTP 201 Created, tạo phòng ban mới thành công. | Đạt | |
+| **SEC-11** | `admin` | `POST /api/v1/departments` (Body: `{"name": "IT", "code": "IT01", "office": "Hanoi"}`) | 201 Created | HTTP 201 Created, tạo phòng ban mới thành công. | Đạt | |
 | **SEC-12** | `employee` | `POST /api/v1/departments` | 403 Forbidden | HTTP 403 Forbidden, chặn đúng quyền khởi tạo. | Đạt | |
 | **SEC-13** | `hr` | `PATCH /api/v1/departments/{id}` | 200 OK | HTTP 200 OK, cập nhật phòng ban thành công. | Đạt | |
 | **SEC-14** | `manager` | `PATCH /api/v1/departments/{id}` | 403 Forbidden | HTTP 403 Forbidden. | Đạt | |
@@ -28,11 +30,11 @@
 | **SEC-18** | Không token | `GET /api/v1/me` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-19** | `manager` | `GET /api/v1/employees` | 200 OK | HTTP 200 OK, trả về danh sách nhân viên. | Đạt | |
 | **SEC-20** | Không token | `GET /api/v1/employees` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
-| **SEC-21** | `hr` | `POST /api/v1/employees` | 201 Created | HTTP 201 Created, tạo mới hồ sơ thành công. | Đạt | |
+| **SEC-21** | `hr` | `POST /api/v1/employees` | 201 Created | HTTP 201 Created, tạo mới hồ sơ thành công. | Đạt | Body gửi: `{"firstName": "Nguyễn", "lastName": "A", "email": "nva@test.com", "departmentId": "d1", "positionId": "p1"}` |
 | **SEC-22** | `admin` | `POST /api/v1/employees` | 403 Forbidden | HTTP 403 Forbidden, chặn theo decorator hệ thống. | Đạt | |
 | **SEC-23** | `employee` | `GET /api/v1/employees/{id_khác}` | 200 OK | HTTP 200 OK, chỉ hiển thị trường danh bạ cơ bản. | Đạt | |
 | **SEC-24** | Không token | `GET /api/v1/employees/{id}` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
-| **SEC-25** | `employee` | `PATCH /api/v1/employees/{id_của_mình}` | 200 OK | HTTP 200 OK, sửa hồ sơ cá nhân thành công. | Đạt | |
+| **SEC-25** | `employee` | `PATCH /api/v1/employees/{id_của_mình}` (Body: `{"phone": "0912345678"}`) | 200 OK | HTTP 200 OK, sửa hồ sơ cá nhân thành công. | Đạt | |
 | **SEC-26** | `employee` | `PATCH /api/v1/employees/{id_khác}` | 403 Forbidden | HTTP 403 Forbidden, từ chối sửa hồ sơ người khác. | Đạt | |
 | **SEC-27** | `manager` | `GET /api/v1/employees/{id}/direct-reports` | 200 OK | HTTP 200 OK, hiển thị danh sách cấp dưới. | Đạt | |
 | **SEC-28** | Không token | `GET /api/v1/employees/{id}/direct-reports`| 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
@@ -40,15 +42,15 @@
 | **SEC-30** | Không token | `GET /api/v1/departments/{id}/members` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-31** | `hr` | `GET /api/v1/employees/{id}?include=sensitive`| 200 OK | HTTP 200 OK, trả về trường nhạy cảm đã giải mã. | Đạt | |
 | **SEC-32** | `admin` | `GET /api/v1/employees/{id}?include=sensitive`| 403 Forbidden | HTTP 403 Forbidden, ADMIN không được đọc dữ liệu nhạy cảm. | Đạt | |
-| **SEC-33** | `hr` | `PATCH /api/v1/employees/{id}` (nhạy cảm) | 200 OK | HTTP 200 OK, cập nhật trường nhạy cảm thành công. | Đạt | |
-| **SEC-34** | `manager` | `PATCH /api/v1/employees/{id}` (nhạy cảm) | 403 Forbidden | HTTP 403 Forbidden. | Đạt | |
+| **SEC-33** | `hr` | `PATCH /api/v1/employees/{id}` (Body: `{"nationalId": "012345678912"}`) | 200 OK | HTTP 200 OK, cập nhật trường nhạy cảm thành công. | Đạt | Body gửi: `{"nationalId": "012345678912", "version": 1}` |
+| **SEC-34** | `manager` | `PATCH /api/v1/employees/{id}` (Body: `{"nationalId": "012345678912"}`) | 403 Forbidden | HTTP 403 Forbidden. | Đạt | |
 | **SEC-35** | `employee` | `GET /api/v1/leave-types` | 200 OK | HTTP 200 OK, hiển thị loại phép. | Đạt | |
 | **SEC-36** | Không token | `GET /api/v1/leave-types` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-37** | `hr` | `GET /api/v1/leave-holidays` | 200 OK | HTTP 200 OK, hiển thị danh sách ngày lễ. | Đạt | |
 | **SEC-38** | Không token | `GET /api/v1/leave-holidays` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-39** | `employee` | `GET /api/v1/leave-balances/me` | 200 OK | HTTP 200 OK, trả về số dư cá nhân. | Đạt | |
 | **SEC-40** | Không token | `GET /api/v1/leave-balances/me` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
-| **SEC-41** | `employee` | `POST /api/v1/leave-requests` | 201 Created | HTTP 201 Created, gửi đơn nghỉ phép thành công. | Đạt | |
+| **SEC-41** | `employee` | `POST /api/v1/leave-requests` | 201 Created | HTTP 201 Created, gửi đơn nghỉ phép thành công. | Đạt | Header: `Idempotency-Key: req-001`. Body gửi: `{"leaveTypeId": "id-1", "startDate": "2026-11-10", "endDate": "2026-11-11", "reason": "Việc gia đình"}` |
 | **SEC-42** | Không token | `POST /api/v1/leave-requests` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
 | **SEC-43** | `employee` | `GET /api/v1/leave-requests/me` | 200 OK | HTTP 200 OK, hiển thị danh sách đơn của mình. | Đạt | |
 | **SEC-44** | Không token | `GET /api/v1/leave-requests/me` | 401 Unauthorized | HTTP 401 Unauthorized. | Đạt | |
@@ -58,11 +60,11 @@
 | **SEC-48** | `manager` | `GET /api/v1/leave-requests` | 403 Forbidden | HTTP 403 Forbidden, giới hạn quyền HR. | Đạt | |
 | **SEC-49** | `manager` | `GET /api/v1/leave-requests/{id}` | 200 OK | HTTP 200 OK, quản lý trực tiếp xem chi tiết đơn. | Đạt | |
 | **SEC-50** | `employee` | `GET /api/v1/leave-requests/{id}` | 403 Forbidden | HTTP 403 Forbidden, chặn do không phải chủ đơn. | Đạt | |
-| **SEC-51** | `manager` | `POST /api/v1/leave-requests/{id}/approve` | 200 OK | HTTP 200 OK, đơn chuyển trạng thái APPROVED. | Đạt | |
+| **SEC-51** | `manager` | `POST /api/v1/leave-requests/{id}/approve` | 200 OK | HTTP 200 OK, đơn chuyển trạng thái APPROVED. | Đạt | Body gửi: `{"version": 1, "note": "Đồng ý duyệt"}` |
 | **SEC-52** | `hr` | `POST /api/v1/leave-requests/{id}/approve` | 403 Forbidden | HTTP 403 Forbidden. | Đạt | |
-| **SEC-53** | `manager` | `POST /api/v1/leave-requests/{id}/reject` | 200 OK | HTTP 200 OK, đơn chuyển trạng thái REJECTED. | Đạt | |
+| **SEC-53** | `manager` | `POST /api/v1/leave-requests/{id}/reject` | 200 OK | HTTP 200 OK, đơn chuyển trạng thái REJECTED. | Đạt | Body gửi: `{"version": 1, "note": "Từ chối do trùng lịch"}` |
 | **SEC-54** | `admin` | `POST /api/v1/leave-requests/{id}/reject` | 403 Forbidden | HTTP 403 Forbidden. | Đạt | |
-| **SEC-55** | `employee` | `POST /api/v1/leave-requests/{id}/cancel` | 200 OK | HTTP 200 OK, chủ đơn hủy thành công. | Đạt | |
+| **SEC-55** | `employee` | `POST /api/v1/leave-requests/{id}/cancel` | 200 OK | HTTP 200 OK, chủ đơn hủy thành công. | Đạt | Body gửi: `{"version": 1, "reason": "Đã thu xếp được công việc"}` |
 | **SEC-56** | `manager` | `POST /api/v1/leave-requests/{id}/cancel` | 403 Forbidden | HTTP 403 Forbidden, chặn quản lý tự hủy. | Đạt | |
-| **SEC-57** | `hr` | `POST /api/v1/leave-requests/{id}/complete`| 200 OK | HTTP 200 OK, đơn chuyển COMPLETED. | Đạt | |
+| **SEC-57** | `hr` | `POST /api/v1/leave-requests/{id}/complete`| 200 OK | HTTP 200 OK, đơn chuyển COMPLETED. | Đạt | Body gửi: `{"version": 2, "note": "Đã cập nhật hệ thống"}` |
 | **SEC-58** | `manager` | `POST /api/v1/leave-requests/{id}/complete`| 403 Forbidden | HTTP 403 Forbidden. | Đạt | |
