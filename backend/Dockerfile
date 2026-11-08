@@ -9,7 +9,7 @@ RUN npm run build && npm prune --omit=dev
 
 # ---- runtime ----
 FROM node:20-alpine
-RUN apk update && apk upgrade --no-cache && npm install -g npm@latest
+RUN apk update && apk upgrade --no-cache
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
