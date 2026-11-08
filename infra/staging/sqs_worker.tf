@@ -179,6 +179,8 @@ resource "aws_ecs_task_definition" "worker" {
         { name = "DB_PORT", value = tostring(aws_db_instance.postgres.port) },
         { name = "DB_NAME", value = var.db_name },
         { name = "DB_USER", value = var.db_username },
+        { name = "DB_SSL", value = "require" },
+        { name = "QUEUE_DRIVER", value = "sqs" },
         { name = "AWS_REGION", value = var.aws_region },
         { name = "SQS_QUEUE_URL", value = aws_sqs_queue.worker_queue.url }
       ]

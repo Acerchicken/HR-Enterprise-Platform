@@ -135,6 +135,7 @@ resource "aws_apprunner_service" "api" {
           OIDC_ROLES_CLAIM     = "cognito:groups"
           OIDC_USERINFO_URL    = "https://${aws_cognito_user_pool_domain.main.domain}.auth.${var.aws_region}.amazoncognito.com/oauth2/userInfo"
           CORS_ORIGIN          = "https://${aws_cloudfront_distribution.web.domain_name}"
+          QUEUE_DRIVER         = "sqs"
           SQS_QUEUE_URL        = aws_sqs_queue.worker_queue.url
         }
 
