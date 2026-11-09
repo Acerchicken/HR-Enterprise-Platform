@@ -69,6 +69,7 @@ services:
     build: ./backend
     environment:
       NODE_ENV: production
+      ALLOW_DEV_SECRETS: "true"   # chỉ cho local: cho phép khóa dev; staging/production phải có secret thật
       PORT: 3000
       CORS_ORIGIN: http://localhost:5173
       DB_HOST: db
@@ -80,6 +81,7 @@ services:
       OIDC_JWKS_URI: http://keycloak:8080/realms/hr/protocol/openid-connect/certs
       OIDC_ALLOWED_CLIENTS: hr-web,hr-api-test
       FIELD_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=
+      QUEUE_DRIVER: rabbitmq
       RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
@@ -105,11 +107,13 @@ services:
     command: ["node", "dist/worker/main.js"]
     environment:
       NODE_ENV: production
+      ALLOW_DEV_SECRETS: "true"   # chỉ cho local: cho phép khóa dev; staging/production phải có secret thật
       DB_HOST: db
       DB_USER: hr
       DB_PASSWORD: hr
       DB_NAME: hr
       FIELD_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=
+      QUEUE_DRIVER: rabbitmq
       RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
@@ -129,6 +133,7 @@ services:
     command: ["node", "dist/database/seed.js"]
     environment:
       NODE_ENV: production
+      ALLOW_DEV_SECRETS: "true"   # chỉ cho local: cho phép khóa dev; staging/production phải có secret thật
       DB_HOST: db
       DB_USER: hr
       DB_PASSWORD: hr
@@ -147,7 +152,7 @@ services:
         VITE_OIDC_AUTHORITY: http://localhost:8080/realms/hr
         VITE_OIDC_CLIENT_ID: hr-web
     ports:
-      - "5173:80"
+      - "5173:8080"
     depends_on:
       - api
 

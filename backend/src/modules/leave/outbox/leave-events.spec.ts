@@ -28,7 +28,7 @@ describe('leave events', () => {
 
   it('nội dung email có thời gian, số ngày và ghi chú', () => {
     const mail = buildEmail('LeaveRejected', { ...payload, comment: 'Trùng lịch dự án' }, 'Trần Thị Nhân');
-    expect(mail.subject).toBe('[HR] Đơn nghỉ phép bị từ chối – Trần Thị Nhân, 09/11/2026 – 10/11/2026');
+    expect(mail.subject).toBe('[HRHelper] Đơn nghỉ phép bị từ chối – Trần Thị Nhân, 09/11/2026 – 10/11/2026');
     expect(mail.text).toContain('Thời gian: 09/11/2026 – 10/11/2026 (2 ngày)');
     expect(mail.text).toContain('Ghi chú: Trùng lịch dự án');
   });

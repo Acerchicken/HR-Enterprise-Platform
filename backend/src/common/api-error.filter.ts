@@ -43,7 +43,8 @@ export class ApiErrorFilter implements ExceptionFilter {
       status = HttpStatus.CONFLICT;
       message = 'Dữ liệu bị trùng';
     } else {
-      this.logger.error(exception);
+      // Chỉ log message + stack: QueryFailedError còn mang câu SQL và tham số (có thể chứa dữ liệu cá nhân).
+      this.logger.error(exception instanceof Error ? (exception.stack ?? exception.message) : String(exception), `traceId=${req.traceId}`);
     }
 
     res.status(status).json({
