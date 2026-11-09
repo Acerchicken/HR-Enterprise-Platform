@@ -12,7 +12,8 @@ Thư mục này lưu kế hoạch 10 tuần và báo cáo tiến độ hàng tu�
 | 6 | 12/10 – 19/10 | P2 – Application, Data & Integration Architecture | [tuan-06/](tuan-06/README.md) |
 | 7 | 19/10 – 26/10 | Implementation 1 – Nền tảng (code) | [tuan-07/](tuan-07/README.md) |
 | 8 | 26/10 – 2/11 | Implementation 2 – Workflow nghỉ phép | [tuan-08/](tuan-08/README.md) |
-| 9 | 2/11 – 9/11 | P3 – Security & DevOps (kế hoạch, điền kết quả cuối tuần) | [tuan-09/](tuan-09/README.md) |
+| 9 | 2/11 – 9/11 | P3 – Security & DevOps | [tuan-09/](tuan-09/README.md) |
+| 10 | 9/11 – 16/11 | Hoàn thiện chức năng (kế hoạch, điền kết quả cuối tuần) | [tuan-10/](tuan-10/README.md) |
 
 ## Cách tổ chức
 
