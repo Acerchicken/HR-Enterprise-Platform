@@ -107,7 +107,7 @@ const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 async function main() {
   const reset = process.argv.includes('--reset');
   faker.seed(2026);
-  const cfg = loadConfig();
+  const cfg = loadConfig(process.env, { needsAuth: false }); // seed không xác thực token, chạy được bằng task của worker
   const crypto = new FieldCrypto(cfg.fieldEncryptionKey);
   await dataSource.initialize();
 
@@ -158,18 +158,24 @@ async function main() {
       let workEmail = email ?? `${slug(fullName)}@hr.local`;
       if (usedEmails.has(workEmail)) workEmail = workEmail.replace('@', `${n}@`);
       usedEmails.add(workEmail);
+      const phone = `09${faker.string.numeric(8)}`; // gọi faker theo đúng thứ tự cũ để dữ liệu seed ít thay đổi
+      // Ngày vào làm sau ngày sinh ít nhất 18 năm (L-02, biên bản kiểm thử tuần 8).
+      const dob = faker.date.birthdate({ min: 22, max: 58, mode: 'age' });
+      const adult = new Date(dob);
+      adult.setFullYear(adult.getFullYear() + 18);
+      const hireFrom = adult > new Date('2015-01-01') ? adult : new Date('2015-01-01');
       const e: SeedEmployee = {
         id: randomUUID(),
         employee_code: `E${String(n).padStart(5, '0')}`,
         full_name: fullName,
         work_email: workEmail,
-        phone: `09${faker.string.numeric(8)}`,
-        date_of_birth: isoDate(faker.date.birthdate({ min: 22, max: 58, mode: 'age' })),
+        phone,
+        date_of_birth: isoDate(dob),
         address: `${faker.number.int({ min: 1, max: 300 })} ${faker.helpers.arrayElement(STREETS)}, ${DEPARTMENTS.find(([c]) => c === dept)![2]}`,
         department_id: deptId.get(dept)!,
         position_id: posId.get(pos)!,
         manager_id: managerId,
-        hire_date: isoDate(faker.date.between({ from: '2015-01-01', to: '2026-09-30' })),
+        hire_date: isoDate(faker.date.between({ from: hireFrom, to: '2026-09-30' })),
         status: faker.helpers.weightedArrayElement([
           { weight: 96, value: 'ACTIVE' },
           { weight: 3, value: 'ON_LEAVE' },
