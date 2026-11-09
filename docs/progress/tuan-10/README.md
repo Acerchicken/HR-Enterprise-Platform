@@ -1,0 +1,92 @@
+# Tuần 10 (9/11 – 16/11) – Hoàn thiện chức năng
+
+Mục tiêu tuần:
+1. **Staging chạy thật trên AWS (việc tồn tuần 9):** `terraform apply`, deploy lần đầu qua pipeline, smoke test với 4 tài khoản.
+   Tiêu chí của ADR-05: cuối tuần 10 demo được luồng nghỉ phép từ tạo đơn đến hoàn tất trên cloud.
+2. **Đủ 7 use case:** kho tài liệu HR (UC5), tìm kiếm tài liệu (UC6), giao diện HR tạo và sửa hồ sơ (UC1), giao diện xem audit
+   (UC7).
+3. **Hoàn thiện nghiệp vụ nghỉ phép:** mỗi người đúng một quản lý trừ CEO, HR duyệt đơn CEO, người duyệt thay (BR-06), tạo đơn hộ
+   (BR-12).
+4. **Vận hành và bảo mật:** logging, metrics cơ bản, diễn tập rollback, email thật trên staging, các khoảng trống mức cao của
+   threat model.
+
+Phân vai theo ADR-11: TV1 Duong code, TV2 Thanh nghiệp vụ + bảo mật nghiệp vụ, TV3 Bảo cloud, IaC, CI/CD, TV4 Duy kiểm thử.
+
+> File này là kế hoạch đầu tuần. Thứ 2 (16/11) nhóm điền mục 1–3 để làm báo cáo.
+
+## Quy trình
+
+Áp dụng [`CONVENTIONS.md` mục 6](../../CONVENTIONS.md#quy-trình-cho-một-việc): mỗi việc một nhánh tách từ `dev`, mỗi nhánh một PR
+vào `dev`, review và sửa ngay trên PR tới khi được approve. Góp ý và review phải có trên GitHub.
+
+Trong bảng dưới, **"Mở PR"** là hạn mở PR, **"Merge"** là hạn PR được approve và merge.
+
+## Thứ tự ưu tiên
+
+Theo mức độ trong BRD. Nếu không đủ thời gian thì cắt từ dưới lên và ghi vào báo cáo, không làm dở nhiều việc cùng lúc.
+
+| Mức | Việc | Yêu cầu BRD |
+|---|---|---|
+| 1 | Staging, smoke test | ADR-05, ADR-12 |
+| 2 (M) | Kho tài liệu, tìm tài liệu, HR tạo/sửa hồ sơ, xem audit, quy tắc một quản lý | FR-5.1, 5.2, 6.2, 1.4, 1.5, 7.3, 2.5 |
+| 3 (S) | HR duyệt đơn CEO, phiên bản tài liệu, người duyệt thay, tạo đơn hộ | FR-4.4, 5.3, 4.3, 3.7 |
+
+## Kế hoạch tuần 10 theo nhánh
+
+| Nhánh | Người | Việc | Output | Mở PR | Merge | Review |
+|---|---|---|---|---|---|---|
+| (không có nhánh) | TV3 Bảo | `terraform plan` thật, TV1 duyệt, `apply`, tạo GitHub vars, deploy lần đầu | Dòng `Plan: N to add`, URL staging | **T3 (10/11), 21:00** | – | TV1 |
+| `docs/test-report-staging` | TV4 Duy | Smoke test staging với 4 tài khoản | `docs/business/test-report-tuan-10.md` mục 1 | Sau khi staging lên 1 ngày | +1 ngày | TV1 |
+| `docs/document-rules` | TV2 Thanh | Quy tắc kho tài liệu: loại, phạm vi xem, phiên bản, tìm kiếm | `docs/business/document-rules.md` | **T3 (10/11), 21:00** | T4 (11/11) | TV1, TV4 |
+| `docs/retention-leave-reason` | TV2 Thanh | Thời gian lưu audit, đơn nghỉ; ai xem lý do nghỉ ốm; nội dung email | Bổ sung `leave-rules.md` | T4 (11/11), 21:00 | T5 (12/11) | TV1 |
+| `feat/employee-manager-rule` | TV1 Duong | Quy tắc một quản lý trừ CEO; HR duyệt đơn CEO (issue #22) | PR code + e2e | T3 (10/11) | T4 (11/11) | TV2 |
+| `chore/minio-local` | TV3 Bảo | MinIO trong docker-compose cho kho tài liệu local | `docker-compose.yml` | T4 (11/11), 21:00 | T5 (12/11) | TV1 |
+| `feat/hr-employee-form` | TV1 Duong | Giao diện HR tạo và sửa hồ sơ | PR code + e2e | T4 (11/11) | T5 (12/11) | TV2, TV4 |
+| `feat/documents-api` | TV1 Duong | API tài liệu, upload presigned URL, lọc theo phạm vi, phiên bản; ADR-13 | PR code + e2e | T5 (12/11) | T6 (13/11) | TV2, TV3 |
+| `infra/documents-email` | TV3 Bảo | S3 tài liệu (CORS, IAM), email trên staging | `infra/` | T5 (12/11), 21:00 | T6 (13/11) | TV1 |
+| `feat/document-search` | TV1 Duong | Worker trích văn bản, full-text PostgreSQL, tìm theo quyền; giao diện tài liệu | PR code + e2e | T6 (13/11) | T7 (14/11) | TV2, TV4 |
+| `infra/observability` | TV3 Bảo | Log, metrics, alarm CloudWatch; diễn tập rollback | `infra/`, `infra/README.md` | T6 (13/11), 21:00 | T7 (14/11) | TV1 |
+| `docs/test-cases-week10` | TV4 Duy | Ca kiểm thử tài liệu, tìm kiếm, hồ sơ, audit, quy tắc một quản lý | `docs/business/test-cases-tuan-10.md` | T5 (12/11), 21:00 | T6 (13/11) | TV2, TV1 |
+| `feat/audit-ui`, `fix/auth-email-verified` | TV1 Duong | Màn hình xem audit; kiểm `email_verified` | PR code + e2e | T7 (14/11) | CN (15/11) | TV2 |
+| `feat/leave-delegation` | TV1 Duong | BR-06 và BR-12 (mức 3, làm nếu còn thời gian) | PR code + e2e | CN (15/11), 12:00 | CN (15/11) | TV2, TV4 |
+| `docs/test-report-week10` | TV4 Duy | Chạy ca kiểm thử trên `dev` và staging | `test-report-tuan-10.md` mục 2 | CN (15/11), 12:00 | T2 (16/11), 9:00 | TV1 |
+| `docs/matrix-week10` | TV2 Thanh | Cập nhật ma trận phân quyền, trạng thái FR trong BRD | `access-control-matrix.md`, `BRD.md` | CN (15/11), 12:00 | T2 (16/11), 9:00 | TV1 |
+
+Thứ tự phụ thuộc:
+
+1. T3: TV3 có plan thật → TV1 duyệt → `apply` → deploy → TV4 smoke test.
+2. T3–T4: TV2 chốt quy tắc tài liệu → TV1 code API, TV4 viết ca kiểm thử.
+3. T5: TV3 xong MinIO local → TV1 chạy thử upload.
+4. T6–T7: TV1 xong tài liệu, tìm kiếm → TV3 deploy, TV4 kiểm thử.
+5. T2 (16/11), 9:00: mọi người điền "Việc đã làm". TV1 viết báo cáo, mở PR `dev` → `main`, gắn tag `week-10`.
+
+**Nếu staging tiếp tục không lên:** TV3 báo TV1 trước **T4 (11/11), 21:00**. Khi đó nhóm cắt phạm vi: staging tối thiểu gồm RDS, API
+trên App Runner, web trên S3/CloudFront, Cognito; worker, SQS chuyển sang tuần 11.
+
+## Chi tiết từng người
+
+| Thành viên | File |
+|---|---|
+| TV1 (Duong, nhóm trưởng) | [TV1_Duong.md](TV1_Duong.md) |
+| TV2 (Thanh) | [TV2_Thanh.md](TV2_Thanh.md) |
+| TV3 (Bảo) | [TV3_Bao.md](TV3_Bao.md) |
+| TV4 (Duy) | [TV4_Duy.md](TV4_Duy.md) |
+
+## 1. Các công việc đã hoàn thành
+
+_Điền cuối tuần._
+
+| Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
+|---|---|---|---|
+| TV1 (Duong, nhóm trưởng) | | | [TV1_Duong.md](TV1_Duong.md) |
+| TV2 (Thanh) | | | [TV2_Thanh.md](TV2_Thanh.md) |
+| TV3 (Bảo) | | | [TV3_Bao.md](TV3_Bao.md) |
+| TV4 (Duy) | | | [TV4_Duy.md](TV4_Duy.md) |
+
+## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 11: 16/11 – 23/11)
+
+_Điền cuối tuần. Dự kiến theo kế hoạch tổng: load test 50 RPS, SLO, chi phí._
+
+## 3. Quyết định quan trọng
+
+_ADR-13 (kho tài liệu và tìm kiếm) do TV1 viết ở nhánh `feat/documents-api`._
