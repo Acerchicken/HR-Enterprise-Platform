@@ -37,7 +37,6 @@ variable "db_username" {
 variable "alert_emails" {
   description = "List of email addresses to receive budget and system alerts"
   type        = list(string)
-  default     = ["tgbao97452004@gmail.com"]
 }
 
 variable "budget_limit_usd" {
