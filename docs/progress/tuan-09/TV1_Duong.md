@@ -137,4 +137,17 @@ _Từ 7/11 góp ý ghi trực tiếp trên PR (CONVENTIONS mục 6). Bảng dư�
 
 ## Việc đã làm
 
-_Điền T2 (9/11)._
+_Chốt ngày 9/11/2026, TV1 tổng hợp từ các PR và issue trên GitHub._
+
+| Việc | Output | Tình trạng |
+|---|---|---|
+| `feat/secret-config`: production không khởi động khi thiếu secret hoặc dùng khóa dev; kiểm khóa 32 byte; `DB_SSL` cho TLS tới DB | PR #43 | Đã merge 7/11 (hạn 5/11) |
+| `feat/auth-cognito`: nhận access token Cognito bên cạnh Keycloak, lấy email qua userinfo, đăng xuất qua Hosted UI | PR #44 | Đã merge 7/11 (hạn 6/11) |
+| `feat/queue-adapter`: `EventBus`/`EventConsumer`, driver RabbitMQ và SQS; worker tự kết nối lại khi RabbitMQ khởi động lại. Driver SQS mới kiểm bằng unit test | PR #45 | Đã merge 7/11, đúng hạn |
+| `test/access-control-e2e`: 11 e2e mới theo ma trận phân quyền và TC-04, 21, 22; sửa L-01, L-02. Không thấy code lệch ma trận | PR #46 | Đã merge 8/11 (hạn 7/11) |
+| Sửa seed chạy được trên staging | PR #55 | Đã merge 9/11 |
+| Tài liệu: BRD, kiến trúc hệ thống (tổng quan và hiện tại), kiến trúc phần mềm; đổi tên hiển thị thành HRHelper; quay lại quy trình review trên PR | PR #37–#42 | Đã merge |
+| Kế hoạch tuần 9 và review PR của TV2, TV3, TV4 trên GitHub | PR #29; review trên #47–#54 | Xong |
+| Làm thay theo quyết định của nhóm trưởng: chạy 6 ca SEC trong #47; chạy thật TC-01 → TC-22 trong #54; sửa nốt góp ý trong #53 | PR #47, #53, #54 | Đã merge |
+| Duyệt `terraform plan` của TV3 | – | **Chưa làm được:** chưa có kết quả plan thật |
+| Đóng issue #21 | Issue #21 | **Chưa làm:** quyết định đã merge ở PR #49, issue còn mở |

@@ -9,7 +9,7 @@ Mục tiêu tuần:
 
 Phân vai theo ADR-11: TV1 Duong code, TV2 Thanh nghiệp vụ + bảo mật nghiệp vụ, TV3 Bảo cloud, IaC, CI/CD, TV4 Duy kiểm thử.
 
-> File này là kế hoạch đầu tuần. Thứ 2 (9/11) nhóm điền mục 1–3 để làm báo cáo.
+> Đã chốt ngày 9/11/2026. Bản chốt trên `main` có tag [`week-09`](https://github.com/Acerchicken/HR-Enterprise-Platform/releases/tag/week-09).
 
 ## Quy trình tuần này (mới)
 
@@ -70,14 +70,22 @@ web trên S3/CloudFront + Cognito; worker và SQS chuyển sang tuần 10.
 
 ## 1. Các công việc đã hoàn thành
 
-_Điền cuối tuần._
+Số liệu chốt ngày 9/11/2026, tình trạng PR theo GitHub.
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (Duong, nhóm trưởng) | | | [TV1_Duong.md](TV1_Duong.md) |
-| TV2 (Thanh) | | | [TV2_Thanh.md](TV2_Thanh.md) |
-| TV3 (Bảo) | | | [TV3_Bao.md](TV3_Bao.md) |
-| TV4 (Duy) | | | [TV4_Duy.md](TV4_Duy.md) |
+| TV1 (Duong, nhóm trưởng) | Secret production, nhận token Cognito, queue adapter RabbitMQ/SQS, e2e theo ma trận phân quyền (36 e2e); BRD và tài liệu kiến trúc; review PR của nhóm | PR #37–#46, #55 (đã merge) | [TV1_Duong.md](TV1_Duong.md) |
+| TV2 (Thanh) | Ma trận phân quyền 27/27 API, threat model STRIDE, chốt issue #21, #22, BR-06, BR-12 | PR #35, #36, #48, #49 (đã merge) | [TV2_Thanh.md](TV2_Thanh.md) |
+| TV3 (Bảo) | ADR-12 chọn AWS, CI build và quét image, Terraform staging, pipeline deploy (trễ 1–3 ngày so với hạn) | PR #50–#53 (đã merge) | [TV3_Bao.md](TV3_Bao.md) |
+| TV4 (Duy) | Ca kiểm thử phân quyền SEC-01 → SEC-58 | PR #47 (đã merge); PR #54 do TV1 chạy lại phần kết quả | [TV4_Duy.md](TV4_Duy.md) |
+
+**Chưa làm được theo kế hoạch:**
+- **Staging trên AWS:** chưa có `terraform plan` thật, chưa `apply`, chưa deploy lần đầu. Mục tiêu deploy staging của tuần không đạt, chuyển sang đầu tuần 10. Workflow deploy sẽ báo lỗi trên `dev` cho tới khi có hạ tầng.
+- **Smoke test staging (TV4):** chưa kiểm vì staging chưa sẵn sàng.
+- **Driver SQS:** mới kiểm bằng unit test với client giả.
+- **Kiểm thử của TV4:** 6 ca SEC và toàn bộ kết quả TC-01 → TC-22 do TV1 chạy thay, vì kết quả nộp lần đầu không tái hiện được hoặc không có số liệu quan sát được.
+- **Review chéo:** TV2, TV3, TV4 chưa để lại review nào trên GitHub cho PR của TV1 (#43–#46).
+- **Issue #21, #22:** chưa có comment quyết định; #21 chưa đóng, #22 giữ mở tới khi code xong ở tuần 10.
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 10: 9/11 – 16/11)
 

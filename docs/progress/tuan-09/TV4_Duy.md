@@ -125,4 +125,12 @@ _Từ 7/11 góp ý ghi trực tiếp trên PR (CONVENTIONS mục 6). Bảng dư�
 
 ## Việc đã làm
 
-_Điền T2 (9/11), 9:00._
+_Chốt ngày 9/11/2026, TV1 tổng hợp từ các PR và issue trên GitHub._
+
+| Việc | Output | Tình trạng |
+|---|---|---|
+| Ca kiểm thử phân quyền SEC-01 → SEC-58, chạy 52 ca trên local | PR #47, `docs/business/security-test-cases.md`, `test-report-tuan-09.md` | Đã merge 8/11 (hạn 7/11). 6 ca (SEC-21, 41, 51, 53, 55, 57) do TV1 chạy thay vì body ghi trong biên bản không khớp API |
+| Biên bản màn hình nghỉ phép TC-01 → TC-22 | PR #54, `test-report-tuan-08.md` mục 2 | Đã merge 8/11 (hạn 4/11). Kết quả trong biên bản là lần chạy của TV1; bản của TV4 không có số liệu quan sát được |
+| Chạy lại issue #18, #19 và đóng issue | Issue #18, #19 | Đã đóng 8/11; TV1 bổ sung kết luận cho #19 |
+| Mở issue riêng cho L-01, L-02 | – | Không cần nữa: đã sửa ở PR #46 |
+| Smoke test staging | – | **Chưa kiểm:** staging chưa sẵn sàng |
