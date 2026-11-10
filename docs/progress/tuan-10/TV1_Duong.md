@@ -8,7 +8,7 @@ Vai trò: code chính, review PR, duyệt `terraform plan`, merge PR, báo cáo 
 |---|---|
 | **T2 (9/11)** | Đóng issue #21; comment quyết định vào #22 |
 | Trong 24 giờ kể từ khi PR mở | Review PR của TV2, TV3, TV4 trên GitHub |
-| Ngay khi TV3 gửi plan | Duyệt `terraform plan` |
+| Ngay khi TV3 gửi plan (T5) | Đọc `terraform plan`, ghi lỗi cần sửa trước tuần 12 (không `apply`) |
 | **T3 (10/11)** | Mở PR `feat/employee-manager-rule` |
 | **T4 (11/11)** | Mở PR `feat/hr-employee-form` |
 | **T5 (12/11)** | Mở PR `feat/documents-api` |
@@ -66,8 +66,8 @@ Làm theo `docs/business/leave-rules.md`. Hết thời gian thì chuyển sang t
 
 ### 7. Việc của nhóm trưởng
 
-- Đọc `terraform plan` của TV3: không mở port DB ra internet, không có secret trong code/output, IAM tối thiểu.
-- Chạy thử driver SQS trên staging cùng TV3.
+- Đọc `terraform plan` của TV3: không mở port DB ra internet, không có secret trong code/output, IAM tối thiểu. Tuần 10 không
+  `apply`; staging chạy ở tuần 12–13.
 - Review trên PR; chỉ approve khi mọi góp ý "cần sửa" đã xử lý.
 
 ## Góp ý review

@@ -1,50 +1,60 @@
-# Tuần 10 – TV3 (Bảo): staging chạy thật, lưu trữ tài liệu, vận hành
+# Tuần 10 – TV3 (Bảo): chuẩn bị lên AWS, lưu trữ tài liệu, vận hành
 
-Vai trò: đưa hệ thống lên AWS và giữ cho nó chạy, chi phí trong hạn mức.
+Vai trò: chuẩn bị hạ tầng để lên AWS gọn trong tuần 12–13, giữ chi phí trong hạn mức.
+
+> **Thay đổi ngày 10/11:** theo quyết định của nhóm trưởng, staging chỉ chạy trên AWS ở **tuần 12 và 13** để tránh phát sinh chi
+> phí khi chưa cần. Tuần 10 **không `terraform apply`**, không tạo tài nguyên tính tiền. Mọi việc chạy local hoặc chỉ dừng ở mức
+> code Terraform đã `validate` và `plan`.
 
 ## Hạn chót
 
 | Hạn | Việc |
 |---|---|
-| **T3 (10/11), 21:00** | Gửi kết quả `terraform plan` thật; sau khi TV1 duyệt thì `apply` và deploy lần đầu; gửi URL + tài khoản cho TV4 |
-| **T4 (11/11), 21:00** | Mở PR `chore/minio-local`. Staging chưa lên thì báo TV1 trước giờ này để cắt phạm vi |
+| **T4 (11/11), 21:00** | Mở PR `chore/minio-local` |
 | T5 (12/11) | Sửa theo góp ý, được merge |
-| **T5 (12/11), 21:00** | Mở PR `infra/documents-email` |
-| **T6 (13/11), 21:00** | Mở PR `infra/observability` |
+| **T5 (12/11), 21:00** | Gửi kết quả `terraform plan` thật (không `apply`) |
+| **T6 (13/11), 21:00** | Mở PR `infra/documents-email` |
+| **T7 (14/11), 21:00** | Mở PR `docs/aws-rollout-plan` |
 | Trong 24 giờ kể từ khi PR mở | Review phần cấu hình trong PR của TV1 (`feat/documents-api`) |
 | **T2 (16/11), 9:00** | Điền mục "Việc đã làm" |
 
 ## Việc cần làm
 
-### 1. Staging chạy thật (việc đầu tiên, tồn từ tuần 9)
+### 1. `chore/minio-local` – lưu trữ tài liệu khi chạy local
 
-1. Chạy `terraform plan -out plan.tfplan` trên tài khoản AWS. Comment **dòng nguyên văn** `Plan: N to add, 0 to change, 0 to
-   destroy` lên PR #53 hoặc gửi vào nhóm chat, kèm xác nhận không có secret. Đặt `alert_emails` trong `terraform.tfvars` (biến này
-   giờ bắt buộc, không có giá trị mặc định).
-2. **Chỉ `apply` sau khi TV1 duyệt.** Làm theo thứ tự trong `infra/README.md`.
-3. Tạo GitHub vars/secrets từ `terraform output`. Workflow deploy hiện lỗi trên `dev` vì chưa có hạ tầng; sau bước này phải xanh.
-4. Chạy workflow với `run_seed=true` để seed. Lấy mật khẩu demo trong Secrets Manager, **gửi riêng** cho nhóm.
-5. Kiểm tra API `/api/v1/health`, đăng nhập Cognito, worker nhận SQS, tạo một đơn thử.
+MinIO trong `docker-compose.yml`, tạo sẵn bucket `hr-documents`, biến môi trường trong `.env.example` thống nhất với TV1 (endpoint,
+bucket, access key dev). Đây là chỗ TV1 chạy thử upload tài liệu trong tuần.
 
-Xong khi: có URL web, URL API, deploy qua pipeline thành công.
+### 2. `terraform plan` thật, không `apply`
 
-### 2. `chore/minio-local`
+`plan` chỉ đọc tài khoản AWS, không tạo tài nguyên nên không tốn tiền. Làm sớm để tuần 12 không bị vướng.
 
-MinIO trong `docker-compose.yml`, tạo sẵn bucket `hr-documents`, biến môi trường trong `.env.example` thống nhất với TV1.
+1. Đặt `alert_emails` trong `terraform.tfvars` (biến bắt buộc, không commit file này).
+2. Chạy `terraform plan -out plan.tfplan` ở `infra/staging/` (cần state bucket từ `infra/bootstrap/`; nếu chưa muốn tạo bucket state
+   thì chạy plan với backend local và ghi rõ).
+3. Gửi **dòng nguyên văn** `Plan: N to add, 0 to change, 0 to destroy` và danh sách lỗi (nếu có) cho TV1. **Không chạy `apply`.**
+4. Xóa `plan.tfplan` sau khi gửi (file chứa giá trị nhạy cảm, đã nằm trong `.gitignore`).
 
-### 3. `infra/documents-email`
+### 3. `infra/documents-email` – code Terraform cho tài liệu và email
+
+Chỉ viết code, chạy `terraform fmt`, `validate`, `plan`; **không `apply`**.
 
 1. Bucket tài liệu: chặn public, mã hóa, CORS cho domain CloudFront (upload presigned), quyền IAM tối thiểu cho App Runner và worker.
-2. Email trên staging: dùng SES (sandbox cần xác minh người nhận), đặt `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM` cho worker. Lưu ý
-   code hiện gửi SMTP không TLS: cần thống nhất với TV1 cấu hình TLS. Cập nhật `docs/cloud/mapping.md` và chi phí.
-3. Nếu SES không dùng được, ghi lý do và phương án thay thế.
+2. Email: SES (sandbox cần xác minh người nhận), biến `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM` cho worker; thống nhất với TV1 cấu
+   hình TLS. Nếu SES không dùng được, ghi lý do và phương án thay thế.
+3. Alarm CloudWatch: API 5xx, độ trễ p95, RDS CPU/kết nối, DLQ có message.
+4. Cập nhật `docs/cloud/mapping.md`.
 
-### 4. `infra/observability`
+### 4. `docs/aws-rollout-plan` – kế hoạch lên AWS tuần 12–13
 
-1. Log API (App Runner) và worker (ECS) về CloudWatch, giữ 14 ngày; tìm được theo `traceId`.
-2. Metrics và alarm: API 5xx, độ trễ p95, RDS CPU/kết nối, DLQ có message, chi phí Budgets.
-3. Diễn tập rollback: deploy lại image SHA cũ bằng workflow, ghi thời gian và kết quả vào `infra/README.md`.
-4. Ghi cách tắt/bật staging; ghi chi phí thực tế sau một tuần so với dự toán 56,80 USD.
+Thêm mục mới trong `infra/README.md`:
+
+1. **Thứ tự triển khai** đầu tuần 12: bootstrap → ECR → push image → `apply` → GitHub vars → deploy → seed → smoke test. Ước tính
+   thời gian từng bước và ai làm.
+2. **Chi phí cho 2 tuần**, dựa trên dự toán 56,80 USD/tháng. Ghi giờ bật, giờ tắt NAT, worker, RDS ngoài giờ demo.
+3. **Diễn tập rollback** trong tuần 12 (deploy lại image SHA cũ bằng workflow).
+4. **Dọn dẹp sau tuần 13:** `terraform destroy`, xóa ECR image, kiểm tra Budgets về 0, thời điểm làm (sau buổi bảo vệ).
+5. Workflow deploy tạm chỉ chạy tay (`workflow_dispatch`) cho tới tuần 12; ghi bước bật lại tự động deploy khi push vào `dev`.
 
 ## Cách làm trên git
 

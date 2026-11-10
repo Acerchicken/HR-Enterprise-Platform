@@ -1,9 +1,8 @@
 name: Deploy Staging
 
+# Tạm chỉ chạy tay: staging chỉ bật trên AWS ở tuần 12–13 (docs/progress/tuan-10/README.md, mục 3).
+# Tuần 12 thêm lại "push: branches: [dev]" để tự deploy khi merge vào dev.
 on:
-  push:
-    branches:
-      - dev
   workflow_dispatch:
     inputs:
       image_tag:
