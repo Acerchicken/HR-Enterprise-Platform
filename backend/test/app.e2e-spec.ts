@@ -224,9 +224,10 @@ describe('HRHelper API (e2e)', () => {
       await http.get('/api/v1/leave-balances/me').expect(401);
     });
 
-    it('danh sách đơn: chờ duyệt chỉ MANAGER; toàn hệ thống chỉ HR', async () => {
+    it('danh sách đơn: chờ duyệt cho MANAGER và HR (đơn của CEO); toàn hệ thống chỉ HR', async () => {
       await http.get('/api/v1/leave-requests/pending-approval').set(MANAGER).expect(200);
-      for (const who of [EMPLOYEE, HR, ADMIN]) {
+      await http.get('/api/v1/leave-requests/pending-approval').set(HR).expect(200);
+      for (const who of [EMPLOYEE, ADMIN]) {
         await http.get('/api/v1/leave-requests/pending-approval').set(who).expect(403);
       }
       await http.get('/api/v1/leave-requests').set(HR).expect(200);
@@ -239,6 +240,90 @@ describe('HRHelper API (e2e)', () => {
   it('số dư phép của tôi', async () => {
     const res = await http.get('/api/v1/leave-balances/me').set(EMPLOYEE).expect(200);
     expect(res.body.map((b: any) => b.leaveType).sort()).toEqual(['ANNUAL', 'SICK']);
+  });
+
+  /** Issue #22 (FR-2.5, FR-4.4): một quản lý cho mỗi nhân viên trừ CEO; HR duyệt đơn của CEO. */
+  describe('quản lý trực tiếp và CEO', () => {
+    let ds: import('typeorm').DataSource;
+    let ceo: { id: string; email: string; positionId: string };
+    let terminatedId: string;
+
+    beforeAll(async () => {
+      const { DataSource } = await import('typeorm');
+      ds = app.get(DataSource);
+      [ceo] = await ds.query(
+        `SELECT e.id, e.work_email AS email, e.position_id AS "positionId" FROM employee.employee e
+         JOIN org.position p ON p.id = e.position_id WHERE p.code = 'CEO' AND e.status <> 'TERMINATED'`,
+      );
+      [{ id: terminatedId }] = await ds.query(`SELECT id FROM employee.employee WHERE status = 'TERMINATED' LIMIT 1`);
+    });
+
+    it('tạo nhân viên không phải CEO mà thiếu quản lý → 400; tạo CEO thứ hai → 400', async () => {
+      const dept = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code !== 'BOD');
+      const positions = (await http.get('/api/v1/positions').set(HR)).body;
+      const staff = positions.find((p: any) => p.code !== 'CEO');
+      const base = { fullName: 'Kiểm Thử Quản Lý', departmentId: dept.id, hireDate: '2026-11-01' };
+      const res = await http
+        .post('/api/v1/employees')
+        .set(HR)
+        .send({ ...base, employeeCode: 'E99001', workEmail: 'no-manager@hr.local', positionId: staff.id })
+        .expect(400);
+      expect(res.body.message).toMatch(/quản lý trực tiếp/);
+      await http
+        .post('/api/v1/employees')
+        .set(HR)
+        .send({ ...base, employeeCode: 'E99002', workEmail: 'second-ceo@hr.local', positionId: ceo.positionId })
+        .expect(400);
+    });
+
+    it('gán quản lý đã nghỉ việc → 400; gán quản lý cho CEO → 400; bỏ quản lý của nhân viên → 400', async () => {
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ managerId: terminatedId }).expect(400);
+      await http.patch(`/api/v1/employees/${ceo.id}`).set(HR).send({ managerId: managerId }).expect(400);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ managerId: null }).expect(400);
+    });
+
+    it('HR duyệt đơn của CEO; quản lý khác không duyệt được; HR thấy đơn CEO trong danh sách chờ duyệt', async () => {
+      const CEO = as(ceo.email);
+      const created = await http
+        .post('/api/v1/leave-requests')
+        .set(CEO)
+        .set('Idempotency-Key', `ceo-${Date.now()}`)
+        .send({ leaveType: 'ANNUAL', startDate: '2026-12-28', endDate: '2026-12-28' })
+        .expect(201);
+      const r = created.body;
+      try {
+        const queue = await http.get('/api/v1/leave-requests/pending-approval').set(HR).expect(200);
+        expect(queue.body.items.map((x: any) => x.id)).toContain(r.id);
+        expect((await http.get(`/api/v1/leave-requests/${r.id}`).set(HR).expect(200)).body.canDecide).toBe(true);
+        await http.post(`/api/v1/leave-requests/${r.id}/approve`).set(MANAGER).send({ version: r.version }).expect(403);
+        const ok = await http.post(`/api/v1/leave-requests/${r.id}/approve`).set(HR).send({ version: r.version }).expect(200);
+        expect(ok.body.status).toBe('APPROVED');
+      } finally {
+        await ds.query('DELETE FROM leave.leave_request_history WHERE request_id = $1', [r.id]);
+        await ds.query('DELETE FROM leave.outbox WHERE aggregate_id = $1', [r.id]);
+        await ds.query('DELETE FROM leave.leave_request WHERE id = $1', [r.id]);
+        await ds.query(
+          `UPDATE leave.leave_balance SET pending = GREATEST(pending - 1, 0)
+           WHERE employee_id = $1 AND leave_type_id = (SELECT id FROM leave.leave_type WHERE code = 'ANNUAL') AND year = 2026`,
+          [ceo.id],
+        );
+      }
+    });
+
+    it('HR không duyệt được đơn của nhân viên khác CEO; người duyệt thấy canDecide', async () => {
+      const r = (
+        await http
+          .post('/api/v1/leave-requests')
+          .set(EMPLOYEE)
+          .set('Idempotency-Key', `nonceo-${Date.now()}`)
+          .send({ leaveType: 'ANNUAL', startDate: '2026-12-29', endDate: '2026-12-29' })
+          .expect(201)
+      ).body;
+      expect((await http.get(`/api/v1/leave-requests/${r.id}`).set(HR).expect(200)).body.canDecide).toBe(false);
+      expect((await http.get(`/api/v1/leave-requests/${r.id}`).set(MANAGER).expect(200)).body.canDecide).toBe(true);
+      await http.post(`/api/v1/leave-requests/${r.id}/approve`).set(HR).send({ version: r.version }).expect(403);
+      await http.post(`/api/v1/leave-requests/${r.id}/cancel`).set(EMPLOYEE).send({ version: r.version }).expect(200);
+    });
   });
 
   describe('workflow nghỉ phép', () => {

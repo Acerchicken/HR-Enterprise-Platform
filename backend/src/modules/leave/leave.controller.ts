@@ -63,7 +63,7 @@ export class LeaveController {
   }
 
   @Get('leave-requests/pending-approval')
-  @Roles('MANAGER')
+  @Roles('MANAGER', 'HR')
   pendingApproval(@Query() q: LeaveRequestQuery, @CurrentUser() user: AuthUser) {
     return this.leave.pendingApproval(user, q);
   }
@@ -81,14 +81,14 @@ export class LeaveController {
 
   @Post('leave-requests/:id/approve')
   @HttpCode(200)
-  @Roles('MANAGER')
+  @Roles('MANAGER', 'HR')
   approve(@Param('id', ParseUUIDPipe) id: string, @Body() dto: LeaveDecisionDto, @CurrentUser() user: AuthUser, @Req() req: Request) {
     return this.act(id, 'approve', dto, user, req);
   }
 
   @Post('leave-requests/:id/reject')
   @HttpCode(200)
-  @Roles('MANAGER')
+  @Roles('MANAGER', 'HR')
   reject(@Param('id', ParseUUIDPipe) id: string, @Body() dto: LeaveDecisionDto, @CurrentUser() user: AuthUser, @Req() req: Request) {
     return this.act(id, 'reject', dto, user, req);
   }

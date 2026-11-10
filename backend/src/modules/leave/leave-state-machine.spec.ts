@@ -39,6 +39,10 @@ describe('leave state machine', () => {
     expect(transition('SUBMITTED', 'approve', 'OTHER', 2).kind).toBe('forbidden');
     expect(transition('SUBMITTED', 'approve', 'OWNER', 2).kind).toBe('forbidden');
     expect(transition('SUBMITTED', 'approve', 'HR', 2).kind).toBe('forbidden');
+    // HR chỉ duyệt được đơn của CEO (issue #22): service trả quan hệ HR_FOR_CEO cho đúng trường hợp này.
+    expect(transition('SUBMITTED', 'approve', 'HR_FOR_CEO', 2)).toMatchObject({ kind: 'changed', to: 'APPROVED' });
+    expect(transition('SUBMITTED', 'reject', 'HR_FOR_CEO', 2)).toMatchObject({ kind: 'changed', to: 'REJECTED' });
+    expect(transition('APPROVED', 'complete', 'HR_FOR_CEO', 2).kind).toBe('forbidden');
   });
 
   it('không hủy được đơn đã duyệt', () => {
