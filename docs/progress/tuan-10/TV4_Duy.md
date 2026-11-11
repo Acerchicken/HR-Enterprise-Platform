@@ -19,7 +19,6 @@ Mẫu: mục 2 của [`docs/business/test-report-tuan-08.md`](../../business/tes
 
 | Hạn | Việc |
 |---|---|
-| Sau khi TV3 báo staging lên 1 ngày | Mở PR `docs/test-report-staging` |
 | **T5 (12/11), 21:00** | Mở PR `docs/test-cases-week10` (cần quy tắc của TV2, merge T4) |
 | T6 (13/11) | Sửa theo góp ý, được merge |
 | Trong 24 giờ kể từ khi PR mở | Review `feat/hr-employee-form`, `feat/document-search` của TV1: kết quả có khớp ca kiểm thử không |
@@ -34,13 +33,9 @@ http://localhost:8025). Tài khoản `employee`, `manager`, `hr`, `admin`, mật
 
 ## Việc cần làm
 
-### 1. `docs/test-report-staging` – smoke test staging (tồn từ tuần 9)
+### 1. Smoke test staging: chuyển sang tuần 12
 
-Chỉ làm khi TV3 báo staging đã chạy. File `docs/business/test-report-tuan-10.md` mục 1.
-
-1. Đăng nhập 4 tài khoản, mở 5 màn hình tuần 7.
-2. Luồng ngắn: `employee` tạo đơn → `manager` duyệt → `hr` hoàn tất; ghi số dư trước/sau.
-3. Ghi URL, thời điểm, commit đã deploy, kết quả từng bước. Staging chưa lên thì ghi "chưa kiểm".
+Staging chỉ chạy trên AWS ở tuần 12–13 (quyết định ngày 10/11), nên việc này làm ở tuần 12.
 
 ### 2. `docs/test-cases-week10` – ca kiểm thử mới
 
@@ -55,7 +50,7 @@ File `docs/business/test-cases-tuan-10.md`, cùng định dạng `leave-test-cas
 
 ### 3. `docs/test-report-week10` – chạy ca kiểm thử
 
-Chạy trên `dev` khi code đã merge, ghi vào `test-report-tuan-10.md` mục 2. Tính năng chưa merge thì đưa vào "Phạm vi chưa kiểm".
+Chạy trên `dev` (local) khi code đã merge, ghi vào `docs/business/test-report-tuan-10.md`. Tính năng chưa merge thì đưa vào "Phạm vi chưa kiểm".
 
 ## Cách làm trên git
 

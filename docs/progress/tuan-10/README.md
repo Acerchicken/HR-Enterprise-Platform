@@ -1,14 +1,13 @@
 # Tuần 10 (9/11 – 16/11) – Hoàn thiện chức năng
 
 Mục tiêu tuần:
-1. **Staging chạy thật trên AWS (việc tồn tuần 9):** `terraform apply`, deploy lần đầu qua pipeline, smoke test với 4 tài khoản.
-   Tiêu chí của ADR-05: cuối tuần 10 demo được luồng nghỉ phép từ tạo đơn đến hoàn tất trên cloud.
+1. **Chuẩn bị lên AWS, chưa tạo tài nguyên:** có kết quả `terraform plan` thật, code Terraform cho tài liệu và email, kế hoạch lên
+   AWS tuần 12–13. Không `terraform apply` trong tuần này (xem quyết định ở mục 3).
 2. **Đủ 7 use case:** kho tài liệu HR (UC5), tìm kiếm tài liệu (UC6), giao diện HR tạo và sửa hồ sơ (UC1), giao diện xem audit
    (UC7).
 3. **Hoàn thiện nghiệp vụ nghỉ phép:** mỗi người đúng một quản lý trừ CEO, HR duyệt đơn CEO, người duyệt thay (BR-06), tạo đơn hộ
    (BR-12).
-4. **Vận hành và bảo mật:** logging, metrics cơ bản, diễn tập rollback, email thật trên staging, các khoảng trống mức cao của
-   threat model.
+4. **Bảo mật:** các khoảng trống mức cao của threat model (kiểm `email_verified`).
 
 Phân vai theo ADR-11: TV1 Duong code, TV2 Thanh nghiệp vụ + bảo mật nghiệp vụ, TV3 Bảo cloud, IaC, CI/CD, TV4 Duy kiểm thử.
 
@@ -27,7 +26,7 @@ Theo mức độ trong BRD. Nếu không đủ thời gian thì cắt từ dư�
 
 | Mức | Việc | Yêu cầu BRD |
 |---|---|---|
-| 1 | Staging, smoke test | ADR-05, ADR-12 |
+| 1 | `terraform plan` thật (không `apply`), MinIO local cho kho tài liệu | ADR-12 |
 | 2 (M) | Kho tài liệu, tìm tài liệu, HR tạo/sửa hồ sơ, xem audit, quy tắc một quản lý | FR-5.1, 5.2, 6.2, 1.4, 1.5, 7.3, 2.5 |
 | 3 (S) | HR duyệt đơn CEO, phiên bản tài liệu, người duyệt thay, tạo đơn hộ | FR-4.4, 5.3, 4.3, 3.7 |
 
@@ -35,33 +34,29 @@ Theo mức độ trong BRD. Nếu không đủ thời gian thì cắt từ dư�
 
 | Nhánh | Người | Việc | Output | Mở PR | Merge | Review |
 |---|---|---|---|---|---|---|
-| (không có nhánh) | TV3 Bảo | `terraform plan` thật, TV1 duyệt, `apply`, tạo GitHub vars, deploy lần đầu | Dòng `Plan: N to add`, URL staging | **T3 (10/11), 21:00** | – | TV1 |
-| `docs/test-report-staging` | TV4 Duy | Smoke test staging với 4 tài khoản | `docs/business/test-report-tuan-10.md` mục 1 | Sau khi staging lên 1 ngày | +1 ngày | TV1 |
+| (không có nhánh) | TV3 Bảo | `terraform plan` thật, **không `apply`** | Dòng `Plan: N to add` | T5 (12/11), 21:00 | – | TV1 |
 | `docs/document-rules` | TV2 Thanh | Quy tắc kho tài liệu: loại, phạm vi xem, phiên bản, tìm kiếm | `docs/business/document-rules.md` | **T3 (10/11), 21:00** | T4 (11/11) | TV1, TV4 |
 | `docs/retention-leave-reason` | TV2 Thanh | Thời gian lưu audit, đơn nghỉ; ai xem lý do nghỉ ốm; nội dung email | Bổ sung `leave-rules.md` | T4 (11/11), 21:00 | T5 (12/11) | TV1 |
 | `feat/employee-manager-rule` | TV1 Duong | Quy tắc một quản lý trừ CEO; HR duyệt đơn CEO (issue #22) | PR code + e2e | T3 (10/11) | T4 (11/11) | TV2 |
 | `chore/minio-local` | TV3 Bảo | MinIO trong docker-compose cho kho tài liệu local | `docker-compose.yml` | T4 (11/11), 21:00 | T5 (12/11) | TV1 |
 | `feat/hr-employee-form` | TV1 Duong | Giao diện HR tạo và sửa hồ sơ | PR code + e2e | T4 (11/11) | T5 (12/11) | TV2, TV4 |
 | `feat/documents-api` | TV1 Duong | API tài liệu, upload presigned URL, lọc theo phạm vi, phiên bản; ADR-13 | PR code + e2e | T5 (12/11) | T6 (13/11) | TV2, TV3 |
-| `infra/documents-email` | TV3 Bảo | S3 tài liệu (CORS, IAM), email trên staging | `infra/` | T5 (12/11), 21:00 | T6 (13/11) | TV1 |
+| `infra/documents-email` | TV3 Bảo | Code Terraform: S3 tài liệu (CORS, IAM), email SES, alarm; chỉ `validate`/`plan` | `infra/` | T6 (13/11), 21:00 | T7 (14/11) | TV1 |
 | `feat/document-search` | TV1 Duong | Worker trích văn bản, full-text PostgreSQL, tìm theo quyền; giao diện tài liệu | PR code + e2e | T6 (13/11) | T7 (14/11) | TV2, TV4 |
-| `infra/observability` | TV3 Bảo | Log, metrics, alarm CloudWatch; diễn tập rollback | `infra/`, `infra/README.md` | T6 (13/11), 21:00 | T7 (14/11) | TV1 |
+| `docs/aws-rollout-plan` | TV3 Bảo | Kế hoạch lên AWS tuần 12–13: thứ tự, chi phí 2 tuần, rollback, dọn dẹp | `infra/README.md` | T7 (14/11), 21:00 | CN (15/11) | TV1 |
 | `docs/test-cases-week10` | TV4 Duy | Ca kiểm thử tài liệu, tìm kiếm, hồ sơ, audit, quy tắc một quản lý | `docs/business/test-cases-tuan-10.md` | T5 (12/11), 21:00 | T6 (13/11) | TV2, TV1 |
 | `feat/audit-ui`, `fix/auth-email-verified` | TV1 Duong | Màn hình xem audit; kiểm `email_verified` | PR code + e2e | T7 (14/11) | CN (15/11) | TV2 |
 | `feat/leave-delegation` | TV1 Duong | BR-06 và BR-12 (mức 3, làm nếu còn thời gian) | PR code + e2e | CN (15/11), 12:00 | CN (15/11) | TV2, TV4 |
-| `docs/test-report-week10` | TV4 Duy | Chạy ca kiểm thử trên `dev` và staging | `test-report-tuan-10.md` mục 2 | CN (15/11), 12:00 | T2 (16/11), 9:00 | TV1 |
+| `docs/test-report-week10` | TV4 Duy | Chạy ca kiểm thử trên `dev` (local) | `test-report-tuan-10.md` mục 2 | CN (15/11), 12:00 | T2 (16/11), 9:00 | TV1 |
 | `docs/matrix-week10` | TV2 Thanh | Cập nhật ma trận phân quyền, trạng thái FR trong BRD | `access-control-matrix.md`, `BRD.md` | CN (15/11), 12:00 | T2 (16/11), 9:00 | TV1 |
 
 Thứ tự phụ thuộc:
 
-1. T3: TV3 có plan thật → TV1 duyệt → `apply` → deploy → TV4 smoke test.
+1. T5: TV3 gửi `terraform plan` thật → TV1 đọc, ghi lỗi cần sửa trước tuần 12.
 2. T3–T4: TV2 chốt quy tắc tài liệu → TV1 code API, TV4 viết ca kiểm thử.
 3. T5: TV3 xong MinIO local → TV1 chạy thử upload.
-4. T6–T7: TV1 xong tài liệu, tìm kiếm → TV3 deploy, TV4 kiểm thử.
+4. T6–T7: TV1 xong tài liệu, tìm kiếm → TV4 kiểm thử trên local.
 5. T2 (16/11), 9:00: mọi người điền "Việc đã làm". TV1 viết báo cáo, mở PR `dev` → `main`, gắn tag `week-10`.
-
-**Nếu staging tiếp tục không lên:** TV3 báo TV1 trước **T4 (11/11), 21:00**. Khi đó nhóm cắt phạm vi: staging tối thiểu gồm RDS, API
-trên App Runner, web trên S3/CloudFront, Cognito; worker, SQS chuyển sang tuần 11.
 
 ## Chi tiết từng người
 
@@ -88,5 +83,22 @@ _Điền cuối tuần._
 _Điền cuối tuần. Dự kiến theo kế hoạch tổng: load test 50 RPS, SLO, chi phí._
 
 ## 3. Quyết định quan trọng
+
+### Lùi thời điểm chạy staging trên AWS sang tuần 12–13 (10/11/2026)
+
+**Quyết định của nhóm trưởng:** chỉ tạo tài nguyên AWS trong tuần 12 và 13. Tuần 10–11 làm và kiểm thử trên local (docker compose),
+code Terraform chỉ dừng ở `validate` và `plan`.
+
+**Lý do:** dự toán ~56,80 USD/tháng, sát hạn mức thẻ ~60 USD. Bật staging từ tuần 10 thì phải trả cho 4 tuần, phần lớn thời gian
+không dùng. Chạy 2 tuần cuối giảm chi phí khoảng một nửa.
+
+**Đánh đổi:**
+- Tiêu chí của ADR-05 ("cuối tuần 10 demo được luồng nghỉ phép trên cloud") chuyển thành cuối tuần 12.
+- Lỗi chỉ xuất hiện trên AWS (IAM, mạng, Cognito, SQS) phát hiện muộn. Giảm rủi ro bằng `plan` thật ở tuần 10 và kế hoạch triển
+  khai chi tiết.
+- Load test tuần 11 chạy trên local; tuần 12 chạy lại một lượt ngắn trên staging.
+- Workflow deploy chỉ chạy tay cho tới tuần 12, để không báo lỗi trên mọi lần merge vào `dev`.
+
+**Khi nào xem lại:** nếu đầu tuần 12 `apply` không thành công trong 1 ngày, nhóm báo thầy và dùng bản demo local.
 
 _ADR-13 (kho tài liệu và tìm kiếm) do TV1 viết ở nhánh `feat/documents-api`._

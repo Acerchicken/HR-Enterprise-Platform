@@ -95,8 +95,8 @@ Hoàn thiện chức năng. Kế hoạch chi tiết, nhánh và hạn ở [`tuan
 |---|---|---|
 | TV1 (Duong) | Quy tắc một quản lý, HR duyệt đơn CEO; giao diện HR tạo/sửa hồ sơ; kho tài liệu, tìm kiếm; giao diện audit; BR-06, BR-12 nếu còn thời gian | PR code + e2e, ADR-13 |
 | TV2 (Thanh) | Quy tắc kho tài liệu; thời gian lưu dữ liệu, quyền xem lý do nghỉ; cập nhật ma trận, BRD, threat model | `document-rules.md`, `leave-rules.md`, ma trận |
-| TV3 (Bảo) | `terraform plan` thật, `apply`, deploy staging; MinIO local; S3 tài liệu, email; log, metrics, rollback | URL staging, `infra/` |
-| TV4 (Duy) | Smoke test staging; ca kiểm thử chức năng mới; chạy và ghi kết quả thật | `test-cases-tuan-10.md`, `test-report-tuan-10.md` |
+| TV3 (Bảo) | MinIO local; `terraform plan` thật (không `apply`); code Terraform tài liệu, email, alarm; kế hoạch lên AWS tuần 12–13 | `infra/` |
+| TV4 (Duy) | Ca kiểm thử chức năng mới; chạy và ghi kết quả thật trên local | `test-cases-tuan-10.md`, `test-report-tuan-10.md` |
 
 ## 3. Quyết định quan trọng
 
