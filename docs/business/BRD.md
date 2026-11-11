@@ -299,9 +299,9 @@ Mô hình dữ liệu chi tiết: [data model tuần 6](../progress/tuan-06/TV2_
 
 | Vấn đề | Quyết định | Theo dõi |
 |---|---|---|
-| Thời gian lưu audit log và đơn nghỉ | Đơn nghỉ lưu 5 năm kể từ trạng thái kết thúc; audit log lưu 5 năm kể từ thời điểm ghi. Legal hold đang hiệu lực thì tạm dừng hủy. Audit không sửa trong thời hạn lưu; archive/hủy sau hạn phải qua quy trình retention được phê duyệt, không phải thao tác xóa thông thường. | BR-13 trong [`leave-rules.md`](leave-rules.md); cần thiết kế cơ chế archive/hủy và đồng bộ ADR-09 trước production |
-| Ai được xem lý do nghỉ ốm/thai sản | Chỉ nhân viên đứng tên đơn và HR xem lý do chi tiết; HR đọc phải được audit. Quản lý/người duyệt thay không nhận trường lý do; ADMIN không có quyền xem thêm. | BR-14 trong [`leave-rules.md`](leave-rules.md) |
-| Email nghỉ phép (T-16) | Subject/body chỉ báo chung có yêu cầu/cập nhật và dẫn tới ứng dụng cần đăng nhập; bỏ tên, loại phép, ngày/buổi, số ngày, lý do/ghi chú, mã đơn và link bearer. | BR-15 trong [`leave-rules.md`](leave-rules.md); cần cập nhật template email và kiểm thử |
+| Thời gian lưu audit log và đơn nghỉ | Mốc retention nội bộ: đơn nghỉ 5 năm từ khi kết thúc; audit 5 năm từ lúc ghi. Chưa khẳng định là thời hạn luật định; HR/pháp chế phải xác nhận trước production và áp dụng thời hạn bắt buộc dài hơn. Legal hold tạm dừng hủy; xử lý hết hạn qua archive bất biến hoặc hủy/khử định danh được phê duyệt, không cho ứng dụng quyền xóa thông thường. | BR-13 trong [`leave-rules.md`](leave-rules.md); đồng bộ ADR-09 và thiết kế retention trước production |
+| Ai được xem lý do nghỉ ốm/thai sản | Chỉ nhân viên đứng tên đơn và HR xem lý do chi tiết trên mọi bề mặt; HR đọc tạo audit không chứa giá trị lý do. Không để lộ lý do/comment sức khỏe qua audit (kể cả quyền đọc audit của ADMIN), export hoặc email. | BR-14 trong [`leave-rules.md`](leave-rules.md); cần lọc response và audit payload |
+| Email nghỉ phép (T-16) | Subject/body chỉ báo chung và link inbox chung cần đăng nhập; không có thông tin nhận diện/chi tiết đơn trong nội dung hay URL. Outbox/log cũng chỉ mang dữ liệu tối thiểu để định tuyến, không mang lý do, comment, loại phép hoặc ngày nghỉ không cần thiết. | BR-15 trong [`leave-rules.md`](leave-rules.md); cần cập nhật template, payload và kiểm thử |
 
 ### Còn mở
 
