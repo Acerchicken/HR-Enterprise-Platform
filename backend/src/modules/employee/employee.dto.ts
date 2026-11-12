@@ -141,6 +141,33 @@ export class CreateEmployeeDto {
   @ApiProperty({ example: '2026-11-01' })
   @IsDateString()
   hireDate: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  dateOfBirth?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(0, 255)
+  address?: string;
+
+  // ----- Trường nhạy cảm: mã hóa khi lưu, audit chỉ ghi tên trường -----
+  @ApiPropertyOptional({ description: 'CCCD (12 số)' })
+  @IsOptional()
+  @Matches(/^[0-9]{12}$/, { message: 'CCCD phải gồm 12 chữ số' })
+  nationalId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Matches(/^[0-9]{6,20}$/, { message: 'Số tài khoản không hợp lệ' })
+  bankAccount?: string;
+
+  @ApiPropertyOptional({ description: 'Lương tháng (VND)' })
+  @IsOptional()
+  @IsNumberString()
+  salary?: string;
 }
 
 export class SensitiveFields {
@@ -157,6 +184,7 @@ export class DirectoryEntry {
   phone: string | null;
   departmentId: string;
   departmentName: string | null;
+  positionId: string;
   positionTitle: string | null;
   managerId: string | null;
   managerName?: string | null;

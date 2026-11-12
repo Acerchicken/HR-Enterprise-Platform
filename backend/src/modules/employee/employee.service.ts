@@ -224,13 +224,28 @@ export class EmployeeService {
     if (!lookups.position.has(dto.positionId)) throw new BadRequestException('Chức danh không tồn tại');
     if (dto.managerId) await this.getOrThrow(dto.managerId);
 
+    const { nationalId, bankAccount, salary, ...plain } = dto;
+    const sensitiveGiven = SENSITIVE_KEYS.filter((k) => dto[k] !== undefined);
     const id = await this.repo.manager.transaction(async (m) => {
       await this.assertManagerRule(m, lookups, { positionId: dto.positionId, managerId: dto.managerId ?? null });
       const saved = await m.getRepository(Employee).save(
-        m.getRepository(Employee).create({ ...dto, workEmail: dto.workEmail.toLowerCase(), managerId: dto.managerId ?? null }),
+        m.getRepository(Employee).create({ ...plain, workEmail: dto.workEmail.toLowerCase(), managerId: dto.managerId ?? null }),
       );
+      if (sensitiveGiven.length) {
+        const sRepo = m.getRepository(EmployeeSensitive);
+        await sRepo.save(
+          sRepo.create({
+            employeeId: saved.id,
+            nationalIdEnc: nationalId !== undefined ? this.crypto.encrypt(nationalId) : null,
+            bankAccountEnc: bankAccount !== undefined ? this.crypto.encrypt(bankAccount) : null,
+            salaryEnc: salary !== undefined ? this.crypto.encrypt(salary) : null,
+          }),
+        );
+      }
+      // Giá trị trường nhạy cảm không bao giờ ghi vào log, chỉ ghi tên trường.
+      const masked = Object.fromEntries(sensitiveGiven.map((k) => [k, '***']));
       await this.audit.record(
-        { actorId: actor.employeeId, action: 'CREATE', entityType: 'employee', entityId: saved.id, changedFields: { ...dto }, ...meta },
+        { actorId: actor.employeeId, action: 'CREATE', entityType: 'employee', entityId: saved.id, changedFields: { ...plain, ...masked }, ...meta },
         m,
       );
       return saved.id;
@@ -304,6 +319,7 @@ export class EmployeeService {
       phone: e.phone,
       departmentId: e.departmentId,
       departmentName: lookups.department.get(e.departmentId)?.name ?? null,
+      positionId: e.positionId,
       positionTitle: lookups.position.get(e.positionId)?.title ?? null,
       managerId: e.managerId,
       managerName: e.managerId ? (managerName.get(e.managerId) ?? null) : null,

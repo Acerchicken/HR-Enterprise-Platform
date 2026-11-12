@@ -74,3 +74,7 @@ a.button:hover { text-decoration: none; }
 .status-completed { background: #ecfdf3; color: var(--ok); }
 .status-rejected { background: #fef3f2; color: var(--danger); }
 .status-cancelled { background: #f2f4f7; color: var(--muted); }
+
+fieldset { border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin: 0 0 16px; }
+legend { padding: 0 6px; font-weight: 600; }
+.picker ul { margin: 4px 0 0; }

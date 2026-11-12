@@ -138,6 +138,15 @@ Ngoài 3 trường hợp này, PR chưa đạt thì để mở và sửa tiếp.
 - Branch protection (ruleset trên GitHub): `main` và `dev` bắt buộc qua PR, có approve của Duong, cấm force push và xóa nhánh, chỉ Duong merge được. Khi CI chạy được thì thêm điều kiện CI phải xanh.
 - Không sửa lịch sử của nhánh người khác (không force push lên nhánh không phải của mình, không bao giờ force push `dev`, `main`).
 
+### Checklist: thêm một trường hồ sơ nhân viên
+
+1. Migration thêm cột (trường nhạy cảm: thêm vào `employee.employee_sensitive`, mã hóa qua `FieldCrypto`).
+2. Entity và DTO (`CreateEmployeeDto`, `UpdateEmployeeDto`) kèm validation; trường nhân viên tự sửa thì thêm vào `SELF_EDITABLE`.
+3. `npm run openapi` (backend) rồi `npm run gen:api` (frontend) để sinh lại type; TypeScript sẽ báo các chỗ chưa xử lý.
+4. Thêm một dòng `FieldDef` trong `frontend/src/pages/employee/employee-fields.ts`; form tạo/sửa và trang hồ sơ tự hiện trường mới.
+   Test `employee-fields.spec.ts` (backend) kiểm `editableBy` khớp `SELF_EDITABLE`.
+5. TV2 thêm dòng vào ma trận phân quyền; TV4 thêm ca kiểm thử.
+
 ## 7. Test
 
 - Logic nghiệp vụ viết thành hàm thuần và có unit test (`*.spec.ts` cạnh file).

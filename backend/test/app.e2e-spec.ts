@@ -202,6 +202,46 @@ describe('HRHelper API (e2e)', () => {
       await http.post('/api/v1/employees').set(HR).send({}).expect(400);
     });
 
+    it('HR tạo nhân viên kèm quản lý và trường nhạy cảm: 201, audit chỉ ghi tên trường nhạy cảm (FR-1.5)', async () => {
+      const dept = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code !== 'BOD');
+      const pos = (await http.get('/api/v1/positions').set(HR)).body.find((p: any) => p.code !== 'CEO');
+      const code = `E9${String(Date.now() % 10000).padStart(4, '0')}`;
+      const res = await http
+        .post('/api/v1/employees')
+        .set(HR)
+        .send({
+          employeeCode: code,
+          fullName: 'Nhân Viên Mới',
+          workEmail: `new-${code.toLowerCase()}@hr.local`,
+          departmentId: dept.id,
+          positionId: pos.id,
+          managerId,
+          hireDate: '2026-11-12',
+          dateOfBirth: '1998-05-20',
+          nationalId: '079098000123',
+          salary: '18000000',
+        })
+        .expect(201);
+      expect(res.body).toMatchObject({ employeeCode: code, positionId: pos.id, managerId });
+      const sensitive = await http.get(`/api/v1/employees/${res.body.id}?include=sensitive`).set(HR).expect(200);
+      expect(sensitive.body.sensitive).toMatchObject({ nationalId: '079098000123', salary: '18000000', bankAccount: null });
+      const logs = await http.get(`/api/v1/audit-logs?entity=employee&entityId=${res.body.id}`).set(HR).expect(200);
+      const created = logs.body.items.find((l: any) => l.action === 'CREATE');
+      expect(created.changedFields).toMatchObject({ nationalId: '***', salary: '***' });
+      expect(JSON.stringify(created.changedFields)).not.toContain('079098000123');
+      const { DataSource } = await import('typeorm');
+      const ds = app.get(DataSource);
+      await ds.query('DELETE FROM employee.employee_sensitive WHERE employee_id = $1', [res.body.id]);
+      await ds.query('DELETE FROM iam.user_account WHERE employee_id = $1', [res.body.id]).catch(() => undefined);
+      await ds.query('DELETE FROM employee.employee WHERE id = $1', [res.body.id]);
+    });
+
+    it('lỗi validation trả thêm fields theo từng trường', async () => {
+      const res = await http.patch(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).send({ phone: 'abc' }).expect(400);
+      expect(res.body.fields).toEqual({ phone: 'Số điện thoại không hợp lệ' });
+      expect(res.body.message).toEqual(['Số điện thoại không hợp lệ']);
+    });
+
     it('xem hồ sơ: chủ hồ sơ PERSONAL, HR mức HR, ADMIN chỉ mức danh bạ; nhân viên không xem trường nhạy cảm', async () => {
       expect((await http.get(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).expect(200)).body.visibility).toBe('PERSONAL');
       expect((await http.get(`/api/v1/employees/${employeeId}`).set(HR).expect(200)).body.visibility).toBe('HR');

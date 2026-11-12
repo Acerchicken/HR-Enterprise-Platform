@@ -519,6 +519,18 @@ components:
         hireDate:
           type: string
           example: 2026-11-01
+        dateOfBirth:
+          type: string
+        address:
+          type: string
+        nationalId:
+          type: string
+          description: CCCD (12 số)
+        bankAccount:
+          type: string
+        salary:
+          type: string
+          description: Lương tháng (VND)
       required:
         - employeeCode
         - fullName
