@@ -1,5 +1,7 @@
 # Business rules – quy trình nghỉ phép
 
+> Phụ lục của [BRD](BRD.md): business rule `BR-nn` của luồng nghỉ phép. Bộ tài liệu: [`docs/README.md`](../README.md).
+
 Tài liệu này mô tả quy tắc nghiệp vụ cho luồng nghỉ phép MVP, đối chiếu với functional requirements UC3–UC4 tuần 5 và state machine trong `backend/src/modules/leave/leave-state-machine.ts`.
 
 **Thuật ngữ thống nhất:** "quản lý trực tiếp" là người quản lý được ghi trong thông tin tổ chức; "người duyệt thay" là quản lý đang làm việc được HR ghi nhận thay quyền quản lý trực tiếp trong khoảng thời gian xác định (xem BR-06). Cả hai được gọi chung là "người duyệt hợp lệ". CEO là ngoại lệ duy nhất không có quản lý trực tiếp; HR duyệt đơn của CEO theo BR-05.

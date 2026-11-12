@@ -1,5 +1,7 @@
 # Ca kiểm thử workflow nghỉ phép
 
+> Tài liệu kiểm thử: kiểm chứng FR UC3–UC4 trong [SRS](../requirements/SRS.md). Bộ tài liệu: [`docs/README.md`](../README.md).
+
 Ca kiểm thử cho 5 bước của luồng nghỉ phép (tạo, duyệt, từ chối, hủy, HR hoàn tất), đối chiếu với business rule trong
 [`leave-rules.md`](leave-rules.md) và danh sách ngày lễ trong [`leave-types-holidays.md`](leave-types-holidays.md).
 Bản nháp đầu do TV4 (Duy) viết ở PR #13; bản này sửa theo review của PR đó.

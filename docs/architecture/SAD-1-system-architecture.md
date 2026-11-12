@@ -1,7 +1,7 @@
-# Kiến trúc hệ thống – HRHelper (HR Enterprise Platform)
+# SAD phần 1 – Kiến trúc hệ thống – HRHelper (HR Enterprise Platform)
 
 Tài liệu mô tả hệ thống **nhìn từ bên ngoài**: gồm những khối nào, nói chuyện với ai, chạy ở đâu, bảo mật hạ tầng, sẵn sàng,
-phục hồi, quan sát, CI/CD và chi phí. Bên trong từng khối nằm ở [kiến trúc phần mềm](software-architecture.md).
+phục hồi, quan sát, CI/CD và chi phí. Bên trong từng khối nằm ở [kiến trúc phần mềm](SAD-2-software-architecture.md).
 
 Tài liệu có hai phần:
 
