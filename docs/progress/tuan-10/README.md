@@ -24,7 +24,7 @@ Trong bảng dưới, **"Mở PR"** là hạn mở PR, **"Merge"** là hạn PR 
 
 Theo mức độ trong BRD. Nếu không đủ thời gian thì cắt từ dưới lên và ghi vào báo cáo, không làm dở nhiều việc cùng lúc.
 
-| Mức | Việc | Yêu cầu BRD |
+| Mức | Việc | Yêu cầu (SRS) |
 |---|---|---|
 | 1 | `terraform plan` thật (không `apply`), MinIO local cho kho tài liệu | ADR-12 |
 | 2 (M) | Kho tài liệu, tìm tài liệu, HR tạo/sửa hồ sơ, xem audit, quy tắc một quản lý | FR-5.1, 5.2, 6.2, 1.4, 1.5, 7.3, 2.5 |
@@ -48,7 +48,7 @@ Theo mức độ trong BRD. Nếu không đủ thời gian thì cắt từ dư�
 | `feat/audit-ui`, `fix/auth-email-verified` | TV1 Duong | Màn hình xem audit; kiểm `email_verified` | PR code + e2e | T7 (14/11) | CN (15/11) | TV2 |
 | `feat/leave-delegation` | TV1 Duong | BR-06 và BR-12 (mức 3, làm nếu còn thời gian) | PR code + e2e | CN (15/11), 12:00 | CN (15/11) | TV2, TV4 |
 | `docs/test-report-week10` | TV4 Duy | Chạy ca kiểm thử trên `dev` (local) | `test-report-tuan-10.md` mục 2 | CN (15/11), 12:00 | T2 (16/11), 9:00 | TV1 |
-| `docs/matrix-week10` | TV2 Thanh | Cập nhật ma trận phân quyền, trạng thái FR trong BRD | `access-control-matrix.md`, `BRD.md` | CN (15/11), 12:00 | T2 (16/11), 9:00 | TV1 |
+| `docs/matrix-week10` | TV2 Thanh | Cập nhật ma trận phân quyền, trạng thái FR trong SRS (từ 12/11 FR chuyển từ BRD sang SRS) | `access-control-matrix.md`, `requirements/SRS.md` | CN (15/11), 12:00 | T2 (16/11), 9:00 | TV1 |
 
 Thứ tự phụ thuộc:
 

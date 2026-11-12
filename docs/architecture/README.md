@@ -9,13 +9,14 @@ Hai tài liệu, hai góc nhìn:
 
 ```mermaid
 flowchart LR
-  brd[BRD<br/>yêu cầu nghiệp vụ] --> sys[Kiến trúc hệ thống<br/>khối, hạ tầng, NFR]
+  brd[BRD<br/>yêu cầu nghiệp vụ] --> srs[SRS<br/>FR, NFR, truy vết]
+  srs --> sys[Kiến trúc hệ thống<br/>khối, hạ tầng, NFR]
   sys --> sw[Kiến trúc phần mềm<br/>module, code, pattern]
   adr[ADR-00 → ADR-12<br/>quyết định] --> sys
   adr --> sw
 ```
 
-Liên quan: [BRD](../business/BRD.md) · [ma trận phân quyền](../security/access-control-matrix.md) ·
+Liên quan: [BRD](../business/BRD.md) · [SRS](../requirements/SRS.md) · [ma trận phân quyền](../security/access-control-matrix.md) ·
 [quy ước code](../CONVENTIONS.md) · [API](../openapi.yaml) · [danh sách ADR](../progress/README.md#danh-sách-quyết-định-adr).
 
 ## Quyết định kiến trúc (ADR)
