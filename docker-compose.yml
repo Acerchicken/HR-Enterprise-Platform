@@ -65,6 +65,31 @@ services:
       # Local không có TLS: cho phép SMTP auth không mã hóa, nếu không Mailpit thoát ngay khi khởi động.
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
+  # MinIO: lưu trữ kho tài liệu chính sách HR và hồ sơ ở local (tương thích AWS S3)
+  minio:
+    image: minio/minio:RELEASE.2024-11-07T00-52-28Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
+  # Tạo sẵn bucket hr-documents khi MinIO khởi động
+  minio-init:
+    image: minio/mc:RELEASE.2024-11-05T11-41-28Z
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until /usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin; do echo 'Waiting for MinIO...' && sleep 1; done;
+      /usr/bin/mc mb --ignore-existing local/hr-documents;
+      exit 0;
+      "
+
   api:
     build: ./backend
     environment:
@@ -86,6 +111,11 @@ services:
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
       SMTP_FROM: no-reply@hr.local
+      STORAGE_BUCKET: hr-documents
+      STORAGE_ENDPOINT: http://minio:9000
+      STORAGE_PUBLIC_ENDPOINT: http://localhost:9000
+      STORAGE_ACCESS_KEY_ID: minioadmin
+      STORAGE_SECRET_ACCESS_KEY: minioadmin
     ports:
       - "3000:3000"
     depends_on:
@@ -95,6 +125,8 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_healthy
+      minio:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1/health || exit 1"]
       interval: 5s
@@ -118,12 +150,19 @@ services:
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
       SMTP_FROM: no-reply@hr.local
+      STORAGE_BUCKET: hr-documents
+      STORAGE_ENDPOINT: http://minio:9000
+      STORAGE_PUBLIC_ENDPOINT: http://localhost:9000
+      STORAGE_ACCESS_KEY_ID: minioadmin
+      STORAGE_SECRET_ACCESS_KEY: minioadmin
     depends_on:
       api:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
       mailpit:
+        condition: service_started
+      minio:
         condition: service_started
     restart: unless-stopped
 
@@ -159,3 +198,4 @@ services:
 volumes:
   db-data:
   rabbitmq-data:
+  minio-data:
