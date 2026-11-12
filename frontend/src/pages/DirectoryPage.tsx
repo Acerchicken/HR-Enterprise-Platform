@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { api, Department, DirectoryEntry, Page } from '../api/client';
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
+import { api, Department, DirectoryEntry, Me, Page } from '../api/client';
 import { useApi } from '../api/useApi';
 import { ErrorBox } from '../components/ErrorBox';
 
 const SIZE = 20;
 
 export function DirectoryPage() {
+  const me = useOutletContext<Me | null>();
   const [params, setParams] = useSearchParams();
   const q = params.get('q') ?? '';
   const dept = params.get('dept') ?? '';
@@ -40,6 +41,7 @@ export function DirectoryPage() {
   return (
     <section className="card">
       <h2>Danh bạ nhân viên</h2>
+      {me?.roles.includes('HR') && <p><Link className="button primary" to="/employees/new">+ Tạo nhân viên</Link></p>}
       <div className="toolbar">
         <input placeholder="Tìm theo tên, email, mã nhân viên…" value={input} onChange={(e) => setInput(e.target.value)} />
         <select value={dept} onChange={(e) => update({ dept: e.target.value, page: '1' })}>
