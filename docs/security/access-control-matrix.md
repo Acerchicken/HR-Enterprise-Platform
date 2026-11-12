@@ -73,6 +73,17 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 | Đơn nghỉ phép | Hủy | `POST /api/v1/leave-requests/{id}/cancel` | ✓ | ✓ | ✓ | ✓ | Chỉ chủ đơn; đơn phải ở `SUBMITTED`. Role không thay thế điều kiện sở hữu; không tự hủy đơn đã duyệt. | BR-07, BR-08 |
 | Đơn nghỉ phép | HR hoàn tất | `POST /api/v1/leave-requests/{id}/complete` | — | — | ✓ | — | Role HR; đơn phải ở `APPROVED`; thay đổi trạng thái yêu cầu `version` hiện tại. Chỉ HR được hoàn tất. | BR-10, BR-11 |
 
+### Kho tài liệu (tuần 10, `document-rules.md`)
+
+| Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |
+|---|---|---|---:|---:|---:|---:|---|---|
+| Tài liệu | Xem danh sách | `GET /api/v1/documents` | ✓ | ✓ | ✓ | ✓ | Chỉ tài liệu chưa ẩn, có phiên bản sẵn sàng và khớp ít nhất một phạm vi: toàn công ty, phòng ban của người xem hoặc phòng ban cha, vai trò. Người đã nghỉ việc hoặc chưa gắn hồ sơ nhận danh sách rỗng. Lọc trong truy vấn, không lộ số lượng. | DR-02, DR-05, DR-06, DR-08 |
+| Tài liệu | Xem chi tiết, phiên bản | `GET /api/v1/documents/{id}` | ✓ | ✓ | ✓ | ✓ | Như trên; ngoài phạm vi trả 404 như không tồn tại. HR không có quyền xem ngầm. | DR-03, DR-04, DR-08 |
+| Tài liệu | Tải xuống | `GET /api/v1/documents/{id}/download`, `GET /api/v1/documents/{id}/versions/{versionId}/download` | ✓ | ✓ | ✓ | ✓ | Kiểm phạm vi ở mỗi lần tải, file đi qua API; không phát link tải. | DR-06, ADR-13 |
+| Kho tài liệu | Quản lý (danh sách, chi tiết metadata) | `GET /api/v1/documents/manage`, `GET /api/v1/documents/manage/{id}` | — | — | ✓ | — | Thấy mọi tài liệu kể cả đã ẩn, chỉ metadata (tiêu đề, phạm vi, phiên bản); không tải được nội dung ngoài phạm vi. | DR-03 |
+| Kho tài liệu | Tạo, thêm phiên bản, xác nhận tải lên | `POST /api/v1/documents`, `POST /api/v1/documents/{id}/versions`, `POST /api/v1/documents/{id}/versions/{versionId}/confirm` | — | — | ✓ | — | PDF/DOCX ≤ 20 MiB, định dạng thực phải khớp; ít nhất một phạm vi; phiên bản mới không ghi đè bản cũ. Ghi audit. | DR-01, DR-04 |
+| Kho tài liệu | Sửa metadata, ẩn, khôi phục | `PATCH /api/v1/documents/{id}`, `POST /api/v1/documents/{id}/hide`, `POST /api/v1/documents/{id}/restore` | — | — | ✓ | — | `version` phải khớp khi sửa; ẩn không xóa phiên bản. Ghi audit. | DR-03, DR-05 |
+
 ## Điểm lệch và quyết định nghiệp vụ
 
 Các mục dưới đây ghi nhận quyết định nghiệp vụ đã thống nhất và các phần chưa được triển khai trong code:

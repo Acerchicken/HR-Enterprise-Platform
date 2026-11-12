@@ -41,6 +41,14 @@ export class OrganizationService {
   }
 
   /** Dùng cho module Employee: tra tên phòng ban/chức danh mà không JOIN chéo schema. */
+  /** Phòng ban và mọi phòng ban cha của nó (tài liệu cấp cho phòng cha thì phòng con cũng xem được, DR-02). */
+  async ancestorIds(departmentId: string): Promise<string[]> {
+    const byId = new Map((await this.listDepartments()).map((d) => [d.id, d]));
+    const out: string[] = [];
+    for (let d = byId.get(departmentId); d && !out.includes(d.id); d = d.parentId ? byId.get(d.parentId) : undefined) out.push(d.id);
+    return out;
+  }
+
   async lookups() {
     const [depts, positions] = await Promise.all([this.listDepartments(), this.listPositions()]);
     return {

@@ -50,6 +50,12 @@ export class EmployeeService {
   // ---------- Interface cho module Leave ----------
 
   /** Quản lý trực tiếp hiện tại của nhân viên (null nếu không có hoặc không tồn tại). */
+  /** Phòng ban và trạng thái hiện tại (module tài liệu dùng để tính phạm vi xem, DR-02, DR-06). */
+  async placementOf(employeeId: string): Promise<{ departmentId: string; status: string } | null> {
+    const e = await this.repo.findOne({ where: { id: employeeId }, select: { id: true, departmentId: true, status: true } });
+    return e ? { departmentId: e.departmentId, status: e.status } : null;
+  }
+
   async managerIdOf(employeeId: string): Promise<string | null> {
     const e = await this.repo.findOne({ where: { id: employeeId }, select: { id: true, managerId: true } });
     return e?.managerId ?? null;

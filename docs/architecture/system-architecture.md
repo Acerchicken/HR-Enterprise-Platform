@@ -57,7 +57,7 @@ flowchart TB
 |---|---|---|---|
 | Identity provider (OIDC) | Redirect đăng nhập + kiểm chữ ký token bằng khóa công khai (JWKS) | Đồng bộ | Không đăng nhập mới được; token còn hạn vẫn dùng |
 | Dịch vụ gửi email | Queue → worker gọi SMTP | Bất đồng bộ | Gửi lại; lỗi đưa vào hàng đợi chết (DLQ); trạng thái đơn không đổi |
-| Object storage | Link tải lên/tải xuống ký sẵn (presigned URL) | Tải lên đồng bộ, xử lý sau bất đồng bộ | Metadata "pending" tới khi file có thật |
+| Object storage | Tải lên bằng link ký sẵn (presigned URL); tải xuống qua API để kiểm quyền mỗi lần (ADR-13) | Tải lên đồng bộ, xử lý sau bất đồng bộ | Metadata "pending" tới khi file có thật |
 | LLM API | REST có timeout | Đồng bộ | Hết thời gian thì chỉ tới tài liệu gốc |
 | Payroll | File CSV hằng đêm | Batch | Chạy lại được, idempotent theo ngày |
 
