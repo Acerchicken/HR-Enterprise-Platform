@@ -9,7 +9,7 @@
 | Người review | TV2 (Thanh) nghiệp vụ, TV4 (Duy) khả năng kiểm thử |
 | Trạng thái | Bản nháp, chờ review trên PR |
 | Đầu vào | [BRD](../business/BRD.md) (yêu cầu nghiệp vụ) |
-| Đầu ra | [Kiến trúc hệ thống](../architecture/system-architecture.md) · [Kiến trúc phần mềm](../architecture/software-architecture.md) · [API](../openapi.yaml) · [Ca kiểm thử](../business/leave-test-cases.md) |
+| Đầu ra | [Kiến trúc hệ thống](../architecture/SAD-1-system-architecture.md) · [Kiến trúc phần mềm](../architecture/SAD-2-software-architecture.md) · [API](../openapi.yaml) · [Ca kiểm thử](../business/leave-test-cases.md) |
 
 **Lịch sử thay đổi**
 
@@ -45,7 +45,7 @@ flowchart LR
 |---|---|---|
 | [BRD](../business/BRD.md) | Bối cảnh, vấn đề, mục tiêu kinh doanh, phạm vi, stakeholder, quy trình nghiệp vụ, business rule, rủi ro, nghiệm thu | BRS / StRS – ISO/IEC/IEEE 29148 |
 | **SRS (tài liệu này)** | Yêu cầu chức năng, dữ liệu, phi chức năng, giao diện ngoài, kiểm chứng, truy vết | SRS – ISO/IEC/IEEE 29148 |
-| SAD: [kiến trúc hệ thống](../architecture/system-architecture.md) + [kiến trúc phần mềm](../architecture/software-architecture.md) + ADR | Khối, hạ tầng, module, pattern, quyết định kiến trúc | Architecture description – ISO/IEC/IEEE 42010 |
+| SAD: [kiến trúc hệ thống](../architecture/SAD-1-system-architecture.md) + [kiến trúc phần mềm](../architecture/SAD-2-software-architecture.md) + ADR | Khối, hạ tầng, module, pattern, quyết định kiến trúc | Architecture description – ISO/IEC/IEEE 42010 |
 
 ### 1.3 Phạm vi
 
@@ -67,7 +67,7 @@ phạm vi (tính lương, chấm công, tuyển dụng, ứng dụng di động,
 HRHelper là ứng dụng web nội bộ chạy trên cloud, thay cho Excel và email (hiện trạng ở [BRD mục 2](../business/BRD.md#2-bối-cảnh-và-vấn-đề)).
 Hệ thống làm việc với các hệ thống ngoài: identity provider (đăng nhập OIDC), dịch vụ gửi email, object storage (file tài liệu),
 LLM API (trợ lý, tuần 12) và hệ thống Payroll (ngoài phạm vi version 1). Sơ đồ ngữ cảnh:
-[kiến trúc hệ thống mục 2](../architecture/system-architecture.md#2-ngữ-cảnh-hệ-thống-c4-mức-1).
+[kiến trúc hệ thống mục 2](../architecture/SAD-1-system-architecture.md#2-ngữ-cảnh-hệ-thống-c4-mức-1).
 
 ### 2.2 Chức năng chính
 
@@ -121,7 +121,7 @@ mình được dùng; chức năng bị chặn ở giao diện vẫn phải bị
 | Object storage | Presigned URL tải lên/tải xuống | Tải lên đồng bộ | File không đi qua API (FR-5.1) |
 | LLM API | REST có timeout | Đồng bộ | Hết thời gian thì chỉ tới tài liệu gốc (FR-6.3) |
 
-Chi tiết cách tích hợp: [kiến trúc hệ thống mục 2](../architecture/system-architecture.md#2-ngữ-cảnh-hệ-thống-c4-mức-1).
+Chi tiết cách tích hợp: [kiến trúc hệ thống mục 2](../architecture/SAD-1-system-architecture.md#2-ngữ-cảnh-hệ-thống-c4-mức-1).
 
 ### 3.3 API
 
@@ -263,8 +263,8 @@ Chiều xuôi: mục tiêu (BRD) → yêu cầu (SRS) → thiết kế (SAD) →
 | MT-3 | UC1, UC7 | FR-1.3, FR-1.4, FR-7.1 → FR-7.3 | ADR-08, ADR-09 | Module Employee (`FieldCrypto`, ADR-08), Audit (ADR-09) | e2e audit, `VIEW_SENSITIVE`; ma trận phân quyền |
 | MT-4 | UC5, UC6 | FR-5.1 → FR-5.3, FR-6.1 → FR-6.3 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13) | Kế hoạch kiểm thử tuần 10, 12 |
 
-Thiết kế chi tiết từng module: [kiến trúc phần mềm mục 4](../architecture/software-architecture.md#4-danh-mục-module).
-NFR-1 → NFR-7 dẫn tới quyết định kiến trúc ở [kiến trúc hệ thống mục 1](../architecture/system-architecture.md#1-yêu-cầu-dẫn-dắt-kiến-trúc).
+Thiết kế chi tiết từng module: [kiến trúc phần mềm mục 4](../architecture/SAD-2-software-architecture.md#4-danh-mục-module).
+NFR-1 → NFR-7 dẫn tới quyết định kiến trúc ở [kiến trúc hệ thống mục 1](../architecture/SAD-1-system-architecture.md#1-yêu-cầu-dẫn-dắt-kiến-trúc).
 
 ## 8. Vấn đề còn mở
 

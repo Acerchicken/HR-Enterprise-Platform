@@ -1,5 +1,7 @@
 # Biên bản kiểm thử chức năng – tuần 8
 
+> Biên bản kiểm thử: kết quả chạy thật, kiểm chứng [SRS](../requirements/SRS.md). Bộ tài liệu: [`docs/README.md`](../README.md).
+
 ## 1. Màn hình tuần 7
 
 - **Ngày kiểm thử:** 31/10/2026

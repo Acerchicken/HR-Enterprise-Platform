@@ -1,8 +1,8 @@
-# Kiến trúc phần mềm – HRHelper (HR Enterprise Platform)
+# SAD phần 2 – Kiến trúc phần mềm – HRHelper (HR Enterprise Platform)
 
 Tài liệu mô tả **bên trong** các khối của hệ thống: cách tổ chức code, module, luồng xử lý một request, dữ liệu, các pattern
 dùng để đảm bảo đúng nghiệp vụ, giao diện web và cách kiểm thử. Các khối chạy ở đâu, mạng, hạ tầng nằm ở
-[kiến trúc hệ thống](system-architecture.md).
+[kiến trúc hệ thống](SAD-1-system-architecture.md).
 
 Cập nhật: 6/11/2026 (tuần 9), theo code trên nhánh `dev`. Trạng thái: ✅ có trên `dev` · 🟡 đang review · ⬜ chưa làm.
 

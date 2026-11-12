@@ -7,7 +7,7 @@
 | Ngày | 12/11/2026 (tuần 10) |
 | Người soạn | TV1 (Dương), tổng hợp từ tài liệu của cả nhóm tuần 4–9 |
 | Trạng thái | Bản nộp, chờ nhóm và giảng viên góp ý |
-| Tài liệu tiếp theo | [SRS – đặc tả yêu cầu phần mềm](../requirements/SRS.md) → [Kiến trúc hệ thống](../architecture/system-architecture.md) · [Kiến trúc phần mềm](../architecture/software-architecture.md) |
+| Tài liệu tiếp theo | [SRS – đặc tả yêu cầu phần mềm](../requirements/SRS.md) → [Kiến trúc hệ thống](../architecture/SAD-1-system-architecture.md) · [Kiến trúc phần mềm](../architecture/SAD-2-software-architecture.md) |
 | Tài liệu liên quan | [Business rule nghỉ phép](leave-rules.md) · [Danh mục loại phép, ngày lễ](leave-types-holidays.md) · [Ma trận phân quyền](../security/access-control-matrix.md) · [Ca kiểm thử](leave-test-cases.md) · [API](../openapi.yaml) |
 
 **Lịch sử thay đổi**

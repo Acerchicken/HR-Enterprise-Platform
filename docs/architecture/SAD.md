@@ -1,11 +1,12 @@
-# Kiến trúc – HRHelper (HR Enterprise Platform)
+# Software Architecture Document (SAD) – HRHelper (HR Enterprise Platform)
 
-Hai tài liệu, hai góc nhìn:
+SAD trả lời **hệ thống được xây thế nào**, lấy [SRS](../requirements/SRS.md) làm đầu vào (ISO/IEC/IEEE 42010). SAD gồm
+file này (mục lục và danh sách ADR) và hai phần, mỗi phần một góc nhìn:
 
 | Tài liệu | Trả lời câu hỏi | Dành cho |
 |---|---|---|
-| [Kiến trúc hệ thống](system-architecture.md) | **Phần I – tổng quan** (không gắn công cụ) và **Phần II – hiện tại** (công cụ, framework, phiên bản, local và cloud). Hệ thống gồm những khối chạy riêng nào, nói chuyện với hệ thống ngoài nào, chạy ở đâu, mạng, bảo mật hạ tầng, sẵn sàng, phục hồi, quan sát, CI/CD, chi phí | Người vận hành, cloud, đánh giá NFR |
-| [Kiến trúc phần mềm](software-architecture.md) | Bên trong API, worker, web: cấu trúc code, module và phụ thuộc, luồng xử lý request, dữ liệu, pattern đảm bảo nghiệp vụ, API, frontend, kiểm thử, cách mở rộng | Người viết code, review code |
+| [SAD phần 1 – Kiến trúc hệ thống](SAD-1-system-architecture.md) | **Phần I – tổng quan** (không gắn công cụ) và **Phần II – hiện tại** (công cụ, framework, phiên bản, local và cloud). Hệ thống gồm những khối chạy riêng nào, nói chuyện với hệ thống ngoài nào, chạy ở đâu, mạng, bảo mật hạ tầng, sẵn sàng, phục hồi, quan sát, CI/CD, chi phí | Người vận hành, cloud, đánh giá NFR |
+| [SAD phần 2 – Kiến trúc phần mềm](SAD-2-software-architecture.md) | Bên trong API, worker, web: cấu trúc code, module và phụ thuộc, luồng xử lý request, dữ liệu, pattern đảm bảo nghiệp vụ, API, frontend, kiểm thử, cách mở rộng | Người viết code, review code |
 
 ```mermaid
 flowchart LR
