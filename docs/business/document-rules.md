@@ -1,5 +1,7 @@
 # Business rules – kho tài liệu và tra cứu
 
+> Phụ lục của [BRD](BRD.md): business rule kho tài liệu và tra cứu. Bộ tài liệu: [`docs/README.md`](../README.md).
+
 Tài liệu này chốt quy tắc nghiệp vụ cho kho tài liệu chính sách và tìm kiếm tài liệu theo UC5–UC6 trong
 [`BRD.md`](BRD.md), làm cơ sở cho TV1 triển khai và TV4 viết ca kiểm thử. Các quy tắc truy cập áp dụng đồng nhất cho
 danh sách, chi tiết, tìm kiếm, xem trước và tải xuống.
@@ -24,5 +26,5 @@ file. "Nhân viên đang làm việc" là người dùng đã đăng nhập, g�
 ## Đối chiếu với hiện thực hiện tại
 
 - UC5/UC6 và FR-5.1–FR-5.3, FR-6.2 trong [`BRD.md`](BRD.md) đã xác định upload PDF/DOCX, metadata tiêu đề/loại/phạm vi, phiên bản và tìm theo tiêu đề/nội dung có lọc quyền; các DR ở trên cụ thể hóa các lựa chọn còn mở.
-- Kiến trúc hệ thống hiện mô tả presigned URL cho cả tải lên và tải xuống trực tiếp từ object storage trong [`system-architecture.md`](../architecture/system-architecture.md); phương án tải xuống này không đáp ứng DR-06 vì link đã cấp không thể thu hồi ngay khi quyền thay đổi. Module tài liệu cần giữ upload trực tiếp nếu phù hợp nhưng triển khai download qua API proxy hoặc cơ chế thu hồi tương đương; cần cập nhật kiến trúc/ADR liên quan để thống nhất. Hiện chưa có module/API kho tài liệu và tìm kiếm trong [`openapi.yaml`](../openapi.yaml), nên DR-01–DR-08 chưa được thực thi trong code.
+- Kiến trúc hệ thống hiện mô tả presigned URL cho cả tải lên và tải xuống trực tiếp từ object storage trong [`SAD-1-system-architecture.md`](../architecture/SAD-1-system-architecture.md); phương án tải xuống này không đáp ứng DR-06 vì link đã cấp không thể thu hồi ngay khi quyền thay đổi. Module tài liệu cần giữ upload trực tiếp nếu phù hợp nhưng triển khai download qua API proxy hoặc cơ chế thu hồi tương đương; cần cập nhật kiến trúc/ADR liên quan để thống nhất. Hiện chưa có module/API kho tài liệu và tìm kiếm trong [`openapi.yaml`](../openapi.yaml), nên DR-01–DR-08 chưa được thực thi trong code.
 - Khi triển khai, cần kiểm tra phạm vi trên server cho mọi thao tác đọc/tải, lọc quyền trước khi tạo kết quả/snippet/thống kê tìm kiếm, và bảo đảm link tải bị vô hiệu hóa khi nhân viên đổi phòng ban hoặc tài liệu bị ẩn. Cần bổ sung ca kiểm thử cho phòng ban con, nhiều phạm vi theo phép cộng, lịch sử phiên bản, thu hồi quyền và không rò rỉ metadata.

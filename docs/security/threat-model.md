@@ -1,5 +1,7 @@
 # Threat model STRIDE – hồ sơ nhân viên và nghỉ phép
 
+> Phụ lục của [SRS](../requirements/SRS.md): mối đe dọa và yêu cầu bảo mật (NFR-5). Bộ tài liệu: [`docs/README.md`](../README.md).
+
 ## Phạm vi và giả định
 
 Đánh giá ba luồng hiện có: đăng nhập OIDC; xem/cập nhật hồ sơ nhân viên; tạo, duyệt, hoàn tất đơn nghỉ phép và gửi email.

@@ -1,5 +1,7 @@
 # Ma trận ca kiểm thử phân quyền và bảo mật (Security Test Cases)
 
+> Tài liệu kiểm thử: kiểm chứng NFR-5 và ma trận phân quyền trong [SRS](../requirements/SRS.md). Bộ tài liệu: [`docs/README.md`](../README.md).
+
 - **Nguyên tắc:** Các API (trừ Health) đều yêu cầu token. Ca bị chặn đối với các API cho phép mọi Role sẽ được kiểm thử bằng thao tác không gửi token (401) hoặc thao tác ngoài phạm vi dữ liệu (403).
 
 ## 1. Hệ thống & Audit Log

@@ -1,5 +1,7 @@
 # Ma trận phân quyền RBAC/ABAC
 
+> Phụ lục của [SRS](../requirements/SRS.md): yêu cầu phân quyền cho từng API (NFR-5). Bộ tài liệu: [`docs/README.md`](../README.md).
+
 Ma trận mô tả quyền hiện tại của API trong `docs/openapi.yaml`, đối chiếu `@Roles(...)` ở controller và kiểm tra theo dữ
 liệu trong service. Đây là hợp đồng nghiệp vụ để TV1 viết e2e test và TV4 viết ca kiểm thử; các điểm chưa được giới hạn ở
 code được ghi riêng, không mặc nhiên kết luận đó là lỗi.

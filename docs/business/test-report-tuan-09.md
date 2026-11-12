@@ -1,5 +1,7 @@
 # Biên bản kiểm thử phân quyền - Tuần 9
 
+> Biên bản kiểm thử: kết quả chạy thật, kiểm chứng [SRS](../requirements/SRS.md). Bộ tài liệu: [`docs/README.md`](../README.md).
+
 - **Ngày chạy:** 08/11/2026
 - **Commit của dev:** `a191a74`
 - **Môi trường:** Local (Swagger, `AUTH_MODE=dev`)
