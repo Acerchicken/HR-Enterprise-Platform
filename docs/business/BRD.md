@@ -3,8 +3,8 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform (trước tuần 9 gọi là Enterprise HR Platform) – môn Cloud Application Development |
-| Phiên bản tài liệu | 1.0 |
-| Ngày | 6/11/2026 (tuần 9) |
+| Phiên bản tài liệu | 1.1 |
+| Ngày | 11/11/2026 (tuần 10) |
 | Người soạn | TV1 (Dương), tổng hợp từ tài liệu của cả nhóm tuần 4–9 |
 | Trạng thái | Bản nộp, chờ nhóm và giảng viên góp ý |
 | Tài liệu liên quan | [Kiến trúc hệ thống](../architecture/system-architecture.md) · [Kiến trúc phần mềm](../architecture/software-architecture.md) · [Business rule nghỉ phép](leave-rules.md) · [Danh mục loại phép, ngày lễ](leave-types-holidays.md) · [Ma trận phân quyền](../security/access-control-matrix.md) · [Ca kiểm thử](leave-test-cases.md) · [API](../openapi.yaml) |
@@ -14,6 +14,7 @@
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 6/11/2026 | Bản đầu tiên, gom problem statement, functional requirements, NFR (tuần 5), data model (tuần 6), business rule (tuần 8–9) vào một tài liệu |
+| 1.1 | 11/11/2026 | Chốt retention đơn nghỉ/audit, quyền xem lý do nghỉ ốm/thai sản và nội dung email (BR-13 → BR-15) |
 
 **Cách đọc tài liệu:** mỗi yêu cầu có mã để truy vết. `MT-n` là mục tiêu kinh doanh, `FR-x.y` là yêu cầu chức năng theo use
 case, `NFR-n` là yêu cầu phi chức năng, `BR-nn` là business rule chi tiết trong [`leave-rules.md`](leave-rules.md). Cột
@@ -292,12 +293,20 @@ Mô hình dữ liệu chi tiết: [data model tuần 6](../progress/tuan-06/TV2_
 | MT-3 | UC1, UC7 | FR-1.3, FR-1.4, FR-7.1 → FR-7.3 | ADR-08, ADR-09 | e2e audit, `VIEW_SENSITIVE`; ma trận phân quyền |
 | MT-4 | UC5, UC6 | FR-5.1 → FR-5.3, FR-6.1 → FR-6.3 | Phạm vi tài liệu | Kế hoạch kiểm thử tuần 10, 12 |
 
-## 15. Vấn đề còn mở
+## 15. Vấn đề còn mở và quyết định đã chốt
+
+### Quyết định đã chốt
+
+| Vấn đề | Quyết định | Theo dõi |
+|---|---|---|
+| Thời gian lưu audit log và đơn nghỉ | Mốc retention nội bộ: đơn nghỉ 5 năm từ khi kết thúc; audit 5 năm từ lúc ghi. Chưa khẳng định là thời hạn luật định; HR/pháp chế phải xác nhận trước production và áp dụng thời hạn bắt buộc dài hơn. Legal hold tạm dừng hủy; xử lý hết hạn qua archive bất biến hoặc hủy/khử định danh được phê duyệt, không cho ứng dụng quyền xóa thông thường. | BR-13 trong [`leave-rules.md`](leave-rules.md); đồng bộ ADR-09 và thiết kế retention trước production |
+| Ai được xem lý do nghỉ ốm/thai sản | Chỉ nhân viên đứng tên đơn và HR xem lý do chi tiết trên mọi bề mặt; HR đọc tạo audit không chứa giá trị lý do. Không để lộ lý do/comment sức khỏe qua audit (kể cả quyền đọc audit của ADMIN), export hoặc email. | BR-14 trong [`leave-rules.md`](leave-rules.md); cần lọc response và audit payload |
+| Email nghỉ phép (T-16) | Subject/body chỉ báo chung và link inbox chung cần đăng nhập; không có thông tin nhận diện/chi tiết đơn trong nội dung hay URL. Outbox/log cũng chỉ mang dữ liệu tối thiểu để định tuyến, không mang lý do, comment, loại phép hoặc ngày nghỉ không cần thiết. | BR-15 trong [`leave-rules.md`](leave-rules.md); cần cập nhật template, payload và kiểm thử |
+
+### Còn mở
 
 | Vấn đề | Ai quyết định | Hạn |
 |---|---|---|
-| Thời gian lưu audit log và đơn nghỉ (retention) | TV2 với TV1 | Tuần 10 |
-| Ai được xem lý do nghỉ của đơn nghỉ ốm, thai sản | TV2 | Tuần 10 |
 | Ngày hoán đổi làm bù của khu vực công có áp dụng cho doanh nghiệp không | TV2, TV4 | Trước khi có lịch 2027 |
 | Cloud provider và dịch vụ cụ thể | TV3 (ADR-12) | Tuần 9 |
 
@@ -309,6 +318,6 @@ Mô hình dữ liệu chi tiết: [data model tuần 6](../progress/tuan-06/TV2_
 | Người duyệt thay | Quản lý được HR chỉ định thay quyền duyệt trong một khoảng ngày (BR-06) |
 | Số dư khả dụng | Được hưởng − đã dùng − đang chờ duyệt |
 | Trường nhạy cảm | CCCD, số tài khoản ngân hàng, lương |
-| Audit log | Nhật ký thao tác chỉ được thêm, không sửa, không xóa |
+| Audit log | Nhật ký thao tác chỉ được thêm; không sửa trong thời hạn lưu. Hết hạn thì archive/hủy theo retention được phê duyệt và legal hold (BR-13) |
 | MVP | Bản sản phẩm tối thiểu nộp ở tuần 13 (version 1) |
 | ADR | Architecture Decision Record: bản ghi một quyết định kiến trúc |
