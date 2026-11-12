@@ -366,6 +366,153 @@ describe('HRHelper API (e2e)', () => {
     });
   });
 
+  /**
+   * Kho tài liệu (UC5, document-rules.md). Cần object storage S3 (MinIO/S3Mock): đặt STORAGE_BUCKET, STORAGE_ENDPOINT…;
+   * không có thì bỏ qua nhóm này.
+   */
+  (process.env.STORAGE_BUCKET ? describe : describe.skip)('kho tài liệu', () => {
+    let ds: import('typeorm').DataSource;
+    let me: any;
+    const pdf = (text: string) => Buffer.from(`%PDF-1.4\n${text}\n%%EOF\n`, 'latin1');
+    const zip = Buffer.from('PK\x03\x04....photos/1.jpg.....', 'latin1');
+
+    /** HR khai báo file, PUT lên presigned URL như trình duyệt, rồi xác nhận. */
+    const publish = async (title: string, scope: object, file = pdf(title), fileName = 'tai-lieu.pdf') => {
+      const created = await http
+        .post('/api/v1/documents')
+        .set(HR)
+        .send({ title, type: 'POLICY', scope, fileName, contentType: fileName.endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', sizeBytes: file.length })
+        .expect(201);
+      const up = created.body.upload;
+      const put = await fetch(up.url, { method: 'PUT', headers: up.headers, body: file });
+      expect(put.ok).toBe(true);
+      const confirmed = await http.post(`/api/v1/documents/${created.body.document.id}/versions/${up.versionId}/confirm`).set(HR);
+      return { id: created.body.document.id as string, versionId: up.versionId as string, confirmed };
+    };
+
+    beforeAll(async () => {
+      const { DataSource } = await import('typeorm');
+      ds = app.get(DataSource);
+      me = (await http.get('/api/v1/me').set(EMPLOYEE)).body.employee;
+      // Storage test (MinIO/S3Mock mới dựng) có thể chưa có bucket.
+      const { S3Client, CreateBucketCommand } = await import('@aws-sdk/client-s3');
+      const s3 = new S3Client({
+        region: process.env.STORAGE_REGION ?? 'ap-southeast-1',
+        endpoint: process.env.STORAGE_ENDPOINT,
+        forcePathStyle: true,
+        credentials: { accessKeyId: process.env.STORAGE_ACCESS_KEY_ID ?? 'x', secretAccessKey: process.env.STORAGE_SECRET_ACCESS_KEY ?? 'x' },
+      });
+      await s3.send(new CreateBucketCommand({ Bucket: process.env.STORAGE_BUCKET! })).catch(() => undefined);
+    });
+
+    afterAll(async () => {
+      await ds.query(`DELETE FROM document.document WHERE title LIKE 'E2E %'`);
+    });
+
+    it('phạm vi phòng ban gồm phòng ban con; HR ngoài phạm vi không thấy; tải qua API đúng nội dung (DR-02, DR-03, DR-06)', async () => {
+      const depts = (await http.get('/api/v1/departments').set(HR)).body;
+      const parent = depts.find((d: any) => d.id === me.departmentId).parentId;
+      const a = await publish('E2E Quy trình kỹ thuật', { departmentIds: [parent] });
+      expect(a.confirmed.status).toBe(200);
+      expect(a.confirmed.body.latest).toMatchObject({ versionNo: 1, status: 'READY' });
+
+      const list = await http.get('/api/v1/documents?size=100').set(EMPLOYEE).expect(200);
+      expect(list.body.items.map((d: any) => d.id)).toContain(a.id);
+      const file = await http.get(`/api/v1/documents/${a.id}/download`).set(EMPLOYEE).buffer(true).parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => cb(null, Buffer.concat(chunks)));
+      }).expect(200);
+      expect(file.headers['content-type']).toBe('application/pdf');
+      expect((file.body as Buffer).toString('latin1').startsWith('%PDF-1.4')).toBe(true);
+
+      // HR không thuộc phạm vi: không thấy trong danh sách, không xem được, nhưng quản lý được metadata.
+      expect((await http.get('/api/v1/documents?size=100').set(HR)).body.items.map((d: any) => d.id)).not.toContain(a.id);
+      await http.get(`/api/v1/documents/${a.id}`).set(HR).expect(404);
+      await http.get(`/api/v1/documents/${a.id}/download`).set(HR).expect(404);
+      expect((await http.get(`/api/v1/documents/manage/${a.id}`).set(HR).expect(200)).body.scope.departmentIds).toEqual([parent]);
+    });
+
+    it('phạm vi theo vai trò; ngoài phạm vi trả 404 như không tồn tại; chỉ HR quản lý kho (DR-02, DR-03, DR-08)', async () => {
+      const b = await publish('E2E Chỉ dành cho HR', { roles: ['HR'] });
+      expect(b.confirmed.status).toBe(200);
+      await http.get(`/api/v1/documents/${b.id}`).set(EMPLOYEE).expect(404);
+      await http.get(`/api/v1/documents/00000000-0000-4000-8000-000000000000`).set(EMPLOYEE).expect(404);
+      expect((await http.get(`/api/v1/documents/${b.id}`).set(HR).expect(200)).body.title).toBe('E2E Chỉ dành cho HR');
+      for (const who of [EMPLOYEE, MANAGER, ADMIN]) {
+        await http.post('/api/v1/documents').set(who).send({}).expect(403);
+        await http.get('/api/v1/documents/manage').set(who).expect(403);
+        await http.post(`/api/v1/documents/${b.id}/hide`).set(who).expect(403);
+      }
+    });
+
+    it('phiên bản mới không ghi đè phiên bản cũ; mặc định tải bản mới nhất (DR-04)', async () => {
+      const c = await publish('E2E Nội quy', { all: true }, pdf('ban 1'));
+      const v2 = await http.post(`/api/v1/documents/${c.id}/versions`).set(HR)
+        .send({ fileName: 'noi-quy-v2.pdf', contentType: 'application/pdf', sizeBytes: pdf('ban 2').length }).expect(201);
+      await fetch(v2.body.url, { method: 'PUT', headers: v2.body.headers, body: pdf('ban 2') });
+      await http.post(`/api/v1/documents/${c.id}/versions/${v2.body.versionId}/confirm`).set(HR).expect(200);
+
+      const detail = (await http.get(`/api/v1/documents/${c.id}`).set(EMPLOYEE).expect(200)).body;
+      expect(detail.versions.map((v: any) => v.versionNo)).toEqual([2, 1]);
+      expect(detail.latest.versionNo).toBe(2);
+      const latest = await http.get(`/api/v1/documents/${c.id}/download`).set(EMPLOYEE).expect(200);
+      expect(latest.headers['content-disposition']).toContain('noi-quy-v2.pdf');
+      const old = await http.get(`/api/v1/documents/${c.id}/versions/${c.versionId}/download`).set(EMPLOYEE).expect(200);
+      expect(old.headers['content-disposition']).toContain('tai-lieu.pdf');
+    });
+
+    it('file sai định dạng hoặc chưa tải lên bị từ chối (DR-01)', async () => {
+      const fake = await publish('E2E File ZIP đổi tên', { all: true }, zip, 'gia-mao.docx');
+      expect(fake.confirmed.status).toBe(400);
+      expect(fake.confirmed.body.message).toMatch(/định dạng/);
+      expect((await http.get(`/api/v1/documents/${fake.id}`).set(EMPLOYEE)).status).toBe(404);
+
+      const big = await http.post('/api/v1/documents').set(HR)
+        .send({ title: 'E2E Quá lớn', type: 'FORM', scope: { all: true }, fileName: 'a.pdf', contentType: 'application/pdf', sizeBytes: 21 * 1024 * 1024 });
+      expect(big.status).toBe(400);
+      const noScope = await http.post('/api/v1/documents').set(HR)
+        .send({ title: 'E2E Không phạm vi', type: 'FORM', scope: {}, fileName: 'a.pdf', contentType: 'application/pdf', sizeBytes: 100 });
+      expect(noScope.status).toBe(400);
+
+      const pending = await http.post('/api/v1/documents').set(HR)
+        .send({ title: 'E2E Chưa tải', type: 'FORM', scope: { all: true }, fileName: 'a.pdf', contentType: 'application/pdf', sizeBytes: 100 }).expect(201);
+      const r = await http.post(`/api/v1/documents/${pending.body.document.id}/versions/${pending.body.upload.versionId}/confirm`).set(HR);
+      expect(r.status).toBe(400);
+    });
+
+    it('ẩn tài liệu thì không ai xem được, khôi phục thì xem lại được; đổi phòng ban mất quyền ngay (DR-05, DR-06)', async () => {
+      const depts = (await http.get('/api/v1/departments').set(HR)).body;
+      const d = await publish('E2E Theo phòng ban', { departmentIds: [me.departmentId] });
+      await http.get(`/api/v1/documents/${d.id}`).set(EMPLOYEE).expect(200);
+
+      const hidden = (await http.post(`/api/v1/documents/${d.id}/hide`).set(HR).expect(200)).body;
+      expect(hidden.hidden).toBe(true);
+      await http.get(`/api/v1/documents/${d.id}`).set(EMPLOYEE).expect(404);
+      await http.get(`/api/v1/documents/${d.id}/download`).set(EMPLOYEE).expect(404);
+      await http.post(`/api/v1/documents/${d.id}/restore`).set(HR).expect(200);
+      await http.get(`/api/v1/documents/${d.id}`).set(EMPLOYEE).expect(200);
+
+      const other = depts.find((x: any) => x.id !== me.departmentId && x.parentId !== me.departmentId && x.code !== 'BOD');
+      const before = (await http.get(`/api/v1/employees/${me.id}`).set(HR)).body;
+      await http.patch(`/api/v1/employees/${me.id}`).set(HR).send({ departmentId: other.id, version: before.version }).expect(200);
+      try {
+        await http.get(`/api/v1/documents/${d.id}`).set(EMPLOYEE).expect(404);
+      } finally {
+        const now = (await http.get(`/api/v1/employees/${me.id}`).set(HR)).body;
+        await http.patch(`/api/v1/employees/${me.id}`).set(HR).send({ departmentId: me.departmentId, version: now.version }).expect(200);
+      }
+    });
+
+    it('sửa metadata cần version đúng (optimistic locking)', async () => {
+      const e = await publish('E2E Đổi tên', { all: true });
+      const cur = (await http.get(`/api/v1/documents/manage/${e.id}`).set(HR)).body;
+      await http.patch(`/api/v1/documents/${e.id}`).set(HR).send({ title: 'E2E Đã đổi tên', version: cur.version + 3 }).expect(409);
+      const ok = await http.patch(`/api/v1/documents/${e.id}`).set(HR).send({ title: 'E2E Đã đổi tên', version: cur.version }).expect(200);
+      expect(ok.body.title).toBe('E2E Đã đổi tên');
+    });
+  });
+
   describe('workflow nghỉ phép', () => {
     let ds: import('typeorm').DataSource;
     let savedBalances: { leave_type_id: string; used: string }[];

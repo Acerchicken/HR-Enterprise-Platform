@@ -34,4 +34,5 @@ Liên quan: [BRD](../business/BRD.md) · [ma trận phân quyền](../security/a
 | ADR-09 | Audit log append-only khóa ở database | Phần mềm | [tuần 7](../progress/tuan-07/README.md#adr-09--audit-log-append-only-khóa-ở-mức-database) |
 | ADR-10 | Role MANAGER suy ra từ sơ đồ tổ chức | Phần mềm | [tuần 7](../progress/tuan-07/README.md#adr-10--role-manager-suy-ra-từ-sơ-đồ-tổ-chức) |
 | ADR-11 | Điều chỉnh phân vai | Dự án | [tuần 7](../progress/tuan-07/README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code) |
-| ADR-12 | Cloud provider (đang review) | Hệ thống | [tuần 9](../progress/tuan-09/README.md#adr-12--chọn-cloud-provider) |
+| ADR-12 | Cloud provider | Hệ thống | [tuần 9](../progress/tuan-09/README.md#adr-12--chọn-cloud-provider) |
+| ADR-13 | Kho tài liệu: tải lên trực tiếp, tải xuống qua API, lọc phạm vi trong truy vấn | Phần mềm | [tuần 10](../progress/tuan-10/README.md#adr-13--kho-tài-liệu-tải-lên-trực-tiếp-tải-xuống-qua-api-lọc-phạm-vi-trong-truy-vấn) |
