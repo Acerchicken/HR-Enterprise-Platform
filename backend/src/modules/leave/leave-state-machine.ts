@@ -11,7 +11,8 @@
  */
 export type LeaveStatus = 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
 export type LeaveAction = 'approve' | 'reject' | 'complete' | 'cancel';
-export type ActorRelation = 'OWNER' | 'DIRECT_MANAGER' | 'HR' | 'OTHER';
+/** `HR_FOR_CEO`: HR duyệt/từ chối đơn của CEO, người duy nhất không có quản lý trực tiếp (issue #22, BR-05). */
+export type ActorRelation = 'OWNER' | 'DIRECT_MANAGER' | 'HR' | 'HR_FOR_CEO' | 'OTHER';
 
 /** Thay đổi số dư phép (đơn vị: ngày) do một bước chuyển gây ra. */
 export interface BalanceEffect {
@@ -33,8 +34,8 @@ interface Rule {
 }
 
 const RULES: Record<LeaveAction, Rule> = {
-  approve: { from: 'SUBMITTED', to: 'APPROVED', allowed: ['DIRECT_MANAGER'], effect: () => ({ pending: 0, used: 0 }) },
-  reject: { from: 'SUBMITTED', to: 'REJECTED', allowed: ['DIRECT_MANAGER'], effect: (d) => ({ pending: -d, used: 0 }) },
+  approve: { from: 'SUBMITTED', to: 'APPROVED', allowed: ['DIRECT_MANAGER', 'HR_FOR_CEO'], effect: () => ({ pending: 0, used: 0 }) },
+  reject: { from: 'SUBMITTED', to: 'REJECTED', allowed: ['DIRECT_MANAGER', 'HR_FOR_CEO'], effect: (d) => ({ pending: -d, used: 0 }) },
   cancel: { from: 'SUBMITTED', to: 'CANCELLED', allowed: ['OWNER'], effect: (d) => ({ pending: -d, used: 0 }) },
   complete: { from: 'APPROVED', to: 'COMPLETED', allowed: ['HR'], effect: (d) => ({ pending: -d, used: d }) },
 };
