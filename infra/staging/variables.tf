@@ -39,6 +39,12 @@ variable "alert_emails" {
   type        = list(string)
 }
 
+variable "sender_email" {
+  description = "Verified sender email address for SES notifications"
+  type        = string
+  default     = "no-reply@hr.local"
+}
+
 variable "budget_limit_usd" {
   description = "Monthly budget limit in USD"
   type        = number

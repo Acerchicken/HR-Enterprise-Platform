@@ -91,6 +91,29 @@ resource "aws_iam_policy" "apprunner_instance_policy" {
         Resource = [
           aws_sqs_queue.worker_queue.arn
         ]
+      },
+      {
+        Sid    = "DocumentStorageAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:HeadObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.documents.arn}/*"
+        ]
+      },
+      {
+        Sid    = "DocumentBucketList"
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.documents.arn
+        ]
       }
     ]
   })
@@ -137,6 +160,8 @@ resource "aws_apprunner_service" "api" {
           CORS_ORIGIN          = "https://${aws_cloudfront_distribution.web.domain_name}"
           QUEUE_DRIVER         = "sqs"
           SQS_QUEUE_URL        = aws_sqs_queue.worker_queue.url
+          STORAGE_BUCKET       = aws_s3_bucket.documents.id
+          STORAGE_REGION       = var.aws_region
         }
 
         # Sensitive secrets retrieved directly from AWS Secrets Manager
