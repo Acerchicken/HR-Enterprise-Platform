@@ -3,7 +3,7 @@
 Vai trò: mô tả **ai được làm gì với dữ liệu nào** (ma trận phân quyền) và **cái gì có thể bị tấn công** (threat model) từ góc
 nhìn nghiệp vụ; chốt các điểm nghiệp vụ còn mở từ tuần 8. TV1 dùng ma trận để viết e2e test, TV4 dùng để viết ca kiểm thử.
 
-Bản đối chiếu UC1/UC2 tuần 8 (`docs/business/uc1-uc2-review-draft.md`) làm rất tốt ở chỗ dẫn chứng code cụ thể và tách điểm đã
+Bản đối chiếu UC1/UC2 tuần 8 (`docs/progress/tuan-08/uc1-uc2-review-draft.md`) làm rất tốt ở chỗ dẫn chứng code cụ thể và tách điểm đã
 xác nhận với điểm cần làm rõ. Tuần này giữ cách làm đó.
 
 ## Hạn chót
