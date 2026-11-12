@@ -27,6 +27,9 @@ export interface RequestMeta {
 
 const SENSITIVE_KEYS = ['nationalId', 'bankAccount', 'salary'] as const;
 
+
+/** Mã chức danh của Tổng Giám đốc trong danh mục chức danh. */
+export const CEO_POSITION = 'CEO';
 @Injectable()
 export class EmployeeService {
   constructor(
@@ -50,6 +53,21 @@ export class EmployeeService {
   // ---------- Interface cho module Leave ----------
 
   /** Quản lý trực tiếp hiện tại của nhân viên (null nếu không có hoặc không tồn tại). */
+  /** CEO là người giữ chức danh mã `CEO` (issue #22: người duy nhất không có quản lý trực tiếp). */
+  async isCeo(employeeId: string): Promise<boolean> {
+    const e = await this.repo.findOne({ where: { id: employeeId }, select: { id: true, positionId: true } });
+    if (!e) return false;
+    return (await this.org.lookups()).position.get(e.positionId)?.code === CEO_POSITION;
+  }
+
+  /** Nhân viên đang giữ chức danh CEO (chưa nghỉ việc); HR duyệt đơn nghỉ của những người này. */
+  async ceoIds(): Promise<string[]> {
+    const ceo = [...(await this.org.lookups()).position.values()].find((p) => p.code === CEO_POSITION);
+    if (!ceo) return [];
+    const rows = await this.repo.find({ where: { positionId: ceo.id, status: In(['ACTIVE', 'ON_LEAVE']) }, select: { id: true } });
+    return rows.map((r) => r.id);
+  }
+
   async managerIdOf(employeeId: string): Promise<string | null> {
     const e = await this.repo.findOne({ where: { id: employeeId }, select: { id: true, managerId: true } });
     return e?.managerId ?? null;
@@ -163,6 +181,13 @@ export class EmployeeService {
       if (dto.departmentId && !lookups.department.has(dto.departmentId)) throw new BadRequestException('Phòng ban không tồn tại');
       if (dto.positionId && !lookups.position.has(dto.positionId)) throw new BadRequestException('Chức danh không tồn tại');
       if (dto.managerId) await this.assertNoManagerCycle(m, id, dto.managerId);
+      if (dto.positionId !== undefined || dto.managerId !== undefined) {
+        await this.assertManagerRule(m, lookups, {
+          employeeId: id,
+          positionId: dto.positionId ?? e.positionId,
+          managerId: dto.managerId !== undefined ? dto.managerId : e.managerId,
+        });
+      }
 
       const changes: Partial<Employee> = {};
       for (const key of ['phone', 'address', 'fullName', 'dateOfBirth', 'departmentId', 'positionId', 'managerId', 'status'] as const) {
@@ -202,6 +227,7 @@ export class EmployeeService {
     const { nationalId, bankAccount, salary, ...plain } = dto;
     const sensitiveGiven = SENSITIVE_KEYS.filter((k) => dto[k] !== undefined);
     const id = await this.repo.manager.transaction(async (m) => {
+      await this.assertManagerRule(m, lookups, { positionId: dto.positionId, managerId: dto.managerId ?? null });
       const saved = await m.getRepository(Employee).save(
         m.getRepository(Employee).create({ ...plain, workEmail: dto.workEmail.toLowerCase(), managerId: dto.managerId ?? null }),
       );
@@ -233,6 +259,31 @@ export class EmployeeService {
     const e = await this.repo.findOneBy({ id });
     if (!e) throw new NotFoundException('Không tìm thấy nhân viên');
     return e;
+  }
+
+  /**
+   * Issue #22 (FR-2.5): chỉ có một CEO và CEO không có quản lý; mọi nhân viên khác phải có đúng một quản lý trực tiếp
+   * đang làm việc.
+   */
+  private async assertManagerRule(
+    m: EntityManager,
+    lookups: Awaited<ReturnType<OrganizationService['lookups']>>,
+    target: { employeeId?: string; positionId: string; managerId: string | null },
+  ) {
+    const ceoPosition = lookups.position.get(target.positionId)?.code === CEO_POSITION;
+    if (ceoPosition) {
+      if (target.managerId) throw new BadRequestException('CEO không có quản lý trực tiếp');
+      const other: { id: string }[] = await m.query(
+        `SELECT id FROM employee.employee WHERE position_id = $1 AND status <> 'TERMINATED' AND id <> $2 LIMIT 1`,
+        [target.positionId, target.employeeId ?? '00000000-0000-0000-0000-000000000000'],
+      );
+      if (other.length) throw new BadRequestException('Đã có một CEO, không thể có CEO thứ hai');
+      return;
+    }
+    if (!target.managerId) throw new BadRequestException('Nhân viên phải có quản lý trực tiếp (chỉ CEO được để trống)');
+    const manager = await m.getRepository(Employee).findOne({ where: { id: target.managerId }, select: { id: true, status: true } });
+    if (!manager) throw new BadRequestException('Quản lý không tồn tại');
+    if (manager.status === 'TERMINATED') throw new BadRequestException('Quản lý trực tiếp đã nghỉ việc');
   }
 
   /** Mỗi nhân viên có đúng 1 quản lý trực tiếp, và chuỗi quản lý không được tạo vòng. */

@@ -17,7 +17,8 @@ export function LeaveDetailPage() {
   const myId = me?.employee?.id;
   const actions: LeaveAction[] = [];
   if (r.status === 'SUBMITTED' && r.employeeId === myId) actions.push('cancel');
-  if (r.status === 'SUBMITTED' && r.employeeId !== myId && me?.roles.includes('MANAGER')) actions.push('approve', 'reject');
+  // Quản lý trực tiếp, hoặc HR với đơn của CEO (issue #22); backend tính sẵn canDecide.
+  if (r.canDecide) actions.push('approve', 'reject');
   if (r.status === 'APPROVED' && me?.roles.includes('HR')) actions.push('complete');
 
   return (

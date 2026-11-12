@@ -134,4 +134,6 @@ export interface LeaveRequest {
   createdAt: string;
   updatedAt: string;
   history?: LeaveHistory[];
+  /** Có ở API xem chi tiết: người gọi được duyệt/từ chối đơn này. */
+  canDecide?: boolean;
 }
