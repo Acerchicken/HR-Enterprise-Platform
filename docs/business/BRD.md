@@ -3,21 +3,24 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform (trước tuần 9 gọi là Enterprise HR Platform) – môn Cloud Application Development |
-| Phiên bản tài liệu | 1.0 |
-| Ngày | 6/11/2026 (tuần 9) |
+| Phiên bản tài liệu | 2.0 |
+| Ngày | 12/11/2026 (tuần 10) |
 | Người soạn | TV1 (Dương), tổng hợp từ tài liệu của cả nhóm tuần 4–9 |
 | Trạng thái | Bản nộp, chờ nhóm và giảng viên góp ý |
-| Tài liệu liên quan | [Kiến trúc hệ thống](../architecture/system-architecture.md) · [Kiến trúc phần mềm](../architecture/software-architecture.md) · [Business rule nghỉ phép](leave-rules.md) · [Danh mục loại phép, ngày lễ](leave-types-holidays.md) · [Ma trận phân quyền](../security/access-control-matrix.md) · [Ca kiểm thử](leave-test-cases.md) · [API](../openapi.yaml) |
+| Tài liệu tiếp theo | [SRS – đặc tả yêu cầu phần mềm](../requirements/SRS.md) → [Kiến trúc hệ thống](../architecture/system-architecture.md) · [Kiến trúc phần mềm](../architecture/software-architecture.md) |
+| Tài liệu liên quan | [Business rule nghỉ phép](leave-rules.md) · [Danh mục loại phép, ngày lễ](leave-types-holidays.md) · [Ma trận phân quyền](../security/access-control-matrix.md) · [Ca kiểm thử](leave-test-cases.md) · [API](../openapi.yaml) |
 
 **Lịch sử thay đổi**
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 6/11/2026 | Bản đầu tiên, gom problem statement, functional requirements, NFR (tuần 5), data model (tuần 6), business rule (tuần 8–9) vào một tài liệu |
+| 2.0 | 12/11/2026 | Tách yêu cầu chức năng (mục 7), dữ liệu (mục 9), phi chức năng (mục 10) và ma trận truy vết (mục 14) sang [SRS](../requirements/SRS.md) theo ISO/IEC/IEEE 29148. BRD chỉ giữ yêu cầu ở mức nghiệp vụ; số mục giữ nguyên để link cũ không gãy |
 
-**Cách đọc tài liệu:** mỗi yêu cầu có mã để truy vết. `MT-n` là mục tiêu kinh doanh, `FR-x.y` là yêu cầu chức năng theo use
-case, `NFR-n` là yêu cầu phi chức năng, `BR-nn` là business rule chi tiết trong [`leave-rules.md`](leave-rules.md). Cột
-"Trạng thái" phản ánh hệ thống trên nhánh `dev` ngày 6/11/2026: **Đã có** (đã chạy và có test), **Một phần**, **Kế hoạch tuần N**.
+**Cách đọc tài liệu:** BRD trả lời **doanh nghiệp cần gì và vì sao**: bối cảnh, mục tiêu, phạm vi, người dùng, quy trình,
+business rule, rủi ro, nghiệm thu. **Hệ thống phải làm gì, đo thế nào** nằm ở [SRS](../requirements/SRS.md); **hệ thống được xây thế nào**
+nằm ở kiến trúc hệ thống và kiến trúc phần mềm (SAD). Mã truy vết: `MT-n` mục tiêu kinh doanh (tài liệu này), `BR-nn` business
+rule ([`leave-rules.md`](leave-rules.md)), `FR-x.y` và `NFR-n` yêu cầu chức năng và phi chức năng (SRS).
 
 ---
 
@@ -129,78 +132,18 @@ Mọi bước ghi lịch sử (ai, lúc nào, từ trạng thái nào sang trạ
 
 ## 7. Yêu cầu chức năng
 
-Mức ưu tiên theo MoSCoW: **M** (bắt buộc), **S** (nên có), **C** (có thể có).
+Đã chuyển sang [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng): 34 yêu cầu `FR-x.y`, mỗi yêu cầu có mức ưu tiên MoSCoW, tiêu chí chấp
+nhận và trạng thái trên `dev`.
 
-### UC1 – Hồ sơ nhân viên
-
-| Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
-|---|---|---|---|---|
-| FR-1.1 | Xem hồ sơ theo 3 mức: danh bạ (mọi người), cá nhân (chính mình, quản lý trực tiếp), đầy đủ (HR) | M | Người ngoài không thấy ngày sinh, địa chỉ; quản lý thấy thông tin cá nhân cấp dưới; ADMIN chỉ thấy mức danh bạ | Đã có |
-| FR-1.2 | Nhân viên tự sửa số điện thoại, địa chỉ của mình | M | Sửa trường khác hoặc hồ sơ người khác bị từ chối (403) | Đã có |
-| FR-1.3 | HR xem CCCD, số tài khoản, lương; mỗi lượt xem ghi audit | M | Vai trò khác bị 403; audit có `VIEW_SENSITIVE` | Đã có |
-| FR-1.4 | HR sửa mọi trường hồ sơ, kể cả trường nhạy cảm | M | Audit chỉ ghi tên trường nhạy cảm, không ghi giá trị | Một phần: API có, giao diện tuần 10 |
-| FR-1.5 | HR tạo nhân viên mới (phòng ban, chức danh, quản lý trực tiếp, trường nhạy cảm) | M | Thiếu dữ liệu bắt buộc trả 400; quản lý tạo vòng lặp bị chặn | Một phần: API có, giao diện tuần 10 |
-| FR-1.6 | Hai người cùng sửa một hồ sơ không ghi đè nhau | S | Gửi `version` cũ trả 409 | Đã có |
-
-### UC2 – Thông tin tổ chức
-
-| Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
-|---|---|---|---|---|
-| FR-2.1 | Danh bạ: tìm theo tên, email, mã; lọc phòng ban; phân trang | M | Không hiện nhân viên đã nghỉ việc; tối đa 100 dòng/trang | Đã có |
-| FR-2.2 | Xem toàn bộ cây tổ chức và thành viên từng phòng ban | M | Cây có một gốc; quyết định issue #21: không cần nhập mã phòng ban | Đã có |
-| FR-2.3 | Xem quản lý trực tiếp và nhân viên trực thuộc của một người | M | Danh sách cấp dưới đúng với dữ liệu | Đã có |
-| FR-2.4 | HR, ADMIN tạo và sửa phòng ban | S | Đổi phòng ban cha không được tạo vòng | Một phần: API có |
-| FR-2.5 | Mỗi nhân viên có đúng một quản lý trực tiếp, trừ CEO | M | Tạo/sửa nhân viên thiếu quản lý (không phải CEO) bị từ chối (issue #22) | Kế hoạch tuần 10 |
-
-### UC3 – Tạo đơn nghỉ
-
-| Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
-|---|---|---|---|---|
-| FR-3.1 | Xem số dư phép theo loại: được hưởng, đã dùng, đang chờ, còn lại | M | Còn lại = được hưởng − đã dùng − đang chờ | Đã có |
-| FR-3.2 | Tạo đơn: loại phép, khoảng ngày, nghỉ nửa ngày, lý do | M | Không đủ số dư trả 400 (BR-01) | Đã có |
-| FR-3.3 | Không cho đơn trùng lịch với đơn đang chờ hoặc đã duyệt | M | Trùng ngày trả 409; hai nửa ngày khác buổi không trùng (BR-02, BR-04) | Đã có |
-| FR-3.4 | Số ngày tính theo ngày làm việc, bỏ cuối tuần và ngày lễ | M | 29/4–4/5/2026 tính 2 ngày; đơn chỉ gồm ngày nghỉ bù 27/4 bị từ chối (BR-03) | Đã có |
-| FR-3.5 | Gửi lại do mạng lỗi không tạo đơn thứ hai | M | Cùng `Idempotency-Key` trả lại đơn cũ (BR-11) | Đã có |
-| FR-3.6 | Nhân viên hủy đơn chưa có quyết định; không tự hủy đơn đã duyệt | M | Hủy trả lại số ngày; hủy đơn đã duyệt trả 409 (BR-07, BR-08) | Đã có |
-| FR-3.7 | HR và quản lý trực tiếp tạo đơn hộ nhân viên | S | Số dư là của nhân viên; nhân viên nhận email, vẫn tự hủy được; lịch sử ghi người tạo hộ (BR-12) | Kế hoạch tuần 10 |
-
-### UC4 – Duyệt đơn
-
-| Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
-|---|---|---|---|---|
-| FR-4.1 | Quản lý xem danh sách đơn chờ duyệt của cấp dưới trực tiếp | M | Không thấy đơn của người không trực thuộc | Đã có |
-| FR-4.2 | Duyệt hoặc từ chối kèm ghi chú; chỉ quản lý trực tiếp tại thời điểm xử lý | M | Người khác trả 403; duyệt lại lần hai không đổi gì; quyết định ngược lại trả 409 (BR-05, BR-09, BR-11) | Đã có |
-| FR-4.3 | Người duyệt thay khi quản lý vắng mặt, do HR chỉ định theo khoảng ngày | S | Người thay thấy và xử lý đơn trong thời hạn được giao (BR-06) | Kế hoạch tuần 10 |
-| FR-4.4 | HR duyệt đơn của CEO (người duy nhất không có quản lý) | S | Chỉ áp dụng cho đơn của CEO (issue #22) | Kế hoạch tuần 10 |
-| FR-4.5 | HR hoàn tất đơn đã duyệt | M | Số ngày giữ chỗ chuyển thành đã dùng; đơn chưa duyệt trả 409 (BR-10) | Đã có |
-| FR-4.6 | Email thông báo: đơn mới → quản lý; duyệt, từ chối, hoàn tất → nhân viên; hủy → quản lý | M | Email tới đúng người; không gửi trùng khi hệ thống gửi lại event | Đã có |
-| FR-4.7 | Xem chi tiết đơn và lịch sử trạng thái | M | Chỉ chủ đơn, quản lý trực tiếp, HR xem được | Đã có |
-
-### UC5 – Kho tài liệu chính sách
-
-| Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
-|---|---|---|---|---|
-| FR-5.1 | HR tải lên tài liệu PDF/DOCX kèm tiêu đề, loại, phạm vi xem (toàn công ty, phòng ban, vai trò) | M | Chỉ HR tải lên được; file không đi qua API mà tải thẳng lên object storage | Kế hoạch tuần 10 |
-| FR-5.2 | Nhân viên chỉ xem, tải tài liệu thuộc phạm vi của mình | M | Tài liệu ngoài phạm vi không hiện trong danh sách và link tải bị từ chối | Kế hoạch tuần 10 |
-| FR-5.3 | Tài liệu có phiên bản; mặc định hiện phiên bản mới nhất | S | Đăng bản mới không mất bản cũ | Kế hoạch tuần 10 |
-
-### UC6 – Tự tra cứu
-
-| Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
-|---|---|---|---|---|
-| FR-6.1 | Tìm đồng nghiệp | M | Như FR-2.1 | Đã có |
-| FR-6.2 | Tìm tài liệu theo từ khóa trong tiêu đề và nội dung, lọc theo quyền | M | Không trả tài liệu ngoài phạm vi | Kế hoạch tuần 10 |
-| FR-6.3 | Trợ lý trả lời câu hỏi về chính sách HR, có trích dẫn tài liệu nguồn | C | Chỉ dùng tài liệu người hỏi được xem; không trả lời được thì chỉ tới tài liệu gốc | Kế hoạch tuần 12 |
-
-### UC7 – Lịch sử thao tác
-
-| Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
-|---|---|---|---|---|
-| FR-7.1 | Ghi audit cho tạo/sửa hồ sơ, đọc trường nhạy cảm, mọi bước của đơn nghỉ | M | Audit ghi cùng giao dịch với thao tác; không ghi giá trị nhạy cảm | Đã có |
-| FR-7.2 | Audit chỉ được thêm, không ai sửa/xóa | M | Lệnh UPDATE/DELETE trên bảng audit bị database chặn | Đã có |
-| FR-7.3 | HR, ADMIN tra cứu audit theo đối tượng, người thực hiện, khoảng thời gian | M | Vai trò khác trả 403 | Một phần: API có, giao diện tuần 10 |
-
-**Tổng hợp:** 34 yêu cầu chức năng; 21 đã có, 4 một phần (API có, chưa có giao diện), 9 theo kế hoạch tuần 10–12.
+| Use case (mục 4.1) | Yêu cầu trong SRS |
+|---|---|
+| UC1 Hồ sơ nhân viên | FR-1.1 → FR-1.6 |
+| UC2 Thông tin tổ chức | FR-2.1 → FR-2.5 |
+| UC3 Tạo đơn nghỉ | FR-3.1 → FR-3.7 |
+| UC4 Duyệt đơn | FR-4.1 → FR-4.7 |
+| UC5 Kho tài liệu chính sách | FR-5.1 → FR-5.3 |
+| UC6 Tự tra cứu | FR-6.1 → FR-6.3 |
+| UC7 Lịch sử thao tác | FR-7.1 → FR-7.3 |
 
 ## 8. Business rule
 
@@ -214,39 +157,13 @@ Mức ưu tiên theo MoSCoW: **M** (bắt buộc), **S** (nên có), **C** (có 
 
 ## 9. Yêu cầu dữ liệu
 
-### 9.1 Dữ liệu chính
-
-| Nhóm dữ liệu | Nội dung | Phân loại |
-|---|---|---|
-| Hồ sơ nhân viên | Mã, họ tên, email công ty, điện thoại, ngày sinh, địa chỉ, phòng ban, chức danh, quản lý, ngày vào làm, trạng thái | Cá nhân |
-| Trường nhạy cảm | CCCD, số tài khoản ngân hàng, lương | **Nhạy cảm:** mã hóa ở tầng ứng dụng, chỉ HR, đọc là ghi audit (ADR-08) |
-| Tổ chức | Phòng ban (cây), chức danh, trưởng đơn vị | Nội bộ |
-| Nghỉ phép | Loại phép, số dư theo năm, đơn, lịch sử trạng thái, ngày lễ | Cá nhân (đơn nghỉ ốm, thai sản cần hạn chế người xem) |
-| Tài liệu | Metadata, file, phạm vi xem, phiên bản | Nội bộ |
-| Audit | Ai, làm gì, trên đối tượng nào, lúc nào, trường nào đổi | Nhạy cảm (chỉ HR, ADMIN) |
-
-Mô hình dữ liệu chi tiết: [data model tuần 6](../progress/tuan-06/TV2_Thanh.md#2-data-model--data-ownership).
-
-### 9.2 Quy mô (ước tính tuần 5)
-
-| Dữ liệu | Khối lượng |
-|---|---|
-| Đơn nghỉ phép | ~100 đơn/ngày (~25.000 đơn/năm) |
-| Audit log | ~1,25 triệu bản ghi/năm |
-| Tài liệu | ~500 file, ~2 GB |
-| Lưu lượng | trung bình ≈ 0,5 request/giây, cao điểm ≈ 10, thiết kế cho 50 |
+Đã chuyển sang [SRS mục 5](../requirements/SRS.md#5-yêu-cầu-dữ-liệu) (nhóm dữ liệu, phân loại, quy mô). Ở mức nghiệp vụ: CCCD, số tài khoản
+ngân hàng và lương là dữ liệu nhạy cảm, chỉ HR được xem và mọi lượt xem phải truy vết được (MT-3).
 
 ## 10. Yêu cầu phi chức năng
 
-| Mã | Nhóm | Yêu cầu | Cách kiểm chứng |
-|---|---|---|---|
-| NFR-1 | Hiệu năng | p95 < 300 ms API đọc, < 500 ms API ghi, tìm kiếm p95 < 1 s | Load test tuần 11 ở 50 request/giây |
-| NFR-2 | Mở rộng | ~500 người dùng đồng thời; tăng 5× (10.000 nhân viên) không đổi kiến trúc | Load test tuần 11 |
-| NFR-3 | Sẵn sàng | 99,5%/tháng (≈ 3,6 giờ dừng); 2 instance API, mất 1 instance lỗi < 1% (ADR-06) | Tắt 1 instance trong load test |
-| NFR-4 | Phục hồi | RPO ≤ 1 giờ, RTO ≤ 4 giờ; không mất đơn đã gửi | Khôi phục thử database về một thời điểm |
-| NFR-5 | Bảo mật | Nhân viên không đọc được hồ sơ người khác; quản lý chỉ thấy cấp dưới; trường nhạy cảm mã hóa, chỉ HR; TLS mọi kết nối; secret không nằm trong code | e2e test phân quyền theo ma trận; threat model tuần 9 |
-| NFR-6 | Truy vết | 100% thao tác duyệt và đọc trường nhạy cảm có audit | e2e test |
-| NFR-7 | Chi phí | < 100 USD/tháng cho staging | AWS Budgets (ADR-12) |
+Đã chuyển sang [SRS mục 6](../requirements/SRS.md#6-yêu-cầu-phi-chức-năng) (`NFR-1` → `NFR-7`: hiệu năng, mở rộng, sẵn sàng, phục hồi, bảo mật,
+truy vết, chi phí). Các con số NFR suy ra từ quy mô doanh nghiệp ở mục 2.1 và mục tiêu ở mục 3.
 
 ## 11. Giả định, ràng buộc, phụ thuộc
 
@@ -278,19 +195,15 @@ Mô hình dữ liệu chi tiết: [data model tuần 6](../progress/tuan-06/TV2_
 ## 13. Tiêu chí nghiệm thu version 1
 
 1. Luồng nghỉ phép chạy trên staging: tạo → duyệt/từ chối → hoàn tất, có email, đúng BR-01 → BR-12.
-2. Mọi yêu cầu mức **M** ở mục 7 đạt tiêu chí chấp nhận, có e2e test hoặc biên bản kiểm thử chức năng.
+2. Mọi yêu cầu mức **M** ở [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng) đạt tiêu chí chấp nhận, có e2e test hoặc biên bản kiểm thử chức năng.
 3. Mọi dòng của ma trận phân quyền có ca kiểm thử được phép và bị chặn.
-4. Load test tuần 11 đạt NFR-1, NFR-3.
-5. Chi phí staging thực tế dưới NFR-7.
+4. Load test tuần 11 đạt NFR-1, NFR-3 (SRS mục 6).
+5. Chi phí staging thực tế dưới NFR-7 (SRS mục 6).
 
 ## 14. Ma trận truy vết
 
-| Mục tiêu | Use case | Yêu cầu | Business rule | Kiểm chứng |
-|---|---|---|---|---|
-| MT-1 | UC1, UC2 | FR-1.1 → FR-1.6, FR-2.1 → FR-2.5 | Quy tắc hồ sơ, issue #21, #22 | e2e `app.e2e-spec.ts`; biên bản kiểm thử tuần 7 |
-| MT-2 | UC3, UC4 | FR-3.1 → FR-3.7, FR-4.1 → FR-4.7 | BR-01 → BR-12 | 22 ca kiểm thử `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
-| MT-3 | UC1, UC7 | FR-1.3, FR-1.4, FR-7.1 → FR-7.3 | ADR-08, ADR-09 | e2e audit, `VIEW_SENSITIVE`; ma trận phân quyền |
-| MT-4 | UC5, UC6 | FR-5.1 → FR-5.3, FR-6.1 → FR-6.3 | Phạm vi tài liệu | Kế hoạch kiểm thử tuần 10, 12 |
+Đã chuyển sang [SRS mục 7](../requirements/SRS.md#7-kiểm-chứng-và-truy-vết), thêm cột thiết kế (SAD): mục tiêu `MT-n` → yêu cầu `FR`/`NFR` →
+module, ADR → ca kiểm thử.
 
 ## 15. Vấn đề còn mở
 

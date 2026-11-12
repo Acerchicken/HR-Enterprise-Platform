@@ -41,7 +41,7 @@ Ghi quyết định vào `leave-rules.md` và mục câu hỏi mở của `BRD.m
 ### 3. `docs/matrix-week10` – cập nhật cuối tuần
 
 - Thêm API tài liệu, tìm kiếm vào `access-control-matrix.md`; đối chiếu `@Roles` và service như tuần 9.
-- Cập nhật cột trạng thái FR trong `BRD.md` theo code đã merge.
+- Cập nhật cột trạng thái FR trong `docs/requirements/SRS.md` theo code đã merge (từ 12/11 bảng FR nằm ở SRS, không còn trong `BRD.md`).
 - Cập nhật `threat-model.md`: các dòng đã xử lý sau #43, #44, #45, thêm luồng tài liệu.
 
 ## Cách làm trên git
