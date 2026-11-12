@@ -56,7 +56,7 @@ phạm vi (tính lương, chấm công, tuyển dụng, ứng dụng di động,
 
 - Thuật ngữ nghiệp vụ: [BRD mục 16](../business/BRD.md#16-thuật-ngữ).
 - Business rule nghỉ phép: [`leave-rules.md`](../business/leave-rules.md); loại phép, ngày lễ:
-  [`leave-types-holidays.md`](../business/leave-types-holidays.md).
+  [`leave-types-holidays.md`](../business/leave-types-holidays.md); kho tài liệu: [`document-rules.md`](../business/document-rules.md).
 - Phân quyền từng API: [ma trận phân quyền](../security/access-control-matrix.md); mối đe dọa: [threat model](../security/threat-model.md).
 - Quy ước API: [`CONVENTIONS.md` mục 4](../CONVENTIONS.md#4-api).
 
@@ -153,7 +153,7 @@ Mức ưu tiên theo MoSCoW: **M** (bắt buộc), **S** (nên có), **C** (có 
 | FR-2.2 | Xem toàn bộ cây tổ chức và thành viên từng phòng ban | M | Cây có một gốc; quyết định issue #21: không cần nhập mã phòng ban | Đã có |
 | FR-2.3 | Xem quản lý trực tiếp và nhân viên trực thuộc của một người | M | Danh sách cấp dưới đúng với dữ liệu | Đã có |
 | FR-2.4 | HR, ADMIN tạo và sửa phòng ban | S | Đổi phòng ban cha không được tạo vòng | Một phần: API có |
-| FR-2.5 | Mỗi nhân viên có đúng một quản lý trực tiếp, trừ CEO | M | Tạo/sửa nhân viên thiếu quản lý (không phải CEO) bị từ chối (issue #22) | Kế hoạch tuần 10 |
+| FR-2.5 | Mỗi nhân viên có đúng một quản lý trực tiếp, trừ CEO | M | Tạo/sửa nhân viên thiếu quản lý (không phải CEO) bị từ chối (issue #22) | Đã có (tuần 10) |
 
 ### 4.3 UC3 – Tạo đơn nghỉ
 
@@ -174,7 +174,7 @@ Mức ưu tiên theo MoSCoW: **M** (bắt buộc), **S** (nên có), **C** (có 
 | FR-4.1 | Quản lý xem danh sách đơn chờ duyệt của cấp dưới trực tiếp | M | Không thấy đơn của người không trực thuộc | Đã có |
 | FR-4.2 | Duyệt hoặc từ chối kèm ghi chú; chỉ quản lý trực tiếp tại thời điểm xử lý | M | Người khác trả 403; duyệt lại lần hai không đổi gì; quyết định ngược lại trả 409 (BR-05, BR-09, BR-11) | Đã có |
 | FR-4.3 | Người duyệt thay khi quản lý vắng mặt, do HR chỉ định theo khoảng ngày | S | Người thay thấy và xử lý đơn trong thời hạn được giao (BR-06) | Kế hoạch tuần 10 |
-| FR-4.4 | HR duyệt đơn của CEO (người duy nhất không có quản lý) | S | Chỉ áp dụng cho đơn của CEO (issue #22) | Kế hoạch tuần 10 |
+| FR-4.4 | HR duyệt đơn của CEO (người duy nhất không có quản lý) | S | Chỉ áp dụng cho đơn của CEO (issue #22) | Đã có (tuần 10) |
 | FR-4.5 | HR hoàn tất đơn đã duyệt | M | Số ngày giữ chỗ chuyển thành đã dùng; đơn chưa duyệt trả 409 (BR-10) | Đã có |
 | FR-4.6 | Email thông báo: đơn mới → quản lý; duyệt, từ chối, hoàn tất → nhân viên; hủy → quản lý | M | Email tới đúng người; không gửi trùng khi hệ thống gửi lại event | Đã có |
 | FR-4.7 | Xem chi tiết đơn và lịch sử trạng thái | M | Chỉ chủ đơn, quản lý trực tiếp, HR xem được | Đã có |
@@ -203,7 +203,7 @@ Mức ưu tiên theo MoSCoW: **M** (bắt buộc), **S** (nên có), **C** (có 
 | FR-7.2 | Audit chỉ được thêm, không ai sửa/xóa | M | Lệnh UPDATE/DELETE trên bảng audit bị database chặn | Đã có |
 | FR-7.3 | HR, ADMIN tra cứu audit theo đối tượng, người thực hiện, khoảng thời gian | M | Vai trò khác trả 403 | Một phần: API có, giao diện tuần 10 |
 
-**Tổng hợp (theo `dev` ngày 6/11/2026):** 34 yêu cầu chức năng; 21 đã có, 4 một phần (API có, chưa có giao diện), 9 theo kế hoạch tuần 10–12.
+**Tổng hợp:** 34 yêu cầu chức năng; 23 đã có, 4 một phần (API có, chưa có giao diện), 7 theo kế hoạch tuần 10–12 (cập nhật 10/11).
 
 ## 5. Yêu cầu dữ liệu
 
@@ -261,11 +261,11 @@ Chiều xuôi: mục tiêu (BRD) → yêu cầu (SRS) → thiết kế (SAD) →
 | MT-1 | UC1, UC2 | FR-1.1 → FR-1.6, FR-2.1 → FR-2.5 | Quy tắc hồ sơ, issue #21, #22 | Module Employee, Organization, Identity; ADR-10 | e2e `app.e2e-spec.ts`; biên bản kiểm thử tuần 7 |
 | MT-2 | UC3, UC4 | FR-3.1 → FR-3.7, FR-4.1 → FR-4.7 | BR-01 → BR-12 | Module Leave, Worker; outbox + queue (ADR-03) | 22 ca kiểm thử `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
 | MT-3 | UC1, UC7 | FR-1.3, FR-1.4, FR-7.1 → FR-7.3 | ADR-08, ADR-09 | Module Employee (`FieldCrypto`, ADR-08), Audit (ADR-09) | e2e audit, `VIEW_SENSITIVE`; ma trận phân quyền |
-| MT-4 | UC5, UC6 | FR-5.1 → FR-5.3, FR-6.1 → FR-6.3 | Phạm vi tài liệu | Module Document (tuần 10), object storage, tìm kiếm full-text | Kế hoạch kiểm thử tuần 10, 12 |
+| MT-4 | UC5, UC6 | FR-5.1 → FR-5.3, FR-6.1 → FR-6.3 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13) | Kế hoạch kiểm thử tuần 10, 12 |
 
 Thiết kế chi tiết từng module: [kiến trúc phần mềm mục 4](../architecture/software-architecture.md#4-danh-mục-module).
 NFR-1 → NFR-7 dẫn tới quyết định kiến trúc ở [kiến trúc hệ thống mục 1](../architecture/system-architecture.md#1-yêu-cầu-dẫn-dắt-kiến-trúc).
 
 ## 8. Vấn đề còn mở
 
-Các câu hỏi chưa chốt ảnh hưởng tới yêu cầu nằm ở [BRD mục 15](../business/BRD.md#15-vấn-đề-còn-mở). Khi chốt, cập nhật FR hoặc BR liên quan và tăng phiên bản tài liệu này.
+Các câu hỏi chưa chốt ảnh hưởng tới yêu cầu nằm ở [BRD mục 15](../business/BRD.md#15-vấn-đề-còn-mở-và-quyết-định-đã-chốt). Khi chốt, cập nhật FR hoặc BR liên quan và tăng phiên bản tài liệu này.

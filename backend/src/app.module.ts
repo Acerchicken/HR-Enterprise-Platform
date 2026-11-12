@@ -5,6 +5,7 @@ import { ConfigModule } from './config/config.module';
 import { dataSourceOptions } from './database/data-source';
 import { HealthController } from './health.controller';
 import { AuditModule } from './modules/audit/audit.module';
+import { DocumentModule } from './modules/document/document.module';
 import { EmployeeModule } from './modules/employee/employee.module';
 import { IdentityModule } from './modules/identity/identity.module';
 import { LeaveModule } from './modules/leave/leave.module';
@@ -23,6 +24,7 @@ import { OrganizationModule } from './modules/organization/organization.module';
     EmployeeModule,
     IdentityModule,
     LeaveModule,
+    DocumentModule,
   ],
   controllers: [HealthController],
 })

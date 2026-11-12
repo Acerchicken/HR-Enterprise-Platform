@@ -15,6 +15,7 @@
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 6/11/2026 | Bản đầu tiên, gom problem statement, functional requirements, NFR (tuần 5), data model (tuần 6), business rule (tuần 8–9) vào một tài liệu |
+| 1.1 | 11/11/2026 | Chốt retention đơn nghỉ/audit, quyền xem lý do nghỉ ốm/thai sản và nội dung email (BR-13 → BR-15) |
 | 2.0 | 12/11/2026 | Tách yêu cầu chức năng (mục 7), dữ liệu (mục 9), phi chức năng (mục 10) và ma trận truy vết (mục 14) sang [SRS](../requirements/SRS.md) theo ISO/IEC/IEEE 29148. BRD chỉ giữ yêu cầu ở mức nghiệp vụ; số mục giữ nguyên để link cũ không gãy |
 
 **Cách đọc tài liệu:** BRD trả lời **doanh nghiệp cần gì và vì sao**: bối cảnh, mục tiêu, phạm vi, người dùng, quy trình,
@@ -205,12 +206,20 @@ truy vết, chi phí). Các con số NFR suy ra từ quy mô doanh nghiệp ở 
 Đã chuyển sang [SRS mục 7](../requirements/SRS.md#7-kiểm-chứng-và-truy-vết), thêm cột thiết kế (SAD): mục tiêu `MT-n` → yêu cầu `FR`/`NFR` →
 module, ADR → ca kiểm thử.
 
-## 15. Vấn đề còn mở
+## 15. Vấn đề còn mở và quyết định đã chốt
+
+### Quyết định đã chốt
+
+| Vấn đề | Quyết định | Theo dõi |
+|---|---|---|
+| Thời gian lưu audit log và đơn nghỉ | Mốc retention nội bộ: đơn nghỉ 5 năm từ khi kết thúc; audit 5 năm từ lúc ghi. Chưa khẳng định là thời hạn luật định; HR/pháp chế phải xác nhận trước production và áp dụng thời hạn bắt buộc dài hơn. Legal hold tạm dừng hủy; xử lý hết hạn qua archive bất biến hoặc hủy/khử định danh được phê duyệt, không cho ứng dụng quyền xóa thông thường. | BR-13 trong [`leave-rules.md`](leave-rules.md); đồng bộ ADR-09 và thiết kế retention trước production |
+| Ai được xem lý do nghỉ ốm/thai sản | Chỉ nhân viên đứng tên đơn và HR xem lý do chi tiết trên mọi bề mặt; HR đọc tạo audit không chứa giá trị lý do. Không để lộ lý do/comment sức khỏe qua audit (kể cả quyền đọc audit của ADMIN), export hoặc email. | BR-14 trong [`leave-rules.md`](leave-rules.md); cần lọc response và audit payload |
+| Email nghỉ phép (T-16) | Subject/body chỉ báo chung và link inbox chung cần đăng nhập; không có thông tin nhận diện/chi tiết đơn trong nội dung hay URL. Outbox/log cũng chỉ mang dữ liệu tối thiểu để định tuyến, không mang lý do, comment, loại phép hoặc ngày nghỉ không cần thiết. | BR-15 trong [`leave-rules.md`](leave-rules.md); cần cập nhật template, payload và kiểm thử |
+
+### Còn mở
 
 | Vấn đề | Ai quyết định | Hạn |
 |---|---|---|
-| Thời gian lưu audit log và đơn nghỉ (retention) | TV2 với TV1 | Tuần 10 |
-| Ai được xem lý do nghỉ của đơn nghỉ ốm, thai sản | TV2 | Tuần 10 |
 | Ngày hoán đổi làm bù của khu vực công có áp dụng cho doanh nghiệp không | TV2, TV4 | Trước khi có lịch 2027 |
 | Cloud provider và dịch vụ cụ thể | TV3 (ADR-12) | Tuần 9 |
 
@@ -222,6 +231,6 @@ module, ADR → ca kiểm thử.
 | Người duyệt thay | Quản lý được HR chỉ định thay quyền duyệt trong một khoảng ngày (BR-06) |
 | Số dư khả dụng | Được hưởng − đã dùng − đang chờ duyệt |
 | Trường nhạy cảm | CCCD, số tài khoản ngân hàng, lương |
-| Audit log | Nhật ký thao tác chỉ được thêm, không sửa, không xóa |
+| Audit log | Nhật ký thao tác chỉ được thêm; không sửa trong thời hạn lưu. Hết hạn thì archive/hủy theo retention được phê duyệt và legal hold (BR-13) |
 | MVP | Bản sản phẩm tối thiểu nộp ở tuần 13 (version 1) |
 | ADR | Architecture Decision Record: bản ghi một quyết định kiến trúc |

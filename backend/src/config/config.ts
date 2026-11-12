@@ -53,6 +53,18 @@ export interface AppConfig {
     port: number;
     from: string;
   };
+  /**
+   * Object storage cho kho tài liệu (S3 trên AWS, MinIO khi chạy local). `bucket` rỗng thì API tài liệu trả 503.
+   * `publicEndpoint`: địa chỉ trình duyệt dùng để upload bằng presigned URL (khác `endpoint` khi API chạy trong Docker).
+   */
+  storage: {
+    bucket: string | null;
+    region: string;
+    endpoint: string | null;
+    publicEndpoint: string | null;
+    accessKeyId: string | null;
+    secretAccessKey: string | null;
+  };
 }
 
 export interface LoadOptions {
@@ -96,6 +108,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
       host: env.SMTP_HOST ?? 'localhost',
       port: Number(env.SMTP_PORT ?? 1025),
       from: env.SMTP_FROM ?? 'no-reply@hr.local',
+    },
+    storage: {
+      bucket: env.STORAGE_BUCKET || null,
+      region: env.STORAGE_REGION || env.AWS_REGION || 'ap-southeast-1',
+      endpoint: env.STORAGE_ENDPOINT || null,
+      publicEndpoint: env.STORAGE_PUBLIC_ENDPOINT || env.STORAGE_ENDPOINT || null,
+      accessKeyId: env.STORAGE_ACCESS_KEY_ID || null,
+      secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY || null,
     },
   };
   assertValid(cfg, env, opts.needsAuth ?? true);

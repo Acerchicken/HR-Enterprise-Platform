@@ -65,13 +65,24 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 | Số dư phép | Xem số dư của mình | `GET /api/v1/leave-balances/me` | ✓ | ✓ | ✓ | ✓ | Tài khoản phải gắn với nhân viên; chỉ trả số dư của `employeeId` trong token, không có tham số chọn nhân viên khác. | BR-01; `LeaveController.myBalances` |
 | Đơn nghỉ phép | Tạo/gửi (tự tạo hoặc tạo hộ) | `POST /api/v1/leave-requests` | ✓ chỉ cho mình | ✓ cho mình hoặc cấp dưới trực tiếp | ✓ cho mình hoặc mọi nhân viên | ✓ chỉ cho mình | Tạo hộ phải chỉ rõ chủ đơn: MANAGER chỉ được chỉ định cấp dưới trực tiếp (không tính quan hệ chỉ được giao duyệt thay theo BR-06); HR được chỉ định mọi nhân viên. Chủ đơn là người nghỉ và là chủ số dư; BR-01–04 áp dụng theo chủ đơn. `Idempotency-Key` bắt buộc. History/audit phải ghi riêng người tạo và chủ đơn; email gửi cho chủ đơn. Manager tạo hộ cho cấp dưới vẫn có thể tự duyệt theo BR-05 — trade-off đã chấp nhận. Đây là nghiệp vụ yêu cầu, hiện API chưa hỗ trợ tạo hộ. | BR-01–04, BR-11, BR-12 |
 | Đơn nghỉ phép | Xem đơn của mình | `GET /api/v1/leave-requests/me` | ✓ | ✓ | ✓ | ✓ | Tài khoản phải gắn với nhân viên; chỉ trả đơn của `employeeId` người gọi; có thể lọc trạng thái và phân trang. | UC3; `LeaveService.mine` |
-| Đơn nghỉ phép | Xem danh sách chờ duyệt | `GET /api/v1/leave-requests/pending-approval` | — | ✓ | — | — | MANAGER thấy đơn `SUBMITTED` của cấp dưới trực tiếp; trong thời hạn phân công BR-06, người duyệt thay thấy đơn của cấp dưới trực tiếp của quản lý được thay. Code hiện chỉ lọc cấp dưới trực tiếp của người gọi. | UC4, BR-05, BR-06; `LeaveService.pendingApproval` |
+| Đơn nghỉ phép | Xem danh sách chờ duyệt | `GET /api/v1/leave-requests/pending-approval` | — | ✓ | ✓ đơn của CEO | — | MANAGER thấy đơn `SUBMITTED` của cấp dưới trực tiếp; HR thấy đơn `SUBMITTED` của CEO (issue #22); trong thời hạn phân công BR-06, người duyệt thay thấy đơn của cấp dưới trực tiếp của quản lý được thay. Code chưa có phần người duyệt thay (BR-06). | UC4, BR-05, BR-06; `LeaveService.pendingApproval` |
 | Đơn nghỉ phép | Xem danh sách toàn hệ thống | `GET /api/v1/leave-requests` | — | — | ✓ | — | Chỉ HR; có thể lọc trạng thái và phân trang; mặc định chỉ đơn `APPROVED` chờ HR hoàn tất. | BR-10; `LeaveService.all` |
 | Đơn nghỉ phép | Xem chi tiết | `GET /api/v1/leave-requests/{id}` | ✓ | ✓ | ✓ | ✓ | Chỉ chủ đơn, quản lý trực tiếp hiện tại của chủ đơn, hoặc HR; điều kiện chủ đơn/quản lý áp dụng cho mọi role, gồm ADMIN. Người khác bị từ chối. | BR-05; `LeaveService.get` |
-| Đơn nghỉ phép | Duyệt | `POST /api/v1/leave-requests/{id}/approve` | — | ✓ | ✓ chỉ đơn của CEO | — | MANAGER phải là quản lý trực tiếp hiện tại hoặc người duyệt thay hợp lệ theo BR-06; HR chỉ duyệt đơn của CEO. Đơn phải ở `SUBMITTED`; thay đổi trạng thái yêu cầu `version` hiện tại; thao tác lặp cùng quyết định không tạo side effect. Code hiện chỉ cho quản lý trực tiếp duyệt; chưa hỗ trợ người duyệt thay hoặc HR duyệt đơn CEO. | UC4, BR-05, BR-06, BR-11 |
-| Đơn nghỉ phép | Từ chối | `POST /api/v1/leave-requests/{id}/reject` | — | ✓ | ✓ chỉ đơn của CEO | — | MANAGER phải là quản lý trực tiếp hiện tại hoặc người duyệt thay hợp lệ theo BR-06; HR chỉ từ chối đơn của CEO. Đơn phải ở `SUBMITTED`; thay đổi trạng thái yêu cầu `version` hiện tại; thao tác lặp cùng quyết định không tạo side effect. Code hiện chỉ cho quản lý trực tiếp từ chối; chưa hỗ trợ người duyệt thay hoặc HR duyệt đơn CEO. | UC4, BR-05, BR-06, BR-09, BR-11 |
+| Đơn nghỉ phép | Duyệt | `POST /api/v1/leave-requests/{id}/approve` | — | ✓ | ✓ chỉ đơn của CEO | — | MANAGER phải là quản lý trực tiếp hiện tại hoặc người duyệt thay hợp lệ theo BR-06; HR chỉ duyệt đơn của CEO. Đơn phải ở `SUBMITTED`; thay đổi trạng thái yêu cầu `version` hiện tại; thao tác lặp cùng quyết định không tạo side effect. Code đã có HR duyệt đơn CEO (tuần 10); chưa có người duyệt thay (BR-06). | UC4, BR-05, BR-06, BR-11 |
+| Đơn nghỉ phép | Từ chối | `POST /api/v1/leave-requests/{id}/reject` | — | ✓ | ✓ chỉ đơn của CEO | — | MANAGER phải là quản lý trực tiếp hiện tại hoặc người duyệt thay hợp lệ theo BR-06; HR chỉ từ chối đơn của CEO. Đơn phải ở `SUBMITTED`; thay đổi trạng thái yêu cầu `version` hiện tại; thao tác lặp cùng quyết định không tạo side effect. Code đã có HR từ chối đơn CEO (tuần 10); chưa có người duyệt thay (BR-06). | UC4, BR-05, BR-06, BR-09, BR-11 |
 | Đơn nghỉ phép | Hủy | `POST /api/v1/leave-requests/{id}/cancel` | ✓ | ✓ | ✓ | ✓ | Chỉ chủ đơn; đơn phải ở `SUBMITTED`. Role không thay thế điều kiện sở hữu; không tự hủy đơn đã duyệt. | BR-07, BR-08 |
 | Đơn nghỉ phép | HR hoàn tất | `POST /api/v1/leave-requests/{id}/complete` | — | — | ✓ | — | Role HR; đơn phải ở `APPROVED`; thay đổi trạng thái yêu cầu `version` hiện tại. Chỉ HR được hoàn tất. | BR-10, BR-11 |
+
+### Kho tài liệu (tuần 10, `document-rules.md`)
+
+| Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |
+|---|---|---|---:|---:|---:|---:|---|---|
+| Tài liệu | Xem danh sách | `GET /api/v1/documents` | ✓ | ✓ | ✓ | ✓ | Chỉ tài liệu chưa ẩn, có phiên bản sẵn sàng và khớp ít nhất một phạm vi: toàn công ty, phòng ban của người xem hoặc phòng ban cha, vai trò. Người đã nghỉ việc hoặc chưa gắn hồ sơ nhận danh sách rỗng. Lọc trong truy vấn, không lộ số lượng. | DR-02, DR-05, DR-06, DR-08 |
+| Tài liệu | Xem chi tiết, phiên bản | `GET /api/v1/documents/{id}` | ✓ | ✓ | ✓ | ✓ | Như trên; ngoài phạm vi trả 404 như không tồn tại. HR không có quyền xem ngầm. | DR-03, DR-04, DR-08 |
+| Tài liệu | Tải xuống | `GET /api/v1/documents/{id}/download`, `GET /api/v1/documents/{id}/versions/{versionId}/download` | ✓ | ✓ | ✓ | ✓ | Kiểm phạm vi ở mỗi lần tải, file đi qua API; không phát link tải. | DR-06, ADR-13 |
+| Kho tài liệu | Quản lý (danh sách, chi tiết metadata) | `GET /api/v1/documents/manage`, `GET /api/v1/documents/manage/{id}` | — | — | ✓ | — | Thấy mọi tài liệu kể cả đã ẩn, chỉ metadata (tiêu đề, phạm vi, phiên bản); không tải được nội dung ngoài phạm vi. | DR-03 |
+| Kho tài liệu | Tạo, thêm phiên bản, xác nhận tải lên | `POST /api/v1/documents`, `POST /api/v1/documents/{id}/versions`, `POST /api/v1/documents/{id}/versions/{versionId}/confirm` | — | — | ✓ | — | PDF/DOCX ≤ 20 MiB, định dạng thực phải khớp; ít nhất một phạm vi; phiên bản mới không ghi đè bản cũ. Ghi audit. | DR-01, DR-04 |
+| Kho tài liệu | Sửa metadata, ẩn, khôi phục | `PATCH /api/v1/documents/{id}`, `POST /api/v1/documents/{id}/hide`, `POST /api/v1/documents/{id}/restore` | — | — | ✓ | — | `version` phải khớp khi sửa; ẩn không xóa phiên bản. Ghi audit. | DR-03, DR-05 |
 
 ## Điểm lệch và quyết định nghiệp vụ
 
@@ -87,8 +98,8 @@ Các mục dưới đây ghi nhận quyết định nghiệp vụ đã thống n
 3. **Đọc tổ chức/chức danh và loại phép/ngày lễ:** hiện mở cho mọi role đã đăng nhập. Ma trận ghi nhận hành vi code; các
    bảng này không phải hồ sơ cá nhân theo UC2 và UC6; đây là phạm vi đọc công khai cho người dùng đã đăng nhập và là quyết
    định có chủ ý.
-4. **BR-06 và ngoại lệ CEO trong BR-05 chưa được triển khai:** nghiệp vụ đã chốt người duyệt thay và HR duyệt đơn CEO;
-   API hiện mới cho quản lý trực tiếp duyệt/từ chối, chưa có phân công thay thế hay nhánh quyền HR cho CEO.
+4. **BR-06 chưa được triển khai:** nghiệp vụ đã chốt người duyệt thay; API chưa có phân công thay thế. Ngoại lệ CEO trong
+   BR-05 (HR duyệt đơn CEO) đã có từ tuần 10, kèm e2e.
 5. **BR-12 chưa được triển khai:** API tạo đơn hiện chỉ nhận chủ đơn là người gọi; chưa hỗ trợ HR tạo hộ mọi nhân viên hoặc
    MANAGER tạo hộ cấp dưới trực tiếp. Cần hỗ trợ phân biệt người tạo và chủ đơn trong request, history/audit, tính số dư theo
    chủ đơn và gửi email cho chủ đơn. Quản lý được chấp nhận vừa tạo hộ vừa duyệt đơn đó theo BR-05.

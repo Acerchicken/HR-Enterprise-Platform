@@ -450,6 +450,209 @@ paths:
           description: ""
       tags: *a5
       security: *a6
+  /api/v1/documents:
+    get:
+      operationId: DocumentController_list
+      parameters:
+        - name: type
+          required: false
+          in: query
+          schema:
+            enum:
+              - POLICY
+              - PROCESS
+              - GUIDE
+              - FORM
+              - NOTICE
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: &a7
+        - documents
+      security: &a8
+        - bearer: []
+    post:
+      operationId: DocumentController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/documents/manage:
+    get:
+      operationId: DocumentController_manageList
+      parameters:
+        - name: type
+          required: false
+          in: query
+          schema:
+            enum:
+              - POLICY
+              - PROCESS
+              - GUIDE
+              - FORM
+              - NOTICE
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/documents/manage/{id}:
+    get:
+      operationId: DocumentController_manageGet
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/documents/{id}:
+    get:
+      operationId: DocumentController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
+    patch:
+      operationId: DocumentController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDocumentDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/documents/{id}/download:
+    get:
+      operationId: DocumentController_downloadLatest
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/documents/{id}/versions/{versionId}/download:
+    get:
+      operationId: DocumentController_download
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: versionId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/documents/{id}/versions:
+    post:
+      operationId: DocumentController_addVersion
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileSpecDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/documents/{id}/versions/{versionId}/confirm:
+    post:
+      operationId: DocumentController_confirm
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: versionId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/documents/{id}/hide:
+    post:
+      operationId: DocumentController_hide
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/documents/{id}/restore:
+    post:
+      operationId: DocumentController_restore
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
 info:
   title: HRHelper API (HR Enterprise Platform)
   description: "REST API /api/v1. Xác thực: Bearer JWT do Keycloak (OIDC) cấp.
@@ -519,6 +722,18 @@ components:
         hireDate:
           type: string
           example: 2026-11-01
+        dateOfBirth:
+          type: string
+        address:
+          type: string
+        nationalId:
+          type: string
+          description: CCCD (12 số)
+        bankAccount:
+          type: string
+        salary:
+          type: string
+          description: Lương tháng (VND)
       required:
         - employeeCode
         - fullName
@@ -596,5 +811,89 @@ components:
         comment:
           type: string
           description: Ghi chú, ví dụ lý do từ chối
+      required:
+        - version
+    DocumentScopeDto:
+      type: object
+      properties:
+        all:
+          type: boolean
+          default: false
+        departmentIds:
+          type: array
+          items:
+            type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum:
+              - EMPLOYEE
+              - MANAGER
+              - HR
+              - ADMIN
+    CreateDocumentDto:
+      type: object
+      properties:
+        fileName:
+          type: string
+          example: quy-che-lam-viec.pdf
+        contentType:
+          type: string
+          example: application/pdf
+        sizeBytes:
+          type: number
+          example: 4194304
+          maximum: 20971520
+        title:
+          type: string
+          example: Quy chế làm việc
+        type:
+          type: string
+          enum: &a9
+            - POLICY
+            - PROCESS
+            - GUIDE
+            - FORM
+            - NOTICE
+        scope:
+          $ref: "#/components/schemas/DocumentScopeDto"
+      required:
+        - fileName
+        - contentType
+        - sizeBytes
+        - title
+        - type
+        - scope
+    FileSpecDto:
+      type: object
+      properties:
+        fileName:
+          type: string
+          example: quy-che-lam-viec.pdf
+        contentType:
+          type: string
+          example: application/pdf
+        sizeBytes:
+          type: number
+          example: 4194304
+          maximum: 20971520
+      required:
+        - fileName
+        - contentType
+        - sizeBytes
+    UpdateDocumentDto:
+      type: object
+      properties:
+        version:
+          type: number
+          description: Version hiện tại của tài liệu (optimistic locking). Lệch → 409.
+        title:
+          type: string
+        type:
+          type: string
+          enum: *a9
+        scope:
+          $ref: "#/components/schemas/DocumentScopeDto"
       required:
         - version

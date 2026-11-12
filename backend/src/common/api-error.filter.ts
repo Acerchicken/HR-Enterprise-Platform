@@ -33,12 +33,14 @@ export class ApiErrorFilter implements ExceptionFilter {
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'Lỗi hệ thống';
+    let fields: Record<string, string> | undefined;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const body = exception.getResponse();
       message =
         typeof body === 'string' ? body : ((body as { message?: string | string[] }).message ?? exception.message);
+      if (typeof body === 'object') fields = (body as { fields?: Record<string, string> }).fields;
     } else if (exception instanceof QueryFailedError && (exception as any).code === '23505') {
       status = HttpStatus.CONFLICT;
       message = 'Dữ liệu bị trùng';
@@ -50,6 +52,7 @@ export class ApiErrorFilter implements ExceptionFilter {
     res.status(status).json({
       code: CODE_BY_STATUS[status] ?? `HTTP_${status}`,
       message,
+      ...(fields ? { fields } : {}),
       traceId: req.traceId,
     });
   }
