@@ -155,6 +155,15 @@ resource "aws_iam_policy" "worker_sqs_policy" {
         Resource = [
           aws_kms_key.main.arn
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.documents.arn}/*"
+        ]
       }
     ]
   })
@@ -191,7 +200,12 @@ resource "aws_ecs_task_definition" "worker" {
         { name = "DB_SSL", value = "require" },
         { name = "QUEUE_DRIVER", value = "sqs" },
         { name = "AWS_REGION", value = var.aws_region },
-        { name = "SQS_QUEUE_URL", value = aws_sqs_queue.worker_queue.url }
+        { name = "SQS_QUEUE_URL", value = aws_sqs_queue.worker_queue.url },
+        { name = "STORAGE_BUCKET", value = aws_s3_bucket.documents.id },
+        { name = "STORAGE_REGION", value = var.aws_region },
+        { name = "SMTP_HOST", value = "email-smtp.${var.aws_region}.amazonaws.com" },
+        { name = "SMTP_PORT", value = "587" },
+        { name = "SMTP_FROM", value = var.sender_email }
       ]
 
       secrets = [

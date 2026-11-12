@@ -56,6 +56,22 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "documents" {
   }
 }
 
+# CORS for direct browser upload via presigned PUT (FR-5.1, ADR-13)
+resource "aws_s3_bucket_cors_configuration" "documents" {
+  bucket = aws_s3_bucket.documents.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT", "GET", "HEAD"]
+    allowed_origins = [
+      "https://${aws_cloudfront_distribution.web.domain_name}",
+      "http://localhost:5173"
+    ]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3600
+  }
+}
+
 # CloudFront Origin Access Control (OAC) for secure S3 origin access
 resource "aws_cloudfront_origin_access_control" "web" {
   name                              = "${var.project_name}-${var.environment}-web-oac"
