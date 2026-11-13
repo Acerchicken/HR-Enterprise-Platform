@@ -43,6 +43,7 @@ Theo mức độ trong BRD. Nếu không đủ thời gian thì cắt từ dư�
 | `feat/documents-api` | TV1 Duong | API tài liệu, upload presigned URL, lọc theo phạm vi, phiên bản; ADR-13 | PR code + e2e | T5 (12/11) | T6 (13/11) | TV2, TV3 |
 | `infra/documents-email` | TV3 Bảo | Code Terraform: S3 tài liệu (CORS, IAM), email SES, alarm; chỉ `validate`/`plan` | `infra/` | T6 (13/11), 21:00 | T7 (14/11) | TV1 |
 | `feat/document-search` | TV1 Duong | Worker trích văn bản, full-text PostgreSQL, tìm theo quyền; giao diện tài liệu | PR code + e2e | T6 (13/11) | T7 (14/11) | TV2, TV4 |
+| `infra/idp-hardening` | TV3 Bảo | Siết cấu hình đăng nhập Cognito và Keycloak: tắt tự đăng ký, mật khẩu có chữ hoa, khóa sau 5 lần sai, thời hạn token và phiên (NFR-5.2, 5.3, 5.5, 5.9; thêm 13/11) | `infra/staging/cognito.tf`, `keycloak/realm-hr.json` | CN (15/11), 12:00 | T2 (16/11), 9:00 | TV1, TV4 |
 | `docs/aws-rollout-plan` | TV3 Bảo | Kế hoạch lên AWS tuần 12–13: thứ tự, chi phí 2 tuần, rollback, dọn dẹp | `infra/README.md` | T7 (14/11), 21:00 | CN (15/11) | TV1 |
 | `docs/test-cases-week10` | TV4 Duy | Ca kiểm thử tài liệu, tìm kiếm, hồ sơ, audit, quy tắc một quản lý | `docs/business/test-cases-tuan-10.md` | T5 (12/11), 21:00 | T6 (13/11) | TV2, TV1 |
 | `feat/audit-ui`, `fix/auth-email-verified` | TV1 Duong | Màn hình xem audit; kiểm `email_verified` | PR code + e2e | T7 (14/11) | CN (15/11) | TV2 |
@@ -81,6 +82,22 @@ _Điền cuối tuần._
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 11: 16/11 – 23/11)
 
 _Điền cuối tuần. Dự kiến theo kế hoạch tổng: load test 50 RPS, SLO, chi phí._
+
+**Việc bảo mật đã xếp sẵn cho tuần 11 (thêm 13/11).** Các việc này lấy từ những dòng "Chưa có" trong
+[SRS mục 6.6](../../requirements/SRS.md#66-nfr-5--bảo-mật). Khi tạo thư mục `tuan-11`, TV1 chép bảng này vào kế hoạch tuần.
+
+| Nhánh | Người | Việc | Yêu cầu (SRS) | Mở PR | Merge | Review |
+|---|---|---|---|---|---|---|
+| `feat/security-headers-ratelimit` | TV1 Duong | Header bảo mật (CSP, HSTS, `nosniff`, chặn iframe); giới hạn 100 request/phút cho mỗi người dùng, 20 request/phút cho tìm kiếm, vượt thì trả 429. Ngưỡng đặt qua biến môi trường | NFR-5.21, NFR-5.22 | T3 (17/11) | T4 (18/11) | TV3, TV4 |
+| `infra/idp-mfa` | TV3 Bảo | MFA bằng ứng dụng TOTP. Keycloak: luồng đăng nhập bắt OTP với role `hr`, `admin`. Cognito: bật TOTP, đặt MFA bắt buộc cho tài khoản HR, ADMIN; ghi cách làm vào `infra/README.md` | NFR-5.4 | T5 (19/11), 21:00 | T6 (20/11) | TV1 |
+| `docs/security-test-cases-week11` | TV4 Duy | Thêm ca kiểm thử: tự đăng ký, mật khẩu yếu, khóa sau 5 lần sai, hết phiên, MFA, 429, header bảo mật | NFR-5.2 → 5.5, 5.9, 5.21, 5.22 | T4 (18/11), 21:00 | T5 (19/11) | TV1, TV3 |
+
+Thứ tự:
+
+- **Rate limit trước load test.** `feat/security-headers-ratelimit` merge trước load test. Khi load test, dùng nhiều tài khoản
+  hoặc nâng ngưỡng qua biến môi trường, để số đo NFR-1 không bị 429 làm sai.
+- **Chốt MFA trước khi làm `infra/idp-mfa`.** Việc này cần chốt câu hỏi số 2 ở
+  [SRS mục 8](../../requirements/SRS.md#8-vấn-đề-còn-mở): MFA có bắt buộc từ version 1 không.
 
 ## 3. Quyết định quan trọng
 

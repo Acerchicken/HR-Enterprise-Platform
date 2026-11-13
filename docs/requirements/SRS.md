@@ -331,14 +331,14 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 | Mã | Yêu cầu | Ngưỡng | Kiểm chứng | Trạng thái |
 |---|---|---|---|---|
 | NFR-5.1 | Chỉ đăng nhập qua identity provider (OIDC, Authorization Code + PKCE S256); ứng dụng không nhận, không lưu mật khẩu | Không API nào nhận mật khẩu | Review code; e2e | Đã có (Keycloak local, Cognito staging) |
-| NFR-5.2 | Chính sách mật khẩu | Tối thiểu 8 ký tự, có chữ hoa, chữ thường và số; không trùng email; không bắt đổi định kỳ (theo NIST SP 800-63B) | Thử đặt mật khẩu yếu | Một phần: Cognito chưa bắt chữ hoa, Keycloak chưa đặt chính sách |
-| NFR-5.3 | Chống dò mật khẩu | Sai 5 lần liên tiếp trong 15 phút thì khóa tạm tài khoản 15 phút; thông báo lỗi không cho biết sai email hay sai mật khẩu | Thử sai 6 lần | Một phần: Keycloak bật chống dò nhưng chưa đặt ngưỡng 5 lần |
-| NFR-5.4 | Xác thực hai lớp (MFA) cho tài khoản đặc quyền | Bắt buộc với HR và ADMIN (ứng dụng TOTP); nhân viên tự chọn | Đăng nhập bằng tài khoản HR | Chưa có |
-| NFR-5.5 | Thời hạn phiên | Access token ≤ 15 phút; phiên hết sau 30 phút không thao tác; tối đa 10 giờ thì phải đăng nhập lại; token tự gia hạn khi đang dùng | Review cấu hình IdP | Một phần: Keycloak đúng 15 và 30 phút; Cognito đang để mặc định |
+| NFR-5.2 | Chính sách mật khẩu | Tối thiểu 8 ký tự, có chữ hoa, chữ thường và số; không trùng email; không bắt đổi định kỳ (theo NIST SP 800-63B) | Thử đặt mật khẩu yếu | Một phần: Cognito chưa bắt chữ hoa, Keycloak chưa đặt chính sách. Sửa tuần 10 (`infra/idp-hardening`) |
+| NFR-5.3 | Chống dò mật khẩu | Sai 5 lần liên tiếp trong 15 phút thì khóa tạm tài khoản 15 phút; thông báo lỗi không cho biết sai email hay sai mật khẩu | Thử sai 6 lần | Một phần: Keycloak bật chống dò nhưng chưa đặt ngưỡng 5 lần. Sửa tuần 10 (`infra/idp-hardening`) |
+| NFR-5.4 | Xác thực hai lớp (MFA) cho tài khoản đặc quyền | Bắt buộc với HR và ADMIN (ứng dụng TOTP); nhân viên tự chọn | Đăng nhập bằng tài khoản HR | Kế hoạch tuần 11 (`infra/idp-mfa`) |
+| NFR-5.5 | Thời hạn phiên | Access token ≤ 15 phút; phiên hết sau 30 phút không thao tác; tối đa 10 giờ thì phải đăng nhập lại; token tự gia hạn khi đang dùng | Review cấu hình IdP | Một phần: Keycloak đúng 15 và 30 phút; Cognito đang để mặc định. Sửa tuần 10 (`infra/idp-hardening`) |
 | NFR-5.6 | Đăng xuất | Kết thúc phiên ở identity provider và xóa token ở trình duyệt | Đăng xuất rồi bấm Back | Đã có |
 | NFR-5.7 | Giữ token an toàn ở trình duyệt | Token chỉ trong `sessionStorage` (đóng tab là mất), không trong `localStorage`, URL hay log | Review code | Đã có |
 | NFR-5.8 | API kiểm token ở mọi request | Kiểm chữ ký (JWKS), issuer, hạn dùng, client (`azp`/`aud`); sai thì 401 | e2e test token giả, token hết hạn | Đã có |
-| NFR-5.9 | Không tự đăng ký tài khoản | Tài khoản do HR hoặc ADMIN tạo; chỉ liên kết tài khoản với hồ sơ khi email đã xác minh (T-02) | Thử đăng ký trên trang đăng nhập | Một phần: Keycloak đã tắt, Cognito còn cho tự đăng ký |
+| NFR-5.9 | Không tự đăng ký tài khoản | Tài khoản do HR hoặc ADMIN tạo; chỉ liên kết tài khoản với hồ sơ khi email đã xác minh (T-02) | Thử đăng ký trên trang đăng nhập | Một phần: Keycloak đã tắt, Cognito còn cho tự đăng ký. Sửa tuần 10 (`infra/idp-hardening`) |
 | NFR-5.10 | Ghi nhận đăng nhập | Lưu đăng nhập thành công, thất bại, bị khóa và mọi lần cấp, thu hồi vai trò HR, ADMIN (T-03, T-06) | Xem event của IdP và audit | Chưa có |
 
 **b) Phân quyền**
@@ -365,8 +365,8 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 | Mã | Yêu cầu | Ngưỡng | Kiểm chứng | Trạng thái |
 |---|---|---|---|---|
 | NFR-5.20 | Kiểm tra đầu vào ở server | Từ chối trường không khai báo; truy vấn database tham số hóa qua ORM, không ghép chuỗi SQL | e2e gửi trường lạ; review code | Đã có |
-| NFR-5.21 | Giới hạn tần suất gọi (chống lạm dụng, T-05, T-11) | 100 request/phút cho mỗi người dùng, 20 request/phút cho tìm kiếm; vượt thì 429 | Load test vượt ngưỡng | Chưa có |
-| NFR-5.22 | Header bảo mật và CORS | CSP, HSTS, `X-Content-Type-Options: nosniff`, chặn nhúng iframe; CORS chỉ cho domain web | Quét header trên staging | Một phần: CORS đã có, header bảo mật chưa có |
+| NFR-5.21 | Giới hạn tần suất gọi (chống lạm dụng, T-05, T-11) | 100 request/phút cho mỗi người dùng, 20 request/phút cho tìm kiếm; vượt thì 429 | Load test vượt ngưỡng | Kế hoạch tuần 11 (`feat/security-headers-ratelimit`) |
+| NFR-5.22 | Header bảo mật và CORS | CSP, HSTS, `X-Content-Type-Options: nosniff`, chặn nhúng iframe; CORS chỉ cho domain web | Quét header trên staging | Một phần: CORS đã có, header bảo mật làm tuần 11 (`feat/security-headers-ratelimit`) |
 | NFR-5.23 | Kiểm soát file tải lên | Chỉ PDF, DOCX; tối đa 20 MB; kiểm loại file theo nội dung, không chỉ theo đuôi | Thử tải file `.exe` đổi đuôi | Kế hoạch tuần 10 |
 | NFR-5.24 | Thông báo lỗi không lộ thông tin nội bộ | Chỉ trả `{ code, message, traceId }`, không trả stack trace hay câu SQL | e2e test lỗi 500 | Đã có |
 
