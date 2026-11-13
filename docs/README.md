@@ -15,7 +15,7 @@ flowchart LR
 | Giai đoạn | Tài liệu | Trả lời câu hỏi | Mã truy vết | Tương ứng chuẩn |
 |---|---|---|---|---|
 | 1. Yêu cầu nghiệp vụ | [BRD](business/BRD.md) + [business rule nghỉ phép](business/leave-rules.md), [loại phép, ngày lễ](business/leave-types-holidays.md), [kho tài liệu](business/document-rules.md) | Bối cảnh, mục tiêu, phạm vi, người dùng, quy trình, business rule, nghiệm thu | `MT-n`, `BR-nn` | BRS/StRS – ISO/IEC/IEEE 29148 |
-| 2. Yêu cầu phần mềm | [SRS](requirements/SRS.md) | Yêu cầu chức năng, dữ liệu, phi chức năng, giao diện ngoài, truy vết | `FR-x.y`, `NFR-n` | SRS – ISO/IEC/IEEE 29148 |
+| 2. Yêu cầu phần mềm | [SRS](requirements/SRS.md); tài liệu từng tính năng [`features/`](features/README.md) (UC1 → UC7: requirements, spec, deploy, test) | Yêu cầu chức năng, dữ liệu, phi chức năng, giao diện ngoài, truy vết; luồng từng use case | `FR-x.y`, `NFR-n.m`, `UCn` | SRS – ISO/IEC/IEEE 29148 |
 | 3. Kiến trúc | [SAD](architecture/SAD.md): [phần 1 – kiến trúc hệ thống](architecture/SAD-1-system-architecture.md), [phần 2 – kiến trúc phần mềm](architecture/SAD-2-software-architecture.md), [ADR](architecture/adr/README.md); phụ lục [database schema](architecture/database-schema.md), [hợp đồng event](architecture/event-contract.md) | Khối, hạ tầng, module, pattern, quyết định; bảng, cột, khóa; event qua queue | `ADR-nn` | ISO/IEC/IEEE 42010 |
 | 4. Bảo mật | [Ma trận phân quyền](security/access-control-matrix.md), [threat model](security/threat-model.md) | Ai được gọi API nào; mối đe dọa và cách chặn | – | STRIDE |
 | 5. Hợp đồng API | [`openapi.yaml`](openapi.yaml) | Endpoint, request, response | – | OpenAPI 3 |

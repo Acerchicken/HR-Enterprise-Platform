@@ -3,7 +3,7 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform – môn Cloud Application Development |
-| Phiên bản tài liệu | 1.1 |
+| Phiên bản tài liệu | 1.2 |
 | Ngày | 13/11/2026 (tuần 10) |
 | Người soạn | TV1 (Dương), tách từ BRD 1.0 |
 | Người review | TV2 (Thanh) nghiệp vụ, TV4 (Duy) khả năng kiểm thử |
@@ -15,6 +15,7 @@
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
+| 1.2 | 13/11/2026 | Thêm tài liệu theo tính năng UC1 → UC7 trong `docs/features/`: mỗi tính năng có `requirements.md` (user story, tiêu chí chấp nhận), `spec.md` (đặc tả use case), `deploy.md`, `test.md`; link từ mục 4 |
 | 1.1 | 13/11/2026 | Tách rõ FR và NFR (định nghĩa, tiêu đề mục, bảng phân biệt). Viết lại mục 6: 11 nhóm NFR, 74 yêu cầu có ngưỡng đo, cách kiểm chứng và trạng thái; bảo mật chia 5 phần (đăng nhập và phiên, phân quyền, bảo vệ dữ liệu, bảo mật ứng dụng web, secret); thêm SLI/SLO/SLA (6.13) và kịch bản lỗi (6.14) |
 | 1.0 | 12/11/2026 | Tách từ BRD 1.0: yêu cầu chức năng (BRD mục 7), dữ liệu (mục 9), phi chức năng (mục 10), ma trận truy vết (mục 14). Thêm mô tả tổng quan, giao diện ngoài, phương pháp kiểm chứng và cột thiết kế trong ma trận truy vết. Nội dung yêu cầu giữ nguyên |
 
@@ -143,9 +144,14 @@ Chi tiết cách tích hợp: [kiến trúc hệ thống mục 2](../architectur
 > một xử lý hệ thống phải làm. Mỗi FR thuộc đúng một use case và có tiêu chí chấp nhận để viết ca kiểm thử.
 > Yêu cầu về tốc độ, bảo mật, sẵn sàng… không nằm ở đây mà ở [mục 6 (NFR)](#6-yêu-cầu-phi-chức-năng-nfr).
 
+**Tài liệu theo từng tính năng** (tiêu chí chấp nhận, đặc tả use case, cách triển khai, cách kiểm thử):
+[`docs/features/`](../features/README.md). Bảng FR dưới đây là nguồn chính về yêu cầu; đặc tả mô tả yêu cầu diễn ra thế nào.
+
 Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo MoSCoW: **M** (bắt buộc), **S** (nên có), **C** (có thể có).
 
 ### 4.1 UC1 – Hồ sơ nhân viên (FR-1.x)
+
+Đặc tả: [features/UC1-employee-profile/spec.md](../features/UC1-employee-profile/spec.md) (yêu cầu kèm tiêu chí: [requirements.md](../features/UC1-employee-profile/requirements.md)).
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
@@ -158,6 +164,8 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 ### 4.2 UC2 – Thông tin tổ chức (FR-2.x)
 
+Đặc tả: [features/UC2-organization/spec.md](../features/UC2-organization/spec.md) (yêu cầu kèm tiêu chí: [requirements.md](../features/UC2-organization/requirements.md)).
+
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
 | FR-2.1 | Danh bạ: tìm theo tên, email, mã; lọc phòng ban; phân trang | M | Không hiện nhân viên đã nghỉ việc; tối đa 100 dòng/trang | Đã có |
@@ -167,6 +175,8 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-2.5 | Mỗi nhân viên có đúng một quản lý trực tiếp, trừ CEO | M | Tạo/sửa nhân viên thiếu quản lý (không phải CEO) bị từ chối (issue #22) | Đã có (tuần 10) |
 
 ### 4.3 UC3 – Tạo đơn nghỉ (FR-3.x)
+
+Đặc tả: [features/UC3-create-leave-request/spec.md](../features/UC3-create-leave-request/spec.md) (yêu cầu kèm tiêu chí: [requirements.md](../features/UC3-create-leave-request/requirements.md)).
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
@@ -180,6 +190,8 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 ### 4.4 UC4 – Duyệt đơn (FR-4.x)
 
+Đặc tả: [features/UC4-approve-leave-request/spec.md](../features/UC4-approve-leave-request/spec.md) (yêu cầu kèm tiêu chí: [requirements.md](../features/UC4-approve-leave-request/requirements.md)).
+
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
 | FR-4.1 | Quản lý xem danh sách đơn chờ duyệt của cấp dưới trực tiếp | M | Không thấy đơn của người không trực thuộc | Đã có |
@@ -192,6 +204,8 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 ### 4.5 UC5 – Kho tài liệu chính sách (FR-5.x)
 
+Đặc tả: [features/UC5-document-repository/spec.md](../features/UC5-document-repository/spec.md) (yêu cầu kèm tiêu chí: [requirements.md](../features/UC5-document-repository/requirements.md)).
+
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
 | FR-5.1 | HR tải lên tài liệu PDF/DOCX kèm tiêu đề, loại, phạm vi xem (toàn công ty, phòng ban, vai trò) | M | Chỉ HR tải lên được; file không đi qua API mà tải thẳng lên object storage | Kế hoạch tuần 10 |
@@ -200,6 +214,8 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 ### 4.6 UC6 – Tự tra cứu (FR-6.x)
 
+Đặc tả: [features/UC6-self-service-search/spec.md](../features/UC6-self-service-search/spec.md) (yêu cầu kèm tiêu chí: [requirements.md](../features/UC6-self-service-search/requirements.md)).
+
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
 | FR-6.1 | Tìm đồng nghiệp | M | Như FR-2.1 | Đã có |
@@ -207,6 +223,8 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-6.3 | Trợ lý trả lời câu hỏi về chính sách HR, có trích dẫn tài liệu nguồn | C | Chỉ dùng tài liệu người hỏi được xem; không trả lời được thì chỉ tới tài liệu gốc | Kế hoạch tuần 12 |
 
 ### 4.7 UC7 – Lịch sử thao tác (FR-7.x)
+
+Đặc tả: [features/UC7-audit-log/spec.md](../features/UC7-audit-log/spec.md) (yêu cầu kèm tiêu chí: [requirements.md](../features/UC7-audit-log/requirements.md)).
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|

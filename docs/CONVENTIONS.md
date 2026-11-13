@@ -90,7 +90,9 @@ Danh sách nhánh của từng tuần ghi trong `docs/progress/tuan-NN/README.md
 Mỗi việc một nhánh, mỗi nhánh **một PR duy nhất**. Review diễn ra ngay trên PR: chưa đạt thì sửa tiếp trên cùng nhánh, PR tự
 cập nhật, không đóng PR để mở PR mới. Lịch sử thảo luận và các lần sửa nằm hết trong PR đó.
 
-1. Tách nhánh từ `dev` mới nhất: `git checkout dev && git pull && git checkout -b <nhánh>`.
+1. Việc thuộc một tính năng (UC1 → UC7) thì đọc thư mục tính năng trong [`docs/features/`](features/README.md) trước:
+   `requirements.md` (chọn mã `AC` sẽ làm), `spec.md` (luồng, ngoại lệ), `deploy.md`, `test.md`. Tách nhánh từ `dev` mới nhất:
+   `git checkout dev && git pull && git checkout -b <nhánh>`.
 2. Mỗi nhánh **chỉ một việc**, sống tối đa vài ngày. Việc lớn thì chia thành nhiều nhánh nối tiếp nhau, mỗi nhánh một PR nhỏ.
 3. Commit theo Conventional Commits: `feat(leave): add approve endpoint`, `fix(employee): ...`, `docs(business): ...`,
    `chore(infra): ...`, `ci: ...`, `test: ...`.
@@ -102,7 +104,8 @@ cập nhật, không đóng PR để mở PR mới. Lịch sử thảo luận v�
 6. **Người làm sửa trên chính nhánh đó**, commit rồi `git push`. PR tự thêm commit mới. Trả lời từng comment ("đã sửa ở
    <commit>") hoặc bấm "Resolve conversation", rồi bấm "Re-request review". Lặp lại bước 5–6 tới khi được approve.
 7. Trước khi merge: đã kéo `dev` mới nhất về nhánh (`git pull origin dev`) và hết xung đột; PR code thì CI xanh
-   (lint, test, build).
+   (lint, test, build). PR làm tính năng thì cập nhật 4 file của tính năng trong cùng PR (trạng thái AC, hiện trạng, migration
+   và biến môi trường mới, test mới), theo [`docs/features/README.md`](features/README.md#làm-một-tính-năng-theo-tài-liệu-này).
 8. Sau khi được approve và CI xanh, **Duong merge** bằng **squash merge** (các commit sửa gộp thành một, lịch sử `dev` vẫn
    gọn), rồi xóa nhánh. Người mở PR không tự merge.
 9. Thứ 2 hằng tuần, TV1 mở PR `dev` → `main` và merge bằng **merge commit** (không squash) để giữ commit và tên tác giả của

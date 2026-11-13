@@ -81,7 +81,8 @@ _Điền cuối tuần._
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 11: 16/11 – 23/11)
 
-_Điền cuối tuần. Dự kiến theo kế hoạch tổng: load test 50 RPS, SLO, chi phí._
+_Điền cuối tuần._ Kế hoạch tuần 11–13 đã chia theo từng tính năng (cập nhật 13/11):
+[kế hoạch tổng mục 7](../tuan-04-ke-hoach-tong.md#7-kế-hoạch-theo-chức-năng-tuần-11--13). Bảng bảo mật dưới đây đã nằm trong mục 7.2.
 
 **Việc bảo mật đã xếp sẵn cho tuần 11 (thêm 13/11).** Các việc này lấy từ những dòng "Chưa có" trong
 [SRS mục 6.6](../../requirements/SRS.md#66-nfr-5--bảo-mật). Khi tạo thư mục `tuan-11`, TV1 chép bảng này vào kế hoạch tuần.

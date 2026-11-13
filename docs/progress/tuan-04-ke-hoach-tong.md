@@ -62,6 +62,9 @@ thực tế chỉ TV1 code nên nhóm điều chỉnh theo [ADR-11](../architect
 
 Tuần 9–13 là kế hoạch tổng quan vì nhóm chưa học P3–P5; mỗi tuần sẽ được chi tiết hóa trong báo cáo thứ 2 của tuần liền trước.
 
+**Cập nhật 13/11:** tuần 11–13 được chia lại theo từng tính năng trong [`docs/features/`](../features/README.md), xem
+[mục 7](#7-kế-hoạch-theo-chức-năng-tuần-11--13). Phần P4, P5 vẫn giữ, nhưng tính năng nào chưa xong thì làm trước.
+
 ## 5. Quyết định quan trọng
 
 ### ADR-05 – Phạm vi MVP: một luồng nghiệp vụ nghỉ phép end-to-end
@@ -76,3 +79,70 @@ Tuần 9–13 là kế hoạch tổng quan vì nhóm chưa học P3–P5; mỗi 
 | TV2 (Thanh) | Functional requirements cho 7 use case theo actor–action–input–output–business rule | Bảng functional requirements |
 | TV3 (Bảo) | User journey đơn nghỉ phép; NFR có target cụ thể | User journey, bảng NFR |
 | TV4 (Duy) | Workload analysis, ước lượng average RPS và peak RPS; kiến trúc cloud ban đầu | Bảng workload, sơ đồ kiến trúc v1 |
+
+## 7. Kế hoạch theo chức năng (tuần 11 – 13)
+
+> Lập 13/11/2026 từ mục "Việc còn lại" trong `requirements.md` của từng tính năng ([`docs/features/`](../features/README.md)).
+> Mỗi dòng là một nhánh, một PR. Cột "Tiêu chí" là mã AC trong `requirements.md`: PR ghi các mã này trong mô tả, và chỉ xong khi
+> các AC đó có test (xem `test.md`) và chạy được theo `deploy.md`. Báo cáo thứ 2 hằng tuần chép phần của tuần đó vào
+> `tuan-NN/README.md` và chỉnh ngày nếu cần.
+
+### 7.1 Tính năng còn thiếu, theo mức ưu tiên
+
+| Tính năng | Việc | FR | Mức | Tuần |
+|---|---|---|---|---|
+| UC5 | Giao diện kho tài liệu | FR-5.1 → 5.3 | M | 10, trễ thì đầu 11 |
+| UC6 | Tìm tài liệu (trích văn bản, full-text, giao diện) | FR-6.2 | M | 10, trễ thì đầu 11 |
+| UC7 | Màn hình tra cứu audit | FR-7.3 | M | 10, trễ thì đầu 11 |
+| UC3, UC4 | Ẩn lý do nghỉ ốm với quản lý, email chỉ báo chung | BR-14, BR-15, NFR-5.18 | M (riêng tư) | 11 |
+| UC1 | Bắt buộc `version` khi sửa; quy tắc chấm dứt nhân viên còn cấp dưới | FR-1.6 | S | 11 |
+| UC3, UC4 | Tạo đơn hộ, người duyệt thay | FR-3.7, FR-4.3 | S | 10, trễ thì 11 |
+| UC5 | Kho tài liệu trên staging | FR-5.x | M | 12 |
+| UC6 | Trợ lý chính sách | FR-6.3 | C | 12 |
+| UC2 | Giao diện quản lý phòng ban | FR-2.4 | S | 13, cắt đầu tiên |
+| UC7 | Audit đăng nhập, cấp và thu hồi vai trò | NFR-5.10 | – | 13, cắt thứ hai |
+
+Thiếu thời gian thì cắt từ dưới lên và ghi vào báo cáo tuần.
+
+### 7.2 Tuần 11 (16/11 – 23/11): xong phần còn lại của UC1, UC3, UC4, UC6 và P4
+
+Thứ tự trong tuần: việc tuần 10 còn dở → riêng tư đơn nghỉ → rate limit → load test. Load test chạy trên code đã đủ tính năng.
+
+| Nhánh | Người | Tính năng | Việc | Tiêu chí | Mở PR | Merge | Review |
+|---|---|---|---|---|---|---|---|
+| `feat/document-search`, `feat/audit-ui`, `feat/leave-delegation` | TV1 Duong | UC5, UC6, UC7, UC3, UC4 | Chỉ khi tuần 10 chưa merge | Như `requirements.md` | T2 (16/11) | T3 (17/11) | Như tuần 10 |
+| `docs/org-integrity-rules` | TV2 Thanh | UC1, UC2, UC7 | Chốt: chấm dứt nhân viên còn cấp dưới; ý nghĩa `headEmployeeId`; thời gian lưu audit (BR-13 5 năm hay NFR-6.3 2 năm) | AC-1.7.1 | T2 (16/11), 21:00 | T3 (17/11) | TV1, TV4 |
+| `feat/leave-privacy` | TV1 Duong | UC3, UC4 | Ẩn lý do nghỉ ốm với quản lý (chi tiết, danh sách, lịch sử); email chỉ báo chung; sửa unit test nội dung email | AC-4.6.3, AC-4.7.3 | T3 (17/11) | T4 (18/11) | TV2, TV4 |
+| `feat/security-headers-ratelimit` | TV1 Duong | Chung, UC6 | Header bảo mật; 100 request/phút mỗi người, 20/phút cho tìm kiếm | AC-6.2.7 | T3 (17/11) | T4 (18/11) | TV3, TV4 |
+| `fix/employee-org-integrity` | TV1 Duong | UC1 | Bắt buộc `version`; chặn theo quy tắc TV2 vừa chốt | AC-1.6.2, AC-1.7.1 | T5 (19/11) | T6 (20/11) | TV2, TV4 |
+| `infra/idp-mfa` | TV3 Bảo | Chung | MFA TOTP cho HR, ADMIN | NFR-5.4 | T5 (19/11), 21:00 | T6 (20/11) | TV1 |
+| `docs/test-cases-week11` | TV4 Duy | UC1 → UC7 | Ca còn thiếu trong mục 7 của mọi `test.md` | Theo `test.md` | T4 (18/11), 21:00 | T5 (19/11) | TV2, TV1 |
+| `docs/security-test-cases-week11` | TV4 Duy | Chung | Tự đăng ký, mật khẩu yếu, khóa 5 lần sai, hết phiên, MFA, 429, header | NFR-5.2 → 5.5, 5.9, 5.21, 5.22 | T4 (18/11), 21:00 | T5 (19/11) | TV1, TV3 |
+| `test/load-k6` | TV4 Duy, TV1 hỗ trợ | UC1 → UC5, UC7 | Load test local: 50 request/giây 15 phút; đo NFR-1.1 → 1.3, NFR-2.1, NFR-2.4 (3,75 triệu bản ghi audit), băng thông tải tài liệu | NFR-1, NFR-2 | T6 (20/11) | CN (22/11) | TV1, TV3 |
+| `docs/slo-dashboard-cost` | TV3 Bảo | Chung | Dashboard CloudWatch theo SLI ở SRS 6.13; chi phí/tháng cập nhật theo kết quả load test | SRS 6.13 | T7 (21/11), 21:00 | CN (22/11) | TV1 |
+| `docs/test-report-week11` | TV4 Duy | UC1 → UC7 | Chạy ca kiểm thử trên `dev` (local), ghi ngày, commit | – | CN (22/11), 12:00 | T2 (23/11), 9:00 | TV1 |
+
+### 7.3 Tuần 12 (23/11 – 30/11): staging trên AWS, UC5 trên cloud, trợ lý UC6
+
+| Nhánh | Người | Tính năng | Việc | Tiêu chí | Mở PR | Merge | Review |
+|---|---|---|---|---|---|---|---|
+| (không có nhánh) | TV3 Bảo | Chung, UC5 | `terraform apply` staging theo `docs/aws-rollout-plan`; bucket tài liệu và `STORAGE_*`; chạy Deploy Staging với seed | `deploy.md` mục 5 của UC1 → UC5, UC7 | T3 (24/11) xong | – | TV1 |
+| `docs/adr-14-policy-assistant` | TV1 Duong | UC6 | ADR-14: cách truy hồi đoạn văn bản (full-text hay `pgvector`), nhà cung cấp LLM, ngưỡng đánh giá | AC-6.3.5 | T2 (23/11) | T3 (24/11) | TV2, TV3 |
+| `docs/assistant-eval-set` | TV2 Thanh | UC6 | Bộ ≥ 30 câu hỏi có đáp án, tài liệu nguồn; có câu ngoài tài liệu, câu prompt injection; độ dài câu hỏi tối đa | AC-6.3.1 → 6.3.3 | T3 (24/11), 21:00 | T4 (25/11) | TV1, TV4 |
+| `infra/llm-secrets-cost` | TV3 Bảo | UC6 | Khóa LLM trong Secrets Manager, budget alarm cho chi phí LLM | NFR-7.1 | T4 (25/11), 21:00 | T5 (26/11) | TV1 |
+| `feat/policy-assistant` | TV1 Duong | UC6 | API và giao diện hỏi đáp; lọc phạm vi trước khi gửi LLM; trích dẫn; timeout 10 s, lùi về danh sách tài liệu | AC-6.3.1 → 6.3.4 | T5 (26/11) | T6 (27/11) | TV2, TV4 |
+| `docs/test-report-week12` | TV4 Duy | UC1 → UC7 | Chạy ca kiểm thử trên **staging**, nhất là UC5 (S3, CORS, bucket không public) và đăng nhập Cognito; load test ngắn trên staging | `test.md` | T7 (28/11), 21:00 | CN (29/11) | TV1 |
+| `docs/assistant-eval-report` | TV4 Duy | UC6 | Chạy bộ đánh giá: tỉ lệ đúng, có trích dẫn, độ trễ, chi phí mỗi câu | AC-6.3.5 | CN (29/11), 12:00 | T2 (30/11), 9:00 | TV1, TV2 |
+
+Trợ lý là mức C: nếu đến T5 (26/11) staging chưa chạy được thì dừng trợ lý, dồn sức cho staging.
+
+### 7.4 Tuần 13 (30/11 – 7/12): đóng băng, sửa lỗi, bảo vệ
+
+| Nhánh | Người | Việc | Hạn |
+|---|---|---|---|
+| `feat/department-admin-ui` | TV1 Duong | UC2 AC-2.4.5, chỉ khi tuần 11–12 xong hết | Merge T3 (1/12) |
+| `infra/idp-auth-events` | TV3 Bảo | UC7 AC-7.4.1: ghi đăng nhập, cấp và thu hồi vai trò từ Keycloak, Cognito | Merge T3 (1/12) |
+| – | Cả nhóm | **Đóng băng tính năng T4 (2/12).** Sau đó chỉ merge sửa lỗi | T4 (2/12) |
+| `docs/feature-status-final` | TV2 Thanh | Cập nhật trạng thái mọi AC trong `requirements.md`, mục 12 `spec.md`, cột trạng thái FR trong SRS; báo cáo MT-2 từ `leave_request_history` | T5 (3/12) |
+| `docs/test-report-final` | TV4 Duy | Chạy lại toàn bộ ca kiểm thử trên staging, bảng phủ AC cuối cùng | T6 (4/12) |
+| – | TV1, cả nhóm | Báo cáo cuối, slide, video demo, Architecture Defense; tắt staging sau buổi bảo vệ | T2 (7/12) |
