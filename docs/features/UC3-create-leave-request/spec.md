@@ -29,7 +29,8 @@ qua email. Gửi lại do mạng lỗi không tạo đơn thứ hai.
 
 - **Điều kiện trước:**
   - Người dùng đã đăng nhập, tài khoản gắn với hồ sơ đang làm việc.
-  - Có số dư phép năm hiện tại cho loại phép chọn.
+  - Số dư: seed cấp số dư năm cho mọi nhân viên. Loại phép chưa có dòng số dư của năm (nhân viên mới, nghỉ cưới…) được tự
+    tạo khi tạo đơn, với số ngày được hưởng = `max_days_per_year` của loại phép (chưa tính theo tỉ lệ ngày vào làm).
   - Danh sách ngày lễ của năm đã có.
 - **Kích hoạt:** nhân viên bấm "Tạo đơn nghỉ".
 - **Điều kiện sau khi thành công:**
@@ -97,7 +98,9 @@ sequenceDiagram
 | E6 | Hủy đơn đã duyệt (BR-08) hoặc đã có quyết định khác | 409 `CONFLICT` |
 | E7 | Hủy đơn của người khác | 403 `FORBIDDEN` |
 | E8 | Hủy với `version` cũ | 409 `CONFLICT` |
-| E9 | Tài khoản chưa gắn hồ sơ | 403 `FORBIDDEN` |
+| E9 | Tài khoản chưa gắn hồ sơ | 404 `NOT_FOUND` ("Tài khoản chưa gắn với nhân viên") |
+| E10 | Khoảng nghỉ qua hai năm, ví dụ 30/12 – 2/1 | 400 `BAD_REQUEST`, yêu cầu tách thành hai đơn |
+| E11 | Dùng lại `Idempotency-Key` cũ cho đơn khác (loại phép, ngày hoặc buổi khác) | 409 `CONFLICT` |
 
 ## 7. Quy tắc áp dụng
 
@@ -147,3 +150,20 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Email chỉ chứa thông báo chung (BR-15) | Chưa có: email còn tên, loại phép, ngày | TV1 sửa `buildEmail` và payload event |
 | Ẩn lý do nghỉ ốm với quản lý (BR-14) | Chưa có | TV1 sửa response chi tiết, danh sách, lịch sử |
 | Lưu trữ 5 năm, legal hold (BR-13) | Chưa có | Thiết kế sau MVP; ghi trong SRS mục 8 |
+
+## 13. Thiết kế đề xuất cho phần chưa có
+
+> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/leave-delegation`; khác đề xuất thì sửa mục này trong cùng PR.
+
+### 13.1 Tạo đơn hộ (FR-3.7, BR-12)
+
+- **API:** dùng lại `POST /leave-requests`, thêm trường tùy chọn `employeeId` (chủ đơn). Không gửi thì chủ đơn là người gọi như hiện nay.
+- **Kiểm quyền:** có `employeeId` khác người gọi thì người gọi phải là HR, hoặc là quản lý trực tiếp hiện tại của chủ đơn. Quan hệ
+  duyệt thay (BR-06) không tính. Sai thì 403.
+- **Dữ liệu:** thêm cột `leave_request.created_by` (người tạo, mặc định bằng chủ đơn). Lịch sử dòng đầu ghi `actorId` = người tạo.
+  Audit `LEAVE_SUBMIT`: `actorId` = người tạo, `changedFields` thêm `onBehalfOf` = chủ đơn.
+- **Khóa và idempotency:** khóa advisory theo **chủ đơn**; `Idempotency-Key` duy nhất theo (chủ đơn, key) như hiện tại.
+- **Email:** event `LeaveRequested` gửi quản lý như thường, thêm một email báo chủ đơn "có đơn nghỉ được tạo cho bạn" (nội dung
+  chung theo BR-15).
+- **Giao diện:** `/leave/new` thêm ô "Tạo cho" chỉ hiện với HR (tìm mọi nhân viên) và quản lý (chọn trong cấp dưới trực tiếp).
+  Số dư hiển thị là số dư của người được chọn: cần API `GET /leave-balances?employeeId=` cho HR và quản lý trực tiếp.

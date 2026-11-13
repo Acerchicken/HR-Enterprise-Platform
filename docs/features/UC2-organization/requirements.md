@@ -19,7 +19,7 @@
 
 - **AC-2.1.1** Khi tìm theo một phần tên, email hoặc mã. Thì trả các nhân viên khớp, có phân trang.
 - **AC-2.1.2** Giả sử nhân viên X đã `TERMINATED`. Khi tìm đúng tên X. Thì X không có trong kết quả.
-- **AC-2.1.3** Khi lọc theo `departmentId`. Thì chỉ trả nhân viên thuộc phòng ban đó.
+- **AC-2.1.3** Khi lọc theo `dept` (UUID phòng ban). Thì chỉ trả nhân viên thuộc phòng ban đó.
 - **AC-2.1.4** Khi gửi `size` lớn hơn 100. Thì trả 400.
 
 ### FR-2.2 Cây tổ chức (M, đã có)
@@ -38,6 +38,9 @@
 - **AC-2.4.3** Khi mã phòng ban đã tồn tại. Thì trả 409.
 - **AC-2.4.4** Khi nhân viên hoặc quản lý tạo, sửa phòng ban. Thì trả 403.
 - **AC-2.4.5** *(chưa có)* HR, ADMIN tạo và sửa phòng ban trên giao diện, lỗi hiện đúng ô.
+- **AC-2.4.6** *(chưa đạt)* Khi tạo phòng ban không có `parentId`, hoặc sửa `parentId` thành `null`. Thì trả 400; cây giữ
+  đúng một gốc. Hiện API chấp nhận và tạo thêm gốc.
+- **AC-2.4.7** *(chưa đạt)* Khi `headEmployeeId` không phải nhân viên đang làm việc. Thì trả 400. Hiện API không kiểm.
 
 ### FR-2.5 Một quản lý trực tiếp, trừ CEO (M, đã có, PR #60)
 
@@ -61,4 +64,5 @@ Lịch làm theo [kế hoạch theo chức năng tuần 11–13](../../progress/
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
 | Chốt ý nghĩa `headEmployeeId` và quan hệ với quản lý trực tiếp | – | TV2 | `docs/org-integrity-rules` | 11 |
+| Chặn gốc thứ hai, kiểm `headEmployeeId` | AC-2.4.6, AC-2.4.7 | TV1 | `fix/employee-org-integrity` | 11 |
 | Giao diện quản lý phòng ban (mức S, cắt đầu tiên nếu thiếu thời gian) | AC-2.4.5 | TV1 | `feat/department-admin-ui` | 13 |

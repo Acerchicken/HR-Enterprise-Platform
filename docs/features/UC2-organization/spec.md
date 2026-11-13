@@ -79,6 +79,8 @@ tạo, sửa phòng ban. Quan hệ quản lý trực tiếp quyết định ai d
 | E4 | Mã phòng ban đã tồn tại | 409 `CONFLICT` |
 | E5 | Phòng ban hoặc nhân viên không tồn tại | 404 `NOT_FOUND` |
 | E6 | `size` lớn hơn 100 | 400 `BAD_REQUEST` |
+| E7 | Tạo phòng ban không có `parentId`, hoặc sửa `parentId` thành `null` | **Hiện được chấp nhận**, tạo thêm một gốc. Phải là 400 để giữ một gốc (mục 12) |
+| E8 | `headEmployeeId` không phải nhân viên có thật | **Hiện được chấp nhận** (không có khóa ngoại, không kiểm). Phải là 400 (mục 12) |
 
 ## 7. Quy tắc áp dụng
 
@@ -99,8 +101,8 @@ tạo, sửa phòng ban. Quan hệ quản lý trực tiếp quyết định ai d
 | `page`, `size` | Không | `size` tối đa 100 |
 | `name`, `code` (phòng ban) | Có khi tạo | `code` gồm chữ in hoa, số, gạch ngang, 2–20 ký tự, duy nhất; không sửa sau khi tạo |
 | `office` | Không | Văn phòng của phòng ban |
-| `parentId` | Không (chỉ gốc được trống) | Phòng ban tồn tại, không tạo vòng |
-| `headEmployeeId` | Không | Nhân viên tồn tại |
+| `parentId` | Không (chỉ gốc được trống, nhưng API chưa chặn) | Phòng ban tồn tại, không tạo vòng |
+| `headEmployeeId` | Không | UUID. API chưa kiểm nhân viên có tồn tại |
 
 ## 9. Giao diện và API
 
@@ -129,3 +131,5 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Tạo, sửa phòng ban | Có API, chưa có giao diện | Làm giao diện nếu còn thời gian (mức S) |
 | Ý nghĩa `headEmployeeId` và quan hệ với quản lý trực tiếp | Chưa chốt | TV2 chốt (bản nháp UC1/UC2 tuần 8) |
 | Gán quản lý đã nghỉ việc | Đã chặn (400, PR #60) | – |
+| Chặn gốc thứ hai (E7), kiểm `headEmployeeId` (E8) | Chưa có | TV1, `fix/employee-org-integrity` tuần 11 |
+| Audit phòng ban | Đã có | `changedFields` ghi giá trị mới (tên, mã, văn phòng, cha, trưởng đơn vị); không có dữ liệu cá nhân |

@@ -29,6 +29,7 @@ thuật toán chặn vòng; e2e kiểm cây, quy tắc một quản lý; ca SEC 
 | AC-2.4.2 | "tạo, sửa phòng ban: … không tạo được vòng lặp" | – | Có |
 | AC-2.4.3 | – | Cần thêm | Chưa |
 | AC-2.4.5 | – | – | Chưa có giao diện |
+| AC-2.4.6, AC-2.4.7 | – | – | Chưa đạt (API chấp nhận gốc thứ hai, `headEmployeeId` bất kỳ) |
 | AC-2.5.1 | "tạo nhân viên không phải CEO mà thiếu quản lý → 400; tạo CEO thứ hai → 400" | – | Có |
 | AC-2.5.2 | "HR không gán được quản lý tạo vòng lặp" | – | Có |
 | AC-2.5.3 | "gán quản lý đã nghỉ việc → 400; gán quản lý cho CEO → 400; bỏ quản lý của nhân viên → 400" | – | Có |
@@ -52,4 +53,4 @@ npm run test:e2e
 
 ## 7. Ca còn thiếu (TV4)
 
-AC-2.1.1 (theo mã, email), AC-2.1.2, AC-2.1.3, AC-2.1.4, AC-2.4.3.
+AC-2.1.1 (theo mã, email), AC-2.1.2, AC-2.1.3, AC-2.1.4, AC-2.4.3; AC-2.4.6, AC-2.4.7 khi `fix/employee-org-integrity` xong.

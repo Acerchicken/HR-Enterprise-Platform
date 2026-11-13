@@ -26,6 +26,7 @@ hiệu năng tra cứu đo với dữ liệu lớn.
 | AC-7.3.2 | "nhân viên không xem được audit log", "audit log: HR, ADMIN xem được; MANAGER bị chặn" | SEC-03, SEC-04 | Có |
 | AC-7.3.3 | – | Cần thêm | Chưa |
 | AC-7.3.4 | – | – | Chưa có giao diện |
+| AC-7.3.5 | – | Cần thêm | Chưa |
 | AC-7.4.1 | – | – | Chưa có tính năng |
 
 ## 4. Dữ liệu và tài khoản
@@ -50,5 +51,5 @@ npm run test:e2e
 
 - AC-7.1.2: thao tác lỗi (ví dụ duyệt với `version` cũ) không sinh audit.
 - AC-7.1.3: audit không chứa CCCD, số tài khoản, lý do nghỉ ốm.
-- AC-7.3.1: lọc theo `actor` và khoảng thời gian. AC-7.3.3: ngày sai định dạng, `size = 101`.
+- AC-7.3.1: lọc theo `actor` và khoảng thời gian; AC-7.3.5: `to` không tính mốc. AC-7.3.3: ngày sai định dạng, `size = 101`.
 - AC-7.1.1 cho thao tác kho tài liệu (`DOCUMENT_*`).

@@ -18,7 +18,8 @@
 - **AC-7.1.1** Mỗi thao tác trong bảng "Các thao tác được ghi" của [spec.md](spec.md#2-tác-nhân-và-quyền) tạo đúng một bản ghi
   có người thực hiện, hành động, loại và ID đối tượng, thời điểm, `traceId`, danh sách trường đã đổi.
 - **AC-7.1.2** Khi thao tác nghiệp vụ lỗi giữa chừng. Thì không có bản ghi audit và không có thay đổi dữ liệu (cùng giao dịch).
-- **AC-7.1.3** Audit không chứa giá trị CCCD, số tài khoản, lương, lý do nghỉ ốm; chỉ tên trường (ADR-08, BR-14).
+- **AC-7.1.3** Audit không chứa giá trị CCCD, số tài khoản, lương (chỉ `***`), không chứa lý do nghỉ (ADR-08, BR-14). Ghi chú
+  duyệt, từ chối và giá trị trường cá nhân: xem UC4 AC-4.7.4, UC1 AC-1.4.3.
 
 ### FR-7.2 Chỉ thêm, không sửa xóa (M, đã có)
 
@@ -33,6 +34,8 @@
 - **AC-7.3.3** Khi ngày sai định dạng ISO 8601 hoặc `size` lớn hơn 100. Thì trả 400.
 - **AC-7.3.4** *(chưa có)* Trang "Lịch sử thao tác": chọn đối tượng, nhập ID, người thực hiện, khoảng thời gian; bảng kết quả
   có thời điểm, người, hành động, `traceId`.
+- **AC-7.3.5** Khi lọc `from=2026-11-01&to=2026-11-02`. Thì có bản ghi của cả ngày 1/11, không có bản ghi ngày 2/11 (`to` không
+  tính mốc).
 
 ### Chưa có (NFR)
 

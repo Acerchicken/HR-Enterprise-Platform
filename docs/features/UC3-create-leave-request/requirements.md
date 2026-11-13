@@ -20,6 +20,8 @@
 - **AC-3.1.1** Khi nhân viên xem số dư. Thì mỗi loại phép có được hưởng, đã dùng, đang chờ, còn lại; còn lại = được hưởng −
   đã dùng − đang chờ.
 - **AC-3.1.2** Giả sử nhân viên vừa tạo đơn 2 ngày. Khi xem lại số dư. Thì đang chờ tăng 2, còn lại giảm 2.
+- **AC-3.1.3** Giả sử nhân viên mới chưa có dòng số dư của loại phép. Khi tạo đơn loại đó. Thì số dư được tạo với số ngày
+  được hưởng = `max_days_per_year`, đơn được tạo bình thường.
 
 ### FR-3.2 Tạo đơn (M, đã có)
 
@@ -28,6 +30,8 @@
 - **AC-3.2.2** Khi không đủ số dư (BR-01). Thì trả 400, câu báo nêu số ngày cần và số ngày còn.
 - **AC-3.2.3** Khi ngày kết thúc trước ngày bắt đầu, nửa ngày nhưng hai ngày khác nhau, loại phép không tồn tại, lý do quá 500
   ký tự. Thì trả 400 kèm `fields`.
+- **AC-3.2.4** Khi khoảng nghỉ qua hai năm (30/12 – 2/1). Thì trả 400, yêu cầu tách hai đơn.
+- **AC-3.2.5** Khi tài khoản đăng nhập chưa gắn hồ sơ. Thì trả 404.
 
 ### FR-3.3 Không trùng lịch (M, đã có)
 
@@ -44,6 +48,7 @@
 
 - **AC-3.5.1** Khi gửi lại cùng `Idempotency-Key`. Thì trả lại đơn cũ, số dư không đổi, không có email thứ hai (BR-11).
 - **AC-3.5.2** Khi thiếu header `Idempotency-Key` hoặc dài quá 100 ký tự. Thì trả 400.
+- **AC-3.5.3** Khi dùng lại `Idempotency-Key` cũ cho đơn khác ngày hoặc loại phép. Thì trả 409.
 
 ### FR-3.6 Hủy đơn (M, đã có)
 

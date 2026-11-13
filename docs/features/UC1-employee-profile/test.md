@@ -34,6 +34,7 @@ audit. Vì vậy:
 | AC-1.3.2 | "xem hồ sơ: … nhân viên không xem trường nhạy cảm" | SEC | Có |
 | AC-1.3.3 | – | Cần thêm | Chưa |
 | AC-1.4.1 | "HR cập nhật lương: audit chỉ ghi tên trường, không ghi giá trị" | – | Có |
+| AC-1.4.3 | – | – | Chờ TV2 chốt; hiện audit có giá trị địa chỉ, ngày sinh |
 | AC-1.4.2 | – (giao diện) | Kiểm tay trên `/employees/:id/edit` | Chưa ghi biên bản |
 | AC-1.5.1 | "HR tạo nhân viên kèm quản lý và trường nhạy cảm: 201, audit chỉ ghi tên trường nhạy cảm (FR-1.5)" | – | Có |
 | AC-1.5.2 | "HR không gán được quản lý tạo vòng lặp", "tạo nhân viên không phải CEO mà thiếu quản lý → 400…" | – | Có |
@@ -41,6 +42,7 @@ audit. Vì vậy:
 | AC-1.5.4 | "tạo nhân viên: chỉ HR…" | SEC | Có |
 | AC-1.6.1 | "version cũ → 409 (optimistic locking)" | – | Có |
 | AC-1.6.2 | – | – | Chưa đạt (code chưa bắt buộc `version`) |
+| AC-1.6.3 | – | – | Chưa đạt (sửa chỉ lương không tăng `version`) |
 | AC-1.7.1 | – | – | Chờ TV2 chốt quy tắc |
 
 ## 4. Dữ liệu và tài khoản

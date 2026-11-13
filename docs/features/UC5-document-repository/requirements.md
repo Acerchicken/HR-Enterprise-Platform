@@ -25,8 +25,10 @@
 - **AC-5.1.4** Khi thiếu tiêu đề, phạm vi rỗng, loại sai, file không phải PDF/DOCX hoặc quá 20 MiB. Thì trả 400 kèm `fields`.
 - **AC-5.1.5** Khi xác nhận lúc chưa tải file. Thì trả 400, phiên bản vẫn `PENDING`.
 - **AC-5.1.6** Khi file sai dung lượng khai báo hoặc nội dung không khớp đuôi (ZIP đổi đuôi `.pdf`). Thì phiên bản `REJECTED`,
-  file bị xóa, trả 400. Xác nhận lại phiên bản đó thì trả 409.
-- **AC-5.1.7** Khi chưa cấu hình `STORAGE_BUCKET`. Thì mọi API tài liệu trả 503, chức năng khác vẫn chạy.
+  file bị xóa, trả 400. Xác nhận lại phiên bản đó thì trả 409. Xác nhận lại phiên bản đã `READY` thì trả
+  lại tài liệu, không đổi gì.
+- **AC-5.1.7** Khi chưa cấu hình `STORAGE_BUCKET`. Thì tạo, thêm phiên bản, xác nhận, tải xuống trả 503; danh sách, chi tiết
+  vẫn 200; chức năng khác vẫn chạy.
 - **AC-5.1.8** *(chưa có)* HR đăng tài liệu trên giao diện: chọn file, nhập metadata, thấy tiến độ tải lên, lỗi hiện đúng ô.
 
 ### FR-5.2 Nhân viên xem, tải trong phạm vi (M, có API, chưa có giao diện)

@@ -46,9 +46,11 @@ Nhân viên tự sửa số điện thoại, địa chỉ của mình. HR tạo 
   - Mở hồ sơ một người từ danh bạ hoặc sơ đồ tổ chức.
   - HR bấm "Thêm nhân viên" hoặc "Sửa".
 - **Điều kiện sau khi thành công:**
-  - Hồ sơ được lưu, `version` tăng 1.
+  - Hồ sơ được lưu, `version` tăng 1. Ngoại lệ: lần sửa chỉ đổi trường nhạy cảm không tăng `version` (trường nhạy cảm nằm ở
+    bảng `employee_sensitive` riêng).
   - Trường nhạy cảm được mã hóa trước khi lưu.
-  - Có audit `CREATE` hoặc `UPDATE` chỉ ghi tên trường đã đổi; trường nhạy cảm ghi tên nhưng che giá trị.
+  - Có audit `CREATE` hoặc `UPDATE`. `changedFields` ghi **tên và giá trị mới** của các trường thường đã đổi (kể cả địa chỉ,
+    ngày sinh); trường nhạy cảm chỉ ghi tên với giá trị `***`. Xem mục 12 về việc ADMIN đọc được địa chỉ, ngày sinh qua audit.
   - HR xem trường nhạy cảm sinh audit `VIEW_SENSITIVE`.
 - **Điều kiện sau khi thất bại:** hồ sơ và `version` giữ nguyên, không có audit.
 
@@ -62,7 +64,7 @@ Nhân viên tự sửa số điện thoại, địa chỉ của mình. HR tạo 
 | 2 | Bấm sửa, nhập số điện thoại hoặc địa chỉ mới, bấm Lưu | Gửi `PATCH /employees/{id}` kèm `version` đang hiển thị |
 | 3 | | Kiểm người gọi là chủ hồ sơ và chỉ gửi `phone`, `address` |
 | 4 | | Kiểm `version` khớp bản ghi hiện tại |
-| 5 | | Lưu, tăng `version`, ghi audit `UPDATE` (tên trường đã đổi) trong cùng giao dịch |
+| 5 | | Lưu, tăng `version`, ghi audit `UPDATE` (trường đã đổi kèm giá trị mới) trong cùng giao dịch |
 | 6 | Thấy hồ sơ đã cập nhật | Trả hồ sơ mới |
 
 ### 4.2 HR tạo hồ sơ nhân viên (FR-1.5)
@@ -81,11 +83,11 @@ Nhân viên tự sửa số điện thoại, địa chỉ của mình. HR tạo 
 
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
-| 1 | HR mở hồ sơ và chọn "Xem thông tin nhạy cảm" | Gọi `GET /employees/{id}?include=sensitive` |
+| 1 | HR mở hồ sơ và chọn "Xem thông tin nhạy cảm" | Gọi `GET /employees/{id}?include=sensitive`. Form sửa của HR (`/employees/:id/edit`) cũng gọi API này khi mở, nên **mỗi lần mở form sửa sinh một audit `VIEW_SENSITIVE`**, kể cả khi HR chỉ sửa số điện thoại |
 | 2 | | Kiểm vai trò HR; giải mã CCCD, số tài khoản, lương; ghi audit `VIEW_SENSITIVE` |
 | 3 | HR bấm Sửa, đổi trường bất kỳ (kể cả nhạy cảm), bấm Lưu | Gửi `PATCH /employees/{id}` kèm `version` |
 | 4 | | Kiểm `version`, kiểm quy tắc quản lý nếu đổi `managerId`, mã hóa trường nhạy cảm |
-| 5 | | Lưu, ghi audit `UPDATE` chỉ có tên trường; giá trị nhạy cảm bị che |
+| 5 | | Lưu, ghi audit `UPDATE`: trường thường có giá trị mới, trường nhạy cảm chỉ có `***` |
 | 6 | HR thấy hồ sơ đã cập nhật | Trả hồ sơ mới |
 
 ## 5. Luồng thay thế
@@ -120,19 +122,19 @@ Nhân viên tự sửa số điện thoại, địa chỉ của mình. HR tạo 
 
 | Trường | Bắt buộc khi tạo | Ai sửa | Kiểm tra |
 |---|---|---|---|
-| `employeeCode` | Có | Không sửa | Dạng `E` + 5 chữ số, duy nhất |
+| `employeeCode` | Có | Không sửa (API không nhận) | Dạng `E` + 5 chữ số, duy nhất |
 | `fullName` | Có | HR | 2–150 ký tự |
-| `workEmail` | Có | Không sửa | Email hợp lệ, duy nhất; dùng để liên kết tài khoản đăng nhập |
+| `workEmail` | Có | Không sửa (API không nhận) | Email hợp lệ, duy nhất, lưu chữ thường; dùng để liên kết tài khoản đăng nhập |
 | `phone` | Không | Chủ hồ sơ, HR | 8–20 ký tự số, có thể có `+`, khoảng trắng, `.`, `-` |
 | `address` | Không | Chủ hồ sơ, HR | Tối đa 255 ký tự |
 | `dateOfBirth` | Không | HR | Ngày hợp lệ |
 | `departmentId`, `positionId` | Có | HR | Phải tồn tại |
 | `managerId` | Có, trừ CEO | HR | Nhân viên đang làm việc; không tạo vòng |
-| `hireDate` | Có | HR | Ngày hợp lệ |
+| `hireDate` | Có | Không sửa (API không nhận, kể cả HR) | Ngày hợp lệ |
 | `status` | Mặc định `ACTIVE` | HR | `ACTIVE`, `ON_LEAVE`, `TERMINATED` |
 | `nationalId` | Không | HR | Đúng 12 chữ số; mã hóa khi lưu |
-| `bankAccount` | Không | HR | Mã hóa khi lưu |
-| `salary` | Không | HR | Số; mã hóa khi lưu |
+| `bankAccount` | Không | HR | 6–20 chữ số; mã hóa khi lưu |
+| `salary` | Không | HR | Chuỗi số; mã hóa khi lưu |
 | `version` | – | – | Bắt buộc theo quy ước khi sửa (xem mục 12) |
 
 ## 9. Giao diện và API
@@ -163,3 +165,6 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | HR tạo, sửa hồ sơ trên giao diện | Đã có (PR #63) | TV2 cập nhật trạng thái FR-1.4, FR-1.5 trong SRS |
 | `version` khi sửa | Một phần: chỉ so khi client gửi | Đề xuất bắt buộc `version` để đúng FR-1.6 |
 | Chấm dứt nhân viên còn cấp dưới | Chưa chặn | Chốt quy tắc (bản nháp UC1/UC2 tuần 8) |
+| Audit `CREATE`, `UPDATE` chứa giá trị địa chỉ, ngày sinh, điện thoại | Đang như vậy | ADMIN chỉ được xem mức danh bạ nhưng đọc được các giá trị này qua `GET /audit-logs`. TV2 chốt: chỉ ghi tên trường cá nhân, hoặc giới hạn ADMIN (T-09) |
+| Sửa chỉ trường nhạy cảm không tăng `version` | Đang như vậy | Hai HR cùng sửa lương không bị 409; sửa cùng `fix/employee-org-integrity` |
+| Mở form sửa của HR sinh `VIEW_SENSITIVE` | Đang như vậy | Chấp nhận (HR thật sự thấy giá trị), hoặc chỉ tải trường nhạy cảm khi HR bấm hiện |

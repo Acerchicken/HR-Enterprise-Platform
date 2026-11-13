@@ -116,3 +116,28 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Tìm đồng nghiệp | Đã có | – |
 | Trích văn bản, full-text, API và giao diện tìm tài liệu | Chưa có | TV1, nhánh `feat/document-search` (tuần 10) |
 | Trợ lý chính sách | Chưa có | Tuần 12; có thể cắt nếu thiếu thời gian (mức C) |
+
+## 13. Thiết kế đề xuất cho phần chưa có
+
+> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/document-search` (13.1) và ADR-14 (13.2).
+
+### 13.1 Tìm tài liệu (FR-6.2)
+
+- **API:** mở rộng `GET /documents` bằng tham số `q`. Có `q` thì xếp theo DR-07; không có `q` thì giữ thứ tự hiện tại. Mỗi kết
+  quả thêm `matchedIn` (`TITLE_EXACT`, `TITLE`, `CONTENT`) và `snippet` (tối đa 200 ký tự, chỉ từ tài liệu đã qua lọc phạm vi).
+- **Dữ liệu:** migration thêm `document_version.text_content text`, `document_version.search_vector tsvector`, chỉ mục GIN; cấu
+  hình `simple` kèm `unaccent` để tìm tiếng Việt có dấu và không dấu. Tiêu đề so khớp bằng `lower(unaccent(title))`.
+- **Trích văn bản:** khi phiên bản thành `READY`, ghi event `DocumentPublished` vào outbox; worker đọc file từ storage, trích văn
+  bản (PDF, DOCX), ghi `text_content` và `search_vector`. Lỗi trích thì vẫn tìm được theo tiêu đề. Chỉ tìm nội dung của phiên
+  bản `READY` mới nhất.
+- **Truy vấn:** dùng lại `visibleQuery` (điều kiện phạm vi, chưa ẩn, có `READY`) rồi mới thêm điều kiện tìm, trong cùng một câu
+  SQL (ADR-13). `total` chỉ đếm trên tài liệu đã lọc.
+- **Giới hạn:** `q` 1–100 ký tự; 20 request mỗi phút (NFR-5.21).
+
+### 13.2 Trợ lý chính sách (FR-6.3)
+
+- **API:** `POST /assistant/questions` `{ question }` → `{ answer, citations: [{ documentId, versionNo, title }], fallback }`.
+  `fallback = true` khi trả danh sách tài liệu thay cho câu trả lời (A2, A3).
+- **Truy hồi:** lấy các đoạn văn bản từ tài liệu qua `visibleQuery` của người hỏi, rồi mới gửi LLM. Cách chia đoạn và
+  full-text hay `pgvector`: chốt ở ADR-14.
+- **Không lưu câu hỏi** vào audit hay log ở dạng đầy đủ (có thể chứa thông tin sức khỏe); chỉ ghi số đoạn, độ trễ, số token.

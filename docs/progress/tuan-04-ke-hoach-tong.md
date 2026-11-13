@@ -111,10 +111,10 @@ Thứ tự trong tuần: việc tuần 10 còn dở → riêng tư đơn nghỉ 
 | Nhánh | Người | Tính năng | Việc | Tiêu chí | Mở PR | Merge | Review |
 |---|---|---|---|---|---|---|---|
 | `feat/document-search`, `feat/audit-ui`, `feat/leave-delegation` | TV1 Duong | UC5, UC6, UC7, UC3, UC4 | Chỉ khi tuần 10 chưa merge | Như `requirements.md` | T2 (16/11) | T3 (17/11) | Như tuần 10 |
-| `docs/org-integrity-rules` | TV2 Thanh | UC1, UC2, UC7 | Chốt: chấm dứt nhân viên còn cấp dưới; ý nghĩa `headEmployeeId`; thời gian lưu audit (BR-13 5 năm hay NFR-6.3 2 năm) | AC-1.7.1 | T2 (16/11), 21:00 | T3 (17/11) | TV1, TV4 |
-| `feat/leave-privacy` | TV1 Duong | UC3, UC4 | Ẩn lý do nghỉ ốm với quản lý (chi tiết, danh sách, lịch sử); email chỉ báo chung; sửa unit test nội dung email | AC-4.6.3, AC-4.7.3 | T3 (17/11) | T4 (18/11) | TV2, TV4 |
+| `docs/org-integrity-rules` | TV2 Thanh | UC1, UC2, UC5, UC7 | Chốt: chấm dứt nhân viên còn cấp dưới; ý nghĩa `headEmployeeId`; audit có ghi giá trị trường cá nhân không; thời gian lưu audit (BR-13 5 năm hay NFR-6.3 2 năm); sửa NFR-5.19 cho khớp URL tải lên 10 phút | AC-1.7.1, AC-1.4.3 | T2 (16/11), 21:00 | T3 (17/11) | TV1, TV4 |
+| `feat/leave-privacy` | TV1 Duong | UC3, UC4 | Ẩn lý do nghỉ ốm với quản lý (chi tiết, danh sách, lịch sử); audit HR đọc lý do; bỏ `comment` khỏi audit; email và payload outbox chỉ báo chung; email đơn CEO tới HR; sửa unit test nội dung email | AC-4.6.3, AC-4.6.5, AC-4.7.3, AC-4.7.4 | T3 (17/11) | T4 (18/11) | TV2, TV4 |
 | `feat/security-headers-ratelimit` | TV1 Duong | Chung, UC6 | Header bảo mật; 100 request/phút mỗi người, 20/phút cho tìm kiếm | AC-6.2.7 | T3 (17/11) | T4 (18/11) | TV3, TV4 |
-| `fix/employee-org-integrity` | TV1 Duong | UC1 | Bắt buộc `version`; chặn theo quy tắc TV2 vừa chốt | AC-1.6.2, AC-1.7.1 | T5 (19/11) | T6 (20/11) | TV2, TV4 |
+| `fix/employee-org-integrity` | TV1 Duong | UC1, UC2 | Bắt buộc `version`, tăng `version` khi sửa trường nhạy cảm; chặn gốc thứ hai, kiểm `headEmployeeId`; làm theo quy tắc TV2 vừa chốt | AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.4.3, AC-2.4.6, AC-2.4.7 | T5 (19/11) | T6 (20/11) | TV2, TV4 |
 | `infra/idp-mfa` | TV3 Bảo | Chung | MFA TOTP cho HR, ADMIN | NFR-5.4 | T5 (19/11), 21:00 | T6 (20/11) | TV1 |
 | `docs/test-cases-week11` | TV4 Duy | UC1 → UC7 | Ca còn thiếu trong mục 7 của mọi `test.md` | Theo `test.md` | T4 (18/11), 21:00 | T5 (19/11) | TV2, TV1 |
 | `docs/security-test-cases-week11` | TV4 Duy | Chung | Tự đăng ký, mật khẩu yếu, khóa 5 lần sai, hết phiên, MFA, 429, header | NFR-5.2 → 5.5, 5.9, 5.21, 5.22 | T4 (18/11), 21:00 | T5 (19/11) | TV1, TV3 |

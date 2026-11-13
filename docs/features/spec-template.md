@@ -68,3 +68,7 @@ Xem `test.md`. Mục này chỉ link, không chép lại.
 ## 12. Hiện trạng và việc còn lại
 
 Phần đã có trên `dev`, phần thiếu. Ai làm, tuần nào: mục 4 của `requirements.md`.
+
+## 13. Thiết kế đề xuất cho phần chưa có
+
+Với tính năng chưa code: API, dữ liệu, màn hình đề xuất để có chỗ bám. Người code chốt và sửa mục này trong PR.

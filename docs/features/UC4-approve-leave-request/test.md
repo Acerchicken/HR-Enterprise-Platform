@@ -35,9 +35,10 @@ email kiểm tay ở Mailpit.
 | AC-4.5.1, AC-4.5.2 | "tạo → … HR hoàn tất", "HR hoàn tất đơn chưa duyệt → 409 (TC-21…)" | TC-20 → TC-22 | Có |
 | AC-4.6.1, AC-4.6.2 | Unit `notification-worker.spec.ts` | Kiểm Mailpit | Có |
 | AC-4.6.3 | – | – | Chưa đạt (BR-15) |
+| AC-4.6.5 | – | – | Chưa đạt (CEO tạo đơn, HR không nhận email) |
 | AC-4.6.4 | Unit `messaging.spec.ts` | Tắt RabbitMQ rồi duyệt đơn | Có unit |
 | AC-4.7.1, AC-4.7.2 | "người ngoài không xem được đơn của nhân viên" | SEC-57, SEC-58 | Có |
-| AC-4.7.3 | – | – | Chưa đạt (BR-14) |
+| AC-4.7.3, AC-4.7.4 | – | – | Chưa đạt (BR-14) |
 
 ## 4. Dữ liệu và tài khoản
 

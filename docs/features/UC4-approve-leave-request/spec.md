@@ -91,7 +91,7 @@ stateDiagram-v2
 | E5 | `version` cũ (người khác vừa xử lý) | 409 `CONFLICT`; tải lại đơn |
 | E6 | Đơn không tồn tại | 404 `NOT_FOUND` |
 | E7 | Xem chi tiết đơn khi không phải chủ đơn, quản lý trực tiếp hoặc HR | 403 `FORBIDDEN` |
-| E8 | Nhân viên chưa có quản lý trực tiếp (dữ liệu cũ) | Đơn chờ; worker ghi cảnh báo, không gửi email |
+| E8 | Chủ đơn không có quản lý trực tiếp: CEO, hoặc dữ liệu cũ | Đơn chờ; worker ghi cảnh báo, không gửi email. **Với CEO, HR không nhận email "có đơn mới"**, chỉ thấy đơn khi mở danh sách chờ duyệt (mục 12) |
 | E9 | Queue hoặc dịch vụ email lỗi | Quyết định vẫn được lưu; event chờ trong outbox hoặc vào DLQ (NFR-3.4) |
 
 ## 7. Quy tắc áp dụng
@@ -139,5 +139,36 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | HR duyệt đơn của CEO | Đã có (PR #60) | – |
 | Người duyệt thay (FR-4.3, BR-06) | Chưa có | TV1, nhánh `feat/leave-delegation`, mức 3 tuần 10 |
 | Ẩn lý do nghỉ ốm với quản lý (BR-14) | Chưa có | TV1 |
-| Email chỉ báo chung, không chi tiết (BR-15) | Chưa có | TV1 |
+| Email chỉ báo chung, không chi tiết (BR-15) | Chưa có: email, payload outbox có loại phép, ngày, số ngày, ghi chú | TV1, `feat/leave-privacy` |
+| Audit duyệt, từ chối chứa ghi chú tự do (`comment`) | Đang như vậy | BR-14 cấm đưa ghi chú có nội dung sức khỏe vào audit; bỏ `comment` khỏi `changedFields` trong `feat/leave-privacy` |
+| Email "có đơn mới" của CEO gửi tới HR | Chưa có | TV1, `feat/leave-privacy` (cùng chỗ sửa worker) |
 | Đo MT-2 (thời gian gửi → quyết định) | Chưa có báo cáo | Truy vấn trên `leave_request_history` khi có dữ liệu staging |
+
+## 13. Thiết kế đề xuất cho phần chưa có
+
+> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/leave-delegation` và `feat/leave-privacy`.
+
+### 13.1 Người duyệt thay (FR-4.3, BR-06)
+
+- **Bảng** `leave.approval_delegation`: `id`, `manager_id` (quản lý vắng), `delegate_id` (người thay), `start_date`, `end_date`
+  (tính cả hai ngày), `created_by`, `created_at`, `ended_at` (HR kết thúc sớm).
+- **Ràng buộc:** `delegate_id` ≠ `manager_id`; người thay đang làm việc và đang có cấp dưới (vai trò MANAGER, ADR-10); không
+  chồng lấn khoảng ngày của cùng một `manager_id` (exclusion constraint trên `daterange`). Không ủy quyền nối tiếp: chỉ xét
+  phân công của **quản lý trực tiếp** của chủ đơn, không xét phân công của người thay.
+- **API (chỉ HR):** `POST /leave-delegations`, `GET /leave-delegations?managerId=&activeOn=`, `POST /leave-delegations/{id}/end`.
+  Mỗi thao tác có audit `DELEGATION_CREATE`, `DELEGATION_END`.
+- **Quyền duyệt:** trong `relation()`, thêm quan hệ `DELEGATE` khi người gọi là `delegate_id` của phân công hiệu lực **hôm nay**
+  với `manager_id` = quản lý trực tiếp hiện tại của chủ đơn. State machine cho `DELEGATE` quyền như `DIRECT_MANAGER`.
+- **Danh sách chờ duyệt:** `GET /leave-requests/pending-approval` gộp thêm cấp dưới của các quản lý đang giao cho người gọi;
+  mỗi đơn có cờ `viaDelegation` để giao diện ghi "duyệt thay cho …".
+- **Giao diện:** `/leave/delegations` cho HR: bảng phân công, nút tạo (chọn quản lý, người thay, khoảng ngày), nút kết thúc.
+
+### 13.2 Riêng tư đơn nghỉ (BR-14, BR-15)
+
+- **Ẩn lý do:** với loại phép ốm, thai sản, `reason` chỉ trả cho chủ đơn và HR ở chi tiết, danh sách, lịch sử. HR đọc lý do thì
+  ghi audit `VIEW_LEAVE_REASON` (chỉ ID đơn, không giá trị).
+- **Audit:** bỏ `comment` khỏi `changedFields` của duyệt, từ chối, hủy, hoàn tất; ghi chú vẫn nằm trong lịch sử đơn.
+- **Outbox và email:** payload chỉ còn `eventId`, `eventType`, `requestId`, `employeeId`, `occurredAt`. Email: tiêu đề và nội dung
+  chung, link `/leave` hoặc `/leave/approvals` (không có mã đơn). Đổi [hợp đồng event](../../architecture/event-contract.md)
+  theo mục 6 của file đó.
+- **Đơn của CEO:** worker gửi email "có đơn cần xử lý" tới mọi tài khoản HR khi chủ đơn là CEO.

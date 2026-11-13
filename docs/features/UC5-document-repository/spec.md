@@ -30,7 +30,8 @@ xóa.
 
 - **Điều kiện trước:**
   - Người dùng đã đăng nhập.
-  - Kho file đã cấu hình (`STORAGE_*`); nếu chưa, API tài liệu trả 503.
+  - Kho file đã cấu hình (`STORAGE_*`); nếu chưa, các API đụng tới file (tạo, thêm phiên bản, xác nhận, tải xuống) trả 503.
+    Danh sách và chi tiết vẫn trả 200 vì chỉ đọc database.
   - Người xem có hồ sơ đang làm việc; nếu không, danh sách rỗng.
 - **Kích hoạt:** HR bấm "Đăng tài liệu" hoặc "Thêm phiên bản"; nhân viên mở "Tài liệu".
 - **Điều kiện sau khi thành công (đăng):**
@@ -91,10 +92,10 @@ sequenceDiagram
 | E2 | Thiếu tiêu đề, phạm vi rỗng, loại không hợp lệ, file không phải PDF/DOCX, quá 20 MiB | 400 `BAD_REQUEST` kèm `fields` |
 | E3 | Xác nhận khi chưa tải file lên | 400 `BAD_REQUEST`; phiên bản vẫn `PENDING`, tải lên rồi xác nhận lại |
 | E3b | File sai dung lượng khai báo hoặc định dạng thật không khớp (ví dụ ZIP đổi đuôi `.pdf`) | Phiên bản `REJECTED`, file bị xóa; 400 `BAD_REQUEST` |
-| E4 | Xác nhận lại phiên bản đã `REJECTED` | 409 `CONFLICT`; tạo phiên bản mới |
+| E4 | Xác nhận lại phiên bản đã `REJECTED` | 409 `CONFLICT`; tạo phiên bản mới. Xác nhận lại phiên bản đã `READY` thì trả lại tài liệu, không đổi gì |
 | E5 | Xem hoặc tải tài liệu ngoài phạm vi, đã ẩn, hoặc ID không tồn tại | 404 `NOT_FOUND`, không phân biệt các trường hợp (DR-08) |
 | E6 | Sửa metadata với `version` cũ | 409 `CONFLICT` |
-| E7 | Kho file chưa cấu hình | 503 `HTTP_503` ("chức năng chưa sẵn sàng") |
+| E7 | Kho file chưa cấu hình | 503 `HTTP_503` ("Kho tài liệu chưa được cấu hình") ở các API đụng tới file |
 | E8 | URL tải lên quá 10 phút | Storage từ chối PUT; HR tạo phiên bản mới |
 
 ## 7. Quy tắc áp dụng
@@ -128,7 +129,9 @@ sequenceDiagram
 
 ## 10. Yêu cầu phi chức năng liên quan
 
-- NFR-5.16: mã hóa file khi lưu. NFR-5.19: bucket chặn public.
+- NFR-5.16: mã hóa file khi lưu. NFR-5.19: bucket chặn public. **Lệch:** NFR-5.19 ghi "presigned URL hết hạn ≤ 5 phút",
+  code đặt URL tải lên 10 phút (`object-storage.ts`). Tải xuống không dùng presigned URL. TV2 sửa NFR-5.19 thành "URL tải lên
+  ≤ 10 phút" hoặc TV1 giảm còn 5 phút.
 - NFR-5.23: kiểm loại file theo nội dung.
 - NFR-3.4: storage lỗi không ảnh hưởng chức năng khác (kịch bản lỗi trong SRS mục 6.14).
 - Đánh đổi của ADR-13: tải xuống tốn băng thông API. Đo khi load test tuần 11.
@@ -145,3 +148,18 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Giao diện kho tài liệu | Chưa có | TV1, nhánh `feat/document-search` (tuần 10) |
 | Dọn phiên bản `PENDING` bỏ dở | Chưa có | Đánh đổi đã ghi trong ADR-13 |
 | Staging: biến `STORAGE_*`, bucket tài liệu | Chưa có | TV3, `infra/documents-email` |
+
+## 13. Thiết kế đề xuất cho phần chưa có: giao diện
+
+> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/document-search`. API đã có, không cần đổi.
+
+| Màn hình | Ai | Nội dung | API |
+|---|---|---|---|
+| `/documents` | Mọi người | Ô tìm kiếm (UC6), lọc loại, bảng: tiêu đề, loại, phiên bản mới nhất, ngày cập nhật; phân trang. Rỗng thì ghi "Chưa có tài liệu nào dành cho bạn", không gợi ý gì thêm (DR-08) | `GET /documents?type=&page=` |
+| `/documents/:id` | Mọi người | Tiêu đề, loại, nút tải bản mới nhất, danh sách phiên bản cũ có nút tải. 404 thì hiện "Không tìm thấy tài liệu", giống hệt cho mọi trường hợp | `GET /documents/{id}`, `GET …/download`, `GET …/versions/{versionId}/download` |
+| `/documents/manage` | HR | Mọi tài liệu kể cả đã ẩn, cột trạng thái (hiện, ẩn), phiên bản `PENDING`, `REJECTED` | `GET /documents/manage` |
+| `/documents/manage/new` | HR | Form: tiêu đề, loại, phạm vi (toàn công ty / chọn phòng ban trong cây / chọn vai trò), chọn file. Kiểm đuôi và dung lượng ngay ở trình duyệt; thanh tiến độ khi PUT; xác nhận tự động khi PUT xong | `POST /documents`, PUT presigned URL, `POST …/confirm` |
+| `/documents/manage/:id` | HR | Sửa tiêu đề, loại, phạm vi (gửi `version`); thêm phiên bản; ẩn, khôi phục có hộp xác nhận | `PATCH /documents/{id}`, `POST …/versions`, `POST …/hide`, `POST …/restore` |
+
+Lỗi khi tải lên: PUT thất bại hoặc URL hết hạn (sau 10 phút) thì giao diện báo "Tải lên không thành công" và cho tạo phiên bản
+mới; phiên bản cũ ở `PENDING` được bỏ lại (ADR-13).

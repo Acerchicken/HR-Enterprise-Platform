@@ -22,13 +22,16 @@ là hàm thuần nên kiểm kỹ bằng unit test; luồng có số dư, lịch
 | Tiêu chí | Test tự động (e2e, tên test) | Ca tay | Trạng thái |
 |---|---|---|---|
 | AC-3.1.1, AC-3.1.2 | "số dư phép của tôi", "tạo → quản lý duyệt → HR hoàn tất; số dư, lịch sử và audit đúng" | TC-01 | Có |
+| AC-3.1.3 | – | Cần thêm (nhân viên vừa tạo ở UC1 tạo đơn nghỉ cưới) | Chưa |
 | AC-3.2.1 | "tạo → quản lý duyệt → HR hoàn tất…" | TC-01 | Có (email kiểm tay ở Mailpit) |
 | AC-3.2.2, AC-3.2.3 | "không đủ số dư, dữ liệu sai hoặc thiếu Idempotency-Key → 400 (BR-01)" | TC-03, TC-10 | Có |
+| AC-3.2.4, AC-3.2.5 | – | Cần thêm | Chưa |
 | AC-3.3.1 | "trùng lịch với đơn đang chờ → 409 (TC-04, BR-02)" | TC-04 | Có |
 | AC-3.3.2, AC-3.3.3 | "trùng lịch bị chặn; hai nửa ngày khác buổi thì được…" | TC-08, TC-09 | Có |
 | AC-3.4.1, AC-3.4.2 | "ngày lễ không trừ phép: 29/4–4/5/2026 tính 2 ngày…" | TC-05 → TC-07 | Có |
 | AC-3.5.1 | – | TC-02 | Có ca tay |
 | AC-3.5.2 | "không đủ số dư, dữ liệu sai hoặc thiếu Idempotency-Key → 400" | – | Có |
+| AC-3.5.3 | – | Cần thêm | Chưa |
 | AC-3.6.1 | "trùng lịch bị chặn; … hủy trả lại số dư" | TC-17 | Có |
 | AC-3.6.2, AC-3.6.3 | "chỉ quản lý trực tiếp duyệt/từ chối, chỉ HR hoàn tất, chỉ chủ đơn hủy (TC-22…)" | TC-18, TC-19, SEC-35 → SEC-44 | Có |
 | AC-3.7.1 → AC-3.7.4 | – | – | Chưa có tính năng |
@@ -57,5 +60,6 @@ Email: mở Mailpit http://localhost:8025 sau khi tạo đơn.
 ## 7. Ca còn thiếu (TV4)
 
 - Hai request tạo đơn song song với cùng số dư.
-- e2e cho AC-3.5.1 (gửi lại cùng key trả đúng đơn cũ, số dư không đổi).
+- e2e cho AC-3.5.1 (gửi lại cùng key trả đúng đơn cũ, số dư không đổi) và AC-3.5.3 (cùng key, đơn khác → 409).
+- AC-3.1.3 (số dư tự tạo cho nhân viên mới), AC-3.2.4 (đơn qua hai năm), AC-3.2.5 (tài khoản chưa gắn hồ sơ → 404).
 - AC-3.7.x khi `feat/leave-delegation` xong.

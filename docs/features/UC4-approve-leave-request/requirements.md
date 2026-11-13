@@ -56,9 +56,11 @@
 
 - **AC-4.6.1** Đơn mới, đơn bị hủy → email tới quản lý trực tiếp; duyệt, từ chối, hoàn tất → email tới nhân viên.
 - **AC-4.6.2** Khi worker nhận lại cùng một event. Thì không gửi email lần hai.
-- **AC-4.6.3** *(chưa đạt)* Mọi email chỉ có câu báo chung và link mở đơn; không có tên loại phép, khoảng ngày, lý do (BR-15,
-  NFR-5.18).
+- **AC-4.6.3** *(chưa đạt)* Mọi email chỉ có câu báo chung và link tới hộp đơn chung (URL không chứa mã đơn); không có tên,
+  loại phép, ngày, số ngày, lý do, ghi chú. Payload outbox và log worker chỉ mang dữ liệu để định tuyến (BR-15, NFR-5.18).
 - **AC-4.6.4** Khi queue hoặc dịch vụ email lỗi. Thì quyết định vẫn được lưu; event chờ trong outbox, thử lại rồi vào DLQ.
+- **AC-4.6.5** *(chưa đạt)* Khi CEO tạo đơn. Thì HR nhận email "có đơn cần xử lý". Hiện worker không gửi vì CEO không có
+  quản lý trực tiếp.
 
 ### FR-4.7 Chi tiết và lịch sử (M, đã có)
 
@@ -67,6 +69,8 @@
 - **AC-4.7.2** Người khác xem chi tiết đơn. Thì trả 403.
 - **AC-4.7.3** *(chưa đạt)* Giả sử đơn nghỉ ốm. Khi quản lý trực tiếp xem chi tiết, danh sách hoặc lịch sử. Thì không thấy
   lý do; chủ đơn và HR vẫn thấy (BR-14).
+- **AC-4.7.4** *(chưa đạt)* Khi HR xem lý do đơn nghỉ ốm. Thì có audit ghi ai đọc trường `reason` của đơn nào, không ghi nội
+  dung. Audit duyệt, từ chối không chứa `comment` (hiện có).
 
 ## 3. Yêu cầu phi chức năng liên quan
 
@@ -80,6 +84,6 @@ Lịch làm theo [kế hoạch theo chức năng tuần 11–13](../../progress/
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
 | Người duyệt thay | AC-4.3.1 → AC-4.3.4 | TV1 | `feat/leave-delegation` | 10, chưa xong thì đầu tuần 11 |
-| Email chung, ẩn lý do nghỉ ốm | AC-4.6.3, AC-4.7.3 | TV1 | `feat/leave-privacy` | 11 |
+| Email chung, email đơn CEO cho HR, ẩn lý do nghỉ ốm, audit không chứa ghi chú | AC-4.6.3, AC-4.6.5, AC-4.7.3, AC-4.7.4 | TV1 | `feat/leave-privacy` | 11 |
 | Ca kiểm thử đổi quản lý khi đơn đang chờ, người duyệt thay, riêng tư | AC-4.2.6, AC-4.3.x, AC-4.6.3, AC-4.7.3 | TV4 | `docs/test-cases-week11` | 11 |
 | Báo cáo MT-2 (thời gian gửi → quyết định) | – | TV2 | `docs/mt2-report` | 13, khi có dữ liệu staging |

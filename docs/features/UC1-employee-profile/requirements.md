@@ -27,7 +27,7 @@
 ### FR-1.2 Nhân viên tự sửa liên hệ (M, đã có)
 
 - **AC-1.2.1** Giả sử nhân viên đã đăng nhập. Khi sửa `phone`, `address` của chính mình với giá trị hợp lệ. Thì trả 200,
-  hồ sơ đổi, audit `UPDATE` ghi tên trường đã đổi.
+  hồ sơ đổi, `version` tăng 1, audit `UPDATE` ghi trường đã đổi.
 - **AC-1.2.2** Khi nhân viên sửa trường khác (ví dụ `jobTitle`) hoặc sửa hồ sơ người khác. Thì trả 403, hồ sơ không đổi.
 - **AC-1.2.3** Khi số điện thoại sai mẫu. Thì trả 400 kèm `fields.phone`.
 
@@ -42,6 +42,8 @@
 
 - **AC-1.4.1** Khi HR sửa lương. Thì trả 200; audit `UPDATE` có tên trường `salary`, không có giá trị cũ hay mới.
 - **AC-1.4.2** Khi HR nhập sai định dạng trên giao diện. Thì lỗi hiện đúng ô theo `fields` của response 400.
+- **AC-1.4.3** *(chưa chốt)* Audit `CREATE`, `UPDATE` không chứa giá trị địa chỉ, ngày sinh, điện thoại, vì ADMIN đọc được
+  audit nhưng chỉ được xem hồ sơ người khác ở mức danh bạ. Hiện audit có các giá trị này.
 
 ### FR-1.5 HR tạo nhân viên (M, đã có API và giao diện, PR #63)
 
@@ -56,7 +58,9 @@
 - **AC-1.6.1** Giả sử HR1 và HR2 cùng mở hồ sơ ở `version` 3, HR1 lưu trước. Khi HR2 lưu với `version` 3. Thì trả 409, dữ
   liệu của HR1 giữ nguyên.
 - **AC-1.6.2** *(chưa đạt)* Khi gửi yêu cầu sửa không kèm `version`. Thì trả 400. Hiện tại API bỏ qua kiểm tra nếu client
-  không gửi `version`.
+  không gửi `version` (giao diện web luôn gửi).
+- **AC-1.6.3** *(chưa đạt)* Giả sử HR1, HR2 cùng mở hồ sơ. Khi HR1 chỉ sửa lương rồi HR2 lưu. Thì HR2 nhận 409. Hiện sửa chỉ
+  trường nhạy cảm không tăng `version`.
 
 ### Quy tắc chờ chốt (TV2)
 
@@ -76,6 +80,6 @@ Lịch làm theo [kế hoạch theo chức năng tuần 11–13](../../progress/
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
 | Cập nhật trạng thái FR-1.4, FR-1.5 trong SRS | – | TV2 | `docs/matrix-week10` | 10 |
-| Chốt quy tắc chấm dứt nhân viên còn cấp dưới | AC-1.7.1 | TV2 | `docs/org-integrity-rules` | 11 |
-| Bắt buộc `version` khi sửa; chặn theo quy tắc TV2 vừa chốt | AC-1.6.2, AC-1.7.1 | TV1 | `fix/employee-org-integrity` | 11 |
-| Ca kiểm thử cho các tiêu chí trên | AC-1.6.2, AC-1.7.1 | TV4 | `docs/test-cases-week11` | 11 |
+| Chốt quy tắc chấm dứt nhân viên còn cấp dưới; audit có ghi giá trị trường cá nhân không | AC-1.7.1, AC-1.4.3 | TV2 | `docs/org-integrity-rules` | 11 |
+| Bắt buộc `version`; tăng `version` khi sửa trường nhạy cảm; chặn theo quy tắc TV2 vừa chốt | AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.4.3 | TV1 | `fix/employee-org-integrity` | 11 |
+| Ca kiểm thử cho các tiêu chí trên | AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.4.3 | TV4 | `docs/test-cases-week11` | 11 |
