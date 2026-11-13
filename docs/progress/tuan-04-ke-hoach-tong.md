@@ -18,7 +18,7 @@ Thread trên Discussions: **[Tên nhóm]_Enterprise HR Platform**. Mỗi báo c�
 ## 2. Phân công vai trò (4 người)
 
 Phân vai có hai giai đoạn. Giai đoạn phân tích, thiết kế (tuần 4–6) theo phân vai ban đầu. Từ giai đoạn code (tuần 7),
-thực tế chỉ TV1 code nên nhóm điều chỉnh theo [ADR-11](tuan-07/README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code).
+thực tế chỉ TV1 code nên nhóm điều chỉnh theo [ADR-11](../architecture/adr/ADR-11-role-adjustment.md).
 
 ### Từ tuần 7 (đang áp dụng)
 
@@ -66,35 +66,7 @@ Tuần 9–13 là kế hoạch tổng quan vì nhóm chưa học P3–P5; mỗi 
 
 ### ADR-05 – Phạm vi MVP: một luồng nghiệp vụ nghỉ phép end-to-end
 
-**Bối cảnh:** đề tài có 7 use case bắt buộc cộng phần AI mở rộng; nhóm 4 người, 10 tuần; môn học chấm nặng phần kiến trúc,
-bảo mật, vận hành trên cloud chứ không chỉ số lượng chức năng.
-
-**Các giải pháp:**
-
-| # | Giải pháp | Mô tả |
-|---|---|---|
-| A | Làm rộng | Làm cả 7 use case + tính lương, chấm công ở mức cơ bản |
-| B | Một luồng end-to-end sâu | Làm đủ 7 use case, trong đó luồng nghỉ phép làm kỹ (workflow, phân quyền, audit, thông báo); bỏ lương, chấm công, tuyển dụng |
-| C | Chỉ phần lõi | Chỉ Employee profile + Leave, bỏ document, search |
-
-**Tiêu chí lựa chọn:**
-
-| Tiêu chí | A | B | C |
-|---|---|---|---|
-| Đáp ứng yêu cầu bắt buộc của đề tài | 5 | 5 | 2 |
-| Khả năng hoàn thành trong 10 tuần với 4 người | 1 | 4 | 5 |
-| Đủ "chiều sâu" để thể hiện kiến trúc (transaction, async, security) | 2 | 5 | 3 |
-| Còn thời gian cho deploy, load test, AI | 1 | 4 | 5 |
-
-**Giải pháp được chọn:** B.
-
-**Trade-off:** bỏ tính lương, chấm công, tuyển dụng; Payroll chỉ là file export mô phỏng. Một số use case (search, document)
-chỉ làm ở mức đủ dùng.
-
-**Tiêu chí nghiệm thu:** cuối tuần 10, demo được luồng nghỉ phép từ tạo đơn đến hoàn tất trên môi trường cloud, có audit
-từng bước và có ca bị từ chối quyền; 7 use case đều có ít nhất một màn hình hoặc API chạy được.
-
-**Khi nào xem lại:** cuối tuần 8 nếu luồng nghỉ phép chưa chạy end-to-end ở local thì cắt AI assistant (tuần 12) để dồn sức.
+> Đã chuyển sang file riêng: [ADR-05 – Phạm vi MVP: một luồng nghiệp vụ nghỉ phép end-to-end](../architecture/adr/ADR-05-mvp-scope.md). Danh sách toàn bộ ADR: [`architecture/adr/`](../architecture/adr/README.md).
 
 ## 6. Kế hoạch tuần tiếp theo (tuần 5: 5/10 – 12/10)
 

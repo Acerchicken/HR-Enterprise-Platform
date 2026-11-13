@@ -33,7 +33,7 @@ Thư mục này lưu kế hoạch 10 tuần và báo cáo tiến độ hàng tu�
 
 ## Phân vai
 
-Tuần 4–6 theo phân vai ban đầu (bảng dưới). Từ tuần 7 điều chỉnh theo [ADR-11](tuan-07/README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code):
+Tuần 4–6 theo phân vai ban đầu (bảng dưới). Từ tuần 7 điều chỉnh theo [ADR-11](../architecture/adr/ADR-11-role-adjustment.md):
 
 | Mã | Thành viên (từ tuần 7) | Vai trò từ tuần 8 |
 |---|---|---|
@@ -55,23 +55,6 @@ Phân vai ban đầu (tuần 4–6):
 
 ## Danh sách quyết định (ADR)
 
-ADR (Architecture Decision Record) là bản ghi một quyết định kiến trúc: bối cảnh, phương án, lựa chọn, lý do, đánh đổi.
-
-| Mã | Quyết định | Tuần |
-|---|---|---|
-| ADR-00 | Dùng managed services cho database, storage, identity | 5 |
-| ADR-01 | Modular monolith thay vì microservices | 6 |
-| ADR-02 | PostgreSQL thay vì NoSQL | 6 |
-| ADR-03 | Workflow đồng bộ, thông báo và index bất đồng bộ (outbox + queue) | 6 |
-| ADR-04 | Tech stack: NestJS + React + PostgreSQL + Keycloak | 7 |
-| ADR-05 | Phạm vi MVP: một luồng nghiệp vụ nghỉ phép end-to-end | 4 |
-| ADR-06 | Mục tiêu availability 99.5%, thiết kế cho 50 RPS | 5 |
-| ADR-07 | Không dùng Redis ở MVP, cache in-memory cho dữ liệu tham chiếu | 6 |
-| ADR-08 | Mã hóa trường nhạy cảm ở tầng ứng dụng | 7 |
-| ADR-09 | Audit log append-only khóa ở mức database | 7 |
-| ADR-10 | Role MANAGER suy ra từ sơ đồ tổ chức | 7 |
-| ADR-11 | Điều chỉnh phân vai cho giai đoạn code | 7 |
-| ADR-12 | Chọn cloud provider (AWS, đang hoàn tất) | 9 |
-
-ADR-00 → ADR-04 được đánh số ngay khi ra quyết định. ADR-05 → ADR-11 là các quyết định được ghi lại sau theo cùng khung,
-nên số thứ tự không trùng với thứ tự tuần. ADR tiếp theo bắt đầu từ ADR-12.
+ADR (Architecture Decision Record) là bản ghi một quyết định kiến trúc: bối cảnh, phương án, tiêu chí, lựa chọn, lý do, đánh đổi.
+Từ 13/11/2026 mỗi ADR là một file riêng trong [`docs/architecture/adr/`](../architecture/adr/README.md). Danh sách, trạng thái,
+mẫu và quy tắc viết đều nằm ở đó. Báo cáo tuần chỉ link tới file ADR.

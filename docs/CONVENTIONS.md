@@ -22,7 +22,7 @@ Hệ thống là **modular monolith** (ADR-01). Để sau này tách được mo
 | document, worker (tuần 8–10) | TV1 | `document` | TV2 / TV4 |
 
 Hạ tầng (`docker-compose.yml`, `.github/workflows/`, IaC) do TV3 (Bảo) phụ trách. Business rule do TV2 (Thanh), ca kiểm thử và kiểm thử chức năng do TV4 (Duy) phụ trách. TV1 (Duong) code toàn bộ module
-(xem ADR-11 trong `docs/progress/tuan-07/README.md`).
+(xem [ADR-11](architecture/adr/ADR-11-role-adjustment.md)).
 
 ## 2. Cấu trúc một module
 

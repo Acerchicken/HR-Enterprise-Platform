@@ -6,7 +6,7 @@ Không có công việc hoàn thành trong tuần 7.
 
 ## Vai trò từ tuần 8: Nghiệp vụ
 
-Theo [ADR-11](README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code), TV2 chịu trách nhiệm:
+Theo [ADR-11](../../architecture/adr/ADR-11-role-adjustment.md), TV2 chịu trách nhiệm:
 - Viết và giữ đúng **business rule** của từng use case trước khi TV1 code.
 - Vẽ **quy trình nghiệp vụ** (ai làm gì, theo thứ tự nào, khi nào rẽ nhánh).
 - Giữ requirements, NFR, user journey cập nhật; đối chiếu code với requirements và mở issue khi lệch.
