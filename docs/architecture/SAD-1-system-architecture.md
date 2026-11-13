@@ -28,7 +28,7 @@ Cập nhật: 6/11/2026 (tuần 9). Trạng thái: ✅ đã chạy · 🟡 đang
 | Chi phí | < 100 USD/tháng cho staging | Dịch vụ tier nhỏ nhất, tắt môi trường ngoài giờ demo |
 | Đội ngũ | 4 người, 10 tuần, không có người vận hành | Ưu tiên dịch vụ managed (ADR-00) |
 
-Nguồn: [NFR và workload tuần 5](../progress/tuan-05/README.md), [SRS mục 6](../requirements/SRS.md#6-yêu-cầu-phi-chức-năng).
+Nguồn: [NFR và workload tuần 5](../progress/tuan-05/README.md), [SRS mục 6](../requirements/SRS.md#6-yêu-cầu-phi-chức-năng-nfr).
 
 ## 2. Ngữ cảnh hệ thống (C4 mức 1)
 

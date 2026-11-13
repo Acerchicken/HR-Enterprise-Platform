@@ -133,7 +133,7 @@ Mọi bước ghi lịch sử (ai, lúc nào, từ trạng thái nào sang trạ
 
 ## 7. Yêu cầu chức năng
 
-Đã chuyển sang [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng): 34 yêu cầu `FR-x.y`, mỗi yêu cầu có mức ưu tiên MoSCoW, tiêu chí chấp
+Đã chuyển sang [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng-fr): 34 yêu cầu `FR-x.y`, mỗi yêu cầu có mức ưu tiên MoSCoW, tiêu chí chấp
 nhận và trạng thái trên `dev`.
 
 | Use case (mục 4.1) | Yêu cầu trong SRS |
@@ -163,8 +163,8 @@ ngân hàng và lương là dữ liệu nhạy cảm, chỉ HR được xem và 
 
 ## 10. Yêu cầu phi chức năng
 
-Đã chuyển sang [SRS mục 6](../requirements/SRS.md#6-yêu-cầu-phi-chức-năng) (`NFR-1` → `NFR-7`: hiệu năng, mở rộng, sẵn sàng, phục hồi, bảo mật,
-truy vết, chi phí). Các con số NFR suy ra từ quy mô doanh nghiệp ở mục 2.1 và mục tiêu ở mục 3.
+Đã chuyển sang [SRS mục 6](../requirements/SRS.md#6-yêu-cầu-phi-chức-năng-nfr) (`NFR-1` → `NFR-11`: hiệu năng, mở rộng, sẵn sàng, phục hồi, bảo mật,
+truy vết, chi phí, vận hành, bảo trì, khả dụng, tuân thủ; kèm SLI/SLO/SLA và kịch bản lỗi). Các con số NFR suy ra từ quy mô doanh nghiệp ở mục 2.1 và mục tiêu ở mục 3.
 
 ## 11. Giả định, ràng buộc, phụ thuộc
 
@@ -196,7 +196,7 @@ truy vết, chi phí). Các con số NFR suy ra từ quy mô doanh nghiệp ở 
 ## 13. Tiêu chí nghiệm thu version 1
 
 1. Luồng nghỉ phép chạy trên staging: tạo → duyệt/từ chối → hoàn tất, có email, đúng BR-01 → BR-12.
-2. Mọi yêu cầu mức **M** ở [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng) đạt tiêu chí chấp nhận, có e2e test hoặc biên bản kiểm thử chức năng.
+2. Mọi yêu cầu mức **M** ở [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng-fr) đạt tiêu chí chấp nhận, có e2e test hoặc biên bản kiểm thử chức năng.
 3. Mọi dòng của ma trận phân quyền có ca kiểm thử được phép và bị chặn.
 4. Load test tuần 11 đạt NFR-1, NFR-3 (SRS mục 6).
 5. Chi phí staging thực tế dưới NFR-7 (SRS mục 6).
