@@ -20,23 +20,25 @@ flowchart LR
 ```
 
 Liên quan: [BRD](../business/BRD.md) · [SRS](../requirements/SRS.md) · [ma trận phân quyền](../security/access-control-matrix.md) ·
-[quy ước code](../CONVENTIONS.md) · [API](../openapi.yaml) · [danh sách ADR](../progress/README.md#danh-sách-quyết-định-adr).
+[quy ước code](../CONVENTIONS.md) · [API](../openapi.yaml) · [danh sách ADR](adr/README.md).
 
 ## Quyết định kiến trúc (ADR)
 
-| ADR | Quyết định | Góc nhìn | Ở đâu |
-|---|---|---|---|
-| ADR-00 | Managed services cho database, lưu file, đăng nhập | Hệ thống | [tuần 5](../progress/tuan-05/README.md#adr-00--dùng-managed-services-cho-database-storage-và-identity) |
-| ADR-01 | Modular monolith | Phần mềm | [tuần 6](../progress/tuan-06/README.md#adr-01--modular-monolith-thay-vì-microservices) |
-| ADR-02 | PostgreSQL | Cả hai | [tuần 6](../progress/tuan-06/README.md#adr-02--postgresql-thay-vì-nosql) |
-| ADR-03 | Workflow đồng bộ, thông báo bất đồng bộ qua outbox + queue | Cả hai | [tuần 6](../progress/tuan-06/README.md#adr-03--workflow-đồng-bộ-thông-báo-và-index-bất-đồng-bộ) |
-| ADR-04 | NestJS + React + PostgreSQL + Keycloak | Phần mềm | [tuần 7](../progress/tuan-07/README.md#adr-04--tech-stack-nestjs--react--postgresql--keycloak) |
-| ADR-05 | Phạm vi MVP | Nghiệp vụ | [tuần 4](../progress/tuan-04-ke-hoach-tong.md#adr-05--phạm-vi-mvp-một-luồng-nghiệp-vụ-nghỉ-phép-end-to-end) |
-| ADR-06 | 99,5%, 2 instance, thiết kế 50 RPS, không Kubernetes | Hệ thống | [tuần 5](../progress/tuan-05/README.md#adr-06--availability-995-và-thiết-kế-cho-50-rps-không-dùng-kubernetes) |
-| ADR-07 | Không Redis, cache in-memory | Phần mềm | [tuần 6](../progress/tuan-06/README.md#adr-07--không-dùng-redis-ở-mvp) |
-| ADR-08 | Mã hóa trường nhạy cảm ở tầng ứng dụng | Phần mềm | [tuần 7](../progress/tuan-07/README.md#adr-08--mã-hóa-trường-nhạy-cảm-ở-tầng-ứng-dụng) |
-| ADR-09 | Audit log append-only khóa ở database | Phần mềm | [tuần 7](../progress/tuan-07/README.md#adr-09--audit-log-append-only-khóa-ở-mức-database) |
-| ADR-10 | Role MANAGER suy ra từ sơ đồ tổ chức | Phần mềm | [tuần 7](../progress/tuan-07/README.md#adr-10--role-manager-suy-ra-từ-sơ-đồ-tổ-chức) |
-| ADR-11 | Điều chỉnh phân vai | Dự án | [tuần 7](../progress/tuan-07/README.md#adr-11--điều-chỉnh-phân-vai-cho-giai-đoạn-code) |
-| ADR-12 | Cloud provider | Hệ thống | [tuần 9](../progress/tuan-09/README.md#adr-12--chọn-cloud-provider) |
-| ADR-13 | Kho tài liệu: tải lên trực tiếp, tải xuống qua API, lọc phạm vi trong truy vấn | Phần mềm | [tuần 10](../progress/tuan-10/README.md#adr-13--kho-tài-liệu-tải-lên-trực-tiếp-tải-xuống-qua-api-lọc-phạm-vi-trong-truy-vấn) |
+Mỗi ADR là một file trong [`adr/`](adr/README.md) (mẫu, trạng thái, quy tắc viết ở đó).
+
+| ADR | Quyết định | Góc nhìn | Trạng thái | File |
+|---|---|---|---|---|
+| ADR-00 | Managed services cho database, lưu file, đăng nhập | Hệ thống | Đã chấp nhận | [ADR-00-managed-services.md](adr/ADR-00-managed-services.md) |
+| ADR-01 | Modular monolith | Phần mềm | Đã chấp nhận | [ADR-01-modular-monolith.md](adr/ADR-01-modular-monolith.md) |
+| ADR-02 | PostgreSQL | Cả hai | Đã chấp nhận | [ADR-02-postgresql.md](adr/ADR-02-postgresql.md) |
+| ADR-03 | Workflow đồng bộ, thông báo bất đồng bộ qua outbox + queue | Cả hai | Đã chấp nhận | [ADR-03-sync-workflow-async-notification.md](adr/ADR-03-sync-workflow-async-notification.md) |
+| ADR-04 | NestJS + React + PostgreSQL + Keycloak | Phần mềm | Đã chấp nhận | [ADR-04-tech-stack.md](adr/ADR-04-tech-stack.md) |
+| ADR-05 | Phạm vi MVP | Nghiệp vụ | Đã chấp nhận | [ADR-05-mvp-scope.md](adr/ADR-05-mvp-scope.md) |
+| ADR-06 | 99,5%, 2 instance, thiết kế 50 RPS, không Kubernetes | Hệ thống | Đã chấp nhận | [ADR-06-availability-50-rps.md](adr/ADR-06-availability-50-rps.md) |
+| ADR-07 | Không Redis, cache in-memory | Phần mềm | Đã chấp nhận | [ADR-07-no-redis.md](adr/ADR-07-no-redis.md) |
+| ADR-08 | Mã hóa trường nhạy cảm ở tầng ứng dụng | Phần mềm | Đã chấp nhận | [ADR-08-field-encryption.md](adr/ADR-08-field-encryption.md) |
+| ADR-09 | Audit log append-only khóa ở database | Phần mềm | Đã chấp nhận | [ADR-09-append-only-audit.md](adr/ADR-09-append-only-audit.md) |
+| ADR-10 | Role MANAGER suy ra từ sơ đồ tổ chức | Phần mềm | Đã chấp nhận | [ADR-10-manager-role-derived.md](adr/ADR-10-manager-role-derived.md) |
+| ADR-11 | Điều chỉnh phân vai | Dự án | Đã chấp nhận | [ADR-11-role-adjustment.md](adr/ADR-11-role-adjustment.md) |
+| ADR-12 | Cloud provider | Hệ thống | Đã chấp nhận | [ADR-12-cloud-provider.md](adr/ADR-12-cloud-provider.md) |
+| ADR-13 | Kho tài liệu: tải lên trực tiếp, tải xuống qua API, lọc phạm vi trong truy vấn | Phần mềm | Đã chấp nhận | [ADR-13-document-storage.md](adr/ADR-13-document-storage.md) |
