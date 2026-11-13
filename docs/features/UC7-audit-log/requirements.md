@@ -18,8 +18,8 @@
 - **AC-7.1.1** Mỗi thao tác trong bảng "Các thao tác được ghi" của [spec.md](spec.md#2-tác-nhân-và-quyền) tạo đúng một bản ghi
   có người thực hiện, hành động, loại và ID đối tượng, thời điểm, `traceId`, danh sách trường đã đổi.
 - **AC-7.1.2** Khi thao tác nghiệp vụ lỗi giữa chừng. Thì không có bản ghi audit và không có thay đổi dữ liệu (cùng giao dịch).
-- **AC-7.1.3** Audit không chứa giá trị CCCD, số tài khoản, lương (chỉ `***`), không chứa lý do nghỉ (ADR-08, BR-14). Ghi chú
-  duyệt, từ chối và giá trị trường cá nhân: xem UC4 AC-4.7.4, UC1 AC-1.4.3.
+- **AC-7.1.3** Audit không chứa giá trị CCCD, số tài khoản, lương (chỉ `***`), không chứa lý do nghỉ (ADR-08, BR-14). Không chứa
+  ghi chú tự do của đơn nghỉ (UC4 AC-4.7.4) và giá trị trường cá nhân (UC1 AC-1.4.3).
 
 ### FR-7.2 Chỉ thêm, không sửa xóa (M, đã có)
 
@@ -34,8 +34,8 @@
 - **AC-7.3.3** Khi ngày sai định dạng ISO 8601 hoặc `size` lớn hơn 100. Thì trả 400.
 - **AC-7.3.4** *(chưa có)* Trang "Lịch sử thao tác": chọn đối tượng, nhập ID, người thực hiện, khoảng thời gian; bảng kết quả
   có thời điểm, người, hành động, `traceId`.
-- **AC-7.3.5** Khi lọc `from=2026-11-01&to=2026-11-02`. Thì có bản ghi của cả ngày 1/11, không có bản ghi ngày 2/11 (`to` không
-  tính mốc).
+- **AC-7.3.5** *(chưa đạt)* Khi lọc `from=2026-11-01&to=2026-11-01`. Thì trả mọi bản ghi trong ngày 1/11 theo giờ Việt Nam
+  (`to` tính cả ngày kết thúc).
 
 ### Chưa có (NFR)
 
@@ -53,7 +53,7 @@ Lịch làm theo [kế hoạch theo chức năng tuần 11–13](../../progress/
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| Màn hình tra cứu | AC-7.3.4 | TV1 | `feat/audit-ui` | 10, chưa xong thì đầu tuần 11 |
+| Màn hình tra cứu; `to` tính cả ngày kết thúc | AC-7.3.4, AC-7.3.5 | TV1 | `feat/audit-ui` | 10, chưa xong thì đầu tuần 11 |
 | Chốt thời gian lưu audit: BR-13 (5 năm) hay NFR-6.3 (2 năm) | – | TV2 | `docs/org-integrity-rules` | 11 |
 | Ca kiểm thử lọc theo `actor`, thời gian; audit không chứa giá trị nhạy cảm; thao tác lỗi không sinh audit | AC-7.1.2, AC-7.1.3, AC-7.3.1 | TV4 | `docs/test-cases-week11` | 11 |
 | Đo NFR-2.4 với 3,75 triệu bản ghi giả | – | TV4 | trong load test tuần 11 | 11 |

@@ -20,8 +20,9 @@
 - **AC-3.1.1** Khi nhân viên xem số dư. Thì mỗi loại phép có được hưởng, đã dùng, đang chờ, còn lại; còn lại = được hưởng −
   đã dùng − đang chờ.
 - **AC-3.1.2** Giả sử nhân viên vừa tạo đơn 2 ngày. Khi xem lại số dư. Thì đang chờ tăng 2, còn lại giảm 2.
-- **AC-3.1.3** Giả sử nhân viên mới chưa có dòng số dư của loại phép. Khi tạo đơn loại đó. Thì số dư được tạo với số ngày
-  được hưởng = `max_days_per_year`, đơn được tạo bình thường.
+- **AC-3.1.3** *(chưa đạt)* Giả sử nhân viên vào làm 1/7/2026. Khi xem số dư phép năm 2026. Thì được hưởng 6 ngày (12 × 6/12,
+  Điều 113 BLLĐ). Người có 10 năm thâm niên được hưởng 14 ngày.
+- **AC-3.1.4** *(chưa đạt)* Nghỉ cưới, nghỉ tang tính theo từng lần (3 ngày/lần), không trừ vào số dư năm.
 
 ### FR-3.2 Tạo đơn (M, đã có)
 
@@ -30,8 +31,9 @@
 - **AC-3.2.2** Khi không đủ số dư (BR-01). Thì trả 400, câu báo nêu số ngày cần và số ngày còn.
 - **AC-3.2.3** Khi ngày kết thúc trước ngày bắt đầu, nửa ngày nhưng hai ngày khác nhau, loại phép không tồn tại, lý do quá 500
   ký tự. Thì trả 400 kèm `fields`.
-- **AC-3.2.4** Khi khoảng nghỉ qua hai năm (30/12 – 2/1). Thì trả 400, yêu cầu tách hai đơn.
-- **AC-3.2.5** Khi tài khoản đăng nhập chưa gắn hồ sơ. Thì trả 404.
+- **AC-3.2.4** *(chưa đạt)* Khi tạo đơn 29/12/2026 – 4/1/2027. Thì một đơn được tạo; số ngày năm 2026 trừ vào số dư 2026,
+  số ngày năm 2027 trừ vào số dư 2027; năm nào thiếu số dư thì trả 400.
+- **AC-3.2.5** *(chưa đạt)* Khi tài khoản đăng nhập chưa gắn hồ sơ. Thì trả 403 (code đang trả 404).
 
 ### FR-3.3 Không trùng lịch (M, đã có)
 
@@ -85,4 +87,6 @@ Lịch làm theo [kế hoạch theo chức năng tuần 11–13](../../progress/
 |---|---|---|---|---|
 | Tạo đơn hộ (làm chung nhánh với người duyệt thay) | AC-3.7.1 → AC-3.7.4 | TV1 | `feat/leave-delegation` | 10, chưa xong thì đầu tuần 11 |
 | Email chung, ẩn lý do nghỉ ốm | UC4 AC-4.6.3, AC-4.7.3 | TV1 | `feat/leave-privacy` | 11 |
+| Xác nhận cách tính phép năm (tỉ lệ, thâm niên), nghỉ theo sự kiện, đơn qua hai năm | AC-3.1.3, AC-3.1.4, AC-3.2.4 | TV2 | `docs/leave-rules-week11` | 11 |
+| Cấp số dư theo luật, đơn qua hai năm, 403 khi chưa gắn hồ sơ | AC-3.1.3, AC-3.1.4, AC-3.2.4, AC-3.2.5 | TV1 | `fix/leave-balance-rules` | 11 |
 | Lưu trữ 5 năm, legal hold (BR-13) | – | – | – | Ngoài MVP, ghi ở SRS mục 8 |

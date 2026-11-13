@@ -37,13 +37,17 @@
   đã giải mã, và có audit `VIEW_SENSITIVE` ghi người xem, nhân viên bị xem, `traceId`.
 - **AC-1.3.2** Khi vai trò khác HR gọi `include=sensitive`. Thì trả 403 và không có audit đọc.
 - **AC-1.3.3** Khi HR mở hồ sơ không kèm `include=sensitive`. Thì không có trường nhạy cảm, không ghi `VIEW_SENSITIVE`.
+- **AC-1.3.4** *(chưa đạt)* Khi HR mở form sửa hồ sơ. Thì giá trị nhạy cảm không tự tải, không sinh `VIEW_SENSITIVE`; chỉ khi
+  HR bấm "Hiện thông tin nhạy cảm" mới tải và ghi audit.
 
 ### FR-1.4 HR sửa mọi trường (M, đã có API và giao diện, PR #63)
 
 - **AC-1.4.1** Khi HR sửa lương. Thì trả 200; audit `UPDATE` có tên trường `salary`, không có giá trị cũ hay mới.
 - **AC-1.4.2** Khi HR nhập sai định dạng trên giao diện. Thì lỗi hiện đúng ô theo `fields` của response 400.
-- **AC-1.4.3** *(chưa chốt)* Audit `CREATE`, `UPDATE` không chứa giá trị địa chỉ, ngày sinh, điện thoại, vì ADMIN đọc được
-  audit nhưng chỉ được xem hồ sơ người khác ở mức danh bạ. Hiện audit có các giá trị này.
+- **AC-1.4.3** *(chưa đạt)* Khi HR đổi phòng ban, chức danh, quản lý, trạng thái hoặc ngày vào làm. Thì audit ghi tên trường,
+  giá trị cũ và mới. Khi đổi họ tên, điện thoại, địa chỉ, ngày sinh. Thì audit chỉ ghi tên trường (ADMIN đọc được audit nhưng
+  không được xem thông tin cá nhân người khác).
+- **AC-1.4.4** *(chưa đạt)* HR sửa được `hireDate` và `workEmail`; `employeeCode` không sửa được.
 
 ### FR-1.5 HR tạo nhân viên (M, đã có API và giao diện, PR #63)
 
@@ -62,10 +66,12 @@
 - **AC-1.6.3** *(chưa đạt)* Giả sử HR1, HR2 cùng mở hồ sơ. Khi HR1 chỉ sửa lương rồi HR2 lưu. Thì HR2 nhận 409. Hiện sửa chỉ
   trường nhạy cảm không tăng `version`.
 
-### Quy tắc chờ chốt (TV2)
+### Nghỉ việc (M, chưa đạt)
 
-- **AC-1.7.1** *(chưa chốt)* Khi HR chuyển nhân viên còn cấp dưới sang `TERMINATED`. Thì bị chặn, hoặc buộc chuyển cấp dưới
-  sang quản lý khác trước. TV2 chốt cách làm ở nhánh `docs/org-integrity-rules`, rồi sửa tiêu chí này.
+- **AC-1.7.1** *(chưa đạt)* Khi HR chuyển nhân viên còn cấp dưới đang làm việc sang `TERMINATED`. Thì trả 400, nêu số cấp dưới
+  cần chuyển sang quản lý khác trước.
+- **AC-1.7.2** *(chưa đạt)* Giả sử hồ sơ đã `TERMINATED`. Khi tài khoản gắn với hồ sơ đó gọi API bằng token còn hạn. Thì bị từ
+  chối (403).
 
 ## 3. Yêu cầu phi chức năng liên quan
 
@@ -80,6 +86,6 @@ Lịch làm theo [kế hoạch theo chức năng tuần 11–13](../../progress/
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
 | Cập nhật trạng thái FR-1.4, FR-1.5 trong SRS | – | TV2 | `docs/matrix-week10` | 10 |
-| Chốt quy tắc chấm dứt nhân viên còn cấp dưới; audit có ghi giá trị trường cá nhân không | AC-1.7.1, AC-1.4.3 | TV2 | `docs/org-integrity-rules` | 11 |
-| Bắt buộc `version`; tăng `version` khi sửa trường nhạy cảm; chặn theo quy tắc TV2 vừa chốt | AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.4.3 | TV1 | `fix/employee-org-integrity` | 11 |
-| Ca kiểm thử cho các tiêu chí trên | AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.4.3 | TV4 | `docs/test-cases-week11` | 11 |
+| Xác nhận quy tắc nghỉ việc khi còn cấp dưới, cách ghi audit theo nhóm trường | AC-1.7.1, AC-1.4.3 | TV2 | `docs/org-integrity-rules` | 11 |
+| Bắt buộc `version`; tăng `version` khi sửa trường nhạy cảm; audit theo nhóm trường; sửa `hireDate`, `workEmail`; nghỉ việc; chỉ tải trường nhạy cảm khi bấm hiện | AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2 | TV1 | `fix/employee-org-integrity` | 11 |
+| Ca kiểm thử cho các tiêu chí trên | Như dòng trên | TV4 | `docs/test-cases-week11` | 11 |

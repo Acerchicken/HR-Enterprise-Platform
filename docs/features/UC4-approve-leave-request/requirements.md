@@ -51,6 +51,7 @@
 - **AC-4.5.1** Khi HR hoàn tất đơn `APPROVED`. Thì đơn `COMPLETED`, số ngày chuyển từ `pending` sang `used` (BR-10), audit
   `LEAVE_COMPLETE`.
 - **AC-4.5.2** Khi hoàn tất đơn chưa duyệt. Thì trả 409, đơn giữ nguyên. Khi quản lý hoặc nhân viên hoàn tất. Thì trả 403.
+- **AC-4.5.3** *(chưa đạt)* Khi HR hoàn tất đơn mà hôm nay chưa qua ngày kết thúc của đơn. Thì trả 409.
 
 ### FR-4.6 Email thông báo (M, đã có; nội dung chưa đạt BR-15)
 
@@ -85,5 +86,7 @@ Lịch làm theo [kế hoạch theo chức năng tuần 11–13](../../progress/
 |---|---|---|---|---|
 | Người duyệt thay | AC-4.3.1 → AC-4.3.4 | TV1 | `feat/leave-delegation` | 10, chưa xong thì đầu tuần 11 |
 | Email chung, email đơn CEO cho HR, ẩn lý do nghỉ ốm, audit không chứa ghi chú | AC-4.6.3, AC-4.6.5, AC-4.7.3, AC-4.7.4 | TV1 | `feat/leave-privacy` | 11 |
+| Quy tắc hủy đơn đã duyệt; chỉ hoàn tất sau ngày kết thúc; nhắc đơn chờ lâu | AC-4.5.3 | TV2 | `docs/leave-rules-week11` | 11 |
+| Chỉ hoàn tất sau ngày kết thúc; hủy đơn đã duyệt theo quy tắc TV2 | AC-4.5.3 | TV1 | `fix/leave-balance-rules` | 11 |
 | Ca kiểm thử đổi quản lý khi đơn đang chờ, người duyệt thay, riêng tư | AC-4.2.6, AC-4.3.x, AC-4.6.3, AC-4.7.3 | TV4 | `docs/test-cases-week11` | 11 |
 | Báo cáo MT-2 (thời gian gửi → quyết định) | – | TV2 | `docs/mt2-report` | 13, khi có dữ liệu staging |

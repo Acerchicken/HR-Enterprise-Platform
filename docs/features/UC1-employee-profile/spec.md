@@ -46,13 +46,18 @@ Nhân viên tự sửa số điện thoại, địa chỉ của mình. HR tạo 
   - Mở hồ sơ một người từ danh bạ hoặc sơ đồ tổ chức.
   - HR bấm "Thêm nhân viên" hoặc "Sửa".
 - **Điều kiện sau khi thành công:**
-  - Hồ sơ được lưu, `version` tăng 1. Ngoại lệ: lần sửa chỉ đổi trường nhạy cảm không tăng `version` (trường nhạy cảm nằm ở
-    bảng `employee_sensitive` riêng).
+  - Hồ sơ được lưu, `version` tăng 1 sau **mọi** lần sửa thành công, kể cả khi chỉ đổi trường nhạy cảm.
   - Trường nhạy cảm được mã hóa trước khi lưu.
-  - Có audit `CREATE` hoặc `UPDATE`. `changedFields` ghi **tên và giá trị mới** của các trường thường đã đổi (kể cả địa chỉ,
-    ngày sinh); trường nhạy cảm chỉ ghi tên với giá trị `***`. Xem mục 12 về việc ADMIN đọc được địa chỉ, ngày sinh qua audit.
+  - Có audit `CREATE` hoặc `UPDATE`, ghi theo ba nhóm trường:
+    - trường tổ chức (phòng ban, chức danh, quản lý trực tiếp, trạng thái, ngày vào làm): tên trường, giá trị cũ và mới, để
+      tra được lịch sử điều chuyển;
+    - trường cá nhân (họ tên, điện thoại, địa chỉ, ngày sinh): chỉ tên trường, vì ADMIN đọc được audit nhưng không được xem
+      thông tin cá nhân của người khác;
+    - trường nhạy cảm (CCCD, số tài khoản, lương): chỉ tên trường.
   - HR xem trường nhạy cảm sinh audit `VIEW_SENSITIVE`.
 - **Điều kiện sau khi thất bại:** hồ sơ và `version` giữ nguyên, không có audit.
+- **Nghỉ việc:** khi hồ sơ chuyển `TERMINATED`, người đó không dùng được hệ thống nữa: HR khóa tài khoản ở identity provider
+  trong ngày, và API từ chối mọi request của tài khoản gắn với hồ sơ `TERMINATED` (kể cả khi token cũ còn hạn).
 
 ## 4. Luồng chính
 
@@ -64,7 +69,7 @@ Nhân viên tự sửa số điện thoại, địa chỉ của mình. HR tạo 
 | 2 | Bấm sửa, nhập số điện thoại hoặc địa chỉ mới, bấm Lưu | Gửi `PATCH /employees/{id}` kèm `version` đang hiển thị |
 | 3 | | Kiểm người gọi là chủ hồ sơ và chỉ gửi `phone`, `address` |
 | 4 | | Kiểm `version` khớp bản ghi hiện tại |
-| 5 | | Lưu, tăng `version`, ghi audit `UPDATE` (trường đã đổi kèm giá trị mới) trong cùng giao dịch |
+| 5 | | Lưu, tăng `version`, ghi audit `UPDATE` (tên trường đã đổi) trong cùng giao dịch |
 | 6 | Thấy hồ sơ đã cập nhật | Trả hồ sơ mới |
 
 ### 4.2 HR tạo hồ sơ nhân viên (FR-1.5)
@@ -83,19 +88,22 @@ Nhân viên tự sửa số điện thoại, địa chỉ của mình. HR tạo 
 
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
-| 1 | HR mở hồ sơ và chọn "Xem thông tin nhạy cảm" | Gọi `GET /employees/{id}?include=sensitive`. Form sửa của HR (`/employees/:id/edit`) cũng gọi API này khi mở, nên **mỗi lần mở form sửa sinh một audit `VIEW_SENSITIVE`**, kể cả khi HR chỉ sửa số điện thoại |
+| 1 | HR mở hồ sơ và bấm "Hiện thông tin nhạy cảm" | Gọi `GET /employees/{id}?include=sensitive`. Chỉ gọi khi HR bấm; mở hồ sơ hay mở form sửa không tự tải giá trị nhạy cảm, để audit `VIEW_SENSITIVE` phản ánh đúng lần HR thật sự cần xem |
 | 2 | | Kiểm vai trò HR; giải mã CCCD, số tài khoản, lương; ghi audit `VIEW_SENSITIVE` |
-| 3 | HR bấm Sửa, đổi trường bất kỳ (kể cả nhạy cảm), bấm Lưu | Gửi `PATCH /employees/{id}` kèm `version` |
+| 3 | HR bấm Sửa, đổi trường bất kỳ, bấm Lưu. Trường nhạy cảm để trống nghĩa là giữ nguyên; muốn đổi thì nhập giá trị mới | Gửi `PATCH /employees/{id}` kèm `version`, chỉ gửi trường đã đổi |
 | 4 | | Kiểm `version`, kiểm quy tắc quản lý nếu đổi `managerId`, mã hóa trường nhạy cảm |
-| 5 | | Lưu, ghi audit `UPDATE`: trường thường có giá trị mới, trường nhạy cảm chỉ có `***` |
+| 5 | | Lưu, tăng `version`, ghi audit `UPDATE` theo ba nhóm trường ở mục 3 |
 | 6 | HR thấy hồ sơ đã cập nhật | Trả hồ sơ mới |
 
 ## 5. Luồng thay thế
 
 - **A1 (từ 4.1 bước 1):** người dùng mở hồ sơ của người khác qua danh bạ. Hệ thống trả mức danh bạ, hoặc mức cá nhân nếu
   người gọi là quản lý trực tiếp của người đó.
-- **A2 (từ 4.1 bước 2):** client không gửi `version`. Code hiện chấp nhận và ghi đè; xem mục 12.
+- **A2 (từ 4.1 bước 2):** client không gửi `version`. Hệ thống từ chối (E9), không ghi đè.
 - **A3 (từ 4.2 bước 4):** chức danh là CEO. Cho phép không có quản lý; chỉ được có một CEO đang làm việc.
+- **A4 (từ 4.3 bước 3), HR chuyển nhân viên sang `TERMINATED`:** nếu người đó còn cấp dưới đang làm việc, hệ thống từ chối
+  (E10) và yêu cầu HR chuyển các cấp dưới sang quản lý khác trước. Đơn nghỉ `SUBMITTED` người đó đang chờ duyệt sẽ chuyển sang
+  quản lý mới theo BR-05.
 
 ## 6. Ngoại lệ
 
@@ -109,6 +117,8 @@ Nhân viên tự sửa số điện thoại, địa chỉ của mình. HR tạo 
 | E6 | Mã nhân viên hoặc email đã tồn tại | 409 `CONFLICT` |
 | E7 | Hồ sơ không tồn tại | 404 `NOT_FOUND` |
 | E8 | ADMIN hoặc vai trò khác gọi `POST /employees` | 403 `FORBIDDEN` |
+| E9 | Sửa hồ sơ không kèm `version` | 400 `BAD_REQUEST` |
+| E10 | Chuyển `TERMINATED` khi còn cấp dưới đang làm việc | 400 `BAD_REQUEST`, nêu số cấp dưới cần chuyển |
 
 ## 7. Quy tắc áp dụng
 
@@ -122,20 +132,20 @@ Nhân viên tự sửa số điện thoại, địa chỉ của mình. HR tạo 
 
 | Trường | Bắt buộc khi tạo | Ai sửa | Kiểm tra |
 |---|---|---|---|
-| `employeeCode` | Có | Không sửa (API không nhận) | Dạng `E` + 5 chữ số, duy nhất |
+| `employeeCode` | Có | Không sửa | Dạng `E` + 5 chữ số, duy nhất |
 | `fullName` | Có | HR | 2–150 ký tự |
-| `workEmail` | Có | Không sửa (API không nhận) | Email hợp lệ, duy nhất, lưu chữ thường; dùng để liên kết tài khoản đăng nhập |
+| `workEmail` | Có | HR (khi đổi email công ty) | Email hợp lệ, duy nhất, lưu chữ thường; dùng để liên kết tài khoản đăng nhập, nên đổi cùng lúc với tài khoản ở identity provider |
 | `phone` | Không | Chủ hồ sơ, HR | 8–20 ký tự số, có thể có `+`, khoảng trắng, `.`, `-` |
 | `address` | Không | Chủ hồ sơ, HR | Tối đa 255 ký tự |
 | `dateOfBirth` | Không | HR | Ngày hợp lệ |
 | `departmentId`, `positionId` | Có | HR | Phải tồn tại |
 | `managerId` | Có, trừ CEO | HR | Nhân viên đang làm việc; không tạo vòng |
-| `hireDate` | Có | Không sửa (API không nhận, kể cả HR) | Ngày hợp lệ |
+| `hireDate` | Có | HR (sửa sai sót nhập liệu) | Ngày hợp lệ; dùng để tính phép năm theo thâm niên (UC3) |
 | `status` | Mặc định `ACTIVE` | HR | `ACTIVE`, `ON_LEAVE`, `TERMINATED` |
 | `nationalId` | Không | HR | Đúng 12 chữ số; mã hóa khi lưu |
 | `bankAccount` | Không | HR | 6–20 chữ số; mã hóa khi lưu |
 | `salary` | Không | HR | Chuỗi số; mã hóa khi lưu |
-| `version` | – | – | Bắt buộc theo quy ước khi sửa (xem mục 12) |
+| `version` | Có khi sửa | – | Bằng `version` hiện tại của hồ sơ |
 
 ## 9. Giao diện và API
 
@@ -163,8 +173,10 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 |---|---|---|
 | Ba mức xem, tự sửa liên hệ, trường nhạy cảm, audit | Đã có | – |
 | HR tạo, sửa hồ sơ trên giao diện | Đã có (PR #63) | TV2 cập nhật trạng thái FR-1.4, FR-1.5 trong SRS |
-| `version` khi sửa | Một phần: chỉ so khi client gửi | Đề xuất bắt buộc `version` để đúng FR-1.6 |
-| Chấm dứt nhân viên còn cấp dưới | Chưa chặn | Chốt quy tắc (bản nháp UC1/UC2 tuần 8) |
-| Audit `CREATE`, `UPDATE` chứa giá trị địa chỉ, ngày sinh, điện thoại | Đang như vậy | ADMIN chỉ được xem mức danh bạ nhưng đọc được các giá trị này qua `GET /audit-logs`. TV2 chốt: chỉ ghi tên trường cá nhân, hoặc giới hạn ADMIN (T-09) |
-| Sửa chỉ trường nhạy cảm không tăng `version` | Đang như vậy | Hai HR cùng sửa lương không bị 409; sửa cùng `fix/employee-org-integrity` |
-| Mở form sửa của HR sinh `VIEW_SENSITIVE` | Đang như vậy | Chấp nhận (HR thật sự thấy giá trị), hoặc chỉ tải trường nhạy cảm khi HR bấm hiện |
+| `version` bắt buộc khi sửa (E9) | Code chưa đúng: chỉ so khi client gửi | TV1, `fix/employee-org-integrity` |
+| Chặn chuyển `TERMINATED` khi còn cấp dưới (A4, E10) | Code chưa có | TV2 xác nhận quy tắc, TV1 làm |
+| Người `TERMINATED` không dùng được hệ thống | Code chưa có: API không kiểm trạng thái hồ sơ khi xác thực | TV1; TV3 thêm bước khóa tài khoản Cognito vào quy trình nghỉ việc |
+| HR sửa `hireDate`, `workEmail` | Code chưa có: API không nhận hai trường này | TV1 |
+| Audit theo ba nhóm trường (mục 3) | Code chưa đúng: ghi giá trị mới của mọi trường thường, kể cả địa chỉ, ngày sinh; không ghi giá trị cũ | TV1 |
+| Sửa chỉ trường nhạy cảm tăng `version` | Code chưa đúng: không tăng | TV1 |
+| Chỉ tải trường nhạy cảm khi HR bấm hiện | Code chưa đúng: form sửa tự tải, mỗi lần mở sinh `VIEW_SENSITIVE` | TV1 |

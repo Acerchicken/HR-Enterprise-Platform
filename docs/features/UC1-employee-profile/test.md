@@ -33,8 +33,10 @@ audit. Vì vậy:
 | AC-1.3.1 | "HR xem trường nhạy cảm (đã giải mã) và lượt xem được audit" | SEC | Có |
 | AC-1.3.2 | "xem hồ sơ: … nhân viên không xem trường nhạy cảm" | SEC | Có |
 | AC-1.3.3 | – | Cần thêm | Chưa |
+| AC-1.3.4 | – | – | Chưa đạt (form sửa tự tải trường nhạy cảm) |
 | AC-1.4.1 | "HR cập nhật lương: audit chỉ ghi tên trường, không ghi giá trị" | – | Có |
-| AC-1.4.3 | – | – | Chờ TV2 chốt; hiện audit có giá trị địa chỉ, ngày sinh |
+| AC-1.4.3 | – | – | Chưa đạt (audit ghi giá trị địa chỉ, ngày sinh; không ghi giá trị cũ) |
+| AC-1.4.4 | – | – | Chưa đạt (API không nhận `hireDate`, `workEmail`) |
 | AC-1.4.2 | – (giao diện) | Kiểm tay trên `/employees/:id/edit` | Chưa ghi biên bản |
 | AC-1.5.1 | "HR tạo nhân viên kèm quản lý và trường nhạy cảm: 201, audit chỉ ghi tên trường nhạy cảm (FR-1.5)" | – | Có |
 | AC-1.5.2 | "HR không gán được quản lý tạo vòng lặp", "tạo nhân viên không phải CEO mà thiếu quản lý → 400…" | – | Có |
@@ -43,7 +45,7 @@ audit. Vì vậy:
 | AC-1.6.1 | "version cũ → 409 (optimistic locking)" | – | Có |
 | AC-1.6.2 | – | – | Chưa đạt (code chưa bắt buộc `version`) |
 | AC-1.6.3 | – | – | Chưa đạt (sửa chỉ lương không tăng `version`) |
-| AC-1.7.1 | – | – | Chờ TV2 chốt quy tắc |
+| AC-1.7.1, AC-1.7.2 | – | – | Chưa đạt |
 
 ## 4. Dữ liệu và tài khoản
 
@@ -68,4 +70,4 @@ npm run test:e2e               # cần docker compose (db, keycloak) đã chạy
 - AC-1.3.3: HR mở hồ sơ không kèm `include=sensitive` thì không có `VIEW_SENSITIVE`.
 - AC-1.5.3: tạo trùng mã hoặc email trả 409.
 - AC-1.4.2: biên bản kiểm tay giao diện HR (ngày, môi trường, commit).
-- AC-1.6.2, AC-1.7.1: viết khi `fix/employee-org-integrity` xong.
+- AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2: viết khi `fix/employee-org-integrity` xong.

@@ -29,8 +29,9 @@
 
 - **Dữ liệu danh mục:** loại phép và ngày lễ 2026 do seed tạo (theo [leave-types-holidays.md](../../business/leave-types-holidays.md)).
   Sang năm mới phải thêm ngày lễ trước 1/1, nếu không đơn qua ngày lễ bị tính sai.
-- **Số dư:** seed cấp số dư năm 2026 cho mọi nhân viên. Nhân viên tạo mới qua UC1 chưa có dòng số dư: API tự tạo khi họ tạo
-  đơn đầu tiên, với số ngày = `max_days_per_year` của loại phép. Sang năm mới cũng vậy (chưa có job cấp phép đầu năm).
+- **Số dư:** phép năm cấp theo luật (tỉ lệ khi chưa đủ 12 tháng, cộng thâm niên) khi tạo nhân viên và vào đầu mỗi năm. Cần
+  một job chạy 1/1 hằng năm; trên staging chạy bằng task ECS theo lịch. Hiện chưa có: seed cấp cho năm hiện tại, nhân viên mới
+  được tự tạo số dư bằng `max_days_per_year` khi tạo đơn đầu tiên ([spec mục 12](spec.md#12-hiện-trạng-và-việc-còn-lại)).
 
 ## 5. Kiểm tra sau deploy
 

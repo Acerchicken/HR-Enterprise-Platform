@@ -73,6 +73,8 @@ stateDiagram-v2
   1. HR mở "Đơn cần hoàn tất". Hệ thống gọi `GET /leave-requests` với mặc định `status=APPROVED`.
   2. HR bấm Hoàn tất. Web gửi `POST /leave-requests/{id}/complete` kèm `version`.
   3. Hệ thống chuyển số ngày từ `pending` sang `used` (BR-10).
+  4. HR chỉ hoàn tất sau ngày kết thúc của đơn, khi nhân viên đã thật sự nghỉ. Với loại phép cần giấy tờ (ốm, cưới, tang, thai
+     sản), HR kiểm giấy tờ trước khi hoàn tất ([danh mục loại phép](../../business/leave-types-holidays.md)).
 - **A3, đơn của CEO (FR-4.4):** đơn hiện trong danh sách chờ của HR. HR duyệt hoặc từ chối như bước 3–7.
 - **A4, người duyệt thay (FR-4.3, BR-06, chưa có):**
   1. HR tạo phân công gồm quản lý vắng, người thay và khoảng ngày.
@@ -91,7 +93,8 @@ stateDiagram-v2
 | E5 | `version` cũ (người khác vừa xử lý) | 409 `CONFLICT`; tải lại đơn |
 | E6 | Đơn không tồn tại | 404 `NOT_FOUND` |
 | E7 | Xem chi tiết đơn khi không phải chủ đơn, quản lý trực tiếp hoặc HR | 403 `FORBIDDEN` |
-| E8 | Chủ đơn không có quản lý trực tiếp: CEO, hoặc dữ liệu cũ | Đơn chờ; worker ghi cảnh báo, không gửi email. **Với CEO, HR không nhận email "có đơn mới"**, chỉ thấy đơn khi mở danh sách chờ duyệt (mục 12) |
+| E8 | Chủ đơn không có quản lý trực tiếp | CEO: email "có đơn cần xử lý" gửi tới HR. Người khác (dữ liệu lỗi, vì FR-2.5 bắt buộc có quản lý): đơn chờ, worker ghi cảnh báo để HR sửa sơ đồ tổ chức |
+| E10 | HR hoàn tất đơn khi chưa qua ngày kết thúc | 409 `CONFLICT` |
 | E9 | Queue hoặc dịch vụ email lỗi | Quyết định vẫn được lưu; event chờ trong outbox hoặc vào DLQ (NFR-3.4) |
 
 ## 7. Quy tắc áp dụng
@@ -140,8 +143,11 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Người duyệt thay (FR-4.3, BR-06) | Chưa có | TV1, nhánh `feat/leave-delegation`, mức 3 tuần 10 |
 | Ẩn lý do nghỉ ốm với quản lý (BR-14) | Chưa có | TV1 |
 | Email chỉ báo chung, không chi tiết (BR-15) | Chưa có: email, payload outbox có loại phép, ngày, số ngày, ghi chú | TV1, `feat/leave-privacy` |
-| Audit duyệt, từ chối chứa ghi chú tự do (`comment`) | Đang như vậy | BR-14 cấm đưa ghi chú có nội dung sức khỏe vào audit; bỏ `comment` khỏi `changedFields` trong `feat/leave-privacy` |
-| Email "có đơn mới" của CEO gửi tới HR | Chưa có | TV1, `feat/leave-privacy` (cùng chỗ sửa worker) |
+| Audit không chứa ghi chú tự do (BR-14) | Code chưa đúng: audit duyệt, từ chối có `comment` | TV1, `feat/leave-privacy` |
+| Email "có đơn mới" của CEO gửi tới HR (E8) | Code chưa có: worker bỏ qua vì CEO không có quản lý | TV1, `feat/leave-privacy` (cùng chỗ sửa worker) |
+| Chỉ hoàn tất sau ngày kết thúc (A2 bước 4, E10) | Code chưa có: hoàn tất được bất kỳ lúc nào | TV2 xác nhận, TV1 làm |
+| Hủy đơn đã duyệt khi nhân viên không nghỉ nữa | **Thiếu quy tắc.** BR-08 cấm nhân viên tự hủy, nhưng không ai khác hủy được; đơn chỉ có thể bị HR hoàn tất và trừ phép sai | TV2 bổ sung quy tắc. Đề xuất: trước ngày bắt đầu, quản lý trực tiếp hoặc HR hủy theo yêu cầu của nhân viên, trả số ngày khỏi `pending` |
+| Nhắc đơn chờ quá 1 ngày làm việc | Chưa có trong yêu cầu | Đề xuất cho MT-2: email nhắc người duyệt, TV2 quyết định |
 | Đo MT-2 (thời gian gửi → quyết định) | Chưa có báo cáo | Truy vấn trên `leave_request_history` khi có dữ liệu staging |
 
 ## 13. Thiết kế đề xuất cho phần chưa có

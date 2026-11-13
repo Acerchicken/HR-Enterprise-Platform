@@ -29,8 +29,11 @@ qua email. Gửi lại do mạng lỗi không tạo đơn thứ hai.
 
 - **Điều kiện trước:**
   - Người dùng đã đăng nhập, tài khoản gắn với hồ sơ đang làm việc.
-  - Số dư: seed cấp số dư năm cho mọi nhân viên. Loại phép chưa có dòng số dư của năm (nhân viên mới, nghỉ cưới…) được tự
-    tạo khi tạo đơn, với số ngày được hưởng = `max_days_per_year` của loại phép (chưa tính theo tỉ lệ ngày vào làm).
+  - Số dư theo [danh mục loại phép](../../business/leave-types-holidays.md):
+    - `ANNUAL`: 12 ngày cho người làm đủ 12 tháng, cộng 1 ngày cho mỗi 5 năm thâm niên; người vào làm chưa đủ 12 tháng được
+      tính theo tỉ lệ số tháng làm việc (Điều 113, 114 BLLĐ). Hệ thống cấp số dư năm mới từ `hireDate` (UC1).
+    - Nghỉ theo sự kiện (`MARRIAGE`, `BEREAVEMENT`…): tính theo từng lần, không trừ vào số dư năm.
+    - `SICK`: theo số năm đóng BHXH; HR kiểm giấy chứng nhận khi hoàn tất (UC4).
   - Danh sách ngày lễ của năm đã có.
 - **Kích hoạt:** nhân viên bấm "Tạo đơn nghỉ".
 - **Điều kiện sau khi thành công:**
@@ -85,6 +88,8 @@ sequenceDiagram
   2. Bước 4–9 của luồng chính áp dụng theo **chủ đơn**.
   3. Lịch sử và audit ghi riêng người tạo và chủ đơn. Chủ đơn nhận email và vẫn tự hủy được.
 - **A4 (từ bước 2), nghỉ nửa ngày vào ngày nghỉ:** số ngày bằng 0, đi tới ngoại lệ E4.
+- **A5 (từ bước 6), đơn qua hai năm, ví dụ 29/12/2026 – 4/1/2027:** hệ thống tách số ngày theo từng năm và trừ vào số dư của
+  năm tương ứng; mỗi năm phải đủ số dư. Nhân viên vẫn gửi một đơn.
 
 ## 6. Ngoại lệ
 
@@ -98,9 +103,8 @@ sequenceDiagram
 | E6 | Hủy đơn đã duyệt (BR-08) hoặc đã có quyết định khác | 409 `CONFLICT` |
 | E7 | Hủy đơn của người khác | 403 `FORBIDDEN` |
 | E8 | Hủy với `version` cũ | 409 `CONFLICT` |
-| E9 | Tài khoản chưa gắn hồ sơ | 404 `NOT_FOUND` ("Tài khoản chưa gắn với nhân viên") |
-| E10 | Khoảng nghỉ qua hai năm, ví dụ 30/12 – 2/1 | 400 `BAD_REQUEST`, yêu cầu tách thành hai đơn |
-| E11 | Dùng lại `Idempotency-Key` cũ cho đơn khác (loại phép, ngày hoặc buổi khác) | 409 `CONFLICT` |
+| E9 | Tài khoản chưa gắn hồ sơ | 403 `FORBIDDEN` |
+| E10 | Dùng lại `Idempotency-Key` cũ cho đơn khác (loại phép, ngày hoặc buổi khác) | 409 `CONFLICT` |
 
 ## 7. Quy tắc áp dụng
 
@@ -150,6 +154,9 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Email chỉ chứa thông báo chung (BR-15) | Chưa có: email còn tên, loại phép, ngày | TV1 sửa `buildEmail` và payload event |
 | Ẩn lý do nghỉ ốm với quản lý (BR-14) | Chưa có | TV1 sửa response chi tiết, danh sách, lịch sử |
 | Lưu trữ 5 năm, legal hold (BR-13) | Chưa có | Thiết kế sau MVP; ghi trong SRS mục 8 |
+| Phép năm theo thâm niên, theo tỉ lệ khi chưa đủ 12 tháng | Code chưa đúng: seed có cộng thâm niên nhưng không tính tỉ lệ cho người vào làm trong năm; nhân viên tạo mới không được cấp số dư, khi tạo đơn số dư tự tạo bằng `max_days_per_year`, kể cả nghỉ cưới | TV2 xác nhận cách tính, TV1 làm (cấp số dư đầu năm và khi tạo nhân viên) |
+| Đơn qua hai năm (A5) | Code chưa đúng: trả 400, bắt tách hai đơn | TV1 |
+| Tài khoản chưa gắn hồ sơ (E9) | Code trả 404 thay vì 403 | TV1 |
 
 ## 13. Thiết kế đề xuất cho phần chưa có
 

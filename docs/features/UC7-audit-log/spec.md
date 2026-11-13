@@ -31,10 +31,10 @@ tra cứu (người dùng).
 
 | Module | Hành động (`action`) | Khi nào |
 |---|---|---|
-| Employee | `CREATE`, `UPDATE` | Tạo, sửa hồ sơ; ghi trường đã đổi kèm giá trị mới, trường nhạy cảm chỉ ghi `***` (xem UC1 mục 12) |
+| Employee | `CREATE`, `UPDATE` | Tạo, sửa hồ sơ. Trường tổ chức ghi giá trị cũ và mới; trường cá nhân và nhạy cảm chỉ ghi tên ([UC1 mục 3](../UC1-employee-profile/spec.md#3-điều-kiện)) |
 | Employee | `VIEW_SENSITIVE` | HR xem CCCD, số tài khoản, lương |
 | Organization | `CREATE`, `UPDATE` (`entityType = department`) | Tạo, sửa phòng ban |
-| Leave (`entityType = leave_request`) | `LEAVE_SUBMIT`, `LEAVE_APPROVE`, `LEAVE_REJECT`, `LEAVE_CANCEL`, `LEAVE_COMPLETE` | Mọi bước của đơn nghỉ. Ghi loại phép, ngày, số ngày, trạng thái trước và sau; **không** ghi lý do. Duyệt, từ chối còn ghi `comment` (BR-14 cấm, xem UC4 mục 12) |
+| Leave (`entityType = leave_request`) | `LEAVE_SUBMIT`, `LEAVE_APPROVE`, `LEAVE_REJECT`, `LEAVE_CANCEL`, `LEAVE_COMPLETE` | Mọi bước của đơn nghỉ. Ghi loại phép, ngày, số ngày, trạng thái trước và sau; **không** ghi lý do và ghi chú tự do (BR-14) |
 | Document | `DOCUMENT_CREATE`, `DOCUMENT_PUBLISH`, `DOCUMENT_UPDATE`, `DOCUMENT_HIDE`, `DOCUMENT_RESTORE` | Thao tác quản lý kho tài liệu |
 
 Mỗi bản ghi có:
@@ -94,7 +94,7 @@ Mỗi bản ghi có:
 | `entity` | Không | Đúng một trong `employee`, `department`, `leave_request`, `document` (so khớp chính xác, giá trị khác trả rỗng) |
 | `entityId` | Không | ID đối tượng |
 | `actor` | Không | UUID hồ sơ nhân viên của người thực hiện (không phải ID tài khoản) |
-| `from`, `to` | Không | Ngày giờ ISO 8601. `from` tính cả mốc, `to` **không** tính mốc: muốn lấy hết ngày 1/11 thì `to=2026-11-02` |
+| `from`, `to` | Không | Ngày `YYYY-MM-DD` hoặc ngày giờ ISO 8601. Cả hai tính cả mốc: `to=2026-11-01` lấy hết ngày 1/11 (giờ Việt Nam) |
 | `page`, `size` | Không | `size` tối đa 100 |
 
 ## 9. Giao diện và API
@@ -123,6 +123,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Màn hình tra cứu | Chưa có | TV1, nhánh `feat/audit-ui` (tuần 10) |
 | Audit đăng nhập, cấp và thu hồi vai trò | Chưa có | NFR-5.10, kế hoạch sau tuần 11 |
 | Thời gian lưu, archive | Chưa có | Thống nhất BR-13 (5 năm) với NFR-6.3 (2 năm đề xuất) |
+| `to` tính cả ngày kết thúc | Code chưa đúng: `to` không tính mốc, `to=2026-11-01` bỏ mất ngày 1/11 | TV1, cùng `feat/audit-ui` |
 
 ## 13. Thiết kế đề xuất cho phần chưa có: màn hình tra cứu
 
@@ -130,7 +131,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 - **Route** `/audit`, chỉ hiện trong menu với HR, ADMIN.
 - **Bộ lọc:** loại đối tượng (chọn trong 4 giá trị), ID đối tượng, người thực hiện (ô tìm theo danh bạ, gửi UUID hồ sơ), từ
-  ngày, đến ngày (giao diện cộng 1 ngày vào `to` vì API không tính mốc `to`).
+  ngày, đến ngày (tính cả hai ngày).
 - **Bảng:** thời điểm (giờ Việt Nam), người thực hiện (tên), hành động, đối tượng (link tới hồ sơ, đơn, tài liệu nếu người xem có
   quyền), `traceId` (nút sao chép), nút mở `changedFields`.
 - **Mở nhanh:** trang hồ sơ nhân viên và chi tiết đơn của HR có link "Lịch sử thao tác" mở `/audit` với bộ lọc điền sẵn.

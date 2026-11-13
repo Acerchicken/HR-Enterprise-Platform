@@ -140,4 +140,6 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
   `fallback = true` khi trả danh sách tài liệu thay cho câu trả lời (A2, A3).
 - **Truy hồi:** lấy các đoạn văn bản từ tài liệu qua `visibleQuery` của người hỏi, rồi mới gửi LLM. Cách chia đoạn và
   full-text hay `pgvector`: chốt ở ADR-14.
+- **Câu trả lời ghi rõ chỉ để tham khảo**, căn cứ là văn bản gốc được trích dẫn; câu hỏi về trường hợp riêng (lương, kỷ luật của
+  một người) thì trợ lý chỉ tới HR.
 - **Không lưu câu hỏi** vào audit hay log ở dạng đầy đủ (có thể chứa thông tin sức khỏe); chỉ ghi số đoạn, độ trễ, số token.

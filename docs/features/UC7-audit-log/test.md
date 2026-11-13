@@ -26,7 +26,7 @@ hiệu năng tra cứu đo với dữ liệu lớn.
 | AC-7.3.2 | "nhân viên không xem được audit log", "audit log: HR, ADMIN xem được; MANAGER bị chặn" | SEC-03, SEC-04 | Có |
 | AC-7.3.3 | – | Cần thêm | Chưa |
 | AC-7.3.4 | – | – | Chưa có giao diện |
-| AC-7.3.5 | – | Cần thêm | Chưa |
+| AC-7.3.5 | – | – | Chưa đạt (`to` không tính ngày kết thúc) |
 | AC-7.4.1 | – | – | Chưa có tính năng |
 
 ## 4. Dữ liệu và tài khoản

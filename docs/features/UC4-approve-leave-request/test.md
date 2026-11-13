@@ -33,6 +33,7 @@ email kiểm tay ở Mailpit.
 | AC-4.3.1 → AC-4.3.4 | – | – | Chưa có tính năng |
 | AC-4.4.1, AC-4.4.2 | "HR duyệt đơn của CEO…", "HR không duyệt được đơn của nhân viên khác CEO…" | – | Có |
 | AC-4.5.1, AC-4.5.2 | "tạo → … HR hoàn tất", "HR hoàn tất đơn chưa duyệt → 409 (TC-21…)" | TC-20 → TC-22 | Có |
+| AC-4.5.3 | – | – | Chưa đạt (hoàn tất được trước ngày kết thúc) |
 | AC-4.6.1, AC-4.6.2 | Unit `notification-worker.spec.ts` | Kiểm Mailpit | Có |
 | AC-4.6.3 | – | – | Chưa đạt (BR-15) |
 | AC-4.6.5 | – | – | Chưa đạt (CEO tạo đơn, HR không nhận email) |

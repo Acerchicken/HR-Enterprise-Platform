@@ -129,9 +129,9 @@ sequenceDiagram
 
 ## 10. Yêu cầu phi chức năng liên quan
 
-- NFR-5.16: mã hóa file khi lưu. NFR-5.19: bucket chặn public. **Lệch:** NFR-5.19 ghi "presigned URL hết hạn ≤ 5 phút",
-  code đặt URL tải lên 10 phút (`object-storage.ts`). Tải xuống không dùng presigned URL. TV2 sửa NFR-5.19 thành "URL tải lên
-  ≤ 10 phút" hoặc TV1 giảm còn 5 phút.
+- NFR-5.16: mã hóa file khi lưu. NFR-5.19: bucket chặn public. URL tải lên hết hạn sau 10 phút, đủ để tải file
+  20 MiB trên mạng chậm; tải xuống không dùng presigned URL (ADR-13). SRS NFR-5.19 đang ghi "≤ 5 phút" cho mọi presigned URL,
+  TV2 sửa lại cho khớp.
 - NFR-5.23: kiểm loại file theo nội dung.
 - NFR-3.4: storage lỗi không ảnh hưởng chức năng khác (kịch bản lỗi trong SRS mục 6.14).
 - Đánh đổi của ADR-13: tải xuống tốn băng thông API. Đo khi load test tuần 11.
@@ -148,6 +148,8 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Giao diện kho tài liệu | Chưa có | TV1, nhánh `feat/document-search` (tuần 10) |
 | Dọn phiên bản `PENDING` bỏ dở | Chưa có | Đánh đổi đã ghi trong ADR-13 |
 | Staging: biến `STORAGE_*`, bucket tài liệu | Chưa có | TV3, `infra/documents-email` |
+| Ngày hiệu lực, ngày hết hiệu lực của chính sách | Chưa có trong yêu cầu | Thực tế chính sách có ngày áp dụng; TV2 quyết định có thêm vào metadata không |
+| Nhân viên xác nhận đã đọc chính sách | Chưa có trong yêu cầu | Thường có ở cổng chính sách HR; ngoài MVP, ghi lại để cân nhắc |
 
 ## 13. Thiết kế đề xuất cho phần chưa có: giao diện
 
