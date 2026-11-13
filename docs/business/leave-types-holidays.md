@@ -12,7 +12,7 @@ các mã còn lại TV1 bổ sung khi đưa vào hệ thống.
 
 | Mã | Tên | Số ngày tối đa | Có lương hay không | Giấy tờ cần nộp |
 |---|---|---|---|---|
-| `ANNUAL` | Nghỉ phép năm | 12 ngày/năm khi làm đủ 12 tháng; cộng 1 ngày cho mỗi 5 năm thâm niên (Điều 113, 114 BLLĐ) | Có, công ty trả 100% lương | Không cần |
+| `ANNUAL` | Nghỉ phép năm | 12 ngày/năm khi làm đủ 12 tháng; chưa đủ 12 tháng thì tính theo tỉ lệ số tháng làm việc trong năm (vào làm 1/7 được 12 × 6/12 = 6 ngày); cộng 1 ngày cho mỗi 5 năm thâm niên (Điều 113, 114 BLLĐ) | Có, công ty trả 100% lương | Không cần |
 | `SICK` | Nghỉ ốm | 30 ngày/năm nếu đóng BHXH dưới 15 năm; 40 ngày nếu từ 15 đến dưới 30 năm; 60 ngày nếu từ 30 năm | Không do công ty trả; hưởng chế độ ốm đau từ BHXH | Giấy chứng nhận nghỉ việc hưởng BHXH hoặc giấy ra viện |
 | `MARRIAGE` | Nghỉ cưới (bản thân kết hôn) | 3 ngày/lần (Điều 115 BLLĐ) | Có, công ty trả 100% lương | Giấy chứng nhận đăng ký kết hôn |
 | `CHILD_MARRIAGE` | Con kết hôn | 1 ngày/lần (Điều 115 BLLĐ) | Có, công ty trả 100% lương | Giấy chứng nhận đăng ký kết hôn của con |
@@ -25,6 +25,8 @@ Ghi chú:
 - Chỉ `ANNUAL` và `SICK` có bảng số dư (`leave.leave_balance`) trong seed. Các loại nghỉ theo sự kiện (`MARRIAGE`,
   `CHILD_MARRIAGE`, `BEREAVEMENT`, `MATERNITY`, `PATERNITY`) tính theo từng lần, không trừ vào phép năm.
 - Giấy tờ nộp cho HR khi HR hoàn tất đơn (bước `COMPLETED`). MVP chưa có chức năng đính kèm file.
+- Đơn kéo qua năm mới (ví dụ 29/12/2026 – 4/1/2027) tính ngày làm việc của từng năm theo lịch lễ năm đó và trừ vào số dư
+  của năm đó (BR-01). Cần bổ sung lịch nghỉ lễ 2027 ở mục 2 khi Chính phủ công bố lịch nghỉ Tết Đinh Mùi.
 
 ## 2. Ngày nghỉ lễ năm 2026
 
