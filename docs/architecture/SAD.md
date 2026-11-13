@@ -7,6 +7,7 @@ file này (mục lục và danh sách ADR) và hai phần, mỗi phần một g�
 |---|---|---|
 | [SAD phần 1 – Kiến trúc hệ thống](SAD-1-system-architecture.md) | **Phần I – tổng quan** (không gắn công cụ) và **Phần II – hiện tại** (công cụ, framework, phiên bản, local và cloud). Hệ thống gồm những khối chạy riêng nào, nói chuyện với hệ thống ngoài nào, chạy ở đâu, mạng, bảo mật hạ tầng, sẵn sàng, phục hồi, quan sát, CI/CD, chi phí | Người vận hành, cloud, đánh giá NFR |
 | [SAD phần 2 – Kiến trúc phần mềm](SAD-2-software-architecture.md) | Bên trong API, worker, web: cấu trúc code, module và phụ thuộc, luồng xử lý request, dữ liệu, pattern đảm bảo nghiệp vụ, API, frontend, kiểm thử, cách mở rộng | Người viết code, review code |
+| [Phụ lục – Database schema](database-schema.md) | Sơ đồ ERD từng schema PostgreSQL; bảng, cột, kiểu, khóa chính, foreign key, unique, index, tham chiếu logic chéo schema, lịch sử migration | Người viết code, viết migration, review |
 
 ```mermaid
 flowchart LR

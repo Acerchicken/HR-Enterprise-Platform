@@ -123,12 +123,14 @@ sequenceDiagram
 
 - **Một PostgreSQL, mỗi module một schema** (ADR-02); foreign key chỉ trong cùng schema.
 - **Migration** TypeORM, `synchronize` luôn tắt; có `up` và `down`; migration đã merge không sửa lại. Hiện có:
-  `InitSchemas` (tuần 7), `LeaveWorkflow` (ngày lễ, nửa ngày), `LeaveOutbox` (outbox, `processed_event`).
+  `InitSchemas` (tuần 7), `LeaveWorkflow` (ngày lễ, nửa ngày), `LeaveOutbox` (outbox, `processed_event`), `Documents`
+  (schema `document`, tuần 10).
 - **Trường nhạy cảm** (CCCD, tài khoản, lương) nằm ở bảng riêng `employee_sensitive`, mã hóa AES-256-GCM bằng `FieldCrypto`
   trước khi ghi (ADR-08); audit chỉ ghi tên trường.
 - **Audit** append-only: trigger chặn UPDATE/DELETE (ADR-09).
 - **Số dư phép** có ràng buộc `used + pending <= entitled` ở database, là chốt chặn cuối nếu code sai.
-- Mô hình dữ liệu chi tiết: [tuần 6](../progress/tuan-06/TV2_Thanh.md#2-data-model--data-ownership).
+- **Mô hình dữ liệu chi tiết** (sơ đồ ERD từng schema, mô tả bảng, cột, khóa, index, tham chiếu chéo schema):
+  [database-schema.md](database-schema.md). Bản thiết kế ban đầu ở tuần 6: [TV2_Thanh](../progress/tuan-06/TV2_Thanh.md#2-data-model--data-ownership).
 
 ## 7. Pattern đảm bảo đúng nghiệp vụ
 
