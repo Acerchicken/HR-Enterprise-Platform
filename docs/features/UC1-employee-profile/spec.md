@@ -3,13 +3,13 @@
 | Mục | Nội dung |
 |---|---|
 | Mục tiêu kinh doanh | MT-1 (hồ sơ tập trung), MT-3 (kiểm soát dữ liệu nhạy cảm) |
-| Tác nhân chính | Nhân viên (xem, tự khai thông tin, tải file); HR (tạo, sửa mọi mục, xem trường nhạy cảm) |
+| Tác nhân chính | Nhân viên (xem, gửi yêu cầu cập nhật, tải file kèm yêu cầu); HR (duyệt yêu cầu, tạo, sửa mọi mục, xem trường nhạy cảm) |
 | Tác nhân phụ, hệ thống ngoài | Quản lý trực tiếp (xem thông tin cá nhân, công việc của cấp dưới); identity provider (đăng nhập); object storage (file hồ sơ); dịch vụ email |
 | Yêu cầu (SRS) | FR-1.1 → FR-1.14 |
 | Quy tắc | ADR-08 (mã hóa trường nhạy cảm), ADR-09 (audit), ADR-10 (MANAGER suy ra từ tổ chức), ADR-13 (lưu file qua presigned URL), [ma trận phân quyền – Hồ sơ nhân viên](../../security/access-control-matrix.md#hồ-sơ-nhân-viên) |
 | Mức ưu tiên | M: FR-1.1 → FR-1.5, FR-1.7, FR-1.14. S: FR-1.6, FR-1.8 → FR-1.11. C: FR-1.12, FR-1.13 |
 | Trạng thái | Đã có: xem theo mức, tự sửa liên hệ, HR tạo, sửa, xem trường nhạy cảm (PR #63). Còn lại chưa có, xem mục 12 |
-| Phiên bản | 2.0 – 14/11/2026 (viết lại theo trang hồ sơ chia nhóm, thêm tự khai, file, nhật ký, chống spam) |
+| Phiên bản | 2.1 – 14/11/2026 (thay đổi của nhân viên phải qua HR xác nhận, luồng 4.2, 4.7) |
 
 ## 1. Mô tả ngắn
 
@@ -26,9 +26,10 @@ Ai được xem gì phụ thuộc quan hệ với chủ hồ sơ:
 
 Thông tin chia làm hai loại theo người nhập:
 
-- **Nhân viên tự khai:** người liên hệ khẩn cấp, thân nhân và người phụ thuộc, chuyên môn và bằng cấp, tài khoản ngân hàng,
-  nơi khám chữa bệnh ban đầu, ảnh đại diện, CV. Nhân viên tự thêm, sửa, xóa và tải file lên, **không cần HR duyệt**. Bù lại,
-  mọi thao tác đều ghi nhật ký mà chủ hồ sơ và HR xem lại được.
+- **Nhân viên đề xuất, HR xác nhận:** điện thoại, địa chỉ, người liên hệ khẩn cấp, thân nhân và người phụ thuộc, chuyên môn
+  và bằng cấp, tài khoản ngân hàng, nơi khám chữa bệnh ban đầu, ảnh đại diện, CV. Nhân viên tự sửa trên form và tải file kèm,
+  nhưng bấm "Gửi yêu cầu" chỉ tạo một **yêu cầu cập nhật**. HR so giá trị cũ và mới, đối chiếu giấy tờ; đúng thì duyệt và dữ
+  liệu mới được ghi vào hồ sơ, sai thì từ chối kèm lý do. Mọi bước đều ghi nhật ký.
 - **HR quản lý:** thông tin tổ chức, hợp đồng, lương, bảo hiểm, phụ cấp, khen thưởng kỷ luật. Nhân viên chỉ xem.
 
 Mọi thao tác ghi và tải file có giới hạn tần suất và hạn mức để chống spam, chống cào dữ liệu.
@@ -39,9 +40,9 @@ Mục nào chưa làm vẫn hiện trên trang với tiêu đề màu đỏ, đ�
 
 | Tác nhân | Được làm gì | Giới hạn theo dữ liệu |
 |---|---|---|
-| Nhân viên (mọi vai trò có hồ sơ) | Xem toàn bộ hồ sơ của mình; sửa `phone`, `address`; thêm, sửa, xóa các mục tự khai; tải lên, tải xuống, xóa file mình tải lên; xem lương, số tài khoản của mình khi bấm mắt; xem nhật ký thay đổi hồ sơ của mình | Không sửa mục HR quản lý; không xóa file HR tải lên; không xem CCCD của mình qua ứng dụng; không xem hồ sơ người khác quá mức danh bạ |
+| Nhân viên (mọi vai trò có hồ sơ) | Xem toàn bộ hồ sơ của mình; gửi, hủy yêu cầu cập nhật các trường và mục có cột "Nhập" là NV (kể cả thêm, xóa dòng, tải lên, xóa file); tải xuống file của mình; xem lương, số tài khoản của mình khi bấm mắt; xem nhật ký thay đổi hồ sơ của mình | Không tự ghi thẳng vào hồ sơ; không gửi yêu cầu cho mục HR quản lý; không xóa file HR tải lên; không xem CCCD của mình qua ứng dụng; không xem hồ sơ người khác quá mức danh bạ |
 | Quản lý trực tiếp | Xem mục ghi "QL" ở mục 9.1 của cấp dưới trực tiếp: thông tin cá nhân, công việc, chuyên môn | Không sửa; không xem tài chính, phúc lợi, thân nhân, liên hệ khẩn cấp, file, nhật ký |
-| HR | Tạo hồ sơ; sửa mọi mục; xem trường nhạy cảm khi bấm mắt; tải file của mọi người; xem nhật ký mọi hồ sơ; đánh dấu "Đã đối chiếu" dòng tự khai | Mỗi lượt xem trường nhạy cảm, mỗi lượt tải file của người khác ghi audit; chịu cùng giới hạn tần suất |
+| HR | Tạo hồ sơ; sửa mọi mục; xem trường nhạy cảm khi bấm mắt; tải file của mọi người; xem nhật ký mọi hồ sơ; duyệt, từ chối yêu cầu cập nhật | Mỗi lượt xem trường nhạy cảm, mỗi lượt tải file của người khác ghi audit; chịu cùng giới hạn tần suất |
 | ADMIN | Như nhân viên đối với hồ sơ của chính mình | Hồ sơ người khác chỉ ở mức danh bạ; không tạo hồ sơ; không xem trường nhạy cảm |
 
 **Mức xem dùng trong mục 8 và 9.1:**
@@ -61,11 +62,13 @@ Mục nào chưa làm vẫn hiện trên trang với tiêu đề màu đỏ, đ�
 - **Kích hoạt:**
   - Mở trang "Hồ sơ của tôi".
   - Mở hồ sơ một người từ danh bạ hoặc sơ đồ tổ chức.
-  - Bấm một mục trên trang hồ sơ để xem, thêm, sửa, xóa hoặc tải file.
+  - Bấm một mục trên trang hồ sơ để xem, đề xuất thêm, sửa, xóa hoặc tải file.
+  - HR mở "Yêu cầu cập nhật hồ sơ".
   - HR bấm "Thêm nhân viên" hoặc "Sửa hồ sơ".
 - **Điều kiện sau khi thành công:**
-  - Dữ liệu được lưu; `version` của hồ sơ (với trường chính) hoặc của dòng (với mục tự khai, mục HR quản lý) tăng 1 sau mọi lần
-    sửa, kể cả khi chỉ đổi trường nhạy cảm.
+  - Nhân viên gửi: yêu cầu `PENDING` được lưu, hồ sơ chưa đổi.
+  - HR duyệt hoặc HR sửa trực tiếp: dữ liệu được ghi; `version` của hồ sơ (trường chính) hoặc của dòng (các mục) tăng 1 sau mọi
+    lần ghi, kể cả khi chỉ đổi trường nhạy cảm.
   - Trường nhạy cảm được mã hóa trước khi lưu.
   - Có đúng một bản ghi audit cho thao tác, ghi cùng giao dịch, theo quy tắc ở mục 7.
   - Thao tác file: object trên storage và bản ghi file khớp trạng thái (`READY`, `REJECTED`, `DELETED`).
@@ -76,32 +79,29 @@ Mục nào chưa làm vẫn hiện trên trang với tiêu đề màu đỏ, đ�
 
 ## 4. Luồng chính
 
-### 4.1 Nhân viên xem hồ sơ và tự sửa liên hệ (FR-1.1, FR-1.2, FR-1.8)
+### 4.1 Nhân viên xem hồ sơ và đề xuất sửa liên hệ (FR-1.1, FR-1.2, FR-1.8)
 
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
-| 1 | Nhân viên mở "Hồ sơ của tôi" | Gọi `GET /me` và `GET /employees/{id}/sections`; trả hồ sơ ở mức chủ hồ sơ (không có giá trị nhạy cảm) và danh sách mục người xem được thấy, kèm trạng thái đã có hay chưa có |
-| 2 | | Hiện trang theo bố cục mục 9.1; mục chưa có có tiêu đề đỏ |
-| 3 | Bấm "Thông tin cá nhân", sửa số điện thoại hoặc địa chỉ, bấm Lưu | Gửi `PATCH /employees/{id}` kèm `version` |
-| 4 | | Kiểm giới hạn tần suất (mục 7), kiểm người gọi là chủ hồ sơ và chỉ gửi `phone`, `address`, kiểm `version` |
-| 5 | | Lưu, tăng `version`, ghi audit `UPDATE` (tên trường) trong cùng giao dịch |
-| 6 | Thấy hồ sơ đã cập nhật | Trả hồ sơ mới |
+| 1 | Nhân viên mở "Hồ sơ của tôi" | Chỉ gọi `GET /employees/{id}/summary`: trả **đúng những gì trang mặc định hiện** (đầu trang, thẻ quản lý và sơ đồ tổ chức, điện thoại, email, nhãn loại hợp đồng) cộng danh sách mục người xem được thấy, mỗi mục có cờ `available` và `pendingRequests`. Không trả ngày sinh, địa chỉ, dòng của các mục hay giá trị nhạy cảm |
+| 2 | | Hiện trang theo bố cục mục 9.1; mục chưa có có tiêu đề đỏ; mục có yêu cầu đang chờ có nhãn "Chờ HR xác nhận" |
+| 2a | Bấm vào một mục, ví dụ "Thông tin cá nhân" | Lúc này mới gọi API của mục đó (`GET /employees/{id}/profile/personal`), trả dữ liệu của riêng mục. Quay lại trang chính không gọi lại `summary` nếu chưa quá 60 giây |
+| 3 | Bấm "Thông tin cá nhân", sửa số điện thoại hoặc địa chỉ, bấm "Gửi yêu cầu" | Tạo yêu cầu cập nhật như luồng 4.2 (mục `personal`, thao tác sửa) |
+| 4 | Thấy giá trị cũ và khung "Đang chờ HR xác nhận" với giá trị mới | Hồ sơ chưa đổi cho tới khi HR duyệt (luồng 4.7) |
 
-### 4.2 Nhân viên tự khai thông tin (FR-1.9)
+### 4.2 Nhân viên gửi yêu cầu cập nhật (FR-1.9)
 
-Ví dụ: thêm người liên hệ khẩn cấp. Các mục tự khai khác đi cùng luồng.
+Ví dụ: thêm người liên hệ khẩn cấp. Sửa, xóa dòng và sửa điện thoại, địa chỉ đi cùng luồng.
 
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
-| 1 | Mở mục "Thông tin liên hệ khẩn cấp" | `GET /employees/{id}/profile/emergency-contacts`; trả các dòng chưa xóa, mỗi dòng có `version`, `source`, nhãn đã đối chiếu |
-| 2 | Bấm "Thêm", nhập họ tên, quan hệ, số điện thoại, bấm Lưu | `POST /employees/{id}/profile/emergency-contacts` kèm header `Idempotency-Key` |
-| 3 | | Kiểm giới hạn tần suất; kiểm người gọi là chủ hồ sơ hoặc HR; kiểm mục cho phép người gọi nhập (mục 8) |
-| 4 | | Kiểm dữ liệu theo mục 8; kiểm số dòng chưa vượt tối đa của mục |
-| 5 | | Mã hóa trường nhạy cảm của dòng (nếu có); lưu dòng với `source = SELF` (hoặc `HR` nếu HR nhập), `version = 1`; ghi audit `PROFILE_ITEM_CREATE` trong cùng giao dịch |
-| 6 | Thấy dòng mới trong danh sách | Trả 201 kèm dòng |
-
-Sửa: `PATCH …/{itemId}` kèm `version`. Xóa: `DELETE …/{itemId}?version=`; xóa mềm (`deleted_at`), nhân viên không còn thấy,
-HR vẫn thấy khi bật "Hiện dòng đã xóa".
+| 1 | Mở mục "Thông tin liên hệ khẩn cấp" | `GET /employees/{id}/profile/emergency-contacts`; trả các dòng hiện tại (mỗi dòng có `version`) và yêu cầu đang chờ của mục |
+| 2 | Bấm "Thêm", nhập họ tên, quan hệ, số điện thoại, bấm "Gửi yêu cầu" | `POST /employees/{id}/change-requests` kèm header `Idempotency-Key`; body gồm mục, thao tác (`CREATE`, `UPDATE`, `DELETE`), `itemId` và `baseVersion` nếu sửa, xóa, giá trị đề xuất, mã các file đã tải lên (luồng 4.3) |
+| 3 | | Kiểm giới hạn tần suất; kiểm người gọi là chủ hồ sơ; kiểm mục cho phép nhân viên đề xuất (cột "Nhập" là NV, mục 8) |
+| 4 | | Kiểm dữ liệu đề xuất theo mục 8 và số dòng tối đa (tính cả dòng sẽ thêm); kiểm người đó chưa có quá 20 yêu cầu `PENDING` |
+| 5 | | Nếu cùng trường hoặc dòng đã có yêu cầu `PENDING`: chuyển yêu cầu cũ sang `CANCELLED` |
+| 6 | | Mã hóa phần nhạy cảm của giá trị đề xuất; lưu yêu cầu `PENDING`; ghi audit `PROFILE_CHANGE_SUBMIT`; ghi event outbox để báo HR (gộp tối đa một email mỗi giờ) |
+| 7 | Thấy khung "Đang chờ HR xác nhận" | Trả 202 kèm yêu cầu. Nhân viên bấm "Hủy yêu cầu" thì yêu cầu `CANCELLED`, audit `PROFILE_CHANGE_CANCEL` |
 
 ### 4.3 Nhân viên tải file lên hồ sơ (FR-1.10)
 
@@ -118,10 +118,11 @@ Ví dụ: tải CV. File bằng cấp, giấy tờ người phụ thuộc gắn 
 | 7 | | `POST /employees/{id}/files/{fileId}/confirm` |
 | 8 | | Đọc object: so dung lượng, đọc vài byte đầu để kiểm loại theo nội dung, tính lại SHA-256. Sai thì xóa object, file `REJECTED`, trả 400 |
 | 9 | | Ảnh đại diện: cắt về 512 × 512, xóa EXIF, lưu bản đã xử lý |
-| 10 | | File `READY`; ghi audit `PROFILE_FILE_UPLOAD` (mã file, mục, loại, dung lượng, SHA-256; không có tên file gốc) |
-| 11 | Thấy file trong danh sách | Trả file |
+| 10 | | File `PENDING_REVIEW` (chỉ chủ hồ sơ và HR thấy); ghi audit `PROFILE_FILE_UPLOAD` (mã file, mục, loại, dung lượng, SHA-256; không có tên file gốc). File chỉ `READY` khi HR duyệt yêu cầu có kèm file (luồng 4.7); file không gắn vào yêu cầu nào trong 24 giờ thì bị xóa |
+| 11 | Thấy file trong khung yêu cầu, bấm "Gửi yêu cầu" | Trả file; nhân viên gửi yêu cầu như luồng 4.2 kèm mã file |
 
-Tải xuống: `GET /employees/{id}/files/{fileId}/download`, API kiểm quyền rồi stream. Xóa: `DELETE /employees/{id}/files/{fileId}`.
+Tải xuống: `GET /employees/{id}/files/{fileId}/download`, API kiểm quyền rồi stream. Nhân viên muốn xóa file thì gửi yêu cầu
+xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /employees/{id}/files/{fileId}`.
 
 ### 4.4 HR tạo hồ sơ nhân viên (FR-1.5)
 
@@ -151,34 +152,48 @@ Tải xuống: `GET /employees/{id}/files/{fileId}/download`, API kiểm quyền
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
 | 1 | Chủ hồ sơ hoặc HR mở "Lịch sử thay đổi" | `GET /employees/{id}/history?page=&section=&actorId=&from=&to=` |
-| 2 | | Kiểm người gọi là chủ hồ sơ hoặc HR; đọc audit có `entity_id` là hồ sơ này, gồm cả các dòng và file thuộc hồ sơ |
-| 3 | Thấy danh sách mới nhất trước | Mỗi dòng: thời điểm, người làm (tên), thao tác, mục, tên trường. Không có giá trị, không có tên file gốc |
+| 2 | | Kiểm người gọi là chủ hồ sơ hoặc HR; đọc audit có `entity_id` là hồ sơ này, gồm cả các dòng, file và yêu cầu cập nhật thuộc hồ sơ |
+| 3 | Thấy danh sách mới nhất trước | Mỗi dòng: thời điểm, người làm (tên), thao tác (gửi, hủy, duyệt, từ chối yêu cầu; HR sửa trực tiếp; tải file; xem nhạy cảm), mục, tên trường. Không có giá trị, không có tên file gốc, không có lý do từ chối |
+
+### 4.7 HR xác nhận yêu cầu cập nhật (FR-1.9)
+
+| Bước | Tác nhân | Hệ thống |
+|---|---|---|
+| 1 | HR mở "Yêu cầu cập nhật hồ sơ" | `GET /change-requests?status=PENDING&section=&departmentId=&page=`; cũ nhất trước; yêu cầu chờ quá 2 ngày làm việc có nhãn "Quá hạn" |
+| 2 | Mở một yêu cầu | `GET /change-requests/{requestId}`; hiện giá trị hiện tại và đề xuất cạnh nhau, trường đổi được tô màu; giá trị nhạy cảm là `********` tới khi bấm mắt (audit `VIEW_SENSITIVE`); file kèm tải được |
+| 3 | HR đối chiếu với giấy tờ, bấm "Duyệt" | `POST /change-requests/{requestId}/approve` |
+| 4 | | Kiểm vai trò HR; kiểm yêu cầu còn `PENDING`; kiểm `baseVersion` bằng `version` hiện tại của hồ sơ hoặc dòng (khác thì 409, E19) |
+| 5 | | Trong một giao dịch: ghi thay đổi vào hồ sơ hoặc dòng, tăng `version`; file kèm chuyển `READY`; yêu cầu `APPROVED` kèm người duyệt, thời điểm; audit `PROFILE_CHANGE_APPROVE` (mục, mã yêu cầu, tên trường); event outbox báo nhân viên |
+| 6 | HR bấm "Từ chối", nhập lý do | `POST /change-requests/{requestId}/reject` với `reason` (bắt buộc, tối đa 500 ký tự); yêu cầu `REJECTED`, hồ sơ không đổi; audit `PROFILE_CHANGE_REJECT` không chứa lý do; file kèm `REJECTED`, xóa sau 30 ngày; event outbox báo nhân viên |
+| 7 | Nhân viên nhận email báo chung, mở ứng dụng | Thấy kết quả; nếu bị từ chối thì thấy lý do |
 
 ## 5. Luồng thay thế
 
 - **A1 (từ 4.1 bước 1):** người dùng mở hồ sơ của người khác qua danh bạ. Hệ thống trả mức danh bạ, hoặc mức QL nếu người gọi
   là quản lý trực tiếp, hoặc toàn bộ nếu là HR. `sections` chỉ liệt kê mục người gọi được xem.
-- **A2 (từ 4.1 bước 3):** client không gửi `version`. Hệ thống từ chối (E9), không ghi đè.
+- **A2 (từ 4.5 bước 3):** client không gửi `version`. Hệ thống từ chối (E9), không ghi đè.
 - **A3 (từ 4.4 bước 4):** chức danh là CEO. Cho phép không có quản lý; chỉ được có một CEO đang làm việc.
 - **A4 (từ 4.5 bước 3), HR chuyển nhân viên sang `TERMINATED`:** nếu người đó còn cấp dưới đang làm việc, hệ thống từ chối
   (E10) và yêu cầu HR chuyển các cấp dưới sang quản lý khác trước. Đơn nghỉ `SUBMITTED` người đó đang chờ duyệt chuyển sang
   quản lý mới theo BR-05.
-- **A5 (từ 4.2 bước 5), nhân viên đổi tài khoản ngân hàng:** lưu ngay, rồi ghi một event vào outbox để gửi email tới email
-  công ty của chủ hồ sơ: "Thông tin tài khoản ngân hàng trên HRHelper vừa thay đổi. Nếu không phải bạn, hãy báo HR." Email
-  không chứa số tài khoản (BR-15 áp dụng tương tự).
-- **A6 (từ 4.2 bước 5), thân nhân là người phụ thuộc:** bắt buộc mã số thuế hoặc CCCD của người đó và ngày bắt đầu giảm trừ;
-  mục "Thông tin thuế TNCN" đếm số người phụ thuộc đang hiệu lực.
-- **A7 (từ 4.2 bước 2), gửi lại cùng `Idempotency-Key`:** trả lại dòng đã tạo, không tạo dòng mới, không ghi audit lần hai.
-- **A8 (từ 4.3 bước 2), HR tải file lên hồ sơ nhân viên** (hợp đồng, quyết định): file có `uploadedBy` là HR; nhân viên xem,
-  tải được nhưng không xóa được.
-- **A9 (sau 4.2 bước 6), HR đánh dấu "Đã đối chiếu":** HR so dòng tự khai với giấy tờ, bấm "Đã đối chiếu"; dòng lưu
-  `verifiedBy`, `verifiedAt`, audit `PROFILE_ITEM_VERIFY`. Nhân viên sửa dòng đó thì nhãn mất.
+- **A5 (từ 4.7 bước 5), HR duyệt yêu cầu đổi tài khoản ngân hàng:** ngoài email báo xử lý, ghi một event outbox để gửi email
+  tới email công ty của chủ hồ sơ: "Thông tin tài khoản ngân hàng trên HRHelper vừa thay đổi. Nếu không phải bạn yêu cầu, hãy
+  báo HR." Email không chứa số tài khoản (BR-15 áp dụng tương tự).
+- **A6 (từ 4.2 bước 4), thân nhân là người phụ thuộc:** bắt buộc mã số thuế hoặc CCCD của người đó và ngày bắt đầu giảm trừ;
+  sau khi duyệt, mục "Thông tin thuế TNCN" đếm số người phụ thuộc đang hiệu lực.
+- **A7 (từ 4.2 bước 2), gửi lại cùng `Idempotency-Key`:** trả lại yêu cầu đã tạo, không tạo yêu cầu mới, không ghi audit lần hai.
+- **A8 (từ 4.3 bước 2), HR tải file lên hồ sơ nhân viên** (hợp đồng, quyết định): file `READY` ngay, có `uploadedBy` là HR;
+  nhân viên xem, tải được nhưng không đề xuất xóa được.
+- **A9 (từ 4.5), HR sửa trực tiếp:** HR sửa hồ sơ hoặc mục thì ghi thẳng, không qua yêu cầu; nếu trường đó đang có yêu cầu
+  `PENDING` của nhân viên thì yêu cầu đó sẽ bị 409 khi duyệt (E19) và HR từ chối hoặc nhân viên gửi lại.
+- **A10 (từ 4.7 bước 1), yêu cầu quá hạn:** yêu cầu chờ quá 2 ngày làm việc có nhãn "Quá hạn" và đứng đầu danh sách; không tự
+  duyệt, không tự hủy.
 
 ## 6. Ngoại lệ
 
 | Mã | Tình huống | Hệ thống phản hồi |
 |---|---|---|
-| E1 | Nhân viên sửa trường không phải `phone`, `address`, sửa mục HR quản lý, hoặc sửa hồ sơ người khác | 403 `FORBIDDEN`; dữ liệu không đổi |
+| E1 | Nhân viên gửi yêu cầu cho trường hoặc mục không phải NV, cho hồ sơ người khác, hoặc gọi API ghi thẳng (`PATCH /employees/{id}`, API mục, duyệt, từ chối) | 403 `FORBIDDEN`; không tạo yêu cầu |
 | E2 | Người không phải HR, không phải chủ hồ sơ gọi `include=sensitive`, hoặc chủ hồ sơ xem CCCD của mình | 403 `FORBIDDEN`; không ghi audit đọc |
 | E3 | `version` gửi lên khác bản ghi hiện tại | 409 `CONFLICT`; client tải lại rồi cho người dùng làm lại |
 | E4 | Dữ liệu sai định dạng hoặc quá độ dài (mục 8) | 400 `BAD_REQUEST` kèm `fields` để hiện lỗi đúng ô |
@@ -191,11 +206,15 @@ Tải xuống: `GET /employees/{id}/files/{fileId}/download`, API kiểm quyền
 | E11 | Thêm dòng vượt số dòng tối đa của mục, hoặc vượt hạn mức file (50 file, 200 MiB) | 409 `CONFLICT`, nêu giới hạn |
 | E12 | File sai loại, sai dung lượng, nội dung không khớp đuôi, quá 10 MiB (ảnh đại diện quá 2 MiB) | 400 `BAD_REQUEST`; file `REJECTED`, object bị xóa |
 | E13 | Xác nhận file khi chưa PUT lên storage | 400 `BAD_REQUEST`; file vẫn `PENDING` |
-| E14 | Nhân viên xóa file do HR tải lên | 403 `FORBIDDEN` |
+| E14 | Nhân viên gửi yêu cầu xóa file do HR tải lên | 403 `FORBIDDEN` |
 | E15 | Vượt giới hạn tần suất (mục 7) | 429 `TOO_MANY_REQUESTS` kèm `Retry-After`; không đổi dữ liệu |
 | E16 | Body request quá 64 KiB | 413 |
 | E17 | Chưa cấu hình `PROFILE_STORAGE_BUCKET` hoặc storage lỗi | 503 cho thao tác file; xem, sửa thông tin vẫn chạy |
 | E18 | Hợp đồng mới trùng khoảng ngày với hợp đồng khác | 409 `CONFLICT` |
+| E19 | HR duyệt yêu cầu mà hồ sơ hoặc dòng đã đổi sau khi nhân viên gửi (`baseVersion` cũ) | 409 `CONFLICT`; yêu cầu vẫn `PENDING` để HR từ chối hoặc nhân viên gửi lại |
+| E20 | Duyệt, từ chối, hủy yêu cầu không còn `PENDING` | 409 `CONFLICT`; duyệt lặp lại cùng yêu cầu đã `APPROVED` thì trả lại yêu cầu, không ghi lần hai |
+| E21 | Nhân viên đã có 20 yêu cầu `PENDING` | 409 `CONFLICT`, nêu giới hạn |
+| E22 | Từ chối không có lý do hoặc lý do quá 500 ký tự | 400 `BAD_REQUEST` kèm `fields.reason` |
 
 ## 7. Quy tắc áp dụng
 
@@ -212,8 +231,10 @@ Tải xuống: `GET /employees/{id}/files/{fileId}/download`, API kiểm quyền
 
 | Thao tác | Action | Ghi gì |
 |---|---|---|
-| Tạo, sửa trường chính của hồ sơ | `CREATE`, `UPDATE` | Trường tổ chức (phòng ban, chức danh, quản lý, trạng thái, ngày vào làm): tên, giá trị cũ và mới. Trường cá nhân, nhạy cảm: chỉ tên |
-| Thêm, sửa, xóa, đối chiếu dòng | `PROFILE_ITEM_CREATE`, `PROFILE_ITEM_UPDATE`, `PROFILE_ITEM_DELETE`, `PROFILE_ITEM_VERIFY` | Mục, mã dòng, tên các trường đã đổi |
+| Nhân viên gửi, hủy yêu cầu | `PROFILE_CHANGE_SUBMIT`, `PROFILE_CHANGE_CANCEL` | Mục, mã yêu cầu, thao tác, tên các trường đề xuất đổi |
+| HR duyệt, từ chối yêu cầu | `PROFILE_CHANGE_APPROVE`, `PROFILE_CHANGE_REJECT` | Mục, mã yêu cầu, tên trường đã ghi. Không có lý do từ chối |
+| HR tạo, sửa trường chính của hồ sơ | `CREATE`, `UPDATE` | Trường tổ chức (phòng ban, chức danh, quản lý, trạng thái, ngày vào làm): tên, giá trị cũ và mới. Trường cá nhân, nhạy cảm: chỉ tên |
+| HR thêm, sửa, xóa dòng trực tiếp | `PROFILE_ITEM_CREATE`, `PROFILE_ITEM_UPDATE`, `PROFILE_ITEM_DELETE` | Mục, mã dòng, tên các trường đã đổi |
 | Tải lên, xóa file | `PROFILE_FILE_UPLOAD`, `PROFILE_FILE_DELETE` | Mã file, mục, loại, dung lượng, SHA-256 |
 | Tải file của người khác | `PROFILE_FILE_DOWNLOAD` | Mã file, mục. Chủ hồ sơ tự tải file của mình thì không ghi |
 | Xem giá trị nhạy cảm | `VIEW_SENSITIVE` | Người xem, hồ sơ bị xem, `traceId` |
@@ -225,7 +246,8 @@ tên người, số CCCD) hay nội dung file.
 
 | Nhóm thao tác | Giới hạn | Vượt thì |
 |---|---|---|
-| Ghi hồ sơ: sửa hồ sơ, thêm, sửa, xóa dòng | 30 lệnh/phút, 300 lệnh/ngày | 429 |
+| Ghi hồ sơ: gửi, hủy yêu cầu; HR sửa, duyệt, từ chối | 30 lệnh/phút, 300 lệnh/ngày | 429 |
+| Yêu cầu `PENDING` mỗi nhân viên | 20 | 409 (E21) |
 | Xin URL tải lên | 10 lệnh/giờ, 30 lệnh/ngày; ảnh đại diện 5 lần/ngày | 429 |
 | Tải file xuống | 60 file/giờ | 429 |
 | Xem trường nhạy cảm (`include=sensitive`) | 100 lần/giờ | 429 và cảnh báo kênh vận hành |
@@ -251,7 +273,8 @@ giảm trừ thuế hoặc liên hệ khẩn cấp. Không thu tôn giáo, tiề
 
 ## 8. Dữ liệu vào
 
-Cột "Nhập" cho biết ai thêm, sửa: **NV** nhân viên tự khai (HR cũng sửa được), **HR** chỉ HR, **Tự tính** do hệ thống tính.
+Cột "Nhập" cho biết ai thêm, sửa: **NV** nhân viên đề xuất qua yêu cầu cập nhật, HR duyệt mới ghi (HR cũng sửa thẳng được),
+**HR** chỉ HR, **Tự tính** do hệ thống tính.
 Cột "Mức" theo ký hiệu ở mục 2. "Tối đa" là số dòng tối đa của mục.
 
 ### 8.1 Trường chính của hồ sơ (đã có, trừ ảnh đại diện)
@@ -316,15 +339,18 @@ Cột "Mức" theo ký hiệu ở mục 2. "Tối đa" là số dòng tối đa 
 | Sơ yếu lý lịch | File CV hoặc sơ yếu lý lịch; bản mới nhất hiện đầu | NV | CN | 5 file | Như mục 7, tệp đính kèm |
 | Lịch sử thay đổi | Nhật ký thao tác (luồng 4.6) | Tự tính từ audit | CN | – | – |
 
-Mọi trường văn bản tự do tối đa 255 ký tự nếu không ghi khác. Mọi dòng có `source` (`SELF`, `HR`), `createdBy`, `updatedBy`,
-`version`, `verifiedBy`, `verifiedAt`.
+Mọi trường văn bản tự do tối đa 255 ký tự nếu không ghi khác. Mọi dòng có `createdBy`, `updatedBy`, `version`, và nếu ghi từ
+yêu cầu thì `changeRequestId` (biết ai đề xuất, HR nào duyệt).
 
 ## 9. Giao diện và API
 
 | Luồng | Màn hình | API |
 |---|---|---|
-| 4.1, 9.1 | `/` (hồ sơ của tôi), `/employees/:id` (hồ sơ người khác); trang con `…/:section` | `GET /me`, `GET /employees/{id}`, `GET /employees/{id}/sections`, `PATCH /employees/{id}` |
-| 4.2 | Trang con của mục tự khai | `GET`, `POST /employees/{id}/profile/{section}`; `PATCH`, `DELETE /employees/{id}/profile/{section}/{itemId}`; `POST …/{itemId}/verify` (HR) |
+| 4.1, 9.1 | `/` (hồ sơ của tôi), `/employees/:id` (hồ sơ người khác) | `GET /me` (chỉ tài khoản, vai trò, `employeeId`), `GET /employees/{id}/summary` |
+| 4.1 bước 2a | Trang con `…/:section` | `GET /employees/{id}/profile/{section}` (mục `personal` trả ngày sinh, địa chỉ, ngày vào làm, trạng thái; HR thêm CCCD đã che) |
+| 4.2 | Trang con của mục, khung "Đang chờ HR xác nhận" | `GET /employees/{id}/profile/{section}`; `POST /employees/{id}/change-requests`; `DELETE /employees/{id}/change-requests/{requestId}` (hủy) |
+| 4.7 | `/hr/change-requests` (danh sách), `/hr/change-requests/:id` (so sánh cũ, mới) | `GET /change-requests`, `GET /change-requests/{requestId}`, `POST …/approve`, `POST …/reject` |
+| 4.5, A9 | Trang con mục, chế độ HR | `POST /employees/{id}/profile/{section}`, `PATCH`, `DELETE …/{itemId}` (chỉ HR, ghi thẳng) |
 | 4.3 | Nút "Tải lên" trong trang con | `POST /employees/{id}/files`, `POST /employees/{id}/files/{fileId}/confirm`, `GET /employees/{id}/files/{fileId}/download`, `DELETE /employees/{id}/files/{fileId}` |
 | 4.4 | `/employees/new` | `POST /employees`, `GET /departments`, `GET /positions`, `GET /employees` |
 | 4.5 | `/employees/:id/edit`; trang con mục HR quản lý | `GET /employees/{id}?include=sensitive`, `PATCH /employees/{id}`; API mục như 4.2 |
@@ -348,8 +374,13 @@ xem thì không hiện.
 - **Mục chưa làm có tiêu đề đỏ** `#DC2626` kèm nhãn "Chưa có"; bấm vào mở trang "Chức năng đang phát triển", không gọi API.
   Trạng thái từng mục lấy từ `GET /employees/{id}/sections` (`available: true|false`); làm xong mục nào thì đổi cờ của mục đó ở
   backend, giao diện tự đổi màu.
+- **Tải theo nhu cầu:** trang mặc định chỉ gọi `GET /employees/{id}/summary`. Dữ liệu của mỗi mục chỉ được lấy khi người dùng
+  bấm vào mục đó; giá trị nhạy cảm chỉ được lấy khi bấm mắt. Không gọi trước, không tải sẵn các mục chưa mở, để không kéo
+  dữ liệu thừa và để mỗi lượt đọc dữ liệu cá nhân gắn với một thao tác thật của người dùng.
 - Giá trị nhạy cảm hiện `********` kèm biểu tượng mắt; bấm mắt mới gọi API và ghi audit.
-- Dòng tự khai có nhãn nhỏ "Tự khai"; dòng HR đã đối chiếu có nhãn "Đã đối chiếu".
+- Mục có yêu cầu đang chờ có nhãn "Chờ HR xác nhận"; trong trang con, giá trị đề xuất hiện trong khung riêng dưới giá trị hiện
+  tại. Yêu cầu bị từ chối hiện lý do cho tới khi nhân viên đóng.
+- Thanh trên của HR có mục "Yêu cầu cập nhật hồ sơ" kèm số yêu cầu đang chờ.
 
 **Đầu trang:**
 
@@ -393,13 +424,14 @@ xem thì không hiện.
   tiếp, sơ đồ tổ chức) cộng số điện thoại và email công ty, hiện ngay dưới đầu trang. Không có địa chỉ, ngày sinh; không có các
   hàng lương, hệ số, diện đối tượng và các nhóm bên dưới.
 - Quản lý trực tiếp: thêm các mục mức QL.
-- Chủ hồ sơ: mọi mục của mình, nút "Thêm", "Tải lên" ở mục NV.
-- HR: mọi mục, nút "Sửa hồ sơ", "Thêm" ở mọi mục, "Hiện dòng đã xóa", "Đã đối chiếu".
+- Chủ hồ sơ: mọi mục của mình; nút "Sửa", "Thêm", "Tải lên" ở mục NV đều kết thúc bằng "Gửi yêu cầu".
+- HR: mọi mục, nút "Sửa hồ sơ", "Thêm" ở mọi mục (ghi thẳng), "Hiện dòng đã xóa"; danh sách yêu cầu chờ của hồ sơ đó.
 - Số dư phép không nằm trên trang hồ sơ; xem ở trang "Đơn nghỉ" (UC3).
 
 ## 10. Yêu cầu phi chức năng liên quan
 
-- NFR-1.1: xem hồ sơ p95 < 300 ms. NFR-1.2: sửa hồ sơ, thêm dòng p95 < 500 ms. Tải file không tính vì đi thẳng lên storage.
+- NFR-1.1: xem hồ sơ (`summary`, từng mục) p95 < 300 ms. Response `summary` dưới 4 KB, không chứa trường của mục chưa mở.
+- NFR-1.2: sửa hồ sơ, thêm dòng p95 < 500 ms. Tải file không tính vì đi thẳng lên storage.
 - NFR-5.13: phân quyền theo dữ liệu, từng mục. NFR-5.17: mã hóa trường nhạy cảm. NFR-5.18: không lộ giá trị nhạy cảm, tên file
   gốc qua log, audit.
 - NFR-5.21: giới hạn tần suất (mục 7). NFR-5.23: kiểm loại file theo nội dung.
@@ -424,9 +456,11 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Sửa chỉ trường nhạy cảm tăng `version` | Code chưa đúng | TV1 |
 | Chỉ tải trường nhạy cảm khi bấm mắt | Code chưa đúng: form sửa tự tải | TV1 |
 | Trang hồ sơ theo nhóm, màu cyan, mục chưa có tiêu đề đỏ (9.1) | Chưa có: trang hiện là các thẻ rời, màu xanh dương | TV1, `feat/profile-layout` |
+| Tải theo nhu cầu: `summary` cho trang mặc định, API riêng cho từng mục | Code chưa đúng: `GET /me` và `GET /employees/{id}` trả mọi trường cá nhân ngay khi mở trang; trang "Hồ sơ của tôi" còn tải số dư phép | TV1, `feat/profile-layout` |
 | Chủ hồ sơ tự xem lương, số tài khoản | Chưa có | TV1, `feat/profile-layout` |
 | Giới hạn tần suất, hạn mức (mục 7) | Chưa có: chưa có rate limit nào | TV1, `feat/security-headers-ratelimit` |
-| Mục tự khai, nhật ký thay đổi (FR-1.9, FR-1.11) | Chưa có | TV1, `feat/profile-self-service` |
+| Nhân viên sửa điện thoại, địa chỉ qua yêu cầu (AC-1.2.1) | Code chưa đúng: đang lưu thẳng | TV1, `feat/profile-self-service` |
+| Yêu cầu cập nhật, màn hình duyệt của HR, nhật ký thay đổi (FR-1.9, FR-1.11) | Chưa có | TV1, `feat/profile-self-service` |
 | Tệp đính kèm, ảnh đại diện (FR-1.10) | Chưa có | TV1 `feat/profile-files`; TV3 `infra/profile-files` |
 | Mục HR quản lý, thông tin tự tính (FR-1.12, FR-1.13) | Chưa có | Sau MVP; mục vẫn hiện với tiêu đề đỏ |
 | Quét mã độc file tải lên | Không làm trong MVP | Rủi ro chấp nhận, mục 7 |
@@ -440,10 +474,14 @@ chung cho các dòng** thay vì một bảng cho mỗi mục, để thêm mục 
 
 | Bảng | Cột chính |
 |---|---|
-| `employee.profile_item` | `id`, `employee_id`, `section` (mã ở mục 9), `data` jsonb (trường thường), `sensitive_data` bytea (trường nhạy cảm của dòng, mã hóa AES-256-GCM như ADR-08), `source` (`SELF`, `HR`), `created_by`, `updated_by`, `verified_by`, `verified_at`, `version`, `created_at`, `updated_at`, `deleted_at` |
-| `employee.profile_file` | `id`, `employee_id`, `section`, `item_id` (nullable), `storage_key`, `original_name` (chỉ để hiện cho người có quyền, không vào log), `content_type`, `size_bytes`, `sha256`, `status` (`PENDING`, `READY`, `REJECTED`, `DELETED`), `uploaded_by`, `created_at`, `deleted_at` |
+| `employee.profile_item` | `id`, `employee_id`, `section` (mã ở mục 9), `data` jsonb (trường thường), `sensitive_data` bytea (trường nhạy cảm của dòng, mã hóa AES-256-GCM như ADR-08), `created_by`, `updated_by`, `change_request_id` (nullable), `version`, `created_at`, `updated_at`, `deleted_at` |
+| `employee.profile_file` | `id`, `employee_id`, `section`, `item_id` (nullable), `storage_key`, `original_name` (chỉ để hiện cho người có quyền, không vào log), `content_type`, `size_bytes`, `sha256`, `status` (`PENDING`, `PENDING_REVIEW`, `READY`, `REJECTED`, `DELETED`), `uploaded_by`, `change_request_id` (nullable), `created_at`, `deleted_at` |
+| `employee.profile_change_request` | `id`, `employee_id`, `section`, `action` (`CREATE`, `UPDATE`, `DELETE`), `item_id` (nullable; `NULL` với trường chính), `base_version`, `proposed` jsonb, `proposed_sensitive` bytea (mã hóa), `file_ids` uuid[], `status` (`PENDING`, `APPROVED`, `REJECTED`, `CANCELLED`), `submitted_by`, `submitted_at`, `reviewed_by`, `reviewed_at`, `reject_reason` (chỉ hiện cho chủ hồ sơ và HR, không vào audit), `idempotency_key` |
 | `employee.employee` | Thêm `avatar_file_id` |
 
+- Unique `(employee_id, section, coalesce(item_id, …)) WHERE status = 'PENDING'` trên `profile_change_request` để mỗi chỗ chỉ có
+  một yêu cầu đang chờ (AC-1.9.7); index `(status, submitted_at)` cho danh sách của HR.
+- Duyệt yêu cầu dùng cùng hàm ghi với HR sửa trực tiếp, để quy tắc kiểm dữ liệu, mã hóa, `version` chỉ viết một lần.
 - Index `(employee_id, section) WHERE deleted_at IS NULL` cho đọc từng mục; unique `(employee_id, section, sha256) WHERE status
   = 'READY'` cho AC-1.10.4.
 - Kiểm dữ liệu của `data` bằng schema theo từng mục trong code (một file mô tả mục: trường, kiểu, bắt buộc, độ dài, ai nhập,

@@ -5,7 +5,8 @@
 ## 1. Chiến lược
 
 Rủi ro chính của UC1 là **lộ dữ liệu**: người không đủ quyền thấy trường cá nhân, trường nhạy cảm, file hồ sơ, hoặc giá trị nhạy
-cảm lọt vào audit. Rủi ro thứ hai là **lạm dụng chức năng tự khai**: tải file độc hại, spam dòng, cào dữ liệu. Vì vậy:
+cảm lọt vào audit. Rủi ro thứ hai là **dữ liệu chưa kiểm lọt vào hồ sơ**: thay đổi của nhân viên phải qua HR duyệt, kể cả khi gọi API trực
+tiếp. Rủi ro thứ ba là **lạm dụng**: tải file độc hại, spam yêu cầu, cào dữ liệu. Vì vậy:
 
 - Unit test kiểm hàm quyết định mức xem và trường được sửa, chạy trong CI.
 - e2e kiểm từng vai trò trên API thật, kể cả audit.
@@ -28,7 +29,7 @@ cảm lọt vào audit. Rủi ro thứ hai là **lạm dụng chức năng tự 
 | AC-1.1.1 | "nhân viên xem hồ sơ người khác chỉ thấy thông tin danh bạ" | SEC-17 → SEC-34 | Có |
 | AC-1.1.2 | "quản lý trực tiếp thấy thông tin cá nhân, không thấy trường nhạy cảm" | SEC | Có |
 | AC-1.1.3 | "xem hồ sơ: chủ hồ sơ PERSONAL, HR mức HR, ADMIN chỉ mức danh bạ…" | SEC | Có |
-| AC-1.2.1, AC-1.2.2 | "nhân viên tự sửa số điện thoại; không sửa được lương hay hồ sơ người khác" | SEC | Có |
+| AC-1.2.2 | "nhân viên tự sửa số điện thoại; không sửa được lương hay hồ sơ người khác" | SEC | Có |
 | AC-1.2.3 | "dữ liệu sai → 400", "lỗi validation trả thêm fields theo từng trường" | – | Có |
 | AC-1.3.1 | "HR xem trường nhạy cảm (đã giải mã) và lượt xem được audit" | SEC | Có |
 | AC-1.3.2 | "xem hồ sơ: … nhân viên không xem trường nhạy cảm" | SEC | Có |
@@ -50,7 +51,9 @@ cảm lọt vào audit. Rủi ro thứ hai là **lạm dụng chức năng tự 
 | AC-1.6.4 | – | Cần thêm e2e: sửa dòng với `version` cũ → 409 | Chưa có |
 | AC-1.8.1 → AC-1.8.5 | – (giao diện) | Kiểm tay bằng 4 tài khoản mẫu, trên màn hình 375 px và 1280 px | Chưa có |
 | AC-1.8.6 | – | Cần thêm e2e: quản lý gọi mục `relatives` của cấp dưới → 404 | Chưa có |
-| AC-1.9.1 → AC-1.9.9 | – | e2e cho từng thao tác; một mục tự khai đại diện (`emergency-contacts`) và mục có trường nhạy cảm (`relatives`, `bank-account`) | Chưa có |
+| AC-1.8.7, AC-1.8.8 | – | e2e kiểm `summary` không có `dateOfBirth`, `address`; kiểm tay bằng tab Network: mở trang chỉ có `summary`, bấm mục nào mới có request mục đó | Chưa đạt |
+| AC-1.2.1 | e2e hiện có "nhân viên tự sửa số điện thoại…" kiểm lưu thẳng, phải đổi sang kiểm 202 và hồ sơ chưa đổi | – | Chưa đạt |
+| AC-1.9.1 → AC-1.9.13 | – | e2e: gửi, hủy, duyệt, từ chối, duyệt khi `baseVersion` cũ (409), nhân viên gọi API ghi thẳng (403), yêu cầu thứ 21 (409); mục đại diện `emergency-contacts`, mục có trường nhạy cảm `bank-account`, `relatives` | Chưa có |
 | AC-1.10.1 → AC-1.10.9 | – (cần MinIO local) | Ca bảo mật file: ZIP đổi đuôi `.pdf`, `.exe` đổi đuôi `.jpg`, file 10 MiB + 1 byte, ảnh có EXIF GPS, tải file người khác, xóa file HR | Chưa có |
 | AC-1.11.1 → AC-1.11.4 | – | e2e: mỗi thao tác đúng một audit; quét audit và log tìm giá trị mẫu, tên file mẫu | Chưa có |
 | AC-1.12.x, AC-1.13.x | – | – | Sau MVP |

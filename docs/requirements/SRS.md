@@ -81,7 +81,7 @@ LLM API (trợ lý, tuần 12) và hệ thống Payroll (ngoài phạm vi versio
 
 | Use case | Hệ thống phải cho phép | Yêu cầu chức năng (FR) |
 |---|---|---|
-| UC1 Hồ sơ nhân viên | Xem hồ sơ theo mức, trang hồ sơ chia nhóm, nhân viên tự khai thông tin và tải file, nhật ký thay đổi, HR quản lý hồ sơ và trường nhạy cảm, chống spam | FR-1.1 → FR-1.14 |
+| UC1 Hồ sơ nhân viên | Xem hồ sơ theo mức, trang hồ sơ chia nhóm, nhân viên đề xuất cập nhật và tải file, HR xác nhận, nhật ký thay đổi, HR quản lý hồ sơ và trường nhạy cảm, chống spam | FR-1.1 → FR-1.14 |
 | UC2 Thông tin tổ chức | Danh bạ, cây tổ chức, quản lý trực tiếp, quản lý phòng ban | FR-2.1 → FR-2.5 |
 | UC3 Tạo đơn nghỉ | Xem số dư, tạo, hủy đơn, tạo đơn hộ | FR-3.1 → FR-3.7 |
 | UC4 Duyệt đơn | Duyệt, từ chối, duyệt thay, HR hoàn tất, email thông báo | FR-4.1 → FR-4.7 |
@@ -156,14 +156,14 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
 | FR-1.1 | Xem hồ sơ theo 3 mức: danh bạ (mọi người), cá nhân (chính mình, quản lý trực tiếp), đầy đủ (HR) | M | Người ngoài (không phải HR, không phải quản lý trực tiếp) thấy điện thoại, email công ty, không thấy ngày sinh, địa chỉ; quản lý thấy thông tin cá nhân cấp dưới; ADMIN chỉ thấy mức danh bạ | Đã có |
-| FR-1.2 | Nhân viên tự sửa số điện thoại, địa chỉ của mình | M | Sửa trường khác hoặc hồ sơ người khác bị từ chối (403) | Đã có |
+| FR-1.2 | Nhân viên sửa số điện thoại, địa chỉ của mình qua yêu cầu cập nhật; HR duyệt mới ghi | M | Gửi yêu cầu trả 202, hồ sơ chưa đổi; sửa trường khác hoặc hồ sơ người khác bị 403 | Chưa đạt: code đang lưu thẳng |
 | FR-1.3 | HR xem CCCD, số tài khoản, lương; mỗi lượt xem ghi audit | M | Vai trò khác bị 403; audit có `VIEW_SENSITIVE` | Đã có |
 | FR-1.4 | HR sửa mọi trường hồ sơ, kể cả trường nhạy cảm | M | Audit chỉ ghi tên trường nhạy cảm, không ghi giá trị | Một phần: API có, giao diện tuần 10 |
 | FR-1.5 | HR tạo nhân viên mới (phòng ban, chức danh, quản lý trực tiếp, trường nhạy cảm) | M | Thiếu dữ liệu bắt buộc trả 400; quản lý tạo vòng lặp bị chặn | Một phần: API có, giao diện tuần 10 |
 | FR-1.6 | Hai người cùng sửa một hồ sơ không ghi đè nhau | S | Gửi `version` cũ trả 409 | Đã có |
 | FR-1.7 | Nghỉ việc: không cho nghỉ khi còn cấp dưới; người đã nghỉ không truy cập được | M | 400 khi còn cấp dưới; token còn hạn của người đã nghỉ bị 403 | Chưa đạt |
-| FR-1.8 | Trang hồ sơ chia nhóm (cá nhân, công việc, tài chính, phúc lợi, khác), màu chủ đạo cyan, mục chưa có tiêu đề đỏ | S | Đúng bố cục spec 9.1; mỗi người xem chỉ thấy mục được phép | Chưa có |
-| FR-1.9 | Nhân viên tự thêm, sửa, xóa liên hệ khẩn cấp, thân nhân, chuyên môn, tài khoản ngân hàng, nơi khám bệnh; không cần HR duyệt | S | Có audit mỗi thao tác; sửa mục HR quản lý bị 403; vượt số dòng tối đa bị 409 | Chưa có |
+| FR-1.8 | Trang hồ sơ chia nhóm (cá nhân, công việc, tài chính, phúc lợi, khác), màu chủ đạo cyan, mục chưa có tiêu đề đỏ; trang mặc định chỉ tải dữ liệu đang hiện, mỗi mục chỉ tải khi bấm vào | S | Đúng bố cục spec 9.1; mỗi người xem chỉ thấy mục được phép | Chưa có |
+| FR-1.9 | Nhân viên đề xuất thêm, sửa, xóa liên hệ khẩn cấp, thân nhân, chuyên môn, tài khoản ngân hàng, nơi khám bệnh, ảnh, CV; HR so cũ và mới rồi duyệt hoặc từ chối, duyệt mới ghi vào hồ sơ | S | Yêu cầu `PENDING` không đổi hồ sơ; duyệt ghi trong một giao dịch, có audit; từ chối bắt buộc lý do; tối đa 20 yêu cầu chờ mỗi người | Chưa có |
 | FR-1.10 | Tải file lên hồ sơ (CV, bằng cấp, giấy tờ, ảnh đại diện) | S | Chỉ PDF, DOCX, JPG, PNG ≤ 10 MiB, kiểm theo nội dung; tối đa 50 file, 200 MiB mỗi người; tải xuống qua API | Chưa có |
 | FR-1.11 | Nhật ký thay đổi hồ sơ cho chủ hồ sơ và HR | S | Mỗi thao tác đúng một bản ghi, không có giá trị hay tên file gốc | Chưa có |
 | FR-1.12 | HR quản lý hợp đồng, lương theo thời gian, bảo hiểm, phụ cấp, khen thưởng kỷ luật | C | Hợp đồng không trùng khoảng ngày; nhân viên chỉ xem | Chưa có, sau MVP |
