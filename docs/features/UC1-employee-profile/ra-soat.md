@@ -21,7 +21,7 @@
 | 1 | Tên nhánh `feat/profile-self-service` dễ nhầm với UC6 (tra cứu tài liệu) | Đổi tên thành `feat/profile-change-requests` (yêu cầu cập nhật hồ sơ, HR duyệt, FR-1.9). UC6 không đổi |
 | 2 | Ô tìm kiếm trên nav bar | **Chỉ tìm đồng nghiệp**, làm trong `feat/profile-layout`. Tìm tài liệu và trợ lý AI ở trang riêng "Tra cứu tài liệu" (`/documents`), mở bằng ô chức năng ở trang chủ; ô "Tài liệu" và "Hỏi trợ lý chính sách" gộp thành một ô. Đã sửa [frontend.md](../frontend.md) 1.3, UC6, SRS, BRD, bản vẽ |
 | 3 | Bộ biểu tượng | `lucide-react` |
-| 4 | Trang con "Thông tin cá nhân" trước khi có `feat/profile-change-requests` | Đề xuất: giữ cách lưu thẳng điện thoại, địa chỉ như hiện tại, đổi sang "Gửi yêu cầu" ở nhánh đó. **Chờ TV1 xác nhận** |
+| 4 | Trang con "Thông tin cá nhân" trước khi có `feat/profile-change-requests` | Giữ cách lưu thẳng điện thoại, địa chỉ như hiện tại (TV1 chốt 14/11); đổi sang "Gửi yêu cầu" ở nhánh đó |
 | 5 | Mục "Các mốc trong công ty" | `available: false` (tiêu đề đỏ) vì thâm niên, mốc chưa tính; ngày vào làm xem trong "Thông tin cá nhân" |
 | 6 | Danh sách cấp dưới trực tiếp ở `EmployeePage` cũ | Bỏ khỏi popup (bản vẽ không có); xem ở sơ đồ tổ chức |
 
