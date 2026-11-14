@@ -94,7 +94,7 @@ Giống [UC2 luồng 4.1](../UC2-organization/spec.md#41-tìm-đồng-nghiệp-t
 
 | Luồng | Màn hình | API |
 |---|---|---|
-| 4.1 | `/directory` | `GET /employees?q=` |
+| 4.1 | Thanh tìm kiếm ở thanh trên (gợi ý, popup xem nhanh), `/directory` (đủ kết quả) — xem [giao diện chung](../UI.md) mục 4, 5 | `GET /employees?q=`, `GET /employees/{id}/summary` |
 | 4.2 | Chưa có | Chưa có (nhánh `feat/document-search`) |
 | 4.3 | Chưa có | Chưa có (tuần 12) |
 

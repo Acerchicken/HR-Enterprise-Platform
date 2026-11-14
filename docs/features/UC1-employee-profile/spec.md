@@ -346,7 +346,7 @@ yêu cầu thì `changeRequestId` (biết ai đề xuất, HR nào duyệt).
 
 | Luồng | Màn hình | API |
 |---|---|---|
-| 4.1, 9.1 | `/` (hồ sơ của tôi), `/employees/:id` (hồ sơ người khác) | `GET /me` (chỉ tài khoản, vai trò, `employeeId`), `GET /employees/{id}/summary` |
+| 4.1, 9.1 | `/employees/:id` (hồ sơ của mình mở từ ô "Hồ sơ của tôi" ở trang chủ, hồ sơ người khác mở từ "Xem hồ sơ đầy đủ"); popup xem nhanh khi tra cứu trên thanh tìm kiếm ([giao diện chung](../UI.md) mục 5) | `GET /me` (chỉ tài khoản, vai trò, `employeeId`), `GET /employees/{id}/summary` |
 | 4.1 bước 2a | Trang con `…/:section` | `GET /employees/{id}/profile/{section}` (mục `personal` trả ngày sinh, địa chỉ, ngày vào làm, trạng thái; HR thêm CCCD đã che) |
 | 4.2 | Trang con của mục, khung "Đang chờ HR xác nhận" | `GET /employees/{id}/profile/{section}`; `POST /employees/{id}/change-requests`; `DELETE /employees/{id}/change-requests/{requestId}` (hủy) |
 | 4.7 | `/hr/change-requests` (danh sách), `/hr/change-requests/:id` (so sánh cũ, mới) | `GET /change-requests`, `GET /change-requests/{requestId}`, `POST …/approve`, `POST …/reject` |
@@ -362,7 +362,7 @@ Mã `{section}`: `emergency-contacts`, `relatives`, `career-history`, `contracts
 
 ### 9.1 Bố cục trang hồ sơ
 
-Trang `/` và `/employees/:id` dùng **chung một bố cục**, theo mẫu ứng dụng HR di động: một cột, rộng tối đa 720 px, dùng
+Trang `/employees/:id` (hồ sơ của mình và người khác) dùng **chung một bố cục**, theo mẫu ứng dụng HR di động: một cột, rộng tối đa 720 px, dùng
 được trên điện thoại. Người xem chỉ thấy nhóm và mục mức xem của mình cho phép (cột "Mức", ký hiệu ở mục 2); mục không được
 xem thì không hiện.
 
@@ -380,7 +380,7 @@ xem thì không hiện.
 - Giá trị nhạy cảm hiện `********` kèm biểu tượng mắt; bấm mắt mới gọi API và ghi audit.
 - Mục có yêu cầu đang chờ có nhãn "Chờ HR xác nhận"; trong trang con, giá trị đề xuất hiện trong khung riêng dưới giá trị hiện
   tại. Yêu cầu bị từ chối hiện lý do cho tới khi nhân viên đóng.
-- Thanh trên của HR có mục "Yêu cầu cập nhật hồ sơ" kèm số yêu cầu đang chờ.
+- Trang chủ của HR có ô "Yêu cầu cập nhật hồ sơ" kèm số yêu cầu đang chờ ([giao diện chung](../UI.md) mục 3).
 
 **Đầu trang:**
 

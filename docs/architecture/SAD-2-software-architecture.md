@@ -164,6 +164,7 @@ Tên event, payload, exchange/queue và cách chống trùng: [hợp đồng eve
 | Đăng nhập | `oidc-client-ts`: Authorization Code + PKCE, token giữ trong `sessionStorage`, tự gia hạn |
 | Gọi API | `api/client.ts` gắn Bearer token, chuẩn hóa lỗi thành `ApiError` có `traceId`; hook `useApi` lo loading/lỗi/tải lại |
 | Điều hướng | React Router; chưa đăng nhập thì chỉ có trang đăng nhập; menu hiện theo vai trò (Duyệt đơn cho MANAGER, HR hoàn tất cho HR) |
+| Giao diện chung | Thanh trên, trang chủ ô chức năng, thanh tìm kiếm, popup xem nhanh hồ sơ: [giao diện chung](../features/UI.md); màn hình từng UC ở mục 9 của `spec.md` UC đó |
 | Màn hình | Hồ sơ của tôi, danh bạ, chi tiết nhân viên, sơ đồ tổ chức; nghỉ phép: tạo đơn, đơn của tôi, chờ duyệt, chi tiết + lịch sử, HR hoàn tất |
 | Thao tác ghi | Khóa nút khi đang gửi, gửi kèm `version`; tạo đơn giữ một `Idempotency-Key` cho mỗi lần gửi |
 | Quyền | Ẩn/hiện nút chỉ để tiện dùng; quyền thật do backend kiểm |
