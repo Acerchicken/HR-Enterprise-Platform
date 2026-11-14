@@ -4,8 +4,8 @@
 
 ## 1. Chiến lược
 
-Rủi ro chính của UC1 là **lộ dữ liệu**: người không đủ quyền thấy trường cá nhân, trường nhạy cảm, hoặc giá trị nhạy cảm lọt vào
-audit. Vì vậy:
+Rủi ro chính của UC1 là **lộ dữ liệu**: người không đủ quyền thấy trường cá nhân, trường nhạy cảm, file hồ sơ, hoặc giá trị nhạy
+cảm lọt vào audit. Rủi ro thứ hai là **lạm dụng chức năng tự khai**: tải file độc hại, spam dòng, cào dữ liệu. Vì vậy:
 
 - Unit test kiểm hàm quyết định mức xem và trường được sửa, chạy trong CI.
 - e2e kiểm từng vai trò trên API thật, kể cả audit.
@@ -46,8 +46,15 @@ audit. Vì vậy:
 | AC-1.6.2 | – | – | Chưa đạt (code chưa bắt buộc `version`) |
 | AC-1.6.3 | – | – | Chưa đạt (sửa chỉ lương không tăng `version`) |
 | AC-1.7.1, AC-1.7.2 | – | – | Chưa đạt |
+| AC-1.3.5 | – | Cần thêm e2e: chủ hồ sơ tự xem lương, có audit; xem CCCD của mình 403 | Chưa có |
+| AC-1.6.4 | – | Cần thêm e2e: sửa dòng với `version` cũ → 409 | Chưa có |
 | AC-1.8.1 → AC-1.8.5 | – (giao diện) | Kiểm tay bằng 4 tài khoản mẫu, trên màn hình 375 px và 1280 px | Chưa có |
-| AC-1.8.6 | – | Cần thêm e2e: chủ hồ sơ tự xem, có audit; xem người khác 403 | Chưa có |
+| AC-1.8.6 | – | Cần thêm e2e: quản lý gọi mục `relatives` của cấp dưới → 404 | Chưa có |
+| AC-1.9.1 → AC-1.9.9 | – | e2e cho từng thao tác; một mục tự khai đại diện (`emergency-contacts`) và mục có trường nhạy cảm (`relatives`, `bank-account`) | Chưa có |
+| AC-1.10.1 → AC-1.10.9 | – (cần MinIO local) | Ca bảo mật file: ZIP đổi đuôi `.pdf`, `.exe` đổi đuôi `.jpg`, file 10 MiB + 1 byte, ảnh có EXIF GPS, tải file người khác, xóa file HR | Chưa có |
+| AC-1.11.1 → AC-1.11.4 | – | e2e: mỗi thao tác đúng một audit; quét audit và log tìm giá trị mẫu, tên file mẫu | Chưa có |
+| AC-1.12.x, AC-1.13.x | – | – | Sau MVP |
+| AC-1.14.1 → AC-1.14.7 | – | Script gửi 31 lệnh ghi trong 1 phút, 11 lệnh xin URL trong 1 giờ, 101 lượt xem nhạy cảm; kiểm 429, `Retry-After`, dữ liệu không đổi, có cảnh báo | Chưa có |
 
 ## 4. Dữ liệu và tài khoản
 
@@ -65,12 +72,17 @@ npm run test:e2e               # cần docker compose (db, keycloak) đã chạy
 ## 6. Kiểm thử phi chức năng
 
 - NFR-1.1: `GET /employees/{id}` trong load test tuần 11, p95 < 300 ms.
-- NFR-5.18: tìm giá trị CCCD, lương mẫu trong log API và bảng audit sau khi chạy e2e: không được có.
+- NFR-5.18: tìm giá trị CCCD, lương, số tài khoản, mã số thuế người phụ thuộc và tên file mẫu trong log API và bảng audit sau
+  khi chạy e2e: không được có.
+- NFR-5.21: đo giới hạn tần suất (AC-1.14.x) trên staging, kể cả khi App Runner chạy 2 instance.
 
 ## 7. Ca còn thiếu (TV4)
 
 - AC-1.3.3: HR mở hồ sơ không kèm `include=sensitive` thì không có `VIEW_SENSITIVE`.
 - AC-1.5.3: tạo trùng mã hoặc email trả 409.
 - AC-1.4.2: biên bản kiểm tay giao diện HR (ngày, môi trường, commit).
-- AC-1.8.1 → AC-1.8.6: viết khi `feat/profile-layout` xong.
+- AC-1.8.x, AC-1.3.5: viết khi `feat/profile-layout` xong.
+- AC-1.9.x, AC-1.6.4, AC-1.11.x: viết khi `feat/profile-self-service` xong.
+- AC-1.10.x: ca bảo mật file trong `docs/security-test-cases-week11` (TV4), chạy khi `feat/profile-files` xong.
+- AC-1.14.x: ca rate limit trong `docs/security-test-cases-week11`.
 - AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2: viết khi `fix/employee-org-integrity` xong.

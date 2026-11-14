@@ -138,7 +138,7 @@ nhận và trạng thái trên `dev`.
 
 | Use case (mục 4.1) | Yêu cầu trong SRS |
 |---|---|
-| UC1 Hồ sơ nhân viên | FR-1.1 → FR-1.6 |
+| UC1 Hồ sơ nhân viên | FR-1.1 → FR-1.14 |
 | UC2 Thông tin tổ chức | FR-2.1 → FR-2.5 |
 | UC3 Tạo đơn nghỉ | FR-3.1 → FR-3.7 |
 | UC4 Duyệt đơn | FR-4.1 → FR-4.7 |

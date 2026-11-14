@@ -8,8 +8,8 @@
 |---|---|
 | API | `backend/src/modules/employee` (hồ sơ, `/me`, mức xem, mã hóa trường nhạy cảm); `modules/identity` (khớp tài khoản đăng nhập với hồ sơ theo email) |
 | Web | `/employees/:id`, `/employees/new`, `/employees/:id/edit` (`frontend/src/pages/employee`) |
-| Database | Schema `employee` (`employee`, `employee_sensitive`), `iam`; migration `1729900000000-InitSchemas` |
-| Dịch vụ ngoài | Identity provider: Keycloak (local), Cognito (staging) |
+| Database | Schema `employee` (`employee`, `employee_sensitive`), `iam`; migration `1729900000000-InitSchemas`. Sắp thêm `profile_item`, `profile_file`, cột `avatar_file_id` (spec 13.1) |
+| Dịch vụ ngoài | Identity provider: Keycloak (local), Cognito (staging); object storage cho file hồ sơ: MinIO (local), S3 (staging) *(chưa có)*; email qua worker (đổi tài khoản ngân hàng) |
 
 ## 2. Biến môi trường
 
@@ -18,6 +18,8 @@
 | `FIELD_ENCRYPTION_KEY` | Khóa dev trong code (`ALLOW_DEV_SECRETS=true`) | Secrets Manager `app_secrets:FIELD_ENCRYPTION_KEY` | Production không khởi động |
 | `OIDC_*`, `AUTH_MODE` | Keycloak realm `hr` | Cognito (issuer, JWKS, `cognito:groups`, userInfo) | Không đăng nhập được |
 | `DB_*` | `docker-compose.yml` | RDS, mật khẩu trong Secrets Manager | API không khởi động |
+| `PROFILE_STORAGE_BUCKET` *(chưa có)* | Bucket MinIO `hr-profile-files-local` | `hr-profile-files-staging` (Terraform) | Thao tác file trả 503; phần còn lại chạy (AC-1.10.9) |
+| `RATE_LIMIT_*` *(chưa có)* | Mặc định trong code (spec mục 7) | Như local; chỉnh qua biến nếu load test cần | Dùng mặc định |
 
 ## 3. Hạ tầng
 
@@ -25,6 +27,7 @@
 |---|---|---|
 | Local | PostgreSQL, Keycloak, seed | `docker-compose.yml`, `keycloak/` |
 | Staging | RDS, Secrets Manager + KMS (khóa mã hóa trường), Cognito, App Runner | `infra/staging/rds.tf`, `kms_secrets.tf`, `cognito.tf`, `app_runner.tf` |
+| Staging *(chưa có)* | Bucket `hr-profile-files-staging`: chặn public, SSE-KMS, CORS chỉ cho domain web (PUT), lifecycle xóa object tag `deleted=true` sau 30 ngày; quyền `s3:PutObject`, `GetObject`, `DeleteObject`, `PutObjectTagging` cho role App Runner; alarm CloudWatch khi số 429 tăng đột biến | TV3, `infra/profile-files` |
 
 ## 4. Các bước
 
@@ -49,3 +52,5 @@
 ## 7. Còn thiếu
 
 - Quy trình xoay `FIELD_ENCRYPTION_KEY` (NFR-5.17) chưa viết.
+- Bucket file hồ sơ, biến `PROFILE_STORAGE_BUCKET`, alarm 429 (TV3, tuần 12).
+- Kiểm tra sau deploy cho file: tải lên một CV thử, tải xuống, xóa; xác nhận object có tag `deleted=true`.

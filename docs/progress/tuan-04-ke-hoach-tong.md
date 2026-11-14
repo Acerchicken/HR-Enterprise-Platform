@@ -116,7 +116,7 @@ Thứ tự trong tuần: việc tuần 10 còn dở → riêng tư đơn nghỉ 
 | `feat/leave-privacy` | TV1 Duong | UC3, UC4 | Ẩn lý do nghỉ ốm với quản lý (chi tiết, danh sách, lịch sử); audit HR đọc lý do; bỏ `comment` khỏi audit; email và payload outbox chỉ báo chung; email đơn CEO tới HR; sửa unit test nội dung email | AC-4.6.3, AC-4.6.5, AC-4.7.3, AC-4.7.4 | T3 (17/11) | T4 (18/11) | TV2, TV4 |
 | `feat/security-headers-ratelimit` | TV1 Duong | Chung, UC6 | Header bảo mật; 100 request/phút mỗi người, 20/phút cho tìm kiếm | AC-6.2.7 | T3 (17/11) | T4 (18/11) | TV3, TV4 |
 | `fix/employee-org-integrity` | TV1 Duong | UC1, UC2 | Bắt buộc `version`, tăng `version` khi sửa trường nhạy cảm; audit theo nhóm trường; HR sửa `hireDate`, `workEmail`; chặn nghỉ việc khi còn cấp dưới, chặn người đã nghỉ; chỉ tải trường nhạy cảm khi bấm hiện; chặn gốc thứ hai, kiểm `headEmployeeId` | AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2, AC-2.4.6, AC-2.4.7 | T5 (19/11) | T6 (20/11) | TV2, TV4 |
-| `feat/profile-layout` | TV1 Duong | UC1 | Trang hồ sơ theo nhóm (cá nhân, công việc, tài chính, phúc lợi, khác), màu chủ đạo cyan, mục chưa có tiêu đề đỏ; chủ hồ sơ tự xem lương, số tài khoản | AC-1.8.1 → AC-1.8.6 | T6 (20/11) | T7 (21/11) | TV2, TV4 |
+| `feat/profile-layout` | TV1 Duong | UC1 | Trang hồ sơ theo nhóm (cá nhân, công việc, tài chính, phúc lợi, khác), màu chủ đạo cyan, mục chưa có tiêu đề đỏ; chủ hồ sơ tự xem lương, số tài khoản | AC-1.8.x, AC-1.3.5 | T6 (20/11) | T7 (21/11) | TV2, TV4 |
 | `fix/leave-balance-rules` | TV1 Duong | UC3, UC4 | Cấp số dư theo luật, đơn qua hai năm, 403 khi chưa gắn hồ sơ, chỉ hoàn tất sau ngày kết thúc, hủy đơn đã duyệt | AC-3.1.3, AC-3.1.4, AC-3.2.4, AC-3.2.5, AC-4.5.3 | T6 (20/11) | T7 (21/11) | TV2, TV4 |
 | `infra/idp-mfa` | TV3 Bảo | Chung | MFA TOTP cho HR, ADMIN | NFR-5.4 | T5 (19/11), 21:00 | T6 (20/11) | TV1 |
 | `docs/test-cases-week11` | TV4 Duy | UC1 → UC7 | Ca còn thiếu trong mục 7 của mọi `test.md` | Theo `test.md` | T4 (18/11), 21:00 | T5 (19/11) | TV2, TV1 |
@@ -134,6 +134,9 @@ Thứ tự trong tuần: việc tuần 10 còn dở → riêng tư đơn nghỉ 
 | `docs/assistant-eval-set` | TV2 Thanh | UC6 | Bộ ≥ 30 câu hỏi có đáp án, tài liệu nguồn; có câu ngoài tài liệu, câu prompt injection; độ dài câu hỏi tối đa | AC-6.3.1 → 6.3.3 | T3 (24/11), 21:00 | T4 (25/11) | TV1, TV4 |
 | `infra/llm-secrets-cost` | TV3 Bảo | UC6 | Khóa LLM trong Secrets Manager, budget alarm cho chi phí LLM | NFR-7.1 | T4 (25/11), 21:00 | T5 (26/11) | TV1 |
 | `feat/policy-assistant` | TV1 Duong | UC6 | API và giao diện hỏi đáp; lọc phạm vi trước khi gửi LLM; trích dẫn; timeout 10 s, lùi về danh sách tài liệu | AC-6.3.1 → 6.3.4 | T5 (26/11) | T6 (27/11) | TV2, TV4 |
+| `feat/profile-self-service` | TV1 Duong | UC1 | Bảng `profile_item`, API mục tự khai, email khi đổi tài khoản ngân hàng, nhật ký thay đổi | AC-1.9.x, AC-1.6.4, AC-1.11.x | T3 (24/11) | T4 (25/11) | TV2, TV4 |
+| `feat/profile-files` | TV1 Duong | UC1 | Tải file hồ sơ, ảnh đại diện, hạn mức, xóa mềm | AC-1.10.x | T5 (26/11) | T6 (27/11) | TV3, TV4 |
+| `infra/profile-files` | TV3 Bảo | UC1 | Bucket `hr-profile-files-staging`, lifecycle 30 ngày, quyền App Runner, alarm 429 | AC-1.10.7, AC-1.10.9, AC-1.14.4, AC-1.14.5 | T3 (24/11) | T4 (25/11) | TV1 |
 | `docs/test-report-week12` | TV4 Duy | UC1 → UC7 | Chạy ca kiểm thử trên **staging**, nhất là UC5 (S3, CORS, bucket không public) và đăng nhập Cognito; load test ngắn trên staging | `test.md` | T7 (28/11), 21:00 | CN (29/11) | TV1 |
 | `docs/assistant-eval-report` | TV4 Duy | UC6 | Chạy bộ đánh giá: tỉ lệ đúng, có trích dẫn, độ trễ, chi phí mỗi câu | AC-6.3.5 | CN (29/11), 12:00 | T2 (30/11), 9:00 | TV1, TV2 |
 
