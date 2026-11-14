@@ -8,7 +8,7 @@
 | Người viết | Nhóm |
 | Góc nhìn | Nghiệp vụ |
 | ADR liên quan | ADR-12 |
-| Nguồn gốc | Mục quyết định trong [kế hoạch tổng tuần 4](../../progress/tuan-04-ke-hoach-tong.md) |
+| Nguồn gốc | Mục quyết định trong [kế hoạch tổng](../../progress/ke-hoach-tong.md) |
 
 ## Lịch sử thay đổi
 

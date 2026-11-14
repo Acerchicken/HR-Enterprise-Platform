@@ -103,7 +103,7 @@ NFR-1.1 và NFR-1.3 (danh bạ p95 < 1 s với 2.000 nhân viên); NFR-1.6 (phâ
 
 ## 4. Việc còn lại
 
-Lịch làm theo [kế hoạch theo chức năng tuần 11–13](../../progress/tuan-04-ke-hoach-tong.md#7-kế-hoạch-theo-chức-năng-tuần-11--13).
+Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13).
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
