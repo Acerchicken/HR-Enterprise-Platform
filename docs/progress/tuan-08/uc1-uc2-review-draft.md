@@ -1,5 +1,7 @@
 # Bản nháp đối chiếu UC1, UC2 — code tuần 7 và FR tuần 5
 
+> Bản nháp lịch sử của tuần 8. Đặc tả chính thức hiện nay: [UC1](../../features/UC1-employee-profile/spec.md), [UC2](../../features/UC2-organization/spec.md).
+
 > Bản đối chiếu ghi nhận hiện trạng code tuần 7 so với FR tuần 5. Hai điểm lệch UC2 đã được tách thành [issue #21](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/21) và [issue #22](https://github.com/Acerchicken/HR-Enterprise-Platform/issues/22).
 
 ## Phạm vi

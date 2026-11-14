@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>HRHelper - bản vẽ giao diện</title>
+<!-- Nguồn của các ảnh PNG trong thư mục này. Dữ liệu là dữ liệu mẫu, không phải người thật.
+     Sửa file này rồi xuất ảnh: Windows chạy render.ps1 (dùng Edge), máy có Playwright chạy node render.js.
+     Mở mockups.html?only=<id> để chỉ hiện một khung (render.ps1 dùng cách này). -->
+<script>
+  (function () {
+    var id = new URLSearchParams(location.search).get('only');
+    if (!id) return;
+    var st = document.createElement('style');
+    st.textContent = 'body{padding:0!important;background:#F8FAFC!important}.frame{display:none!important;margin:0!important}' +
+      'div#' + id + '{display:block!important}';
+    document.head.appendChild(st);
+  })();
+</script>
+<style>
+:root{
+  --primary:#0E7490;--primary-hover:#155E75;--soft1:#ECFEFF;--soft2:#CFFAFE;--accent:#06B6D4;
+  --todo:#DC2626;--danger:#B42318;--ok:#067647;--warn:#B54708;
+  --text:#0F172A;--muted:#64748B;--line:#E2E8F0;--bg:#F8FAFC;--card:#fff;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--text);background:#CBD5E1;padding:24px}
+.frame{background:var(--bg);margin:0 0 24px;position:relative;overflow:hidden}
+.desk{width:1280px;height:800px}
+.mob{width:390px;height:844px;border-radius:0}
+svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* nav */
+.nav{height:60px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;gap:24px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--primary);font-size:18px;width:200px}
+.logo b{width:30px;height:30px;border-radius:8px;background:var(--primary);color:#fff;display:grid;place-items:center;font-size:15px}
+.search{flex:1;max-width:560px;margin:0 auto;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--bg);display:flex;align-items:center;gap:10px;padding:0 12px;color:var(--muted);font-size:14px}
+.search.focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px #CFFAFE;color:var(--text)}
+.kbd{margin-left:auto;font-size:12px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--muted);background:#fff}
+.navr{display:flex;align-items:center;gap:18px;width:200px;justify-content:flex-end}
+.bell{position:relative;color:var(--muted)}
+.bell i{position:absolute;top:-6px;right:-8px;background:var(--danger);color:#fff;font-style:normal;font-size:11px;border-radius:9px;padding:0 5px;font-weight:600}
+.av{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:600;font-size:14px;flex:none}
+.av.lg{width:96px;height:96px;font-size:34px;border:4px solid #fff;box-shadow:0 2px 8px #0002}
+.av.md{width:48px;height:48px;font-size:17px}
+.av.alt{background:#0891B2}.av.alt2{background:#155E75}
+/* home */
+.home{padding:28px 48px}
+h1{font-size:24px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:18px}
+.todo{display:flex;gap:12px;margin-bottom:26px}
+.tchip{background:#fff;border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:10px;padding:10px 14px;font-size:14px;display:flex;gap:8px;align-items:center}
+.tchip b{color:var(--warn);font-size:18px}
+.sect{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;gap:12px;align-items:flex-start;position:relative;min-height:84px}
+.tile .ic{width:40px;height:40px;border-radius:10px;background:var(--soft1);color:var(--primary);display:grid;place-items:center;flex:none}
+.tile h3{margin:0 0 3px;font-size:15px}
+.tile p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.35}
+.tile .cnt{position:absolute;top:12px;right:12px;background:var(--warn);color:#fff;border-radius:10px;font-size:12px;font-weight:600;padding:1px 8px}
+.tile.hover{border-color:var(--primary);background:var(--soft1)}
+.tile.no h3{color:var(--todo)}
+.tile.no .ic{background:#FEF2F2;color:var(--todo)}
+.chua{display:inline-block;font-size:11px;font-weight:600;color:var(--todo);border:1px solid #FCA5A5;background:#FEF2F2;border-radius:6px;padding:0 6px;margin-left:6px;vertical-align:2px}
+.bal{margin-top:22px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;font-size:15px}
+.bal a{margin-left:auto;color:var(--primary);font-weight:600;text-decoration:none;font-size:14px}
+.note{position:absolute;z-index:10;background:#FEF9C3;border:1px solid #EAB308;color:#713F12;font-size:12px;border-radius:8px;padding:6px 9px;max-width:230px;line-height:1.35;box-shadow:0 2px 6px #0001}
+/* search dropdown */
+.dd{position:absolute;top:56px;left:360px;width:560px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px #0f172a26;padding:8px 0;z-index:5}
+.dd h4{margin:6px 16px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.dd .r{display:flex;align-items:center;gap:12px;padding:8px 16px;font-size:14px}
+.dd .r.sel{background:var(--soft1)}
+.dd .r small{display:block;color:var(--muted);font-size:12px}
+.dd .foot{border-top:1px solid var(--line);margin-top:6px;padding:9px 16px 3px;font-size:13px;color:var(--primary)}
+mark{background:#CFFAFE;color:inherit;border-radius:3px}
+/* overlay */
+.dim{position:absolute;inset:0;background:#0F172A73;z-index:4}
+.qv{position:absolute;z-index:6;top:180px;left:460px;width:360px;background:#fff;border-radius:16px;box-shadow:0 20px 50px #0f172a40;overflow:hidden}
+.qv .top{background:linear-gradient(135deg,var(--soft1),var(--soft2));padding:20px;text-align:center;position:relative}
+.x{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--muted);background:#ffffffb0}
+.code{display:inline-block;background:var(--primary);color:#fff;font-weight:700;font-size:13px;border-radius:6px;padding:2px 10px;margin:-14px 0 6px;position:relative}
+.qv h2{margin:4px 0 2px;font-size:19px}
+.qv .role{color:var(--muted);font-size:13.5px}
+.qv .rows{padding:6px 18px 4px}
+.kv{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.kv:last-child{border:0}
+.kv .k{color:var(--muted);width:104px;flex:none;font-size:13px}
+.kv .acts{margin-left:auto;display:flex;gap:6px;color:var(--primary)}
+.kv .acts span{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;border-radius:10px;padding:0 16px;font-weight:600;font-size:14px;border:1px solid transparent}
+.btn.p{background:var(--primary);color:#fff}
+.btn.o{background:#fff;color:var(--primary);border-color:var(--primary)}
+.btn.d{background:#fff;color:var(--danger);border-color:#FDA29B}
+.btn.dis{background:#E2E8F0;color:#94A3B8}
+.qv .foot{padding:12px 18px 18px}
+.qv .foot .btn{width:100%}
+/* profile panel */
+.drawer{position:absolute;z-index:6;top:0;right:0;bottom:0;width:720px;background:var(--bg);box-shadow:-12px 0 40px #0f172a40;overflow:hidden}
+.ph{background:linear-gradient(160deg,var(--soft1) 0%,var(--soft2) 100%);text-align:center;padding:14px 20px 18px;position:relative}
+.ph::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 20% 0%,#ffffff99,transparent 55%),radial-gradient(ellipse at 100% 60%,#A5F3FC66,transparent 50%);pointer-events:none}
+.pbar{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600;position:relative;z-index:1;height:36px}
+.pbar .x{position:static;margin-left:auto}
+.pc{position:relative;z-index:1}
+.pc h2{margin:6px 0 2px;font-size:21px}
+.pc .role{color:#334155;font-size:14px}
+.cards{display:flex;background:#fff;border-radius:14px;margin:-2px 16px 0;box-shadow:0 2px 10px #0f172a14;position:relative;z-index:2}
+.cards>div{flex:1;text-align:center;padding:12px 8px}
+.cards>div+div{border-left:1px solid var(--line)}
+.cards small{display:block;color:var(--muted);font-size:12.5px;margin-top:6px}
+.cards b{font-size:14px}
+.circ{width:44px;height:44px;border-radius:50%;background:var(--soft1);color:var(--primary);display:grid;place-items:center;margin:0 auto}
+.blk{background:#fff;border-radius:14px;margin:12px 16px 0;box-shadow:0 1px 4px #0f172a0f}
+.row{display:flex;align-items:center;gap:12px;padding:0 14px;height:50px;font-size:14.5px;color:var(--text)}
+.row{position:relative}
+.row+.row::before{content:"";position:absolute;top:0;left:46px;right:0;border-top:1px solid var(--line)}
+.row .ri{color:var(--primary)}
+.row .v{margin-left:auto;color:var(--muted);display:flex;align-items:center;gap:6px;font-size:14px}
+.row .ch{color:#94A3B8}
+.row.no .t{color:var(--todo)}
+.row.no .ri{color:var(--todo)}
+.mask{letter-spacing:2px;color:var(--muted)}
+.eye{color:var(--primary)}
+.gh{display:inline-block;margin:16px 16px 0;padding:5px 14px 5px 12px;border-left:3px solid var(--primary);background:linear-gradient(90deg,var(--soft1),transparent);color:var(--primary);font-weight:700;font-size:14.5px;border-radius:2px 8px 8px 2px}
+.pend{font-size:11px;font-weight:600;color:var(--warn);background:#FFFAEB;border:1px solid #FEC84B;border-radius:6px;padding:0 6px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 4px}
+.cols .gh{margin-top:14px}
+/* mobile */
+.mob .ph{padding-top:10px}
+.mob .row{height:48px;font-size:14px}
+.status{height:26px;display:flex;justify-content:space-between;padding:4px 18px 0;font-size:12px;font-weight:600;position:relative;z-index:1}
+/* subpage */
+.sp{padding:0}
+.spbar{display:flex;align-items:center;gap:10px;height:52px;padding:0 12px;background:#fff;border-bottom:1px solid var(--line);font-weight:600;font-size:16px}
+.fld{background:#fff;border-radius:14px;margin:12px 16px 0;padding:4px 14px;box-shadow:0 1px 4px #0f172a0f}
+.fld .kv .k{width:118px}
+.prop{margin:12px 16px 0;border:1px dashed #FEC84B;background:#FFFAEB;border-radius:12px;padding:10px 14px;font-size:13.5px}
+.prop b{color:var(--warn)}
+.prop .old{text-decoration:line-through;color:var(--muted)}
+.input{border:1px solid var(--line);border-radius:10px;height:42px;display:flex;align-items:center;padding:0 12px;font-size:14px;background:#fff;margin-top:4px}
+.input.f{border-color:var(--primary);box-shadow:0 0 0 3px #CFFAFE}
+label.l{font-size:12.5px;color:var(--muted);display:block;margin-top:10px}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -10px 30px #0f172a30;padding:8px 16px 20px;z-index:6}
+.grab{width:40px;height:4px;border-radius:2px;background:#CBD5E1;margin:0 auto 10px}
+.hint{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.4}
+/* HR page */
+.page{padding:22px 40px}
+.crumb{font-size:13px;color:var(--muted);margin-bottom:6px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:14px 0 0}
+.tabs span{padding:9px 14px;font-size:14px;color:var(--muted)}
+.tabs span.on{color:var(--primary);border-bottom:2px solid var(--primary);font-weight:600}
+.split{display:grid;grid-template-columns:470px 1fr;gap:18px;margin-top:16px}
+.list{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.li{display:flex;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:14px;align-items:center}
+.li:last-child{border:0}
+.li.sel{background:var(--soft1);box-shadow:inset 3px 0 0 var(--primary)}
+.li small{display:block;color:var(--muted);font-size:12.5px}
+.li .age{margin-left:auto;text-align:right;font-size:12px;color:var(--muted)}
+.det{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.det h3{margin:0 0 4px;font-size:17px}
+table.cmp{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+table.cmp th{text-align:left;color:var(--muted);font-weight:600;font-size:12.5px;padding:8px 10px;background:var(--bg);border-bottom:1px solid var(--line)}
+table.cmp td{padding:10px;border-bottom:1px solid var(--line)}
+td.new{background:#ECFDF3;color:var(--ok);font-weight:600}
+.filec{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;margin:6px 0}
+.ta{border:1px solid var(--line);border-radius:10px;height:64px;padding:10px 12px;font-size:13.5px;color:var(--muted);margin:6px 0 12px}
+.badge{font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px}
+.badge.w{background:#FFFAEB;color:var(--warn)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+<defs>
+<symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+<symbol id="bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+<symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+<symbol id="cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></symbol>
+<symbol id="list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+<symbol id="check" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+<symbol id="users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+<symbol id="org" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-5h14v5"/></symbol>
+<symbol id="file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+<symbol id="chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+<symbol id="inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+<symbol id="useradd" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M19 8v6M16 11h6"/></symbol>
+<symbol id="done" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+<symbol id="upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+<symbol id="hist" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></symbol>
+<symbol id="chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="back" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></symbol>
+<symbol id="mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></symbol>
+<symbol id="copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<symbol id="money" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></symbol>
+<symbol id="shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="clip" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 12h6M9 16h6"/></symbol>
+<symbol id="sos" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 7v5M12 15h.01"/></symbol>
+<symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="flag" viewBox="0 0 24 24"><path d="M4 22V4s1-1 4-1 5 2 8 2 4-1 4-1v11s-1 1-4 1-5-2-8-2-4 1-4 1"/></symbol>
+<symbol id="bank" viewBox="0 0 24 24"><path d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M2 10l10-7 10 7z"/></symbol>
+<symbol id="tax" viewBox="0 0 24 24"><path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></symbol>
+<symbol id="heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></symbol>
+<symbol id="gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></symbol>
+<symbol id="award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.5 13 17 22l-5-3-5 3 1.5-9"/></symbol>
+<symbol id="book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5z"/></symbol>
+<symbol id="pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+<symbol id="lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+</defs>
+</svg>
+
+<!-- ============ 1. Trang chủ (desktop) ============ -->
+<div class="frame desk" id="home">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp, tài liệu…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>5</i></span><span class="av">AN</span></div>
+  </div>
+  <div class="home">
+    <h1>Chào An</h1>
+    <div class="sub">Thứ Bảy, 14/11/2026</div>
+    <div class="todo">
+      <div class="tchip"><b>3</b> đơn nghỉ chờ bạn duyệt</div>
+      <div class="tchip"><b>2</b> yêu cầu cập nhật hồ sơ chờ HR</div>
+    </div>
+    <div class="sect">Chức năng</div>
+    <div class="grid">
+      <div class="tile hover"><span class="ic"><svg class="i"><use href="#user"/></svg></span><div><h3>Hồ sơ của tôi</h3><p>Thông tin cá nhân, công việc, giấy tờ</p></div></div>
+      <div class="tile"><span class="ic"><svg class="i"><use href="#cal"/></svg></span><div><h3>Đăng ký nghỉ</h3><p>Tạo đơn nghỉ phép, nghỉ ốm, nghỉ việc riêng</p></div></div>
+      <div class="tile"><span class="ic"><svg class="i"><use href="#list"/></svg></span><div><h3>Đơn nghỉ của tôi</h3><p>Trạng thái các đơn đã gửi</p></div></div>
+      <div class="tile"><span class="ic"><svg class="i"><use href="#check"/></svg></span><div><h3>Việc cần duyệt</h3><p>Đơn nghỉ của nhân viên cấp dưới</p></div><span class="cnt">3</span></div>
+      <div class="tile"><span class="ic"><svg class="i"><use href="#users"/></svg></span><div><h3>Danh bạ</h3><p>Tra cứu đồng nghiệp</p></div></div>
+      <div class="tile"><span class="ic"><svg class="i"><use href="#org"/></svg></span><div><h3>Sơ đồ tổ chức</h3><p>Phòng ban và quản lý</p></div></div>
+      <div class="tile no"><span class="ic"><svg class="i"><use href="#file"/></svg></span><div><h3>Tài liệu<span class="chua">Chưa có</span></h3><p>Quy chế, biểu mẫu, chính sách</p></div></div>
+      <div class="tile no"><span class="ic"><svg class="i"><use href="#chat"/></svg></span><div><h3>Hỏi trợ lý chính sách<span class="chua">Chưa có</span></h3><p>Hỏi đáp theo tài liệu công ty</p></div></div>
+    </div>
+    <div class="bal"><svg class="i" style="color:var(--primary)"><use href="#cal"/></svg><span>Còn <b>7 ngày</b> phép năm 2026</span><a href="#">Xem nghỉ phép ›</a></div>
+  </div>
+  <div class="note" style="top:640px;left:48px;max-width:400px">Thanh tìm kiếm chung (mục 2.1): gõ từ 2 ký tự, chờ 300 ms mới gọi API. Ctrl+K để vào ô.</div>
+  <div class="note" style="top:560px;left:752px;max-width:300px">Chuông: tổng việc chờ. Ảnh đại diện: menu Hồ sơ của tôi, Đăng xuất.</div>
+  <div class="note" style="top:560px;left:48px;max-width:330px">Dải "Việc cần làm": ẩn khi không có việc. Ô "Hồ sơ của tôi" mở popup hồ sơ; các ô khác sang trang mới.</div>
+  <div class="note" style="top:560px;left:400px;max-width:330px">Ô chưa làm: tên đỏ + nhãn "Chưa có". Nhân viên thường không thấy ô Việc cần duyệt (ví dụ này là quản lý).</div>
+</div>
+
+<!-- ============ 2. Trang chủ HR ============ -->
+<div class="frame desk" id="home-hr" style="height:560px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp, tài liệu…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>9</i></span><span class="av alt2">HL</span></div>
+  </div>
+  <div class="home">
+    <h1>Chào Hà</h1>
+    <div class="sub">HR · Thứ Bảy, 14/11/2026</div>
+    <div class="todo">
+      <div class="tchip"><b>6</b> yêu cầu cập nhật hồ sơ chờ duyệt</div>
+      <div class="tchip"><b>3</b> đơn nghỉ chờ HR hoàn tất</div>
+    </div>
+    <div class="sect">Chức năng HR</div>
+    <div class="grid">
+      <div class="tile no"><span class="ic"><svg class="i"><use href="#inbox"/></svg></span><div><h3>Việc cần duyệt<span class="chua">Chưa có</span></h3><p>Đơn nghỉ, hoàn tất nghỉ, sửa hồ sơ, file, ảnh</p></div><span class="cnt">9</span></div>
+      <div class="tile"><span class="ic"><svg class="i"><use href="#useradd"/></svg></span><div><h3>Quản lý nhân viên</h3><p>Thêm, sửa hồ sơ, nghỉ việc</p></div></div>
+      <div class="tile no"><span class="ic"><svg class="i"><use href="#upload"/></svg></span><div><h3>Đăng tài liệu<span class="chua">Chưa có</span></h3><p>Quy chế, biểu mẫu, phạm vi xem</p></div></div>
+      <div class="tile no"><span class="ic"><svg class="i"><use href="#hist"/></svg></span><div><h3>Lịch sử thao tác<span class="chua">Chưa có</span></h3><p>Ai làm gì, lúc nào</p></div></div>
+    </div>
+    <div class="sect" style="margin-top:20px">Chức năng chung</div>
+    <div style="color:var(--muted);font-size:14px">Hồ sơ của tôi · Đăng ký nghỉ · Đơn nghỉ của tôi · Danh bạ · Sơ đồ tổ chức · Tài liệu · Hỏi trợ lý (cùng lưới, thứ tự như nhân viên)</div>
+  </div>
+</div>
+
+<!-- ============ 3. Tìm kiếm + thẻ xem nhanh ============ -->
+<div class="frame desk" id="search" style="height:620px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search focus"><svg class="i"><use href="#search"/></svg>ngu|<span class="kbd">Esc</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>5</i></span><span class="av">AN</span></div>
+  </div>
+  <div class="home" style="opacity:.45">
+    <h1>Chào An</h1><div class="sub">Thứ Bảy, 14/11/2026</div>
+    <div class="grid"><div class="tile" style="height:84px"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+  </div>
+  <div class="dd">
+    <h4>Đồng nghiệp</h4>
+    <div class="r sel"><span class="av md alt" style="width:36px;height:36px;font-size:13px">BT</span><div><mark>Ngu</mark>yễn Bảo Trâm<small>100318 · Chuyên viên tuyển dụng · Phòng Nhân sự</small></div></div>
+    <div class="r"><span class="av md" style="width:36px;height:36px;font-size:13px">MK</span><div><mark>Ngu</mark>yễn Minh Khoa<small>100207 · Trưởng nhóm Backend · Phòng Công nghệ</small></div></div>
+    <h4>Tài liệu</h4>
+    <div class="r"><svg class="i" style="color:var(--primary)"><use href="#file"/></svg><div>Quy chế <mark>ngu</mark>ồn nhân lực 2026<small>PDF · Toàn công ty</small></div></div>
+    <div class="foot">Xem tất cả kết quả cho "ngu" (Enter)</div>
+  </div>
+  <div class="note" style="top:70px;left:940px;max-width:260px">Gợi ý chia nhóm. Tài liệu ngoài phạm vi người dùng không xuất hiện. Mũi tên lên xuống để chọn, Enter mở trang kết quả.</div>
+</div>
+
+<div class="frame desk" id="quickview" style="height:720px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp, tài liệu…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>5</i></span><span class="av">AN</span></div>
+  </div>
+  <div class="home"><h1>Chào An</h1><div class="sub">Thứ Bảy, 14/11/2026</div>
+    <div class="grid"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div></div>
+  <div class="dim"></div>
+  <div class="qv">
+    <div class="top"><span class="x"><svg class="i"><use href="#x"/></svg></span>
+      <span class="av lg alt" style="margin:0 auto">BT</span>
+      <div><span class="code">100318</span></div>
+      <h2>Nguyễn Bảo Trâm</h2><div class="role">Chuyên viên tuyển dụng · Phòng Nhân sự</div></div>
+    <div class="rows">
+      <div class="kv"><span class="k">Quản lý trực tiếp</span><span style="color:var(--primary);font-weight:600">Lê Thu Hà</span></div>
+      <div class="kv"><span class="k">Điện thoại</span>0912 345 678<span class="acts"><span><svg class="i" style="width:16px"><use href="#copy"/></svg></span><span><svg class="i" style="width:16px"><use href="#phone"/></svg></span></span></div>
+      <div class="kv"><span class="k">Email công việc</span>tram.nb@hrhelper.vn<span class="acts"><span><svg class="i" style="width:16px"><use href="#copy"/></svg></span><span><svg class="i" style="width:16px"><use href="#mail"/></svg></span></span></div>
+    </div>
+    <div class="foot"><span class="btn p">Xem hồ sơ đầy đủ</span></div>
+  </div>
+  <div class="note" style="top:200px;left:850px;max-width:250px">Thẻ xem nhanh 360 px. Chỉ gọi <code>GET /employees/{id}/summary</code>, chỉ dữ liệu mức danh bạ (không địa chỉ, ngày sinh). Đóng: X, Esc, bấm ra ngoài.</div>
+</div>
+
+<!-- ============ 4. Hồ sơ đầy đủ: drawer desktop ============ -->
+<div class="frame desk" id="profile-desktop" style="height:900px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search" style="max-width:420px;margin:0"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp, tài liệu…</div>
+    <div class="navr"></div>
+  </div>
+  <div class="home"><h1>Chào An</h1><div class="sub">Thứ Bảy, 14/11/2026</div>
+    <div class="grid" style="grid-template-columns:repeat(2,250px)"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div></div>
+  <div class="dim"></div>
+  <div class="drawer">
+    <div class="ph">
+      <div class="pbar"><span>Hồ sơ</span><span style="font-size:12px;color:var(--muted);font-weight:400">/me/profile</span><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+      <div class="pc"><span class="av lg" style="margin:0 auto">AN</span>
+        <div><span class="code">100245</span></div>
+        <h2>Nguyễn Văn An</h2><div class="role">Kỹ sư phần mềm</div></div>
+    </div>
+    <div class="cards">
+      <div><span class="av md alt" style="margin:0 auto">MK</span><small>Quản lý trực tiếp</small><b>Nguyễn Minh Khoa</b></div>
+      <div><span class="circ"><svg class="i"><use href="#org"/></svg></span><small>Xem sơ đồ tổ chức</small><b>Phòng Công nghệ</b></div>
+    </div>
+    <div class="blk">
+      <div class="row"><svg class="i ri"><use href="#money"/></svg><span class="t">Lương mục tiêu</span><span class="v"><svg class="i eye"><use href="#eye"/></svg><span class="mask">********</span><svg class="i ch"><use href="#chev"/></svg></span></div>
+      <div class="row no"><svg class="i ri"><use href="#shield"/></svg><span class="t">Hệ số lương bảo hiểm<span class="chua">Chưa có</span></span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+      <div class="row no"><svg class="i ri"><use href="#clip"/></svg><span class="t">Diện đối tượng<span class="chua">Chưa có</span></span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    </div>
+    <div class="cols">
+      <div>
+        <span class="gh">Thông tin cá nhân</span>
+        <div class="blk" style="margin-right:6px">
+          <div class="row"><svg class="i ri"><use href="#user"/></svg><span class="t">Thông tin cá nhân</span><span class="v"><span class="pend">Chờ HR</span><svg class="i ch"><use href="#chev"/></svg></span></div>
+          <div class="row no"><svg class="i ri"><use href="#sos"/></svg><span class="t">Liên hệ khẩn cấp</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+          <div class="row no"><svg class="i ri"><use href="#users"/></svg><span class="t">Thân nhân, người phụ thuộc</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+        </div>
+        <span class="gh">Tài chính</span>
+        <div class="blk" style="margin-right:6px">
+          <div class="row"><svg class="i ri"><use href="#money"/></svg><span class="t">Lương mục tiêu</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+          <div class="row no"><svg class="i ri"><use href="#shield"/></svg><span class="t">Hệ số lương bảo hiểm</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+          <div class="row"><svg class="i ri"><use href="#bank"/></svg><span class="t">Tài khoản ngân hàng</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+          <div class="row no"><svg class="i ri"><use href="#tax"/></svg><span class="t">Thuế TNCN</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+        </div>
+      </div>
+      <div>
+        <span class="gh">Công việc</span>
+        <div class="blk" style="margin-left:6px">
+          <div class="row no"><svg class="i ri"><use href="#clock"/></svg><span class="t">Quá trình công tác</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+          <div class="row no"><svg class="i ri"><use href="#clip"/></svg><span class="t">Diện đối tượng</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+          <div class="row no"><svg class="i ri"><use href="#cal"/></svg><span class="t">Ngày nghỉ dài</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+          <div class="row"><svg class="i ri"><use href="#flag"/></svg><span class="t">Các mốc trong công ty</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+        </div>
+        <span class="gh">Phúc lợi</span>
+        <div class="blk" style="margin-left:6px">
+          <div class="row no"><svg class="i ri"><use href="#shield"/></svg><span class="t">Bảo hiểm xã hội</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+          <div class="row no"><svg class="i ri"><use href="#heart"/></svg><span class="t">Bảo hiểm y tế</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+          <div class="row no"><svg class="i ri"><use href="#gift"/></svg><span class="t">Phụ cấp</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+        </div>
+      </div>
+    </div>
+    <span class="gh">Khác</span>
+    <div class="blk">
+      <div class="row no"><svg class="i ri"><use href="#award"/></svg><span class="t">Khen thưởng kỷ luật</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+      <div class="row no"><svg class="i ri"><use href="#book"/></svg><span class="t">Chuyên môn</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    </div>
+  </div>
+  <div class="note" style="top:120px;left:40px;max-width:420px">Hồ sơ đầy đủ: ngăn phải 720 px (màn hình ≥ 1024 px), trang chủ mờ phía sau. URL đổi thành <code>/me/profile</code> hoặc <code>/employees/{id}</code>; Back đóng ngăn. Trên màn hình rộng hai nhóm xếp hai cột để đỡ cuộn; thứ tự đọc vẫn như ảnh mẫu.</div>
+  <div class="note" style="top:330px;left:40px;max-width:420px">Mục đỏ + "Chưa có" là mục chưa làm (UC1 spec 9.1). Bấm vào mở trang "Chức năng đang phát triển", không gọi API.<br><br>Mở ngăn chỉ gọi <code>summary</code>; mỗi mục chỉ gọi API khi bấm; lương chỉ gọi khi bấm mắt (ghi audit).</div>
+  <div class="note" style="top:560px;left:40px;max-width:420px">Bản vẽ này cắt bớt cuối ngăn: nhóm Khác còn "Sơ yếu lý lịch" và "Lịch sử thay đổi" (xem bản điện thoại).</div>
+</div>
+
+<!-- ============ 5. Hồ sơ trên điện thoại ============ -->
+<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+<div class="frame mob" id="profile-mobile" style="height:1745px">
+  <div class="ph" style="padding-bottom:22px">
+    <div class="pbar"><svg class="i"><use href="#back"/></svg><span>Hồ sơ</span></div>
+    <div class="pc"><span class="av lg" style="margin:0 auto">AN</span>
+      <div><span class="code">100245</span></div>
+      <h2>Nguyễn Văn An</h2><div class="role">Kỹ sư phần mềm</div></div>
+  </div>
+  <div class="cards">
+    <div><span class="av md alt" style="margin:0 auto">MK</span><small>Quản lý trực tiếp</small><b>Nguyễn Minh Khoa</b></div>
+    <div><span class="circ"><svg class="i"><use href="#org"/></svg></span><small>Xem sơ đồ tổ chức</small><b>Phòng Công nghệ</b></div>
+  </div>
+  <div class="blk">
+    <div class="row"><svg class="i ri"><use href="#money"/></svg><span class="t">Lương mục tiêu</span><span class="v"><svg class="i eye"><use href="#eye"/></svg><span class="mask">******</span><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#shield"/></svg><span class="t">Hệ số lương BH</span><span class="v"><span class="chua">Chưa có</span><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#clip"/></svg><span class="t">Diện đối tượng</span><span class="v"><span class="chua">Chưa có</span><svg class="i ch"><use href="#chev"/></svg></span></div>
+  </div>
+  <span class="gh">Thông tin cá nhân</span>
+  <div class="blk">
+    <div class="row"><svg class="i ri"><use href="#user"/></svg><span class="t">Thông tin cá nhân</span><span class="v"><span class="pend">Chờ HR</span><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#sos"/></svg><span class="t">Liên hệ khẩn cấp</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#users"/></svg><span class="t">Thân nhân, người phụ thuộc</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+  </div>
+  <span class="gh">Công việc</span>
+  <div class="blk">
+    <div class="row no"><svg class="i ri"><use href="#clock"/></svg><span class="t">Quá trình công tác</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#clip"/></svg><span class="t">Diện đối tượng</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#cal"/></svg><span class="t">Ngày nghỉ dài</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row"><svg class="i ri"><use href="#flag"/></svg><span class="t">Các mốc trong công ty</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+  </div>
+  <span class="gh">Tài chính</span>
+  <div class="blk">
+    <div class="row"><svg class="i ri"><use href="#money"/></svg><span class="t">Lương mục tiêu</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#shield"/></svg><span class="t">Hệ số lương bảo hiểm</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row"><svg class="i ri"><use href="#bank"/></svg><span class="t">Tài khoản ngân hàng</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#tax"/></svg><span class="t">Thông tin thuế TNCN</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+  </div>
+  <span class="gh">Phúc lợi</span>
+  <div class="blk">
+    <div class="row no"><svg class="i ri"><use href="#shield"/></svg><span class="t">Bảo hiểm xã hội</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#heart"/></svg><span class="t">Bảo hiểm y tế</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#gift"/></svg><span class="t">Phụ cấp</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+  </div>
+  <span class="gh">Khác</span>
+  <div class="blk">
+    <div class="row no"><svg class="i ri"><use href="#award"/></svg><span class="t">Khen thưởng kỷ luật</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#book"/></svg><span class="t">Chuyên môn</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#file"/></svg><span class="t">Sơ yếu lý lịch</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+    <div class="row no"><svg class="i ri"><use href="#hist"/></svg><span class="t">Lịch sử thay đổi</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+  </div>
+</div>
+
+<!-- ============ 6. Trang con: sửa thông tin cá nhân ============ -->
+<div class="frame mob" id="subpage-mobile">
+  <div class="spbar"><svg class="i"><use href="#back"/></svg>Thông tin cá nhân<span style="margin-left:auto;color:var(--primary);font-size:14px">Sửa</span></div>
+  <div class="prop"><b>Chờ HR xác nhận</b> · gửi 13/11/2026 09:12<br>
+    Điện thoại: <span class="old">0901 111 222</span> → <b style="color:var(--text)">0987 654 321</b><br>
+    <span style="color:var(--primary);font-weight:600">Hủy yêu cầu</span></div>
+  <div class="fld">
+    <div class="kv"><span class="k">Họ tên</span>Nguyễn Văn An<svg class="i" style="margin-left:auto;color:#94A3B8;width:16px"><use href="#lock"/></svg></div>
+    <div class="kv"><span class="k">Ngày sinh</span>12/05/1998<svg class="i" style="margin-left:auto;color:#94A3B8;width:16px"><use href="#lock"/></svg></div>
+    <div class="kv"><span class="k">Giới tính</span>Nam<svg class="i" style="margin-left:auto;color:#94A3B8;width:16px"><use href="#lock"/></svg></div>
+    <div class="kv"><span class="k">Điện thoại</span>0901 111 222</div>
+    <div class="kv"><span class="k">Email công việc</span>an.nv@hrhelper.vn</div>
+    <div class="kv"><span class="k">Địa chỉ</span>12 Lê Lợi, Q.1, TP.HCM</div>
+    <div class="kv"><span class="k">CCCD</span><span class="mask">************</span><svg class="i eye" style="margin-left:auto"><use href="#eye"/></svg></div>
+  </div>
+  <div class="hint" style="margin:10px 16px">Ổ khóa: chỉ HR sửa. Điện thoại, địa chỉ: nhân viên sửa được, nhưng chỉ gửi yêu cầu; HR duyệt thì mới ghi.</div>
+  <div class="dim" style="background:#0F172A59"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div style="font-weight:700;font-size:16px">Sửa địa chỉ</div>
+    <label class="l">Địa chỉ hiện tại</label><div class="input" style="color:var(--muted);background:var(--bg)">12 Lê Lợi, Q.1, TP.HCM</div>
+    <label class="l">Địa chỉ mới</label><div class="input f">45 Nguyễn Huệ, Q.1, TP.HCM|</div>
+    <label class="l">Ghi chú cho HR (không bắt buộc)</label><div class="input" style="color:#94A3B8">Chuyển nhà từ 01/11</div>
+    <div class="hint">Thông tin chỉ đổi sau khi HR xác nhận. Bạn có thể hủy khi yêu cầu còn chờ.</div>
+    <div style="display:flex;gap:10px;margin-top:14px"><span class="btn o" style="flex:1">Hủy</span><span class="btn p" style="flex:2">Gửi yêu cầu</span></div>
+  </div>
+</div>
+
+<!-- ============ 7. Người khác xem (mức danh bạ) ============ -->
+<div class="frame mob" id="profile-directory-view" style="height:700px">
+  <div class="ph" style="padding-bottom:22px">
+    <div class="pbar"><svg class="i"><use href="#back"/></svg><span>Hồ sơ</span></div>
+    <div class="pc"><span class="av lg alt" style="margin:0 auto">BT</span>
+      <div><span class="code">100318</span></div>
+      <h2>Nguyễn Bảo Trâm</h2><div class="role">Chuyên viên tuyển dụng</div></div>
+  </div>
+  <div class="cards">
+    <div><span class="av md alt2" style="margin:0 auto">LH</span><small>Quản lý trực tiếp</small><b>Lê Thu Hà</b></div>
+    <div><span class="circ"><svg class="i"><use href="#org"/></svg></span><small>Xem sơ đồ tổ chức</small><b>Phòng Nhân sự</b></div>
+  </div>
+  <span class="gh">Liên hệ</span>
+  <div class="blk">
+    <div class="row"><svg class="i ri"><use href="#phone"/></svg><span class="t">0912 345 678</span><span class="v" style="color:var(--primary)"><svg class="i"><use href="#copy"/></svg></span></div>
+    <div class="row"><svg class="i ri"><use href="#mail"/></svg><span class="t">tram.nb@hrhelper.vn</span><span class="v" style="color:var(--primary)"><svg class="i"><use href="#copy"/></svg></span></div>
+  </div>
+  <div class="hint" style="margin:14px 16px">Đồng nghiệp không phải quản lý, không phải HR chỉ thấy mức danh bạ: ảnh, mã, tên, chức danh, quản lý, phòng ban, điện thoại, email công việc. Không có địa chỉ, ngày sinh, tài chính; các nhóm không được xem thì không hiện (không hiện rồi khóa).</div>
+</div>
+</div>
+
+<!-- ============ 8. HR duyệt yêu cầu cập nhật hồ sơ ============ -->
+<div class="frame desk" id="approvals" style="height:760px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp, tài liệu…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>9</i></span><span class="av alt2">HL</span></div>
+  </div>
+  <div class="page">
+    <div class="crumb">Trang chủ › Việc cần duyệt</div>
+    <h1>Việc cần duyệt</h1>
+    <div class="tabs"><span>Đơn nghỉ (0)</span><span>Hoàn tất đơn nghỉ (3)</span><span class="on">Sửa hồ sơ (3)</span><span>File hồ sơ (1)</span><span>Ảnh đại diện (2)</span><span style="margin-left:auto">Đã xử lý ▾</span></div>
+    <div class="split">
+      <div class="list">
+        <div class="li sel"><span class="av md" style="width:36px;height:36px;font-size:13px">AN</span><div>Nguyễn Văn An<small>Địa chỉ</small></div><div class="age">13/11 09:12<br><span class="badge w">Chờ duyệt</span></div></div>
+        <div class="li"><span class="av md alt" style="width:36px;height:36px;font-size:13px">BT</span><div>Nguyễn Bảo Trâm<small>Chuyên môn · thêm 1 dòng</small></div><div class="age">13/11 08:40<br><span class="badge w">Chờ duyệt</span></div></div>
+        <div class="li"><span class="av md alt" style="width:36px;height:36px;font-size:13px">VD</span><div>Võ Đức Duy<small>Thông tin cá nhân · điện thoại</small></div><div class="age">11/11 14:47<br><span class="badge w">Chờ duyệt</span></div></div>
+      </div>
+      <div class="det">
+        <h3>Nguyễn Văn An · 100245</h3>
+        <div style="color:var(--muted);font-size:13.5px">Kỹ sư phần mềm · Phòng Công nghệ · gửi 13/11/2026 09:12</div>
+        <table class="cmp"><tr><th>Trường</th><th>Hiện tại</th><th>Đề xuất</th></tr>
+          <tr><td>Địa chỉ</td><td>12 Lê Lợi, Q.1, TP.HCM</td><td class="new">45 Nguyễn Huệ, Q.1, TP.HCM</td></tr></table>
+        <div style="font-size:13.5px"><b>Ghi chú của nhân viên:</b> Chuyển nhà từ 01/11</div>
+        <div style="font-size:13px;color:var(--muted);margin:12px 0 4px">File đính kèm (nếu có) chỉ xem qua link tạm, chưa vào hồ sơ đến khi duyệt</div>
+        <div class="filec"><svg class="i" style="color:var(--primary)"><use href="#file"/></svg>xac-nhan-cu-tru.pdf · 420 KB<span style="margin-left:auto;color:var(--primary);font-weight:600">Xem</span></div>
+        <label class="l" style="margin-top:14px">Lý do từ chối (bắt buộc khi từ chối, tối đa 500 ký tự)</label>
+        <div class="ta">Nhập lý do để nhân viên sửa lại…</div>
+        <div style="display:flex;gap:10px;justify-content:flex-end"><span class="btn d">Từ chối</span><span class="btn p">Duyệt và ghi vào hồ sơ</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="note" style="top:640px;left:40px;max-width:700px">Một trang cho mọi loại duyệt, mỗi loại một tab kèm số việc chờ; tab chỉ hiện nếu có quyền (quản lý chỉ có Đơn nghỉ, ẩn thanh tab). URL /approvals?type=profile. Duyệt: ghi vào hồ sơ, ghi audit, báo nhân viên. Nếu hồ sơ đã đổi sau khi gửi (baseVersion khác) thì báo 409 "Dữ liệu vừa được thay đổi", không ghi đè.</div>
+</div>
+
+</body>
+</html>
