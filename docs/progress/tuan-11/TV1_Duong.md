@@ -14,6 +14,7 @@ Vai trò: code chính, review PR, merge PR, báo cáo thứ 2. Tuần này chỉ
 | **T4 (18/11)** | Mở PR `fix/employee-org-integrity`, `fix/auth-email-verified` |
 | **T5 (19/11)** | Mở PR `feat/profile-self-service` |
 | **T6 (20/11)** | Mở PR `feat/profile-files`; hỗ trợ TV4 chạy `test/load-k6` |
+| **T7 (21/11)** | Mở PR `feat/mail-driver-ses` (cần merge trước khi TV3 `apply` staging T3 24/11) |
 | **T2 (23/11)** | Báo cáo tuần 11, tạo thư mục tuần 12, PR `dev` → `main`, tag `week-11` |
 
 ## Việc cần làm
@@ -38,6 +39,11 @@ tên bucket. Cập nhật `deploy.md`, `configuration.md` trong cùng PR.
 
 - `feat/security-headers-ratelimit`: CSP, HSTS, `nosniff`, chặn iframe; giới hạn theo người dùng, ngưỡng qua biến môi trường.
 - `fix/auth-email-verified`: chỉ liên kết tài khoản khi `email_verified`; có test.
+- `feat/mail-driver-ses` (quyết định 14/11): interface gửi email cho worker, chọn bằng `MAIL_DRIVER=smtp|ses`. `smtp` giữ
+  nodemailer tới Mailpit khi chạy local; `ses` gửi bằng `@aws-sdk/client-sesv2` với IAM role của ECS task (quyền
+  `ses:SendEmail` đã có ở #70), không dùng SMTP credentials. Unit test cả hai driver với client giả; cập nhật
+  `configuration.md` và biến môi trường worker trong Terraform cùng TV3 (`MAIL_DRIVER=ses`, `SMTP_FROM` là email đã xác minh).
+  SES sandbox chỉ gửi tới địa chỉ đã xác minh: TV3 xác minh hộp thư của nhóm khi `apply`.
 
 ### 5. Việc của nhóm trưởng
 

@@ -140,6 +140,7 @@ nhiều chức năng cùng lúc. Load test (P4, tuần 11) chạy trên các API
 | `infra/idp-mfa` | TV3 Bảo | MFA TOTP cho HR, ADMIN (Keycloak và Cognito) | NFR-5.4 | T5 (19/11), 21:00 | T6 (20/11) | TV1 |
 | `test/load-k6` | TV4 Duy, TV1 hỗ trợ | Load test local 50 request/giây 15 phút; đo NFR-1.1 → 1.3, NFR-2.1, NFR-2.4. Rate limit đã merge: dùng nhiều tài khoản hoặc nâng ngưỡng | NFR-1, NFR-2 | T6 (20/11) | CN (22/11) | TV1, TV3 |
 | `docs/slo-dashboard-cost` | TV3 Bảo | Dashboard CloudWatch theo SLI ở SRS 6.13; chi phí/tháng theo kết quả load test | SRS 6.13 | T7 (21/11), 21:00 | CN (22/11) | TV1 |
+| `feat/mail-driver-ses` | TV1 Duong | Driver gửi email `MAIL_DRIVER=smtp\|ses`: local giữ SMTP tới Mailpit, AWS gửi bằng SES API (`@aws-sdk/client-sesv2`) với IAM role của worker, không dùng SMTP credentials (quyết định 14/11, góp ý #70) | Worker gửi được email trên staging | T7 (21/11) | CN (22/11) | TV3 |
 | (không có nhánh) | TV3 Bảo | `terraform apply` staging theo `docs/aws-rollout-plan`, gồm bucket tài liệu và bucket hồ sơ; chạy Deploy Staging với seed | `deploy.md` mục 5 của các UC đã xong | T3 (24/11) xong | – | TV1 |
 | `infra/llm-secrets-cost` | TV3 Bảo | Khóa LLM trong Secrets Manager, budget alarm chi phí LLM | NFR-7.1 | T4 (25/11), 21:00 | T5 (26/11) | TV1 |
 
