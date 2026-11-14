@@ -18,7 +18,8 @@ giống ứng dụng HR di động: đầu trang, Thông tin cá nhân, Công vi
 
 Ai được xem gì phụ thuộc quan hệ với chủ hồ sơ:
 
-- Người khác chỉ thấy thông tin danh bạ.
+- Người khác (không phải HR, không phải quản lý trực tiếp) chỉ thấy thông tin danh bạ: mã, họ tên, ảnh, chức danh, phòng ban,
+  quản lý trực tiếp, số điện thoại, email công ty. Không thấy địa chỉ, ngày sinh.
 - Quản lý trực tiếp thấy thêm thông tin cá nhân và công việc.
 - Chủ hồ sơ thấy toàn bộ hồ sơ của mình; lương, số tài khoản chỉ hiện khi bấm biểu tượng mắt.
 - HR thấy toàn bộ mọi hồ sơ. Mỗi lần xem trường nhạy cảm đều ghi audit.
@@ -367,7 +368,7 @@ xem thì không hiện.
 
 | Nhóm | Mục | Nhập | Mức | Trạng thái |
 |---|---|---|---|---|
-| Thông tin cá nhân | Thông tin cá nhân (8.1) | NV sửa điện thoại, địa chỉ; HR phần còn lại | QL (CCCD: HR) | Đã có |
+| Thông tin cá nhân | Thông tin cá nhân (8.1) | NV sửa điện thoại, địa chỉ; HR phần còn lại | QL (điện thoại, email: DB; CCCD: HR) | Đã có |
 | | Thông tin liên hệ khẩn cấp | NV | CN | **Chưa có** |
 | | Thân nhân và người phụ thuộc | NV | CN | **Chưa có** |
 | Công việc | Quá trình công tác | Tự tính, HR | QL | **Chưa có** |
@@ -388,7 +389,9 @@ xem thì không hiện.
 
 **Theo người xem:**
 
-- Mức danh bạ: chỉ đầu trang (ảnh, mã, họ tên, chức danh, quản lý trực tiếp, sơ đồ tổ chức), điện thoại, email.
+- Mức danh bạ (người không phải HR, không phải quản lý trực tiếp): chỉ đầu trang (ảnh, mã, họ tên, chức danh, quản lý trực
+  tiếp, sơ đồ tổ chức) cộng số điện thoại và email công ty, hiện ngay dưới đầu trang. Không có địa chỉ, ngày sinh; không có các
+  hàng lương, hệ số, diện đối tượng và các nhóm bên dưới.
 - Quản lý trực tiếp: thêm các mục mức QL.
 - Chủ hồ sơ: mọi mục của mình, nút "Thêm", "Tải lên" ở mục NV.
 - HR: mọi mục, nút "Sửa hồ sơ", "Thêm" ở mọi mục, "Hiện dòng đã xóa", "Đã đối chiếu".
