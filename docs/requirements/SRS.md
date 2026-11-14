@@ -86,7 +86,7 @@ LLM API (trợ lý, tuần 12) và hệ thống Payroll (ngoài phạm vi versio
 | UC3 Tạo đơn nghỉ | Xem số dư, tạo, hủy đơn, tạo đơn hộ | FR-3.1 → FR-3.7 |
 | UC4 Duyệt đơn | Duyệt, từ chối, duyệt thay, HR duyệt thêm theo loại phép, HR hoàn tất, email thông báo | FR-4.1 → FR-4.8 |
 | UC5 Kho tài liệu | Đăng tài liệu theo phạm vi xem, phiên bản | FR-5.1 → FR-5.3 |
-| UC6 Tra cứu chung và trợ lý | Ô tìm kiếm chung (đồng nghiệp và tài liệu), tìm trong nội dung tài liệu, trợ lý chính sách | FR-6.1 → FR-6.3 |
+| UC6 Tra cứu chung và trợ lý | Ô tìm đồng nghiệp trên nav bar; trang "Tra cứu tài liệu" gồm tìm trong nội dung tài liệu và trợ lý chính sách | FR-6.1 → FR-6.3 |
 | UC7 Lịch sử thao tác | Audit append-only, tra cứu audit | FR-7.1 → FR-7.3 |
 
 ### 2.3 Lớp người dùng
@@ -231,7 +231,7 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-6.1 | Ô tìm kiếm chung trên nav bar: gợi ý đồng nghiệp và tài liệu chia nhóm, trang kết quả `/search` | M | Dùng lại tìm kiếm của FR-2.1 và FR-6.2; chỉ trả thứ người dùng được xem | Một phần: chỉ có tìm trong trang Danh bạ |
+| FR-6.1 | Ô tìm đồng nghiệp trên nav bar: gợi ý tối đa 5 đồng nghiệp, Enter sang Danh bạ. Tìm tài liệu (FR-6.2) và trợ lý (FR-6.3) ở trang riêng "Tra cứu tài liệu" | M | Dùng lại tìm kiếm của FR-2.1; không có người đã nghỉ việc | Một phần: chỉ có tìm trong trang Danh bạ |
 | FR-6.2 | Tìm tài liệu theo từ khóa trong tiêu đề và nội dung, lọc theo quyền | M | Không trả tài liệu ngoài phạm vi | Kế hoạch tuần 10 |
 | FR-6.3 | Trợ lý trả lời câu hỏi về chính sách HR, có trích dẫn tài liệu nguồn | C | Chỉ dùng tài liệu người hỏi được xem; không trả lời được thì chỉ tới tài liệu gốc | Kế hoạch tuần 12 |
 

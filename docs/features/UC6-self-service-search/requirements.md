@@ -8,27 +8,29 @@
 
 | Mã | Là | Tôi muốn | Để | FR |
 |---|---|---|---|---|
-| US-6.1 | Nhân viên | Gõ một ô tìm kiếm ở mọi trang và thấy cả đồng nghiệp lẫn tài liệu | Không phải nhớ vào Danh bạ hay Tài liệu để tìm | FR-6.1 |
-| US-6.2 | Nhân viên | Tìm tài liệu theo từ khóa trong tiêu đề và nội dung | Tìm ra chính sách mà không cần biết tên file | FR-6.2 |
+| US-6.1 | Nhân viên | Gõ tên, email hoặc mã đồng nghiệp vào ô tìm kiếm ở mọi trang | Tìm nhanh người cần liên lạc mà không phải vào Danh bạ | FR-6.1 |
+| US-6.2 | Nhân viên | Mở trang "Tra cứu tài liệu" từ trang chủ, tìm tài liệu theo từ khóa trong tiêu đề và nội dung | Tìm ra chính sách mà không cần biết tên file | FR-6.2 |
 | US-6.3 | Nhân viên | Hỏi trợ lý bằng câu tự nhiên và nhận câu trả lời có trích dẫn | Có câu trả lời nhanh, kiểm lại được ở tài liệu gốc | FR-6.3 |
 
 ## 2. Tiêu chí chấp nhận
 
-### FR-6.1 Ô tìm kiếm chung (M, một phần: chỉ có tìm trong trang Danh bạ)
+### FR-6.1 Ô tìm đồng nghiệp trên nav bar (M, một phần: chỉ có tìm trong trang Danh bạ)
 
-Ô tìm kiếm trên nav bar ([giao diện chung mục 2.1](../frontend.md#21-nav-bar-thanh-trên-cùng-mọi-trang)). Dùng lại tìm đồng
-nghiệp của [UC2 FR-2.1](../UC2-organization/requirements.md#fr-21-danh-bạ-m-đã-có) và tìm tài liệu của FR-6.2; UC6 lo phần gộp,
-gợi ý và trang kết quả.
+Ô tìm kiếm trên nav bar ([giao diện chung mục 2.1](../frontend.md#21-nav-bar-thanh-trên-cùng-mọi-trang)) **chỉ tìm đồng
+nghiệp**, dùng lại tìm danh bạ của [UC2 FR-2.1](../UC2-organization/requirements.md#fr-21-danh-bạ-m-đã-có). Quyết định
+14/11/2026: tìm tài liệu (FR-6.2) và trợ lý AI (FR-6.3) không nằm trên nav bar mà ở trang riêng "Tra cứu tài liệu"
+(`/documents`), mở bằng ô chức năng ở trang chủ. Làm trong nhánh `feat/profile-layout` (UC1) vì thẻ xem nhanh cần ô này.
 
-- **AC-6.1.1** *(chưa có)* Khi gõ từ 2 ký tự, dừng 300 ms. Thì gợi ý tối đa 5 đồng nghiệp và 5 tài liệu, chia hai nhóm; một
-  lần gõ chỉ gọi API một lần (frontend AC-0.1.2).
-- **AC-6.1.2** *(chưa có)* Khi nhấn Enter. Thì mở `/search?q=` có hai tab Đồng nghiệp, Tài liệu kèm số kết quả, phân trang.
-- **AC-6.1.3** *(chưa có)* Kết quả đồng nghiệp tuân theo AC-2.1.1 → AC-2.1.4 (không có người đã nghỉ việc); kết quả tài liệu
-  tuân theo AC-6.2.2 (không lộ tài liệu ngoài phạm vi, kể cả số lượng).
-- **AC-6.1.4** *(chưa có)* Khi một nhóm lỗi (ví dụ tìm tài liệu trả 503). Thì nhóm kia vẫn hiện; nhóm lỗi báo "Tạm thời không
-  tìm được tài liệu".
+- **AC-6.1.1** *(chưa có)* Khi gõ từ 2 ký tự, dừng 300 ms. Thì gợi ý tối đa 5 đồng nghiệp; một lần gõ chỉ gọi
+  `GET /employees?q=` một lần, không gọi API tài liệu (frontend AC-0.1.2).
+- **AC-6.1.2** *(chưa có)* Khi nhấn Enter. Thì mở Danh bạ `/directory?q=` với từ khóa đó.
+- **AC-6.1.3** *(chưa có)* Kết quả tuân theo AC-2.1.1 → AC-2.1.4 (không có người đã nghỉ việc).
+- **AC-6.1.4** *(chưa có)* Khi chọn một gợi ý. Thì mở thẻ xem nhanh người đó, chỉ gọi `GET /employees/{id}/summary`.
 
 ### FR-6.2 Tìm tài liệu (M, chưa có)
+
+Ô tìm tài liệu nằm trên trang "Tra cứu tài liệu" (`/documents`), cùng trang với khung hỏi trợ lý (FR-6.3) và danh sách
+tài liệu của UC5.
 
 - **AC-6.2.1** Khi tìm một từ có trong nội dung (không có trong tiêu đề) của tài liệu trong phạm vi. Thì tài liệu có trong kết
   quả.
@@ -43,6 +45,8 @@ gợi ý và trang kết quả.
   `feat/security-headers-ratelimit`).
 
 ### FR-6.3 Trợ lý chính sách (C, chưa có, tuần 12)
+
+Khung hỏi trợ lý AI nằm trên trang "Tra cứu tài liệu" (`/documents`), không có trang hay ô chức năng riêng.
 
 - **AC-6.3.1** Khi hỏi câu có đáp án trong tài liệu được xem. Thì câu trả lời kèm trích dẫn (tài liệu, phiên bản); mỗi ý dẫn
   về tài liệu nguồn.
@@ -64,7 +68,8 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| Trích văn bản, full-text, API và giao diện tìm tài liệu | AC-6.2.1 → AC-6.2.6 | TV1 | `feat/document-search` | 12 |
+| Ô tìm đồng nghiệp trên nav bar | AC-6.1.1 → AC-6.1.4 | TV1 | `feat/profile-layout` | 11 |
+| Trích văn bản, full-text, API và trang "Tra cứu tài liệu" | AC-6.2.1 → AC-6.2.6 | TV1 | `feat/document-search` | 12 |
 | Giới hạn 20 request tìm kiếm mỗi phút | AC-6.2.7 | TV1 | `feat/security-headers-ratelimit` | 11 |
 | Ca kiểm thử tìm tài liệu | AC-6.2.x | TV4 | `docs/test-cases-uc5-uc6-uc7` | 12 |
 | ADR-14: cách truy hồi, nhà cung cấp LLM, ngưỡng đánh giá | AC-6.3.5 | TV1 | `docs/adr-14-policy-assistant` | 12 |

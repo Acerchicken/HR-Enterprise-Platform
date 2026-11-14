@@ -448,6 +448,8 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 ## 12. Hiện trạng và việc còn lại
 
+Rà soát chi tiết database, backend, frontend ngày 14/11/2026 và kế hoạch `feat/profile-layout`: [ra-soat.md](ra-soat.md).
+
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
 | Xem theo mức, tự sửa liên hệ, HR xem trường nhạy cảm, audit | Đã có | – |
@@ -463,8 +465,8 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Tải theo nhu cầu: `summary` cho trang mặc định, API riêng cho từng mục | Code chưa đúng: `GET /me` và `GET /employees/{id}` trả mọi trường cá nhân ngay khi mở trang; trang "Hồ sơ của tôi" còn tải số dư phép | TV1, `feat/profile-layout` |
 | Chủ hồ sơ tự xem lương, số tài khoản | Chưa có | TV1, `feat/profile-layout` |
 | Giới hạn tần suất, hạn mức (mục 7) | Chưa có: chưa có rate limit nào | TV1, `feat/security-headers-ratelimit` |
-| Nhân viên sửa điện thoại, địa chỉ qua yêu cầu (AC-1.2.1) | Code chưa đúng: đang lưu thẳng | TV1, `feat/profile-self-service` |
-| Yêu cầu cập nhật, màn hình duyệt của HR, nhật ký thay đổi (FR-1.9, FR-1.11) | Chưa có | TV1, `feat/profile-self-service` |
+| Nhân viên sửa điện thoại, địa chỉ qua yêu cầu (AC-1.2.1) | Code chưa đúng: đang lưu thẳng | TV1, `feat/profile-change-requests` |
+| Yêu cầu cập nhật, màn hình duyệt của HR, nhật ký thay đổi (FR-1.9, FR-1.11) | Chưa có | TV1, `feat/profile-change-requests` |
 | Tệp đính kèm, ảnh đại diện (FR-1.10) | Chưa có | TV1 `feat/profile-files`; TV3 `infra/profile-files` |
 | Mục HR quản lý, thông tin tự tính (FR-1.12, FR-1.13) | Chưa có | Sau MVP; mục vẫn hiện với tiêu đề đỏ |
 | Quét mã độc file tải lên | Không làm trong MVP | Rủi ro chấp nhận, mục 7 |
