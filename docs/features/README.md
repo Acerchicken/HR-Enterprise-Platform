@@ -30,6 +30,9 @@ Cách làm theo spec-driven (giống spec-kit, Kiro): requirements → spec → 
 
 Lịch làm phần còn lại: [kế hoạch theo chức năng tuần 11–13](../progress/tuan-04-ke-hoach-tong.md#7-kế-hoạch-theo-chức-năng-tuần-11--13).
 
+Phần giao diện dùng chung (nav bar, trang chủ, popup hồ sơ, màu, cách báo lỗi, tải dữ liệu theo nhu cầu) nằm ở
+[`frontend.md`](frontend.md); mục 9 của từng `spec.md` chỉ mô tả màn hình riêng của tính năng và dẫn về file đó.
+
 ## Làm một tính năng theo tài liệu này
 
 1. **Trước khi mở nhánh:** đọc `requirements.md`, chọn các `AC` sẽ làm. Tiêu chí còn ghi *(chưa chốt)* thì TV2 chốt trước.

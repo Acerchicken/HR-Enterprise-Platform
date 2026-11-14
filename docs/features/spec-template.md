@@ -54,6 +54,8 @@ Link tới BR, DR, ADR; không chép lại nội dung.
 
 ## 9. Giao diện và API
 
+> Chỉ mô tả màn hình riêng của tính năng. Nav bar, trang chủ, popup, màu, cách báo lỗi theo [giao diện chung](frontend.md).
+
 | Bước | Màn hình | API |
 |---|---|---|
 

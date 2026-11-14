@@ -346,8 +346,8 @@ yêu cầu thì `changeRequestId` (biết ai đề xuất, HR nào duyệt).
 
 | Luồng | Màn hình | API |
 |---|---|---|
-| 4.1, 9.1 | `/` (hồ sơ của tôi), `/employees/:id` (hồ sơ người khác) | `GET /me` (chỉ tài khoản, vai trò, `employeeId`), `GET /employees/{id}/summary` |
-| 4.1 bước 2a | Trang con `…/:section` | `GET /employees/{id}/profile/{section}` (mục `personal` trả ngày sinh, địa chỉ, ngày vào làm, trạng thái; HR thêm CCCD đã che) |
+| 4.1, 9.1 | Popup hồ sơ: `/me/profile` (của mình), `/employees/:id` (người khác), mở từ trang chủ, ô tìm kiếm, danh bạ | `GET /me` (chỉ tài khoản, vai trò, `employeeId`), `GET /employees/{id}/summary` |
+| 4.1 bước 2a | Trang con trong popup `/employees/:id/:section` | `GET /employees/{id}/profile/{section}` (mục `personal` trả ngày sinh, địa chỉ, ngày vào làm, trạng thái; HR thêm CCCD đã che) |
 | 4.2 | Trang con của mục, khung "Đang chờ HR xác nhận" | `GET /employees/{id}/profile/{section}`; `POST /employees/{id}/change-requests`; `DELETE /employees/{id}/change-requests/{requestId}` (hủy) |
 | 4.7 | `/hr/change-requests` (danh sách), `/hr/change-requests/:id` (so sánh cũ, mới) | `GET /change-requests`, `GET /change-requests/{requestId}`, `POST …/approve`, `POST …/reject` |
 | 4.5, A9 | Trang con mục, chế độ HR | `POST /employees/{id}/profile/{section}`, `PATCH`, `DELETE …/{itemId}` (chỉ HR, ghi thẳng) |
@@ -362,9 +362,10 @@ Mã `{section}`: `emergency-contacts`, `relatives`, `career-history`, `contracts
 
 ### 9.1 Bố cục trang hồ sơ
 
-Trang `/` và `/employees/:id` dùng **chung một bố cục**, theo mẫu ứng dụng HR di động: một cột, rộng tối đa 720 px, dùng
-được trên điện thoại. Người xem chỉ thấy nhóm và mục mức xem của mình cho phép (cột "Mức", ký hiệu ở mục 2); mục không được
-xem thì không hiện.
+Hồ sơ (của mình và của người khác) mở trong **popup hồ sơ** theo [giao diện chung mục 4](../frontend.md#4-popup-hồ-sơ):
+ngăn bên phải rộng 720 px trên màn hình rộng, toàn màn hình trên điện thoại, có URL riêng (`/me/profile`, `/employees/{id}`,
+mục con `/employees/{id}/{section}`); mục con mở bên trong popup. Bố cục bên trong theo mẫu ứng dụng HR di động, một cột.
+Người xem chỉ thấy nhóm và mục mức xem của mình cho phép (cột "Mức", ký hiệu ở mục 2); mục không được xem thì không hiện.
 
 **Quy ước màu:**
 
