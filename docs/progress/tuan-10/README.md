@@ -91,7 +91,7 @@ _Điền cuối tuần._
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 11: 16/11 – 23/11)
 
-_Điền cuối tuần._ Kế hoạch tuần 11–13 đã chia theo từng tính năng (cập nhật 13/11):
+_Điền cuối tuần._ Kế hoạch chi tiết tuần 11 cho từng thành viên: [`tuan-11/`](../tuan-11/README.md) (lập 14/11). Kế hoạch tuần 11–13 đã chia theo từng tính năng (cập nhật 13/11):
 [kế hoạch tổng mục 7](../ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13). Bảng bảo mật dưới đây đã nằm trong mục 7.3 (việc chung).
 
 **Việc bảo mật đã xếp sẵn cho tuần 11 (thêm 13/11).** Các việc này lấy từ những dòng "Chưa có" trong

@@ -14,6 +14,7 @@ Thư mục này lưu kế hoạch tổng ([`ke-hoach-tong.md`](ke-hoach-tong.md)
 | 8 | 26/10 – 2/11 | Implementation 2 – Workflow nghỉ phép | [tuan-08/](tuan-08/README.md) |
 | 9 | 2/11 – 9/11 | P3 – Security & DevOps | [tuan-09/](tuan-09/README.md) |
 | 10 | 9/11 – 16/11 | Hoàn thiện chức năng (kế hoạch, điền kết quả cuối tuần) | [tuan-10/](tuan-10/README.md) |
+| 11 | 16/11 – 23/11 | Hoàn thành UC1, P4 – Production Engineering (kế hoạch) | [tuan-11/](tuan-11/README.md) |
 
 ## Cách tổ chức
 
