@@ -9,7 +9,7 @@
 |---|---|---|
 | API | Endpoint tìm kiếm trong `modules/document`, cùng điều kiện phạm vi với UC5 | Endpoint hỏi đáp, gọi LLM có timeout |
 | Worker | Trích văn bản từ PDF, DOCX sau khi phiên bản `READY` | Chia đoạn, đánh chỉ mục đoạn văn bản (theo ADR-14) |
-| Web | Ô tìm kiếm trên trang "Tài liệu" | Khung hỏi đáp |
+| Web | Ô tìm kiếm trên trang "Tra cứu tài liệu" (`/documents`) | Khung hỏi đáp trên cùng trang |
 | Database | Migration mới: cột văn bản, cột `tsvector`, chỉ mục GIN (full-text PostgreSQL, không thêm dịch vụ tìm kiếm, ADR-13) | Bảng đoạn văn bản; có thể cần `pgvector` (chốt ở ADR-14) |
 | Dịch vụ ngoài | Object storage (đọc file để trích) | LLM API |
 

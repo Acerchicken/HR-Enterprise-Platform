@@ -9,7 +9,7 @@ Vai trò: chốt quy tắc nghiệp vụ trước khi TV1 code và TV4 viết ca
 | **T2 (16/11), 21:00** | Review `requirements.md`, `spec.md` UC1, UC2, bảng FR trong SRS, ma trận phân quyền trên #76 |
 | **T2 (16/11), 21:00** | Mở PR `docs/org-integrity-rules` |
 | T3 (17/11) | Sửa theo góp ý, được merge |
-| Trong 24 giờ kể từ khi PR mở | Review nghiệp vụ `feat/profile-layout`, `fix/employee-org-integrity`, `feat/profile-self-service` |
+| Trong 24 giờ kể từ khi PR mở | Review nghiệp vụ `feat/profile-layout`, `fix/employee-org-integrity`, `feat/profile-change-requests` |
 | **T5 (19/11), 21:00** | Mở PR `docs/leave-rules-week11` |
 | **T6 (20/11)** | Review `requirements.md`, `spec.md` UC3, UC4 trên #76; `docs/leave-rules-week11` được merge |
 | **T2 (23/11), 9:00** | Điền mục "Việc đã làm" |

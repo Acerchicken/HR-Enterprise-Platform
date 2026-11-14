@@ -9,16 +9,19 @@
 | Quy tắc | [DR-07, DR-08](../../business/document-rules.md), DR-02 (phạm vi xem), ADR-13 |
 | Mức ưu tiên | FR-6.1, FR-6.2 là M; FR-6.3 là C |
 | Trạng thái | FR-6.1 đã có; FR-6.2 kế hoạch tuần 10; FR-6.3 kế hoạch tuần 12 |
-| Phiên bản | 1.1 – 14/11/2026 (FR-6.1 thành ô tìm kiếm chung; danh bạ vẫn thuộc UC2) |
+| Phiên bản | 1.2 – 14/11/2026 (ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp; tìm tài liệu và trợ lý AI ở trang "Tra cứu tài liệu") |
 
 ## 1. Mô tả ngắn
 
 Nhân viên tự tìm thông tin thay vì hỏi HR, theo ba cách:
 
-1. **Một ô tìm kiếm chung** trên nav bar trả về đồng nghiệp và tài liệu cùng lúc (dùng lại tìm danh bạ của UC2 và tìm tài
-   liệu ở mục 2). Danh bạ đầy đủ vẫn là trang của UC2.
+1. **Ô tìm đồng nghiệp** trên nav bar, chỉ tìm đồng nghiệp (dùng lại tìm danh bạ của UC2). Danh bạ đầy đủ vẫn là trang của
+   UC2.
 2. **Tìm tài liệu** theo từ khóa trong tiêu đề và nội dung, chỉ trên tài liệu mình được xem.
 3. **Hỏi trợ lý chính sách** bằng câu hỏi tự nhiên. Trợ lý trả lời kèm trích dẫn và chỉ dùng tài liệu người hỏi được xem.
+
+Tìm tài liệu và trợ lý nằm chung một trang **"Tra cứu tài liệu"** (`/documents`), mở bằng ô chức năng ở trang chủ, cùng với
+danh sách tài liệu của UC5. Không đặt trên nav bar (quyết định 14/11/2026).
 
 ## 2. Tác nhân và quyền
 
@@ -37,21 +40,20 @@ Nhân viên tự tìm thông tin thay vì hỏi HR, theo ba cách:
 
 ## 4. Luồng chính
 
-### 4.1 Ô tìm kiếm chung (FR-6.1)
+### 4.1 Ô tìm đồng nghiệp trên nav bar (FR-6.1)
 
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
-| 1 | Gõ từ khóa vào ô tìm kiếm trên nav bar | Chờ 300 ms sau phím cuối, gọi song song `GET /employees?q=&size=5` (UC2) và tìm tài liệu `size=5` (4.2) |
-| 2 | | Hiện gợi ý chia nhóm Đồng nghiệp, Tài liệu; nhóm nào lỗi thì chỉ nhóm đó báo lỗi |
+| 1 | Gõ từ khóa vào ô tìm kiếm trên nav bar | Chờ 300 ms sau phím cuối, gọi `GET /employees?q=&size=5` (UC2); không gọi API tài liệu |
+| 2 | | Hiện tối đa 5 đồng nghiệp |
 | 3 | Chọn một đồng nghiệp | Mở thẻ xem nhanh ([giao diện chung mục 4.1](../frontend.md#41-thẻ-xem-nhanh)) |
-| 4 | Chọn một tài liệu | Mở tài liệu như UC5 luồng A1 |
-| 5 | Nhấn Enter | Mở `/search?q=` với hai tab, phân trang từng tab |
+| 4 | Nhấn Enter | Mở Danh bạ `/directory?q=` |
 
 ### 4.2 Tìm tài liệu (FR-6.2)
 
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
-| 1 | Nhập từ khóa, có thể chọn loại tài liệu | Gửi yêu cầu tìm kiếm (API sẽ có ở nhánh `feat/document-search`) |
+| 1 | Mở "Tra cứu tài liệu" từ trang chủ, nhập từ khóa, có thể chọn loại tài liệu | Gửi yêu cầu tìm kiếm (API sẽ có ở nhánh `feat/document-search`) |
 | 2 | | Áp **điều kiện phạm vi trước**, trong cùng truy vấn SQL: chưa ẩn, có phiên bản `READY`, khớp phạm vi (ADR-13) |
 | 3 | | Tìm full-text PostgreSQL trong tiêu đề và nội dung phiên bản mới nhất |
 | 4 | | Xếp hạng (DR-07): khớp nguyên tiêu đề, rồi khớp một phần tiêu đề, rồi khớp nội dung. Cùng mức thì bản cập nhật mới hơn trước, rồi theo tiêu đề |
@@ -101,9 +103,9 @@ Nhân viên tự tìm thông tin thay vì hỏi HR, theo ba cách:
 
 | Luồng | Màn hình | API |
 |---|---|---|
-| 4.1 | `/directory` | `GET /employees?q=` |
-| 4.2 | Chưa có | Chưa có (nhánh `feat/document-search`) |
-| 4.3 | Chưa có | Chưa có (tuần 12) |
+| 4.1 | Ô tìm kiếm trên nav bar; Enter sang `/directory?q=` | `GET /employees?q=` |
+| 4.2 | Trang "Tra cứu tài liệu" `/documents`, ô tìm tài liệu (chưa có) | Chưa có (nhánh `feat/document-search`) |
+| 4.3 | Cùng trang `/documents`, khung hỏi trợ lý (chưa có) | Chưa có (tuần 12) |
 
 ## 10. Yêu cầu phi chức năng liên quan
 
@@ -120,8 +122,8 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
-| Tìm đồng nghiệp | Đã có | – |
-| Trích văn bản, full-text, API và giao diện tìm tài liệu | Chưa có | TV1, nhánh `feat/document-search` (tuần 12) |
+| Tìm đồng nghiệp | Có trong trang Danh bạ | Ô tìm kiếm trên nav bar: TV1, nhánh `feat/profile-layout` (tuần 11) |
+| Trích văn bản, full-text, API và trang "Tra cứu tài liệu" | Chưa có | TV1, nhánh `feat/document-search` (tuần 12) |
 | Trợ lý chính sách | Chưa có | Tuần 12; có thể cắt nếu thiếu thời gian (mức C) |
 
 ## 13. Thiết kế đề xuất cho phần chưa có

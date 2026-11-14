@@ -86,7 +86,7 @@ flowchart LR
 | UC3 Tạo đơn nghỉ | Nhân viên tạo, gửi, hủy đơn | MT-2 |
 | UC4 Duyệt đơn | Quản lý trực tiếp duyệt/từ chối, HR hoàn tất | MT-2 |
 | UC5 Kho tài liệu | HR đăng tài liệu chính sách, phân phạm vi xem | MT-4 |
-| UC6 Tra cứu chung và trợ lý | Một ô tìm kiếm cho đồng nghiệp và tài liệu; trợ lý chính sách (mở rộng) | MT-4 |
+| UC6 Tra cứu chung và trợ lý | Ô tìm đồng nghiệp trên mọi trang; trang "Tra cứu tài liệu" gồm tìm tài liệu và trợ lý chính sách (mở rộng) | MT-4 |
 | UC7 Lịch sử thao tác | Audit log append-only, tra cứu cho HR/Admin | MT-3 |
 
 ### 4.2 Ngoài phạm vi version 1

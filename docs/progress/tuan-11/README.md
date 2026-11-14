@@ -34,7 +34,7 @@ mở nhánh của chức năng khác (trừ việc chung).
 | `docs/test-cases-uc1` | TV4 Duy | Ca còn thiếu ở mục 7 `test.md` UC1 | Mọi AC-1.x | T3 (17/11), 21:00 | T4 (18/11) | TV2, TV1 |
 | `fix/employee-org-integrity` | TV1 Duong | Bắt buộc `version`, audit theo nhóm trường, sửa `hireDate`/`workEmail`, nghỉ việc, trường nhạy cảm tải khi bấm hiện; UC2 gốc thứ hai, `headEmployeeId` | AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2, AC-2.4.6, AC-2.4.7 | T4 (18/11) | T5 (19/11) | TV2, TV4 |
 | `infra/profile-files` | TV3 Bảo | Bucket hồ sơ, lifecycle 30 ngày, quyền App Runner, alarm 429, `PROFILE_STORAGE_BUCKET` (MinIO local, S3 staging). Chỉ `validate`, `plan` | AC-1.10.7, AC-1.10.9, AC-1.14.4, AC-1.14.5 | T4 (18/11), 21:00 | T5 (19/11) | TV1 |
-| `feat/profile-self-service` | TV1 Duong | `profile_item`, yêu cầu cập nhật hồ sơ, màn hình HR duyệt, email khi đổi tài khoản ngân hàng, nhật ký thay đổi | AC-1.2.1, AC-1.9.x, AC-1.6.4, AC-1.11.x | T5 (19/11) | T6 (20/11) | TV2, TV4 |
+| `feat/profile-change-requests` | TV1 Duong | `profile_item`, yêu cầu cập nhật hồ sơ, màn hình HR duyệt, email khi đổi tài khoản ngân hàng, nhật ký thay đổi | AC-1.2.1, AC-1.9.x, AC-1.6.4, AC-1.11.x | T5 (19/11) | T6 (20/11) | TV2, TV4 |
 | `feat/profile-files` | TV1 Duong | File hồ sơ, ảnh đại diện, hạn mức, xóa mềm | AC-1.10.x | T6 (20/11) | T7 (21/11) | TV3, TV4 |
 | `docs/test-report-uc1` | TV4 Duy | Chạy mọi ca UC1 trên `dev` (local) | `test.md` UC1 | CN (22/11), 12:00 | T2 (23/11), 9:00 | TV1 |
 
