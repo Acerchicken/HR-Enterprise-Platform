@@ -149,7 +149,8 @@ Trợ lý là mức C: nếu đến T5 (26/11) staging chưa chạy được th�
 
 | Nhánh | Người | Việc | Hạn |
 |---|---|---|---|
-| `feat/department-admin-ui` | TV1 Duong | UC2 AC-2.4.5, chỉ khi tuần 11–12 xong hết | Merge T3 (1/12) |
+| `feat/department-admin-ui` | TV1 Duong | UC2 AC-2.4.5, trưởng/phó phòng AC-2.9.x, chức danh AC-2.6.x; chỉ khi tuần 11–12 xong hết | Merge T3 (1/12) |
+| `feat/employee-transfer` | TV1 Duong | UC2 quá trình công tác AC-2.8.x, điều chuyển có ngày hiệu lực AC-2.7.x (mức S; thiếu thời gian thì chỉ làm AC-2.8.x) | Merge T3 (1/12) |
 | `infra/idp-auth-events` | TV3 Bảo | UC7 AC-7.4.1: ghi đăng nhập, cấp và thu hồi vai trò từ Keycloak, Cognito | Merge T3 (1/12) |
 | – | Cả nhóm | **Đóng băng tính năng T4 (2/12).** Sau đó chỉ merge sửa lỗi | T4 (2/12) |
 | `docs/feature-status-final` | TV2 Thanh | Cập nhật trạng thái mọi AC trong `requirements.md`, mục 12 `spec.md`, cột trạng thái FR trong SRS; báo cáo MT-2 từ `leave_request_history` | T5 (3/12) |

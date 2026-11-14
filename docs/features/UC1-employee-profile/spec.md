@@ -308,7 +308,7 @@ Cột "Mức" theo ký hiệu ở mục 2. "Tối đa" là số dòng tối đa 
 
 | Mục | Trường | Nhập | Mức | Kiểm tra |
 |---|---|---|---|---|
-| Quá trình công tác | Ngày, phòng ban, chức danh, quản lý trước và sau | Tự tính từ audit; HR nhập thêm giai đoạn trước khi có hệ thống | QL | Dòng HR nhập: ngày không ở tương lai |
+| Quá trình công tác | Từ ngày, đến ngày, phòng ban, chức danh, quản lý trực tiếp, lý do | Lấy từ quá trình công tác của [UC2 FR-2.8](../UC2-organization/requirements.md) (mỗi lần tuyển mới, điều chuyển là một dòng); HR thêm dòng điều chỉnh có lý do | QL | Dòng HR nhập: ngày không ở tương lai |
 | Diện đối tượng (hợp đồng) | Loại (thử việc, học việc, xác định thời hạn, không xác định thời hạn), số hợp đồng, ngày bắt đầu, ngày kết thúc (bỏ trống nếu không xác định thời hạn), file đã ký | HR | CN (đầu trang hiện loại ở mức QL) | Không trùng khoảng ngày (E18); ngày kết thúc sau ngày bắt đầu |
 | Ngày nghỉ dài | Loại phép, từ ngày, đến ngày, số ngày | Tự tính từ đơn nghỉ ≥ 14 ngày làm việc đã duyệt hoặc hoàn tất (UC3) và khoảng `ON_LEAVE` | QL | – |
 | Các mốc trong công ty | Ngày vào làm, thâm niên, các mốc 5 năm, số ngày phép cộng thêm | Tự tính từ `hireDate` | QL | – |
@@ -406,7 +406,7 @@ HR duyệt yêu cầu).
 | Thông tin cá nhân | Thông tin cá nhân (8.1) | NV sửa điện thoại, địa chỉ; HR phần còn lại | QL (điện thoại, email: DB; CCCD: HR) | Đã có |
 | | Thông tin liên hệ khẩn cấp | NV | CN | **Chưa có** |
 | | Thân nhân và người phụ thuộc | NV | CN | **Chưa có** |
-| Công việc | Quá trình công tác | Tự tính, HR | QL | **Chưa có** |
+| Công việc | Quá trình công tác | Tự tính (UC2 FR-2.8), HR | QL | **Chưa có** |
 | | Diện đối tượng | HR | CN | **Chưa có** |
 | | Ngày nghỉ dài | Tự tính | QL | **Chưa có** |
 | | Các mốc trong công ty | Tự tính | QL | Ngày vào làm: đã có. Thâm niên, mốc: **chưa có** |

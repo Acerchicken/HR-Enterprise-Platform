@@ -1,6 +1,6 @@
-# UC6 – Tự tra cứu: yêu cầu và tiêu chí chấp nhận
+# UC6 – Tra cứu chung và trợ lý: yêu cầu và tiêu chí chấp nhận
 
-> Đọc file này trước khi mở nhánh làm UC6. Luồng chi tiết: [spec.md](spec.md). Nguồn FR: [SRS mục 4.6](../../requirements/SRS.md#46-uc6--tự-tra-cứu-fr-6x).
+> Đọc file này trước khi mở nhánh làm UC6. Luồng chi tiết: [spec.md](spec.md). Nguồn FR: [SRS mục 4.6](../../requirements/SRS.md#46-uc6--tra-cứu-chung-và-trợ-lý-fr-6x).
 > Quy tắc: [document-rules.md](../../business/document-rules.md) (DR-02, DR-07, DR-08), [ADR-13](../../architecture/adr/ADR-13-document-storage.md).
 > Mỗi tiêu chí `AC-x.y.z` là một ca kiểm thử.
 
@@ -8,15 +8,25 @@
 
 | Mã | Là | Tôi muốn | Để | FR |
 |---|---|---|---|---|
-| US-6.1 | Nhân viên | Tìm đồng nghiệp | Liên lạc đúng người | FR-6.1 |
+| US-6.1 | Nhân viên | Gõ một ô tìm kiếm ở mọi trang và thấy cả đồng nghiệp lẫn tài liệu | Không phải nhớ vào Danh bạ hay Tài liệu để tìm | FR-6.1 |
 | US-6.2 | Nhân viên | Tìm tài liệu theo từ khóa trong tiêu đề và nội dung | Tìm ra chính sách mà không cần biết tên file | FR-6.2 |
 | US-6.3 | Nhân viên | Hỏi trợ lý bằng câu tự nhiên và nhận câu trả lời có trích dẫn | Có câu trả lời nhanh, kiểm lại được ở tài liệu gốc | FR-6.3 |
 
 ## 2. Tiêu chí chấp nhận
 
-### FR-6.1 Tìm đồng nghiệp (M, đã có)
+### FR-6.1 Ô tìm kiếm chung (M, một phần: chỉ có tìm trong trang Danh bạ)
 
-Như [UC2 FR-2.1](../UC2-organization/requirements.md#fr-21-danh-bạ-m-đã-có) (AC-2.1.1 → AC-2.1.4).
+Ô tìm kiếm trên nav bar ([giao diện chung mục 2.1](../frontend.md#21-nav-bar-thanh-trên-cùng-mọi-trang)). Dùng lại tìm đồng
+nghiệp của [UC2 FR-2.1](../UC2-organization/requirements.md#fr-21-danh-bạ-m-đã-có) và tìm tài liệu của FR-6.2; UC6 lo phần gộp,
+gợi ý và trang kết quả.
+
+- **AC-6.1.1** *(chưa có)* Khi gõ từ 2 ký tự, dừng 300 ms. Thì gợi ý tối đa 5 đồng nghiệp và 5 tài liệu, chia hai nhóm; một
+  lần gõ chỉ gọi API một lần (frontend AC-0.1.2).
+- **AC-6.1.2** *(chưa có)* Khi nhấn Enter. Thì mở `/search?q=` có hai tab Đồng nghiệp, Tài liệu kèm số kết quả, phân trang.
+- **AC-6.1.3** *(chưa có)* Kết quả đồng nghiệp tuân theo AC-2.1.1 → AC-2.1.4 (không có người đã nghỉ việc); kết quả tài liệu
+  tuân theo AC-6.2.2 (không lộ tài liệu ngoài phạm vi, kể cả số lượng).
+- **AC-6.1.4** *(chưa có)* Khi một nhóm lỗi (ví dụ tìm tài liệu trả 503). Thì nhóm kia vẫn hiện; nhóm lỗi báo "Tạm thời không
+  tìm được tài liệu".
 
 ### FR-6.2 Tìm tài liệu (M, chưa có)
 

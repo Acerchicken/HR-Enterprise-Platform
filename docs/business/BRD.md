@@ -82,11 +82,11 @@ flowchart LR
 | Use case | Nội dung | Mục tiêu |
 |---|---|---|
 | UC1 Hồ sơ nhân viên | Xem, cập nhật hồ sơ; trường nhạy cảm chỉ HR | MT-1, MT-3 |
-| UC2 Thông tin tổ chức | Phòng ban, sơ đồ tổ chức, quản lý trực tiếp | MT-1 |
+| UC2 Thông tin tổ chức | Phòng ban, sơ đồ tổ chức, quản lý trực tiếp, chức danh, điều chuyển, quá trình công tác, trưởng/phó phòng | MT-1 |
 | UC3 Tạo đơn nghỉ | Nhân viên tạo, gửi, hủy đơn | MT-2 |
 | UC4 Duyệt đơn | Quản lý trực tiếp duyệt/từ chối, HR hoàn tất | MT-2 |
 | UC5 Kho tài liệu | HR đăng tài liệu chính sách, phân phạm vi xem | MT-4 |
-| UC6 Tự tra cứu | Tìm đồng nghiệp, tài liệu; trợ lý chính sách (mở rộng) | MT-4 |
+| UC6 Tra cứu chung và trợ lý | Một ô tìm kiếm cho đồng nghiệp và tài liệu; trợ lý chính sách (mở rộng) | MT-4 |
 | UC7 Lịch sử thao tác | Audit log append-only, tra cứu cho HR/Admin | MT-3 |
 
 ### 4.2 Ngoài phạm vi version 1
@@ -139,11 +139,11 @@ nhận và trạng thái trên `dev`.
 | Use case (mục 4.1) | Yêu cầu trong SRS |
 |---|---|
 | UC1 Hồ sơ nhân viên | FR-1.1 → FR-1.14 |
-| UC2 Thông tin tổ chức | FR-2.1 → FR-2.5 |
+| UC2 Thông tin tổ chức | FR-2.1 → FR-2.9 |
 | UC3 Tạo đơn nghỉ | FR-3.1 → FR-3.7 |
 | UC4 Duyệt đơn | FR-4.1 → FR-4.8 |
 | UC5 Kho tài liệu chính sách | FR-5.1 → FR-5.3 |
-| UC6 Tự tra cứu | FR-6.1 → FR-6.3 |
+| UC6 Tra cứu chung và trợ lý | FR-6.1 → FR-6.3 |
 | UC7 Lịch sử thao tác | FR-7.1 → FR-7.3 |
 
 ## 8. Business rule

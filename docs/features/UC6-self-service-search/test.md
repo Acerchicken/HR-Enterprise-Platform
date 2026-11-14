@@ -1,7 +1,7 @@
-# UC6 – Tự tra cứu: kiểm thử
+# UC6 – Tra cứu chung và trợ lý: kiểm thử
 
 > Tiêu chí: [requirements.md](requirements.md). Cách chạy chung, tài khoản mẫu: [README](../README.md#kiểm-thử).
-> Tìm đồng nghiệp (FR-6.1) kiểm như [UC2 test](../UC2-organization/test.md).
+> Phần tìm đồng nghiệp bên trong FR-6.1 kiểm như [UC2 test](../UC2-organization/test.md); phần gộp, gợi ý, trang `/search` kiểm theo AC-6.1.x.
 
 ## 1. Chiến lược
 
@@ -21,6 +21,7 @@ Chưa có: tính năng chưa làm. PR `feat/document-search` và `feat/policy-as
 
 | Tiêu chí | Test tự động | Ca tay | Trạng thái |
 |---|---|---|---|
+| AC-6.1.1 → AC-6.1.4 | e2e giao diện khi có ô tìm kiếm chung (`feat/document-search`) | `docs/test-cases-week11` | Chưa |
 | AC-6.2.1 → AC-6.2.6 | e2e trong `feat/document-search` | `docs/test-cases-week11` | Chưa |
 | AC-6.2.7 | e2e trong `feat/security-headers-ratelimit` | `docs/security-test-cases-week11` | Chưa |
 | AC-6.3.1 → AC-6.3.3, AC-6.3.5 | Script chạy bộ đánh giá | `docs/assistant-eval-set` | Chưa |

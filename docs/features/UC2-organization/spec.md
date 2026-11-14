@@ -3,19 +3,21 @@
 | Mục | Nội dung |
 |---|---|
 | Mục tiêu kinh doanh | MT-1 (hồ sơ và tổ chức tập trung, đúng một quản lý trực tiếp) |
-| Tác nhân chính | Mọi người dùng đã đăng nhập (xem); HR, ADMIN (quản lý phòng ban) |
+| Tác nhân chính | Mọi người dùng đã đăng nhập (xem); HR, ADMIN (quản lý phòng ban); HR (chức danh, điều chuyển, trưởng/phó phòng) |
 | Tác nhân phụ, hệ thống ngoài | Module Identity (suy ra vai trò MANAGER từ quan hệ quản lý, ADR-10) |
-| Yêu cầu (SRS) | FR-2.1 → FR-2.5 |
+| Yêu cầu (SRS) | FR-2.1 → FR-2.9 |
 | Quy tắc | Issue #21 (xem toàn bộ cây, không tra theo mã), issue #22 (một quản lý trừ CEO), ADR-10 |
-| Mức ưu tiên | M (FR-2.4 là S) |
+| Mức ưu tiên | M (FR-2.4, FR-2.6 → FR-2.9 là S) |
 | Trạng thái | Đã có; tạo, sửa phòng ban mới có API, chưa có giao diện |
-| Phiên bản | 1.0 – 13/11/2026 |
+| Phiên bản | 1.1 – 14/11/2026 (thêm chức danh, điều chuyển có ngày hiệu lực, quá trình công tác, trưởng/phó phòng) |
 
 ## 1. Mô tả ngắn
 
 Mọi người dùng xem được danh bạ, sơ đồ tổ chức, thành viên từng phòng ban, quản lý trực tiếp và cấp dưới của một người. Đây là
 danh bạ nội bộ có chủ ý: mọi tài khoản đã đăng nhập đều xem được, nhưng không bao giờ thấy trường nhạy cảm. HR và ADMIN
-tạo, sửa phòng ban. Quan hệ quản lý trực tiếp quyết định ai duyệt đơn nghỉ (UC4) và ai có vai trò MANAGER.
+tạo, sửa phòng ban. HR quản lý danh mục chức danh, gán trưởng phòng và phó phòng, điều chuyển nhân viên từ một ngày hiệu lực;
+mỗi lần điều chuyển thành một dòng trong quá trình công tác. Quan hệ quản lý trực tiếp quyết định ai duyệt đơn nghỉ (UC4) và
+ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, không tự cho quyền duyệt.
 
 ## 2. Tác nhân và quyền
 
@@ -23,7 +25,8 @@ tạo, sửa phòng ban. Quan hệ quản lý trực tiếp quyết định ai d
 |---|---|---|
 | Mọi người dùng đã đăng nhập | Tìm danh bạ; xem cây tổ chức, chi tiết và thành viên phòng ban, chức danh, quản lý trực tiếp, cấp dưới | Không thấy nhân viên `TERMINATED`; chỉ trường danh bạ |
 | HR, ADMIN | Thêm: tạo, sửa phòng ban (tên, mã, văn phòng, phòng ban cha, trưởng đơn vị) | Không tạo vòng trong cây phòng ban |
-| HR | Gán quản lý trực tiếp khi tạo, sửa hồ sơ (UC1) | Đúng một quản lý đang làm việc, trừ CEO |
+| HR | Gán quản lý trực tiếp khi tạo, sửa hồ sơ (UC1); điều chuyển; quản lý chức danh; gán trưởng, phó phòng | Đúng một quản lý đang làm việc, trừ CEO; trưởng, phó phòng thuộc chính phòng đó |
+| Chủ hồ sơ, quản lý trực tiếp | Xem quá trình công tác của mình, của cấp dưới trực tiếp | – |
 
 ## 3. Điều kiện
 
@@ -63,6 +66,23 @@ tạo, sửa phòng ban. Quan hệ quản lý trực tiếp quyết định ai d
 | 4 | | Lưu, ghi audit, xóa cache dữ liệu tham chiếu |
 | 5 | Thấy cây đã cập nhật | Trả phòng ban |
 
+### 4.4 HR điều chuyển nhân viên (FR-2.7, FR-2.8)
+
+| Bước | Tác nhân | Hệ thống |
+|---|---|---|
+| 1 | HR mở hồ sơ nhân viên, bấm "Điều chuyển"; chọn phòng ban, chức danh, quản lý mới (điền sẵn trưởng phòng mới), ngày hiệu lực, lý do | Gửi `POST /employees/{id}/transfers` |
+| 2 | | Kiểm FR-2.5 với quản lý mới; ngày hiệu lực không trước ngày vào làm, không lùi quá 30 ngày; không có điều chuyển chưa hiệu lực khác của cùng người |
+| 3 | | Hiệu lực hôm nay hoặc quá khứ: trong một giao dịch đóng dòng công tác cũ, mở dòng mới, đổi `department_id`, `position_id`, `manager_id`, ghi audit `TRANSFER`, event `EmployeeTransferred` |
+| 4 | | Hiệu lực tương lai: lưu dòng "Sắp hiệu lực"; job chạy 00:00 giờ Việt Nam áp dụng như bước 3 (chạy lại không áp dụng hai lần) |
+| 5 | Thấy quá trình công tác cập nhật | Đơn nghỉ `SUBMITTED` của người này tự sang quản lý mới vì quyền duyệt tính theo quản lý hiện tại (BR-05); worker gửi email chung cho quản lý mới |
+
+### 4.5 HR gán trưởng phòng, phó phòng (FR-2.9)
+
+| Bước | Tác nhân | Hệ thống |
+|---|---|---|
+| 1 | HR mở phòng ban, chọn trưởng phòng và tối đa 3 phó phòng trong danh sách thành viên | Gửi `PATCH /departments/{id}` với `headEmployeeId`, `deputyEmployeeIds` |
+| 2 | | Kiểm từng người đang làm việc và thuộc phòng ban đó; lưu, ghi audit; không đổi quản lý trực tiếp của ai |
+
 ## 5. Luồng thay thế
 
 - **A1 (4.1 bước 1):** không nhập từ khóa. Trả toàn bộ danh bạ có phân trang.
@@ -80,7 +100,10 @@ tạo, sửa phòng ban. Quan hệ quản lý trực tiếp quyết định ai d
 | E5 | Phòng ban hoặc nhân viên không tồn tại | 404 `NOT_FOUND` |
 | E6 | `size` lớn hơn 100 | 400 `BAD_REQUEST` |
 | E7 | Tạo phòng ban không có `parentId`, hoặc sửa `parentId` thành `null` (tạo gốc thứ hai) | 400 `BAD_REQUEST` |
-| E8 | `headEmployeeId` không phải nhân viên đang làm việc | 400 `BAD_REQUEST` |
+| E8 | `headEmployeeId` hoặc phó phòng không phải nhân viên đang làm việc, hoặc không thuộc phòng ban đó | 400 `BAD_REQUEST` |
+| E9 | Điều chuyển vi phạm FR-2.5, hiệu lực trước ngày vào làm hoặc lùi quá 30 ngày | 400 `BAD_REQUEST` |
+| E10 | Đã có điều chuyển chưa hiệu lực cho cùng người | 409 `CONFLICT`; hủy điều chuyển cũ trước |
+| E11 | Xóa chức danh đang được dùng hoặc có trong lịch sử | 409 `CONFLICT`; chỉ ngừng dùng được |
 
 ## 7. Quy tắc áp dụng
 
@@ -110,7 +133,9 @@ tạo, sửa phòng ban. Quan hệ quản lý trực tiếp quyết định ai d
 |---|---|---|
 | 4.1 | `/directory` | `GET /employees` |
 | 4.2 | `/org` | `GET /departments/tree`, `GET /departments/{id}`, `GET /departments/{id}/members`, `GET /employees/{id}/direct-reports`, `GET /positions` |
-| 4.3 | Chưa có màn hình | `POST /departments`, `PATCH /departments/{id}` |
+| 4.3, 4.5 | Chưa có màn hình (`/org/manage`) | `POST /departments`, `PATCH /departments/{id}` |
+| 4.4 | Nút "Điều chuyển" trong hồ sơ (chế độ HR); mục "Quá trình công tác" của popup hồ sơ (UC1) | `POST /employees/{id}/transfers`, `DELETE /employees/{id}/transfers/{transferId}` (hủy khi chưa hiệu lực), `GET /employees/{id}/profile/career-history` |
+| FR-2.6 | `/org/positions` (HR) | `GET /positions`, `POST /positions`, `PATCH /positions/{id}` (tên, cấp bậc, `active`) |
 
 ## 10. Yêu cầu phi chức năng liên quan
 
@@ -129,8 +154,26 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Danh bạ, cây, thành viên, cấp dưới | Đã có | – |
 | Quy tắc một quản lý, CEO | Đã có (PR #60, tuần 10) | – |
 | Tạo, sửa phòng ban | Có API, chưa có giao diện | Làm giao diện nếu còn thời gian (mức S) |
-| Ý nghĩa `headEmployeeId` và quan hệ với quản lý trực tiếp | Chưa chốt | TV2 chốt (bản nháp UC1/UC2 tuần 8) |
+| Ý nghĩa `headEmployeeId` và quan hệ với quản lý trực tiếp | Đã chốt 14/11 (FR-2.9, soạn thay TV2, chờ TV2 rà) | – |
+| Trưởng, phó phòng (FR-2.9) | Chưa có: có cột `head_employee_id`, chưa có phó phòng, chưa kiểm thuộc phòng | TV1, tuần 13 |
+| Danh mục chức danh (FR-2.6) | Chỉ có `GET /positions` và seed | TV1, tuần 13 |
+| Điều chuyển, quá trình công tác (FR-2.7, FR-2.8) | Chưa có: sửa hồ sơ ghi đè phòng ban, quản lý, không giữ lịch sử | TV1, `feat/employee-transfer` tuần 13 |
 | Gán quản lý đã nghỉ việc | Đã chặn (400, PR #60) | – |
 | Chặn gốc thứ hai (E7), kiểm `headEmployeeId` (E8) | Code chưa có: API chấp nhận cả hai | TV1, `fix/employee-org-integrity` tuần 11 |
 | Giải thể, sáp nhập phòng ban | Chưa có trong yêu cầu | TV2 quyết định có đưa vào không (thực tế có xảy ra; hiện chỉ đổi tên, đổi cha) |
 | Audit phòng ban | Đã có | `changedFields` ghi giá trị mới (tên, mã, văn phòng, cha, trưởng đơn vị); không có dữ liệu cá nhân |
+
+## 13. Thiết kế đề xuất cho phần chưa có
+
+- **Bảng `org.employment_assignment`** (quá trình công tác): `id`, `employee_id`, `department_id`, `position_id`, `manager_id`,
+  `effective_from`, `effective_to` (NULL = đang hiệu lực), `reason` (`HIRE`, `TRANSFER`, `PROMOTION`, `MANAGER_CHANGE`,
+  `CORRECTION`), `note`, `status` (`SCHEDULED`, `ACTIVE`, `CLOSED`, `CANCELLED`), `created_by`, `created_at`. Mỗi người có đúng
+  một dòng `ACTIVE` (unique index có điều kiện) và tối đa một dòng `SCHEDULED`. Chỉ thêm, không sửa nội dung dòng đã đóng.
+- `employee.employee.department_id`, `position_id`, `manager_id` vẫn giữ, là **giá trị hiện tại** để mọi truy vấn cũ (danh bạ,
+  quyền duyệt) không đổi; điều chuyển cập nhật cả hai trong một giao dịch.
+- **Migration:** tạo dòng `HIRE` cho mọi nhân viên hiện có từ `hire_date` với phòng ban, chức danh, quản lý hiện tại.
+- **Phó phòng:** bảng `org.department_deputy` (`department_id`, `employee_id`, `created_by`, `created_at`), tối đa 3 dòng mỗi
+  phòng ban (kiểm ở service).
+- **Chức danh:** thêm `org.position.active` (mặc định `true`); `level` 1–10.
+- **Job áp dụng điều chuyển tương lai:** chạy trong worker mỗi ngày 00:05 giờ Việt Nam, lấy dòng `SCHEDULED` có
+  `effective_from <= hôm nay`, áp dụng từng dòng trong một giao dịch, bỏ qua dòng đã áp dụng (idempotent).

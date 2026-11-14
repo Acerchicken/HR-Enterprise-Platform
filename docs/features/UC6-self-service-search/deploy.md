@@ -1,4 +1,4 @@
-# UC6 – Tự tra cứu: triển khai
+# UC6 – Tra cứu chung và trợ lý: triển khai
 
 > Cách chạy chung, staging, rollback chung: [README](../README.md#môi-trường). File này chỉ ghi phần riêng của UC6.
 > Tìm đồng nghiệp (FR-6.1) triển khai như [UC2](../UC2-organization/deploy.md). Phần dưới cho tìm tài liệu và trợ lý.

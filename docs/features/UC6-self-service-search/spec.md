@@ -1,4 +1,4 @@
-# UC6 – Tự tra cứu
+# UC6 – Tra cứu chung và trợ lý
 
 | Mục | Nội dung |
 |---|---|
@@ -9,13 +9,14 @@
 | Quy tắc | [DR-07, DR-08](../../business/document-rules.md), DR-02 (phạm vi xem), ADR-13 |
 | Mức ưu tiên | FR-6.1, FR-6.2 là M; FR-6.3 là C |
 | Trạng thái | FR-6.1 đã có; FR-6.2 kế hoạch tuần 10; FR-6.3 kế hoạch tuần 12 |
-| Phiên bản | 1.0 – 13/11/2026 |
+| Phiên bản | 1.1 – 14/11/2026 (FR-6.1 thành ô tìm kiếm chung; danh bạ vẫn thuộc UC2) |
 
 ## 1. Mô tả ngắn
 
 Nhân viên tự tìm thông tin thay vì hỏi HR, theo ba cách:
 
-1. **Tìm đồng nghiệp** trong danh bạ (dùng lại UC2).
+1. **Một ô tìm kiếm chung** trên nav bar trả về đồng nghiệp và tài liệu cùng lúc (dùng lại tìm danh bạ của UC2 và tìm tài
+   liệu ở mục 2). Danh bạ đầy đủ vẫn là trang của UC2.
 2. **Tìm tài liệu** theo từ khóa trong tiêu đề và nội dung, chỉ trên tài liệu mình được xem.
 3. **Hỏi trợ lý chính sách** bằng câu hỏi tự nhiên. Trợ lý trả lời kèm trích dẫn và chỉ dùng tài liệu người hỏi được xem.
 
@@ -36,9 +37,15 @@ Nhân viên tự tìm thông tin thay vì hỏi HR, theo ba cách:
 
 ## 4. Luồng chính
 
-### 4.1 Tìm đồng nghiệp (FR-6.1)
+### 4.1 Ô tìm kiếm chung (FR-6.1)
 
-Giống [UC2 luồng 4.1](../UC2-organization/spec.md#41-tìm-đồng-nghiệp-trong-danh-bạ-fr-21).
+| Bước | Tác nhân | Hệ thống |
+|---|---|---|
+| 1 | Gõ từ khóa vào ô tìm kiếm trên nav bar | Chờ 300 ms sau phím cuối, gọi song song `GET /employees?q=&size=5` (UC2) và tìm tài liệu `size=5` (4.2) |
+| 2 | | Hiện gợi ý chia nhóm Đồng nghiệp, Tài liệu; nhóm nào lỗi thì chỉ nhóm đó báo lỗi |
+| 3 | Chọn một đồng nghiệp | Mở thẻ xem nhanh ([giao diện chung mục 4.1](../frontend.md#41-thẻ-xem-nhanh)) |
+| 4 | Chọn một tài liệu | Mở tài liệu như UC5 luồng A1 |
+| 5 | Nhấn Enter | Mở `/search?q=` với hai tab, phân trang từng tab |
 
 ### 4.2 Tìm tài liệu (FR-6.2)
 

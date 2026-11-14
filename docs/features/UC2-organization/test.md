@@ -32,6 +32,7 @@ thuật toán chặn vòng; e2e kiểm cây, quy tắc một quản lý; ca SEC 
 | AC-2.4.6, AC-2.4.7 | – | – | Chưa đạt (API chấp nhận gốc thứ hai, `headEmployeeId` bất kỳ) |
 | AC-2.5.1 | "tạo nhân viên không phải CEO mà thiếu quản lý → 400; tạo CEO thứ hai → 400" | – | Có |
 | AC-2.5.2 | "HR không gán được quản lý tạo vòng lặp" | – | Có |
+| AC-2.6.x → AC-2.9.x | – | Cần thêm (TV4, khi có tính năng) | Chưa có tính năng |
 | AC-2.5.3 | "gán quản lý đã nghỉ việc → 400; gán quản lý cho CEO → 400; bỏ quản lý của nhân viên → 400" | – | Có |
 
 ## 4. Dữ liệu và tài khoản

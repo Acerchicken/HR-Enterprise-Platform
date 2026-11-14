@@ -82,11 +82,11 @@ LLM API (trợ lý, tuần 12) và hệ thống Payroll (ngoài phạm vi versio
 | Use case | Hệ thống phải cho phép | Yêu cầu chức năng (FR) |
 |---|---|---|
 | UC1 Hồ sơ nhân viên | Xem hồ sơ theo mức, trang hồ sơ chia nhóm, nhân viên đề xuất cập nhật và tải file, HR xác nhận, nhật ký thay đổi, HR quản lý hồ sơ và trường nhạy cảm, chống spam | FR-1.1 → FR-1.14 |
-| UC2 Thông tin tổ chức | Danh bạ, cây tổ chức, quản lý trực tiếp, quản lý phòng ban | FR-2.1 → FR-2.5 |
+| UC2 Thông tin tổ chức | Danh bạ, cây tổ chức, quản lý trực tiếp, quản lý phòng ban, chức danh, điều chuyển, quá trình công tác, trưởng/phó phòng | FR-2.1 → FR-2.9 |
 | UC3 Tạo đơn nghỉ | Xem số dư, tạo, hủy đơn, tạo đơn hộ | FR-3.1 → FR-3.7 |
 | UC4 Duyệt đơn | Duyệt, từ chối, duyệt thay, HR duyệt thêm theo loại phép, HR hoàn tất, email thông báo | FR-4.1 → FR-4.8 |
 | UC5 Kho tài liệu | Đăng tài liệu theo phạm vi xem, phiên bản | FR-5.1 → FR-5.3 |
-| UC6 Tự tra cứu | Tìm đồng nghiệp, tìm tài liệu, trợ lý chính sách | FR-6.1 → FR-6.3 |
+| UC6 Tra cứu chung và trợ lý | Ô tìm kiếm chung (đồng nghiệp và tài liệu), tìm trong nội dung tài liệu, trợ lý chính sách | FR-6.1 → FR-6.3 |
 | UC7 Lịch sử thao tác | Audit append-only, tra cứu audit | FR-7.1 → FR-7.3 |
 
 ### 2.3 Lớp người dùng
@@ -181,6 +181,10 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-2.3 | Xem quản lý trực tiếp và nhân viên trực thuộc của một người | M | Danh sách cấp dưới đúng với dữ liệu | Đã có |
 | FR-2.4 | HR, ADMIN tạo và sửa phòng ban | S | Đổi phòng ban cha không được tạo vòng | Một phần: API có |
 | FR-2.5 | Mỗi nhân viên có đúng một quản lý trực tiếp, trừ CEO | M | Tạo/sửa nhân viên thiếu quản lý (không phải CEO) bị từ chối (issue #22) | Đã có (tuần 10) |
+| FR-2.6 | HR quản lý danh mục chức danh, cấp bậc; ngừng dùng thay vì xóa | S | Chức danh đang dùng không xóa được (409) | Một phần: chỉ có danh sách |
+| FR-2.7 | HR điều chuyển nhân viên (phòng ban, chức danh, quản lý) có ngày hiệu lực, kể cả ngày tương lai | S | Áp dụng đúng ngày; kiểm như FR-2.5; đơn nghỉ đang chờ sang quản lý mới | Chưa có, kế hoạch tuần 13 |
+| FR-2.8 | Quá trình công tác của từng nhân viên (phòng ban, chức danh, quản lý theo thời gian) | S | Mỗi lần tuyển, điều chuyển là một dòng, chỉ thêm; chủ hồ sơ, quản lý, HR xem | Chưa có, kế hoạch tuần 13 |
+| FR-2.9 | Trưởng phòng và tối đa 3 phó phòng cho mỗi phòng ban | S | Phải thuộc chính phòng đó; không tự cho quyền duyệt (quyền theo quản lý trực tiếp, BR-05) | Chưa có, kế hoạch tuần 13 |
 
 ### 4.3 UC3 – Tạo đơn nghỉ (FR-3.x)
 
@@ -221,13 +225,13 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-5.2 | Nhân viên chỉ xem, tải tài liệu thuộc phạm vi của mình | M | Tài liệu ngoài phạm vi không hiện trong danh sách và link tải bị từ chối | Kế hoạch tuần 10 |
 | FR-5.3 | Tài liệu có phiên bản; mặc định hiện phiên bản mới nhất | S | Đăng bản mới không mất bản cũ | Kế hoạch tuần 10 |
 
-### 4.6 UC6 – Tự tra cứu (FR-6.x)
+### 4.6 UC6 – Tra cứu chung và trợ lý (FR-6.x)
 
 Đặc tả: [features/UC6-self-service-search/spec.md](../features/UC6-self-service-search/spec.md) (yêu cầu kèm tiêu chí: [requirements.md](../features/UC6-self-service-search/requirements.md)).
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-6.1 | Tìm đồng nghiệp | M | Như FR-2.1 | Đã có |
+| FR-6.1 | Ô tìm kiếm chung trên nav bar: gợi ý đồng nghiệp và tài liệu chia nhóm, trang kết quả `/search` | M | Dùng lại tìm kiếm của FR-2.1 và FR-6.2; chỉ trả thứ người dùng được xem | Một phần: chỉ có tìm trong trang Danh bạ |
 | FR-6.2 | Tìm tài liệu theo từ khóa trong tiêu đề và nội dung, lọc theo quyền | M | Không trả tài liệu ngoài phạm vi | Kế hoạch tuần 10 |
 | FR-6.3 | Trợ lý trả lời câu hỏi về chính sách HR, có trích dẫn tài liệu nguồn | C | Chỉ dùng tài liệu người hỏi được xem; không trả lời được thì chỉ tới tài liệu gốc | Kế hoạch tuần 12 |
 
