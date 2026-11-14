@@ -166,3 +166,64 @@ Sau khi chạy `terraform apply`, lấy các giá trị từ `terraform output` 
 | `VITE_OIDC_LOGOUT_URL` | Variable | `oidc_logout_url` | URL đăng xuất Cognito Hosted UI |
 | `S3_WEB_BUCKET` | Variable | `s3_web_bucket` | Tên S3 Bucket lưu trữ mã tĩnh frontend Web SPA |
 | `CLOUDFRONT_DISTRIBUTION_ID` | Variable | ID từ `aws_cloudfront_distribution.web` | ID CDN CloudFront cần xóa cache (invalidation) khi deploy |
+
+---
+
+## 7. Kế hoạch triển khai AWS Staging Tuần 12–13 (Rollout Plan)
+
+Căn cứ quyết định của Nhóm trưởng (10/11/2026), hạ tầng AWS Staging được lùi thời điểm khởi tạo sang **Tuần 12 và 13** nhằm tối ưu chi phí thẻ Debit (~60 USD). Dưới đây là kế hoạch chi tiết cho giai đoạn này:
+
+### 7.1. Thứ tự các bước triển khai (Đầu tuần 12)
+
+| Bước | Nội dung công việc | Người thực hiện | Thời gian ước tính | Tiêu chí nghiệm thu |
+|---|---|---|---|---|
+| **1** | Khởi tạo Remote State Bootstrap (`infra/bootstrap/`) | TV3 (Bảo) | 15 phút | S3 bucket & DynamoDB table khóa trạng thái hoạt động |
+| **2** | Kích hoạt S3 backend và tạo trước ECR Repositories | TV3 (Bảo) | 15 phút | `terraform apply -target=aws_ecr_repository.api -target=aws_ecr_repository.web` thành công |
+| **3** | Build và push image khởi tạo (`:latest`) lên ECR | TV3 (Bảo) | 20 phút | ECR `hr-api` và `hr-web` có ít nhất 1 image tag `:latest` |
+| **4** | Chạy `terraform plan` toàn bộ staging và gửi review | TV3 (Bảo) | 10 phút | File plan sạch, không lộ secret, TV1 phê duyệt |
+| **5** | Áp dụng hạ tầng staging (`terraform apply`) | TV3 (Bảo) | 25 phút | Toàn bộ 40+ tài nguyên AWS tạo thành công |
+| **6** | Cấu hình GitHub Actions Secrets & Variables | TV3 (Bảo) | 10 phút | Đủ 9 biến theo bảng mục 6 trong repo settings |
+| **7** | Kích hoạt tự động deploy hoặc chạy tay pipeline | TV3 & TV1 | 15 phút | Workflow `deploy-staging.yml` chạy qua và API health check 200 |
+| **8** | Chạy seed dữ liệu mẫu 2,000 nhân viên trên AWS RDS | TV1 (Dương) | 10 phút | DB RDS có đủ 2,000 nhân viên và 4 tài khoản demo |
+| **9** | Smoke test staging với 4 tài khoản | TV4 (Duy) | 45 phút | Đăng nhập 4 vai trò, thử luồng nghỉ phép và xem tài liệu |
+
+### 7.2. Dự toán chi phí và lịch trình bật/tắt (2 tuần: Tuần 12 & 13)
+
+- **Dự toán tổng 2 tuần:** Dựa trên chi phí 24/7 (~$56.80 USD/tháng), khi chạy 2 tuần (14 ngày), chi phí danh định là **~$28.40 USD**.
+- **Chiến lược tiết kiệm tối đa:** Tắt NAT instance, ECS worker và RDS ngoài giờ demo/kiểm thử để chi phí thực tế xuống dưới **$15–20 USD**, đảm bảo cách xa hạn mức thẻ thanh toán (1.500.000 VNĐ ~ 60 USD).
+- **Lịch trình bật/tắt cụ thể:**
+  - *Giờ bật (Active hours):* 08:30 – 18:00 các ngày kiểm thử và buổi báo cáo/bảo vệ đồ án.
+  - *Quy trình tắt cuối ngày (18:00):* Thực hiện tuần tự theo mục 5.3:
+    1. Dừng ECS Worker (`desired-count = 0`).
+    2. Pause service AWS App Runner.
+    3. Stop RDS PostgreSQL (`aws rds stop-db-instance`).
+    4. Stop NAT instance (`aws ec2 stop-instances`).
+  - *Quy trình bật lại đầu ngày:* Khởi động theo thứ tự: NAT instance -> RDS instance (chờ available) -> Resume App Runner -> Bật lại ECS Worker (`desired-count = 1`).
+
+### 7.3. Kịch bản diễn tập Rollback (Tuần 12)
+
+Nhóm sẽ thực hiện một lượt diễn tập rollback có kiểm soát trong Tuần 12:
+1. Ghi nhận `IMAGE_TAG` của bản build ổn định trước đó (ví dụ tag commit PR tuần 11).
+2. TV1 cố ý tạo một commit gắn nhãn lỗi thử nghiệm trên nhánh test và trigger deploy.
+3. TV3 kích hoạt workflow **Deploy Staging** với tham số `IMAGE_TAG` của bản cũ.
+4. TV4 kiểm tra lại endpoint `/health` và giao diện web xác nhận hệ thống đã khôi phục về trạng thái ổn định trong vòng < 5 phút.
+
+### 7.4. Kế hoạch dọn dẹp hoàn toàn sau Tuần 13 (Teardown)
+
+Ngay sau buổi bảo vệ đồ án kết thúc (sau ngày 7/12/2026):
+1. **Chạy `terraform destroy`:**
+   ```bash
+   cd infra/staging
+   terraform destroy -auto-approve
+   ```
+2. **Dọn dẹp ECR Images & S3 Buckets:**
+   - Xóa các image còn lưu trong ECR Repositories.
+   - Xóa S3 bucket bootstrap và DynamoDB lock table trong `infra/bootstrap/` bằng `terraform destroy`.
+3. **Kiểm tra AWS Budgets & Billing Console:**
+   - Đảm bảo không còn tài nguyên nào chạy ngầm (NAT, Elastic IP, RDS snapshot giữ lại).
+   - Xác nhận hóa đơn cuối cùng và đóng tài khoản hoặc hủy liên kết thẻ thanh toán để an toàn 100%.
+
+### 7.5. Quản lý Workflow Deploy trong giai đoạn chuyển tiếp
+
+- Từ Tuần 10 đến hết Tuần 11: Workflow `.github/workflows/deploy-staging.yml` chỉ được kích hoạt thủ công (`workflow_dispatch`), không tự động chạy khi merge vào `dev` để tránh gây báo lỗi đỏ cho các PR code và docs.
+- Khi hạ tầng AWS sẵn sàng ở đầu Tuần 12: TV3 sẽ bật lại trigger tự động `push: branches: [dev]` trong workflow.
