@@ -9,7 +9,7 @@
 |---|---|
 | API | `backend/src/modules/leave` (pending-approval, approve, reject, complete, chi tiết và lịch sử) |
 | Outbox, queue, worker | API ghi event vào `leave.outbox` trong cùng giao dịch; publisher đẩy lên RabbitMQ hoặc SQS; worker `backend/src/worker` gửi email, chống gửi trùng bằng `notification.processed_event` |
-| Web | `/leave/approvals` (quản lý, HR với đơn CEO), `/leave/hr` (HR hoàn tất), `/leave/:id` |
+| Web | `/approvals?type=leave` (quản lý, HR với đơn CEO), `/approvals?type=leave-complete` (HR hoàn tất), `/leave/:id`; hiện code còn `/leave/approvals`, `/leave/hr` (sẽ chuyển tiếp) |
 | Database | `leave.leave_request_history`, `leave.outbox`, `notification.processed_event` |
 
 ## 2. Biến môi trường

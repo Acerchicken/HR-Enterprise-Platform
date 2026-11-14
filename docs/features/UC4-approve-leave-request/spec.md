@@ -118,10 +118,13 @@ stateDiagram-v2
 
 | Luồng | Màn hình | API |
 |---|---|---|
-| Chính, A1, A5 | `/leave/approvals`, `/leave/:id` | `GET /leave-requests/pending-approval`, `GET /leave-requests/{id}`, `POST …/approve`, `POST …/reject` |
-| A2 | `/leave/hr`, `/leave/:id` | `GET /leave-requests`, `POST …/complete` |
-| A3 | `/leave/approvals` (HR) | Như luồng chính |
+| Chính, A1, A5 | Trang "Việc cần duyệt" tab Đơn nghỉ: `/approvals?type=leave`, `/approvals/leave/:id` ([giao diện chung mục 2.4](../frontend.md#24-trang-việc-cần-duyệt-approvals)) | `GET /leave-requests/pending-approval`, `GET /leave-requests/{id}`, `POST …/approve`, `POST …/reject` |
+| A2 | Tab Hoàn tất đơn nghỉ: `/approvals?type=leave-complete`, `/approvals/leave-complete/:id` | `GET /leave-requests`, `POST …/complete` |
+| A3 | `/approvals?type=leave` (HR) | Như luồng chính |
 | A4 | Chưa có | Chưa có |
+
+Hiện code có `/leave/approvals`, `/leave/hr` là trang riêng; khi làm trang `/approvals` thì hai đường dẫn này chuyển tiếp sang
+tab tương ứng.
 
 ## 10. Yêu cầu phi chức năng liên quan
 
@@ -175,6 +178,6 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
   ghi audit `VIEW_LEAVE_REASON` (chỉ ID đơn, không giá trị).
 - **Audit:** bỏ `comment` khỏi `changedFields` của duyệt, từ chối, hủy, hoàn tất; ghi chú vẫn nằm trong lịch sử đơn.
 - **Outbox và email:** payload chỉ còn `eventId`, `eventType`, `requestId`, `employeeId`, `occurredAt`. Email: tiêu đề và nội dung
-  chung, link `/leave` hoặc `/leave/approvals` (không có mã đơn). Đổi [hợp đồng event](../../architecture/event-contract.md)
+  chung, link `/leave` hoặc `/approvals?type=leave` (không có mã đơn). Đổi [hợp đồng event](../../architecture/event-contract.md)
   theo mục 6 của file đó.
 - **Đơn của CEO:** worker gửi email "có đơn cần xử lý" tới mọi tài khoản HR khi chủ đơn là CEO.

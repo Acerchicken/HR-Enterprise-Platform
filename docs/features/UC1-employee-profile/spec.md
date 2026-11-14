@@ -159,7 +159,7 @@ xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /em
 
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
-| 1 | HR mở "Yêu cầu cập nhật hồ sơ" | `GET /change-requests?status=PENDING&section=&departmentId=&page=`; cũ nhất trước; yêu cầu chờ quá 2 ngày làm việc có nhãn "Quá hạn" |
+| 1 | HR mở "Việc cần duyệt", tab Sửa hồ sơ (hoặc File hồ sơ, Ảnh đại diện) | `GET /change-requests?status=PENDING&section=&departmentId=&page=`; cũ nhất trước; yêu cầu chờ quá 2 ngày làm việc có nhãn "Quá hạn" |
 | 2 | Mở một yêu cầu | `GET /change-requests/{requestId}`; hiện giá trị hiện tại và đề xuất cạnh nhau, trường đổi được tô màu; giá trị nhạy cảm là `********` tới khi bấm mắt (audit `VIEW_SENSITIVE`); file kèm tải được |
 | 3 | HR đối chiếu với giấy tờ, bấm "Duyệt" | `POST /change-requests/{requestId}/approve` |
 | 4 | | Kiểm vai trò HR; kiểm yêu cầu còn `PENDING`; kiểm `baseVersion` bằng `version` hiện tại của hồ sơ hoặc dòng (khác thì 409, E19) |
@@ -349,7 +349,7 @@ yêu cầu thì `changeRequestId` (biết ai đề xuất, HR nào duyệt).
 | 4.1, 9.1 | Popup hồ sơ: `/me/profile` (của mình), `/employees/:id` (người khác), mở từ trang chủ, ô tìm kiếm, danh bạ | `GET /me` (chỉ tài khoản, vai trò, `employeeId`), `GET /employees/{id}/summary` |
 | 4.1 bước 2a | Trang con trong popup `/employees/:id/:section` | `GET /employees/{id}/profile/{section}` (mục `personal` trả ngày sinh, địa chỉ, ngày vào làm, trạng thái; HR thêm CCCD đã che) |
 | 4.2 | Trang con của mục, khung "Đang chờ HR xác nhận" | `GET /employees/{id}/profile/{section}`; `POST /employees/{id}/change-requests`; `DELETE /employees/{id}/change-requests/{requestId}` (hủy) |
-| 4.7 | `/hr/change-requests` (danh sách), `/hr/change-requests/:id` (so sánh cũ, mới) | `GET /change-requests`, `GET /change-requests/{requestId}`, `POST …/approve`, `POST …/reject` |
+| 4.7 | Trang "Việc cần duyệt" ([giao diện chung mục 2.4](../frontend.md#24-trang-việc-cần-duyệt-approvals)), tab Sửa hồ sơ, File hồ sơ, Ảnh đại diện: `/approvals?type=profile\|profile-file\|avatar`, `/approvals/{type}/:id` (so sánh cũ, mới) | `GET /change-requests`, `GET /change-requests/{requestId}`, `POST …/approve`, `POST …/reject` |
 | 4.5, A9 | Trang con mục, chế độ HR | `POST /employees/{id}/profile/{section}`, `PATCH`, `DELETE …/{itemId}` (chỉ HR, ghi thẳng) |
 | 4.3 | Nút "Tải lên" trong trang con | `POST /employees/{id}/files`, `POST /employees/{id}/files/{fileId}/confirm`, `GET /employees/{id}/files/{fileId}/download`, `DELETE /employees/{id}/files/{fileId}` |
 | 4.4 | `/employees/new` | `POST /employees`, `GET /departments`, `GET /positions`, `GET /employees` |
@@ -366,6 +366,8 @@ Hồ sơ (của mình và của người khác) mở trong **popup hồ sơ** th
 ngăn bên phải rộng 720 px trên màn hình rộng, toàn màn hình trên điện thoại, có URL riêng (`/me/profile`, `/employees/{id}`,
 mục con `/employees/{id}/{section}`); mục con mở bên trong popup. Bố cục bên trong theo mẫu ứng dụng HR di động, một cột.
 Người xem chỉ thấy nhóm và mục mức xem của mình cho phép (cột "Mức", ký hiệu ở mục 2); mục không được xem thì không hiện.
+Bản vẽ: [giao diện chung mục 10](../frontend.md#10-bản-vẽ-giao-diện) (hồ sơ desktop, điện thoại, trang con, người khác xem,
+HR duyệt yêu cầu).
 
 **Quy ước màu:**
 
@@ -381,7 +383,8 @@ Người xem chỉ thấy nhóm và mục mức xem của mình cho phép (cột
 - Giá trị nhạy cảm hiện `********` kèm biểu tượng mắt; bấm mắt mới gọi API và ghi audit.
 - Mục có yêu cầu đang chờ có nhãn "Chờ HR xác nhận"; trong trang con, giá trị đề xuất hiện trong khung riêng dưới giá trị hiện
   tại. Yêu cầu bị từ chối hiện lý do cho tới khi nhân viên đóng.
-- Thanh trên của HR có mục "Yêu cầu cập nhật hồ sơ" kèm số yêu cầu đang chờ.
+- HR duyệt yêu cầu ở trang "Việc cần duyệt" chung (ô ở trang chủ và chuông có số yêu cầu đang chờ), không có trang duyệt
+  riêng của UC1.
 
 **Đầu trang:**
 

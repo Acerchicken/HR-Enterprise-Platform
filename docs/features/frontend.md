@@ -1,6 +1,6 @@
 # Giao diện chung (frontend)
 
-> Phiên bản 1.0 – 14/11/2026. Áp dụng cho mọi tính năng UC1 → UC7. Bộ tài liệu: [`docs/README.md`](../README.md).
+> Phiên bản 1.2 – 14/11/2026 (1.1: bản vẽ giao diện mục 10; 1.2: gộp mọi loại duyệt vào trang "Việc cần duyệt", mục 2.4). Áp dụng cho mọi tính năng UC1 → UC7. Bộ tài liệu: [`docs/README.md`](../README.md).
 > Mỗi UC chỉ mô tả màn hình riêng của mình ở mục 9 trong `spec.md` và dẫn về file này cho phần dùng chung.
 > Mục còn ghi **Chưa có** là phần code chưa làm; tiêu chí `AC-0.x.y` dùng cho các PR giao diện như `AC` của từng UC.
 
@@ -46,14 +46,12 @@ Từ trên xuống:
 | Hồ sơ của tôi | Popup hồ sơ của mình | Mọi người có hồ sơ | UC1 |
 | Đăng ký nghỉ | `/leave/new` | Mọi người có hồ sơ | UC3 |
 | Đơn nghỉ của tôi | `/leave` | Mọi người có hồ sơ | UC3 |
-| Duyệt đơn nghỉ | `/leave/approvals` | Quản lý, người duyệt thay, HR (đơn của CEO) | UC4 |
+| Việc cần duyệt | `/approvals` (mục 2.4) | Quản lý, người duyệt thay, HR | UC1, UC4 |
 | Danh bạ | `/directory` | Mọi người | UC2 |
 | Sơ đồ tổ chức | `/org` | Mọi người | UC2 |
 | Tài liệu | `/documents` | Mọi người | UC5, UC6 |
 | Hỏi trợ lý chính sách | `/assistant` | Mọi người | UC6 |
-| Duyệt yêu cầu hồ sơ | `/hr/change-requests` | HR | UC1 |
 | Quản lý nhân viên | `/employees/new`, danh bạ ở chế độ HR | HR | UC1 |
-| Hoàn tất đơn nghỉ | `/leave/hr` | HR | UC4 |
 | Đăng tài liệu | `/documents/manage` | HR | UC5 |
 | Lịch sử thao tác | `/audit` | HR, ADMIN | UC7 |
 
@@ -64,6 +62,50 @@ vị trí.
 
 Mỗi chức năng là một trang riêng có URL riêng (như bảng trên), có tiêu đề trang và nút quay về trang chủ. Nav bar luôn ở trên.
 Nút Back của trình duyệt quay về trang trước.
+
+### 2.4 Trang "Việc cần duyệt" `/approvals`
+
+Mọi việc người dùng phải duyệt nằm ở **một trang, chia tab theo loại**, thay vì mỗi loại một trang riêng. Đây là cách các hệ
+thống HR lớn làm (hộp duyệt chung kiểu "Inbox", "Approvals"): người duyệt không phải nhớ nhiều chỗ, chuông và dải "Việc cần làm"
+chỉ cần dẫn về một nơi. Gộp **giao diện**, không gộp **nghiệp vụ**: quyền, trạng thái, quy tắc của từng loại vẫn theo UC của nó.
+
+| Tab | `type` | Nội dung | Ai thấy | Quy tắc |
+|---|---|---|---|---|
+| Đơn nghỉ | `leave` | Đơn `SUBMITTED` của cấp dưới trực tiếp, đơn được giao duyệt thay; với HR: đơn của CEO | Quản lý, người duyệt thay, HR | UC4 luồng chính, A1, A3, A5 |
+| Hoàn tất đơn nghỉ | `leave-complete` | Đơn đã duyệt chờ HR hoàn tất | HR | UC4 A2 |
+| Sửa hồ sơ | `profile` | Yêu cầu sửa trường, thêm, sửa, xóa dòng (liên hệ khẩn cấp, thân nhân, chuyên môn…) | HR | UC1 4.2, 4.7 |
+| File hồ sơ | `profile-file` | File nhân viên tải lên đang `PENDING_REVIEW` | HR | UC1 4.3, 4.7 |
+| Ảnh đại diện | `avatar` | Ảnh đại diện mới chờ duyệt | HR | UC1 4.3, 4.7 |
+
+Sau này có loại duyệt mới (ví dụ đăng ký làm thêm giờ) thì thêm một tab, không thêm trang hay ô chức năng mới.
+
+Không có tab "Tất cả" trộn các loại: mỗi loại xem và quyết định theo cách khác nhau (đơn nghỉ xem số dư, hồ sơ xem trước và sau),
+trộn vào một danh sách thì người duyệt phải đổi cách nghĩ ở mỗi dòng. Thay vào đó, mở `/approvals` không kèm `type` thì vào tab
+đang có nhiều việc chờ nhất.
+
+**Quy tắc:**
+
+- **Chỉ hiện tab người dùng có quyền.** Quản lý chỉ có tab "Đơn nghỉ" nên thanh tab ẩn đi; HR thấy đủ. Người không có tab nào thì không
+  có ô "Việc cần duyệt" ở trang chủ, mở thẳng `/approvals` thì báo không có quyền (mục 3).
+- **Mỗi tab có số việc chờ** lấy từ `GET /me/todo-counts`, cùng số với chuông và dải "Việc cần làm". Tab không có việc vẫn hiện,
+  số 0, để vị trí tab không nhảy.
+- **URL:** tab là `/approvals?type=leave`; mở một việc là `/approvals/{type}/{id}` (ví dụ `/approvals/profile/8f2c…`). Link
+  trong email, chuông, dải "Việc cần làm" trỏ thẳng vào tab hoặc việc đó. Các đường dẫn cũ `/leave/approvals`, `/leave/hr`
+  chuyển tiếp sang tab tương ứng để link cũ vẫn chạy.
+- **Bố cục chung:** danh sách bên trái (người gửi, tóm tắt, thời điểm gửi, đã chờ bao lâu, nhãn "Quá hạn" nếu quá hạn; cũ nhất
+  lên đầu), chi tiết bên phải; trên điện
+  thoại danh sách là một trang, chi tiết là trang tiếp theo. Bộ lọc chung: phòng ban, người gửi, khoảng ngày gửi.
+- **Chi tiết riêng theo loại:** đơn nghỉ hiện loại nghỉ, ngày, số ngày, số dư phép, đơn trùng ngày của cùng nhóm; sửa hồ sơ hiện
+  bảng giá trị hiện tại và đề xuất; file hiện tên, loại, dung lượng, nút xem qua link tạm. Nút hành động theo loại: Duyệt, Từ
+  chối (đơn nghỉ, hồ sơ), Hoàn tất (đơn nghỉ đã duyệt).
+- **Từ chối luôn bắt buộc lý do** (UC1 E-lý do, UC4 FR-4.2). Duyệt xong việc biến khỏi danh sách, chi tiết chuyển sang việc kế
+  tiếp để duyệt liên tục.
+- **Không duyệt hàng loạt** trong phạm vi tuần 11–13. Nếu làm sau thì chỉ cho tab "Đơn nghỉ", mỗi đơn vẫn kiểm `version` riêng và
+  báo kết quả từng đơn; không bao giờ cho yêu cầu sửa hồ sơ, file, ảnh (phải xem từng cái).
+- **Dữ liệu:** backend giữ API riêng của từng UC, không làm API gộp. Mỗi tab gọi API danh sách của UC đó (UC4: `GET
+  /leave-requests/pending-approval`, `GET /leave-requests?status=APPROVED`; UC1: `GET /change-requests?status=PENDING` lọc theo loại), chỉ khi tab được
+  mở. Số trên tab lấy từ `GET /me/todo-counts`. Mở chi tiết thì gọi API chi tiết của UC đó (UC1 mục 9, UC4 mục 9). Không tải
+  chi tiết của việc chưa mở.
 
 ## 3. Điều hướng và URL
 
@@ -174,10 +216,17 @@ Lucide), không trộn nhiều bộ.
 - **AC-0.1.1** *(chưa có)* Mọi trang có nav bar gồm logo, ô tìm kiếm, chuông thông báo, ảnh đại diện; bấm logo về trang chủ.
 - **AC-0.1.2** *(chưa có)* Gõ "ngu" vào ô tìm kiếm. Thì sau 300 ms có gợi ý chia nhóm Đồng nghiệp và Tài liệu; tài liệu ngoài
   phạm vi không xuất hiện (DR-08). Chọn một đồng nghiệp thì mở popup hồ sơ người đó.
-- **AC-0.2.1** *(chưa có)* Trang chủ của nhân viên thường không có ô "Duyệt đơn nghỉ", "Duyệt yêu cầu hồ sơ", "Lịch sử thao
-  tác"; của HR thì có. Ô chức năng chưa làm có tên màu `--todo` kèm nhãn "Chưa có".
-- **AC-0.2.2** *(chưa có)* Quản lý có 3 đơn chờ duyệt. Thì ô "Duyệt đơn nghỉ" và chuông đều hiện số 3; dải "Việc cần làm" có
-  thẻ "3 đơn chờ bạn duyệt".
+- **AC-0.2.1** *(chưa có)* Trang chủ của nhân viên thường không có ô "Việc cần duyệt", "Lịch sử thao tác"; của quản lý và HR
+  thì có ô "Việc cần duyệt". Ô chức năng chưa làm có tên màu `--todo` kèm nhãn "Chưa có".
+- **AC-0.2.2** *(chưa có)* Quản lý có 3 đơn chờ duyệt. Thì ô "Việc cần duyệt", tab "Đơn nghỉ" và chuông đều hiện số 3; dải
+  "Việc cần làm" có thẻ "3 đơn chờ bạn duyệt", bấm vào mở `/approvals?type=leave`.
+- **AC-0.6.1** *(chưa có)* Quản lý mở `/approvals`. Thì thấy ngay danh sách đơn nghỉ, không có thanh tab; HR mở thì có đủ 5 tab,
+  mỗi tab có số việc chờ.
+- **AC-0.6.2** *(chưa có)* HR có 2 yêu cầu sửa hồ sơ và 1 đơn nghỉ chờ hoàn tất, mở `/approvals`. Thì vào tab "Sửa hồ sơ" (nhiều
+  việc nhất), có 2 dòng, cũ nhất lên đầu, và chỉ gọi API danh sách của tab đó. Mở một dòng thì URL là `/approvals/{type}/{id}` và
+  chỉ gọi API chi tiết của dòng đó.
+- **AC-0.6.3** *(chưa có)* Bấm "Từ chối" khi chưa nhập lý do. Thì không gửi request, ô lý do báo lỗi, với mọi loại.
+- **AC-0.6.4** *(chưa có)* Mở link cũ `/leave/approvals`. Thì chuyển sang `/approvals?type=leave`.
 - **AC-0.3.0** *(chưa có)* Chọn một đồng nghiệp trong ô tìm kiếm. Thì thẻ xem nhanh hiện, chỉ có một request `summary`, không có
   ngày sinh, địa chỉ; bấm "Xem hồ sơ đầy đủ" thì mở hồ sơ đầy đủ.
 - **AC-0.3.1** *(chưa có)* Mở popup hồ sơ của một đồng nghiệp, copy URL, mở ở tab mới. Thì popup hồ sơ người đó mở sẵn. Bấm Back
@@ -200,12 +249,63 @@ Lucide), không trộn nhiều bộ.
 | Popup hồ sơ | Chưa có; hồ sơ người khác là trang `/employees/:id` | `ProfilePanel` theo mục 4 |
 | Màu | `--primary: #2457c5` (xanh dương) | Đổi sang bảng màu mục 5.1 |
 | Tìm kiếm chung | Chỉ có ô tìm trong trang Danh bạ | `SearchBox` trên nav bar, cần API tìm tài liệu của UC6 |
+| Trang duyệt | Ba trang riêng `/leave/approvals`, `/leave/hr`; chưa có trang duyệt hồ sơ | Gộp vào `/approvals` có tab (mục 2.4) |
 | Đếm việc cần làm | Chưa có API | `GET /me/todo-counts` (đơn chờ duyệt, yêu cầu hồ sơ chờ, yêu cầu bị từ chối) |
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
+| Trang "Việc cần duyệt" `/approvals` có tab (gom trang duyệt đơn, HR hoàn tất hiện có), không thêm API gộp | AC-0.6.x | TV1 | `feat/approvals-inbox` | 12 |
 | Nav bar, trang chủ, màu, popup hồ sơ có URL | AC-0.1.1, AC-0.2.1, AC-0.3.x, AC-0.4.1, UC1 AC-1.8.x | TV1 | `feat/profile-layout` | 11 |
 | Ô tìm kiếm chung trên nav bar | AC-0.1.2 | TV1 | `feat/document-search` | 11 |
 | Chuông, việc cần làm, `GET /me/todo-counts` | AC-0.2.2 | TV1 | `feat/app-shell-todo` | 12 |
 | Hiển thị lỗi 429, 503 theo mục 6 | AC-0.5.x | TV1 | `feat/security-headers-ratelimit` | 11 |
 | Ca kiểm thử giao diện chung (bàn phím, 375 px, URL popup) | AC-0.x | TV4 | `docs/test-cases-week11` | 11 |
+
+## 10. Bản vẽ giao diện
+
+Bản vẽ để duyệt bố cục trước khi code, không phải ảnh chụp ứng dụng thật. Dữ liệu là người mẫu, không phải nhân viên thật.
+Nguồn là [`mockups/mockups.html`](mockups/mockups.html) (mở bằng trình duyệt là xem được); sửa file đó rồi xuất lại ảnh PNG
+bằng `powershell -ExecutionPolicy Bypass -File docs/features/mockups/render.ps1` (Windows, dùng Edge) hoặc
+`node docs/features/mockups/render.js` (máy có Playwright). Ô vàng là ghi chú cho người đọc, không có trong giao diện thật.
+Bản vẽ theo mục 2 → 7 ở trên và [UC1 spec mục 9.1](UC1-employee-profile/spec.md#91-bố-cục-trang-hồ-sơ); chỗ nào bản vẽ khác
+chữ thì chữ đúng.
+
+### 10.1 Trang chủ (quản lý)
+
+Nav bar, dải "Việc cần làm", lưới ô chức năng 4 cột, dòng số dư phép. Ô "Tài liệu", "Hỏi trợ lý chính sách" chưa làm nên tên
+đỏ và nhãn "Chưa có".
+
+![Trang chủ của quản lý](mockups/home.png)
+
+### 10.2 Trang chủ (HR)
+
+HR có thêm nhóm "Chức năng HR"; mọi loại duyệt gom vào một ô "Việc cần duyệt"; các ô chung xếp như nhân viên.
+
+![Trang chủ của HR](mockups/home-hr.png)
+
+### 10.3 Tìm kiếm trên nav bar
+
+![Gợi ý tìm kiếm chia nhóm Đồng nghiệp, Tài liệu](mockups/search.png)
+
+### 10.4 Thẻ xem nhanh (mục 4.1)
+
+![Thẻ xem nhanh một đồng nghiệp](mockups/quickview.png)
+
+### 10.5 Hồ sơ đầy đủ trên màn hình rộng (mục 4.2)
+
+Ngăn phải 720 px. Hai nhóm xếp thành hai cột để đỡ cuộn; trên điện thoại là một cột như ảnh mẫu.
+
+![Popup hồ sơ dạng ngăn bên phải](mockups/profile-desktop.png)
+
+### 10.6 Hồ sơ trên điện thoại, trang con và người khác xem
+
+| Hồ sơ của mình (toàn màn hình) | Trang con "Thông tin cá nhân", gửi yêu cầu sửa | Đồng nghiệp xem (mức danh bạ) |
+|---|---|---|
+| ![Hồ sơ trên điện thoại](mockups/profile-mobile.png) | ![Trang con và form gửi yêu cầu](mockups/subpage-mobile.png) | ![Đồng nghiệp xem hồ sơ](mockups/profile-directory-view.png) |
+
+### 10.7 Trang "Việc cần duyệt" của HR, tab "Sửa hồ sơ" (mục 2.4, UC1 FR-1.9)
+
+Tab theo loại kèm số việc chờ. Danh sách bên trái, chi tiết bên phải: giá trị hiện tại và đề xuất, file đính kèm, lý do từ chối
+bắt buộc khi từ chối. Tab "Đơn nghỉ" cùng bố cục, phần chi tiết là thông tin đơn và số dư phép.
+
+![Trang Việc cần duyệt, tab Sửa hồ sơ](mockups/approvals.png)
