@@ -9,7 +9,7 @@
 | Quy tắc | ADR-08 (mã hóa trường nhạy cảm), ADR-09 (audit), ADR-10 (MANAGER suy ra từ tổ chức), [ma trận phân quyền – Hồ sơ nhân viên](../../security/access-control-matrix.md#hồ-sơ-nhân-viên) |
 | Mức ưu tiên | M (FR-1.6 là S) |
 | Trạng thái | Đã có API và giao diện (giao diện HR tạo, sửa hồ sơ merge 12/11, PR #63) |
-| Phiên bản | 1.0 – 13/11/2026 |
+| Phiên bản | 1.1 – 14/11/2026 (thêm bố cục trang hồ sơ, mục 9.1) |
 
 ## 1. Mô tả ngắn
 
@@ -20,11 +20,14 @@ Mỗi nhân viên có một hồ sơ duy nhất trên hệ thống thay cho các
 
 Nhân viên tự sửa số điện thoại, địa chỉ của mình. HR tạo hồ sơ mới và sửa mọi trường.
 
+Trang hồ sơ của một người chia thành các nhóm: thông tin cá nhân, công việc, tài chính, phúc lợi, khác (mục 9.1). Nhóm nào
+hoặc mục nào chưa làm thì vẫn hiện trên trang, nhưng tiêu đề màu đỏ, để người dùng và nhóm phát triển cùng thấy phần còn thiếu.
+
 ## 2. Tác nhân và quyền
 
 | Tác nhân | Được làm gì | Giới hạn theo dữ liệu |
 |---|---|---|
-| Nhân viên (mọi vai trò có hồ sơ) | Xem hồ sơ mình ở mức cá nhân; sửa `phone`, `address` của mình | Không sửa trường khác; không xem trường nhạy cảm, kể cả của mình |
+| Nhân viên (mọi vai trò có hồ sơ) | Xem hồ sơ mình ở mức cá nhân; sửa `phone`, `address` của mình; xem lương, số tài khoản của chính mình khi bấm biểu tượng mắt *(chưa có)* | Không sửa trường khác; không xem trường nhạy cảm của người khác. Mỗi lượt tự xem trường nhạy cảm cũng ghi audit `VIEW_SENSITIVE` |
 | Quản lý trực tiếp | Xem thông tin cá nhân của cấp dưới trực tiếp | Không sửa hồ sơ cấp dưới; không xem trường nhạy cảm |
 | HR | Tạo hồ sơ; sửa mọi trường; xem trường nhạy cảm khi yêu cầu rõ (`include=sensitive`) | Mỗi lượt xem trường nhạy cảm ghi audit `VIEW_SENSITIVE` |
 | ADMIN | Như nhân viên đối với hồ sơ của chính mình | Hồ sơ người khác chỉ ở mức danh bạ; không tạo hồ sơ; không xem trường nhạy cảm |
@@ -155,6 +158,68 @@ Nhân viên tự sửa số điện thoại, địa chỉ của mình. HR tạo 
 | A1 | `/employees/:id` | `GET /employees/{id}` |
 | 4.2 | `/employees/new` | `POST /employees`, `GET /departments`, `GET /positions`, `GET /employees` |
 | 4.3 | `/employees/:id`, `/employees/:id/edit` | `GET /employees/{id}?include=sensitive`, `PATCH /employees/{id}` |
+| 9.1 | `/` và `/employees/:id` dùng chung một bố cục; mỗi mục mở trang con `…/:muc` | Như các dòng trên; mục chưa có thì chưa có API |
+
+### 9.1 Bố cục trang hồ sơ
+
+Trang `/` (hồ sơ của tôi) và `/employees/:id` (hồ sơ người khác) dùng **chung một bố cục**, theo mẫu ứng dụng HR di động:
+một cột, rộng tối đa 720 px, dùng được trên điện thoại. Người xem chỉ thấy những nhóm và mục mà mức xem của mình cho phép
+(mục 2).
+
+**Quy ước màu:**
+
+- **Màu chủ đạo là cyan.** Màu chính `--primary: #0E7490` (cyan-700) dùng cho nút, link, tiêu đề nhóm, biểu tượng. Màu này đủ
+  tương phản với chữ trắng (WCAG AA). Nền đầu trang dùng dải chuyển `#ECFEFF` → `#CFFAFE` (cyan-50 → cyan-100), điểm nhấn
+  `#06B6D4` (cyan-500). Áp dụng cho toàn ứng dụng, thay màu xanh dương hiện tại `#2457C5`.
+- **Mục chưa làm có tiêu đề màu đỏ** `#DC2626`, kèm nhãn nhỏ "Chưa có". Bấm vào thì mở trang con báo "Chức năng đang phát
+  triển", không gọi API. Khi mục được làm xong, chỉ cần đổi trạng thái của mục đó trong cấu hình giao diện thành "đã có", tiêu
+  đề chuyển về màu thường.
+- Giá trị nhạy cảm hiện `********` kèm biểu tượng mắt. Bấm mắt thì mới gọi API lấy giá trị và ghi audit (AC-1.3.4).
+
+**Đầu trang:**
+
+| Thành phần | Nội dung | Ai thấy | Trạng thái |
+|---|---|---|---|
+| Ảnh đại diện | Ảnh của nhân viên; chưa có ảnh thì hiện chữ cái đầu của tên | Mọi người | **Chưa có** (hiện chữ cái đầu) |
+| Mã nhân viên | Nhãn nền cyan dưới ảnh | Mọi người | Đã có |
+| Họ tên, chức danh | | Mọi người | Đã có |
+| Thẻ "Quản lý trực tiếp" | Ảnh, tên quản lý trực tiếp, bấm mở hồ sơ người đó | Mọi người | Đã có (ảnh: chưa có) |
+| Thẻ "Xem sơ đồ tổ chức" | Tên phòng ban, bấm mở `/org` tại phòng ban đó | Mọi người | Đã có |
+| Hàng "Lương mục tiêu" | `********` + mắt | Chủ hồ sơ, HR | HR: đã có. Chủ hồ sơ tự xem: **chưa có** |
+| Hàng "Hệ số lương bảo hiểm" | `********` + mắt | Chủ hồ sơ, HR | **Chưa có** |
+| Hàng "Diện đối tượng" | Loại hợp đồng: thử việc, học việc, xác định thời hạn, không xác định thời hạn | Chủ hồ sơ, quản lý trực tiếp, HR | **Chưa có** |
+
+**Các nhóm bên dưới** (mỗi mục là một hàng có biểu tượng và mũi tên, bấm mở trang con):
+
+| Nhóm | Mục | Nội dung trang con | Ai thấy | Trạng thái |
+|---|---|---|---|---|
+| Thông tin cá nhân | Thông tin cá nhân | Ngày sinh, điện thoại, email công ty, địa chỉ; chủ hồ sơ sửa điện thoại, địa chỉ tại đây (luồng 4.1). HR thấy thêm CCCD khi bấm mắt | Chủ hồ sơ, quản lý trực tiếp, HR | Đã có |
+| | Thông tin liên hệ khẩn cấp | Tên, quan hệ, số điện thoại người liên hệ | Chủ hồ sơ, HR | **Chưa có** |
+| | Thân nhân và người phụ thuộc | Danh sách thân nhân; người phụ thuộc dùng giảm trừ gia cảnh thuế TNCN | Chủ hồ sơ, HR | **Chưa có** |
+| Công việc | Quá trình công tác | Các lần đổi phòng ban, chức danh, quản lý trực tiếp, kèm ngày. Lấy từ audit nhóm trường tổ chức (AC-1.4.3) | Chủ hồ sơ, quản lý trực tiếp, HR | **Chưa có** |
+| | Diện đối tượng | Hợp đồng hiện tại và các hợp đồng trước: loại, số, ngày bắt đầu, ngày kết thúc | Chủ hồ sơ, HR | **Chưa có** |
+| | Ngày nghỉ dài | Các đợt nghỉ dài ngày (thai sản, nghỉ không lương dài, trạng thái `ON_LEAVE`) | Chủ hồ sơ, quản lý trực tiếp, HR | **Chưa có** |
+| | Các mốc trong công ty | Ngày vào làm, thâm niên, các mốc 5 năm (cộng phép năm, UC3) | Chủ hồ sơ, quản lý trực tiếp, HR | Đã có ngày vào làm; thâm niên và mốc: **chưa có** |
+| Tài chính | Lương mục tiêu | Lương hiện tại; sau này có lịch sử thay đổi lương | Chủ hồ sơ, HR | HR: đã có. Chủ hồ sơ: **chưa có** |
+| | Hệ số lương bảo hiểm | Mức lương đóng BHXH | Chủ hồ sơ, HR | **Chưa có** |
+| | Thông tin tài khoản ngân hàng | Số tài khoản (đã có); tên ngân hàng, chủ tài khoản (chưa có) | Chủ hồ sơ, HR | HR: đã có số tài khoản. Phần còn lại: **chưa có** |
+| | Thông tin thuế TNCN | Mã số thuế (từ 1/7/2025 là số CCCD), số người phụ thuộc | Chủ hồ sơ, HR | **Chưa có** |
+| Phúc lợi | Bảo hiểm xã hội | Mã số BHXH, ngày bắt đầu đóng | Chủ hồ sơ, HR | **Chưa có** |
+| | Bảo hiểm y tế | Số thẻ, nơi khám chữa bệnh ban đầu | Chủ hồ sơ, HR | **Chưa có** |
+| | Phụ cấp | Các khoản phụ cấp hằng tháng | Chủ hồ sơ, HR | **Chưa có** |
+| Khác | Khen thưởng kỷ luật | Các quyết định khen thưởng, kỷ luật | Chủ hồ sơ, HR | **Chưa có** |
+| | Chuyên môn | Trình độ, chuyên ngành, bằng cấp, chứng chỉ | Chủ hồ sơ, quản lý trực tiếp, HR | **Chưa có** |
+| | Sơ yếu lý lịch | File CV, sơ yếu lý lịch; tải qua API như kho tài liệu UC5 | Chủ hồ sơ, HR | **Chưa có** |
+
+**Theo mức xem:**
+
+- Người xem ở mức danh bạ chỉ thấy đầu trang (ảnh, mã, họ tên, chức danh, quản lý trực tiếp, sơ đồ tổ chức) và điện thoại,
+  email. Không thấy các hàng lương, hệ số, diện đối tượng và các nhóm bên dưới.
+- Quản lý trực tiếp thấy thêm các mục ghi "quản lý trực tiếp" ở bảng trên.
+- HR thấy mọi nhóm, cộng nút "Sửa hồ sơ" (luồng 4.3).
+- Số dư phép không còn nằm trên trang hồ sơ; xem ở trang "Đơn nghỉ" (UC3).
+
+Các trường dữ liệu của những mục **chưa có** sẽ chốt khi làm từng mục, ghi vào mục 8 trong cùng PR làm mục đó.
 
 ## 10. Yêu cầu phi chức năng liên quan
 
@@ -180,3 +245,6 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Audit theo ba nhóm trường (mục 3) | Code chưa đúng: ghi giá trị mới của mọi trường thường, kể cả địa chỉ, ngày sinh; không ghi giá trị cũ | TV1 |
 | Sửa chỉ trường nhạy cảm tăng `version` | Code chưa đúng: không tăng | TV1 |
 | Chỉ tải trường nhạy cảm khi HR bấm hiện | Code chưa đúng: form sửa tự tải, mỗi lần mở sinh `VIEW_SENSITIVE` | TV1 |
+| Bố cục trang hồ sơ theo nhóm, màu cyan, mục chưa có tiêu đề đỏ (mục 9.1) | Chưa có: trang hiện là các thẻ `dl` rời, màu xanh dương | TV1, `feat/profile-layout` |
+| Chủ hồ sơ tự xem lương, số tài khoản của mình | Chưa có: API chỉ cho HR gọi `include=sensitive` | TV1 |
+| Các mục ghi **Chưa có** ở mục 9.1 | Chưa có dữ liệu, API | Chọn mục làm tiếp sau MVP; mỗi mục một nhánh |

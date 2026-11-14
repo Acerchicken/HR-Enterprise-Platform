@@ -13,6 +13,8 @@
 | US-1.4 | HR | Xem CCCD, số tài khoản, lương khi cần, mỗi lần xem đều có dấu vết | Làm nghiệp vụ mà vẫn kiểm soát được dữ liệu nhạy cảm | FR-1.3 |
 | US-1.5 | HR | Tạo nhân viên mới và sửa mọi trường | Hồ sơ nằm tập trung một chỗ | FR-1.4, FR-1.5 |
 | US-1.6 | HR | Được báo khi người khác vừa sửa cùng hồ sơ | Không ghi đè thay đổi của nhau | FR-1.6 |
+| US-1.7 | Nhân viên | Xem hồ sơ của mình trên một trang chia nhóm rõ ràng, dùng được trên điện thoại | Tìm nhanh thông tin cá nhân, công việc, tài chính, phúc lợi | FR-1.1 |
+| US-1.8 | Nhân viên | Xem lương, số tài khoản của chính mình khi bấm hiện | Kiểm tra thông tin trả lương mà không phải hỏi HR | FR-1.3 |
 
 ## 2. Tiêu chí chấp nhận
 
@@ -73,6 +75,24 @@
 - **AC-1.7.2** *(chưa đạt)* Giả sử hồ sơ đã `TERMINATED`. Khi tài khoản gắn với hồ sơ đó gọi API bằng token còn hạn. Thì bị từ
   chối (403).
 
+### Trang hồ sơ theo nhóm (S, chưa có)
+
+Bố cục chi tiết ở [spec mục 9.1](spec.md#91-bố-cục-trang-hồ-sơ).
+
+- **AC-1.8.1** *(chưa có)* Khi nhân viên mở trang "Hồ sơ của tôi". Thì thấy đầu trang (ảnh hoặc chữ cái đầu, mã nhân viên,
+  họ tên, chức danh), thẻ quản lý trực tiếp, thẻ sơ đồ tổ chức, và các nhóm Thông tin cá nhân, Công việc, Tài chính, Phúc lợi,
+  Khác theo đúng thứ tự ở spec mục 9.1.
+- **AC-1.8.2** *(chưa có)* Giả sử mục "Bảo hiểm xã hội" chưa làm. Khi xem trang hồ sơ. Thì tiêu đề mục màu đỏ `#DC2626`, kèm
+  nhãn "Chưa có"; bấm vào thì mở trang báo "Chức năng đang phát triển" và không gọi API nào. Mục đã làm có tiêu đề màu thường.
+- **AC-1.8.3** *(chưa có)* Khi mở bất kỳ trang nào. Thì nút chính, link, tiêu đề nhóm dùng màu `--primary: #0E7490` (cyan);
+  không còn màu xanh dương cũ `#2457C5`.
+- **AC-1.8.4** *(chưa có)* Giả sử B chỉ ở mức danh bạ với A. Khi B mở hồ sơ A. Thì B chỉ thấy đầu trang, điện thoại, email;
+  không thấy hàng lương, hệ số, diện đối tượng và các nhóm bên dưới. Quản lý trực tiếp thấy thêm đúng các mục spec 9.1 cho
+  phép; HR thấy mọi nhóm và nút "Sửa hồ sơ".
+- **AC-1.8.5** *(chưa có)* Khi mở trang hồ sơ trên màn hình rộng 375 px. Thì trang một cột, không cuộn ngang.
+- **AC-1.8.6** *(chưa có)* Giả sử nhân viên A. Khi A bấm biểu tượng mắt ở "Lương mục tiêu" của chính mình. Thì thấy lương, có
+  audit `VIEW_SENSITIVE` ghi A xem hồ sơ của A. Khi A gọi lấy trường nhạy cảm của người khác. Thì trả 403.
+
 ## 3. Yêu cầu phi chức năng liên quan
 
 NFR-1.1, NFR-1.2 (thời gian phản hồi); NFR-5.12, NFR-5.13 (phân quyền theo vai trò và dữ liệu); NFR-5.17 (mã hóa trường nhạy
@@ -89,3 +109,5 @@ Lịch làm theo [kế hoạch theo chức năng tuần 11–13](../../progress/
 | Xác nhận quy tắc nghỉ việc khi còn cấp dưới, cách ghi audit theo nhóm trường | AC-1.7.1, AC-1.4.3 | TV2 | `docs/org-integrity-rules` | 11 |
 | Bắt buộc `version`; tăng `version` khi sửa trường nhạy cảm; audit theo nhóm trường; sửa `hireDate`, `workEmail`; nghỉ việc; chỉ tải trường nhạy cảm khi bấm hiện | AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2 | TV1 | `fix/employee-org-integrity` | 11 |
 | Ca kiểm thử cho các tiêu chí trên | Như dòng trên | TV4 | `docs/test-cases-week11` | 11 |
+| Trang hồ sơ theo nhóm, màu cyan, mục chưa có tiêu đề đỏ; chủ hồ sơ tự xem lương, số tài khoản | AC-1.8.1 → AC-1.8.6 | TV1 | `feat/profile-layout` | 11 |
+| Các mục **Chưa có** ở spec 9.1 (liên hệ khẩn cấp, hợp đồng, BHXH…) | Viết AC khi chọn làm | – | – | Sau MVP |

@@ -46,6 +46,8 @@ audit. Vì vậy:
 | AC-1.6.2 | – | – | Chưa đạt (code chưa bắt buộc `version`) |
 | AC-1.6.3 | – | – | Chưa đạt (sửa chỉ lương không tăng `version`) |
 | AC-1.7.1, AC-1.7.2 | – | – | Chưa đạt |
+| AC-1.8.1 → AC-1.8.5 | – (giao diện) | Kiểm tay bằng 4 tài khoản mẫu, trên màn hình 375 px và 1280 px | Chưa có |
+| AC-1.8.6 | – | Cần thêm e2e: chủ hồ sơ tự xem, có audit; xem người khác 403 | Chưa có |
 
 ## 4. Dữ liệu và tài khoản
 
@@ -70,4 +72,5 @@ npm run test:e2e               # cần docker compose (db, keycloak) đã chạy
 - AC-1.3.3: HR mở hồ sơ không kèm `include=sensitive` thì không có `VIEW_SENSITIVE`.
 - AC-1.5.3: tạo trùng mã hoặc email trả 409.
 - AC-1.4.2: biên bản kiểm tay giao diện HR (ngày, môi trường, commit).
+- AC-1.8.1 → AC-1.8.6: viết khi `feat/profile-layout` xong.
 - AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2: viết khi `fix/employee-org-integrity` xong.
