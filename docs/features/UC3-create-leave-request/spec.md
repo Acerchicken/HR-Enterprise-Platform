@@ -69,15 +69,15 @@ sequenceDiagram
 | 4 | | Nếu key đã dùng cho đơn trước của cùng nhân viên: trả lại đơn đó, không tạo mới (FR-3.5, BR-11) |
 | 5 | | Mở giao dịch, khóa theo nhân viên để hai request song song không cùng vượt qua kiểm tra |
 | 6 | | Tính số ngày: đếm ngày làm việc, bỏ thứ Bảy, Chủ nhật, ngày lễ và ngày nghỉ bù; nửa ngày tính 0,5 (BR-03, BR-04) |
-| 7 | | Kiểm không trùng với đơn `SUBMITTED` hoặc `APPROVED` khác của chủ đơn; hai nửa ngày khác buổi không trùng (BR-02, BR-04) |
+| 7 | | Kiểm không trùng với đơn `SUBMITTED`, `PENDING_HR` hoặc `APPROVED` khác của chủ đơn; hai nửa ngày khác buổi không trùng (BR-02, BR-04) |
 | 8 | | Kiểm số ngày ≤ số dư còn lại (BR-01) |
-| 9 | | Ghi đơn `SUBMITTED`, cộng `pending`, ghi lịch sử, audit, event outbox |
+| 9 | | Ghi đơn `SUBMITTED`, cộng `pending`, chụp `requiresHrApproval` theo cấu hình loại phép (BR-16, UC4 A6), ghi lịch sử, audit, event outbox |
 | 10 | Thấy đơn mới trong "Đơn của tôi" | Trả 201 kèm đơn; worker gửi email cho quản lý trực tiếp |
 
 ## 5. Luồng thay thế
 
 - **A1, nhân viên hủy đơn (FR-3.6):**
-  1. Nhân viên mở đơn `SUBMITTED` của mình và bấm Hủy. Web gửi `POST /leave-requests/{id}/cancel` kèm `version`.
+  1. Nhân viên mở đơn `SUBMITTED` hoặc `PENDING_HR` (đã qua quản lý, chờ HR, BR-16) của mình và bấm Hủy. Web gửi `POST /leave-requests/{id}/cancel` kèm `version`.
   2. Hệ thống chuyển đơn sang `CANCELLED` và trả số ngày khỏi `pending` (BR-07).
   3. Hệ thống ghi lịch sử, audit `LEAVE_CANCEL` và event `LeaveCancelled`, rồi email báo quản lý trực tiếp.
   4. Bấm hủy lần hai không đổi gì (BR-11).

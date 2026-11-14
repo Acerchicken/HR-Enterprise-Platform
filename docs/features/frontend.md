@@ -71,7 +71,7 @@ chỉ cần dẫn về một nơi. Gộp **giao diện**, không gộp **nghiệ
 
 | Tab | `type` | Nội dung | Ai thấy | Quy tắc |
 |---|---|---|---|---|
-| Đơn nghỉ | `leave` | Đơn `SUBMITTED` của cấp dưới trực tiếp, đơn được giao duyệt thay; với HR: đơn của CEO | Quản lý, người duyệt thay, HR | UC4 luồng chính, A1, A3, A5 |
+| Đơn nghỉ | `leave` | Quản lý: đơn `SUBMITTED` của cấp dưới trực tiếp, đơn được giao duyệt thay. HR: đơn của CEO và đơn `PENDING_HR` chờ HR duyệt thêm (BR-16), hiện kèm quyết định của quản lý | Quản lý, người duyệt thay, HR | UC4 luồng chính, A1, A3, A5, A6 |
 | Hoàn tất đơn nghỉ | `leave-complete` | Đơn đã duyệt chờ HR hoàn tất | HR | UC4 A2 |
 | Sửa hồ sơ | `profile` | Yêu cầu sửa trường, thêm, sửa, xóa dòng (liên hệ khẩn cấp, thân nhân, chuyên môn…) | HR | UC1 4.2, 4.7 |
 | File hồ sơ | `profile-file` | File nhân viên tải lên đang `PENDING_REVIEW` | HR | UC1 4.3, 4.7 |

@@ -136,6 +136,9 @@ Thứ tự trong tuần: việc tuần 10 còn dở → riêng tư đơn nghỉ 
 | `feat/policy-assistant` | TV1 Duong | UC6 | API và giao diện hỏi đáp; lọc phạm vi trước khi gửi LLM; trích dẫn; timeout 10 s, lùi về danh sách tài liệu | AC-6.3.1 → 6.3.4 | T5 (26/11) | T6 (27/11) | TV2, TV4 |
 | `feat/profile-self-service` | TV1 Duong | UC1 | Bảng `profile_item`, API mục tự khai, email khi đổi tài khoản ngân hàng, nhật ký thay đổi | AC-1.9.x, AC-1.6.4, AC-1.11.x | T3 (24/11) | T4 (25/11) | TV2, TV4 |
 | `feat/profile-files` | TV1 Duong | UC1 | Tải file hồ sơ, ảnh đại diện, hạn mức, xóa mềm | AC-1.10.x | T5 (26/11) | T6 (27/11) | TV3, TV4 |
+| `feat/leave-hr-approval` | TV1 Duong | UC4 | Trạng thái `PENDING_HR`, cấu hình "Cần HR duyệt thêm" của loại phép, API `pending-hr`, `hr-approve`, `hr-reject` (BR-16) | AC-4.8.1 → 4.8.8 | T3 (24/11) | T4 (25/11) | TV2, TV4 |
+| `feat/approvals-inbox` | TV1 Duong | Chung, UC1, UC4 | Trang "Việc cần duyệt" `/approvals` có tab, chuyển tiếp `/leave/approvals`, `/leave/hr` | AC-0.6.1 → 0.6.4 | T6 (27/11) | T7 (28/11) | TV2, TV4 |
+| `docs/test-cases-week12` | TV4 Duy | UC4, chung | Ca kiểm thử HR duyệt thêm và trang "Việc cần duyệt" | AC-4.8.x, AC-0.6.x | T4 (25/11), 21:00 | T5 (26/11) | TV2 |
 | `infra/profile-files` | TV3 Bảo | UC1 | Bucket `hr-profile-files-staging`, lifecycle 30 ngày, quyền App Runner, alarm 429 | AC-1.10.7, AC-1.10.9, AC-1.14.4, AC-1.14.5 | T3 (24/11) | T4 (25/11) | TV1 |
 | `docs/test-report-week12` | TV4 Duy | UC1 → UC7 | Chạy ca kiểm thử trên **staging**, nhất là UC5 (S3, CORS, bucket không public) và đăng nhập Cognito; load test ngắn trên staging | `test.md` | T7 (28/11), 21:00 | CN (29/11) | TV1 |
 | `docs/assistant-eval-report` | TV4 Duy | UC6 | Chạy bộ đánh giá: tỉ lệ đúng, có trích dẫn, độ trễ, chi phí mỗi câu | AC-6.3.5 | CN (29/11), 12:00 | T2 (30/11), 9:00 | TV1, TV2 |

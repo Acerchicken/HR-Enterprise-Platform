@@ -141,7 +141,7 @@ nhận và trạng thái trên `dev`.
 | UC1 Hồ sơ nhân viên | FR-1.1 → FR-1.14 |
 | UC2 Thông tin tổ chức | FR-2.1 → FR-2.5 |
 | UC3 Tạo đơn nghỉ | FR-3.1 → FR-3.7 |
-| UC4 Duyệt đơn | FR-4.1 → FR-4.7 |
+| UC4 Duyệt đơn | FR-4.1 → FR-4.8 |
 | UC5 Kho tài liệu chính sách | FR-5.1 → FR-5.3 |
 | UC6 Tự tra cứu | FR-6.1 → FR-6.3 |
 | UC7 Lịch sử thao tác | FR-7.1 → FR-7.3 |

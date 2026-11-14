@@ -13,6 +13,7 @@
 | US-4.4 | HR | Hoàn tất đơn đã duyệt | Số ngày giữ chỗ thành đã dùng | FR-4.5 |
 | US-4.5 | Nhân viên, quản lý | Nhận email khi đơn đổi trạng thái | Không phải vào hệ thống kiểm tra | FR-4.6 |
 | US-4.6 | Chủ đơn, quản lý, HR | Xem chi tiết và lịch sử đơn | Biết ai đã làm gì | FR-4.7 |
+| US-4.7 | HR | Duyệt thêm đơn của loại phép dài hoặc ảnh hưởng lương, BHXH (thai sản, nghỉ không lương dài) sau khi quản lý duyệt | Kịp làm hồ sơ BHXH, lương, người thay | FR-4.8 |
 
 ## 2. Tiêu chí chấp nhận
 
@@ -73,6 +74,24 @@
 - **AC-4.7.4** *(chưa đạt)* Khi HR xem lý do đơn nghỉ ốm. Thì có audit ghi ai đọc trường `reason` của đơn nào, không ghi nội
   dung. Audit duyệt, từ chối không chứa `comment` (hiện có).
 
+### FR-4.8 HR duyệt thêm theo loại phép (S, chưa có, BR-16)
+
+- **AC-4.8.1** *(chưa có)* Giả sử đơn nghỉ không lương 5 ngày làm việc. Khi quản lý trực tiếp duyệt. Thì đơn `PENDING_HR`, số
+  dư không đổi, nhân viên và HR nhận email chung; đơn hiện ở tab Đơn nghỉ của HR.
+- **AC-4.8.2** *(chưa có)* Giả sử đơn nghỉ không lương 2 ngày, hoặc đơn phép năm. Khi quản lý duyệt. Thì đơn `APPROVED` ngay,
+  không qua HR.
+- **AC-4.8.3** *(chưa có)* Giả sử đơn `PENDING_HR`. Khi HR duyệt kèm `version` đúng. Thì đơn `APPROVED`, audit
+  `LEAVE_HR_APPROVE`; sau ngày kết thúc HR hoàn tất được.
+- **AC-4.8.4** *(chưa có)* Khi HR từ chối đơn `PENDING_HR` có lý do. Thì đơn `REJECTED`, `pending` giảm (BR-09), audit không
+  chứa lý do. Từ chối không có lý do thì trả 400.
+- **AC-4.8.5** *(chưa có)* Giả sử chủ đơn là HR, đơn thai sản đã qua quản lý. Khi chính người đó gọi `hr-approve`. Thì trả 403;
+  HR khác duyệt được.
+- **AC-4.8.6** *(chưa có)* Giả sử đơn `PENDING_HR`. Khi nhân viên hủy. Thì đơn `CANCELLED`, trả `pending`. Khi nhân viên gửi đơn
+  mới trùng ngày. Thì bị từ chối (BR-02).
+- **AC-4.8.7** *(chưa có)* Giả sử đơn đã gửi khi `UNPAID` là `OVER_DAYS` 3. Khi HR đổi cấu hình `UNPAID` thành `NEVER` rồi quản
+  lý duyệt. Thì đơn vẫn sang `PENDING_HR` (cấu hình chụp lúc gửi).
+- **AC-4.8.8** *(chưa có)* Khi CEO gửi đơn thai sản và HR duyệt. Thì đơn `APPROVED`, không có bước HR thứ hai.
+
 ## 3. Yêu cầu phi chức năng liên quan
 
 NFR-1.2 (duyệt, từ chối, hoàn tất p95 < 500 ms); NFR-1.4 (email p95 < 1 phút); NFR-3.4, NFR-3.5 (lỗi email không ảnh hưởng
@@ -89,4 +108,6 @@ Lịch làm theo [kế hoạch theo chức năng tuần 11–13](../../progress/
 | Quy tắc hủy đơn đã duyệt; chỉ hoàn tất sau ngày kết thúc; nhắc đơn chờ lâu | AC-4.5.3 | TV2 | `docs/leave-rules-week11` | 11 |
 | Chỉ hoàn tất sau ngày kết thúc; hủy đơn đã duyệt theo quy tắc TV2 | AC-4.5.3 | TV1 | `fix/leave-balance-rules` | 11 |
 | Ca kiểm thử đổi quản lý khi đơn đang chờ, người duyệt thay, riêng tư | AC-4.2.6, AC-4.3.x, AC-4.6.3, AC-4.7.3 | TV4 | `docs/test-cases-week11` | 11 |
+| HR duyệt thêm theo loại phép | AC-4.8.1 → AC-4.8.8 | TV1 | `feat/leave-hr-approval` | 12 |
+| Ca kiểm thử HR duyệt thêm | AC-4.8.x | TV4 | `docs/test-cases-week12` | 12 |
 | Báo cáo MT-2 (thời gian gửi → quyết định) | – | TV2 | `docs/mt2-report` | 13, khi có dữ liệu staging |
