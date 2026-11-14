@@ -85,8 +85,8 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| Tạo đơn hộ (làm chung nhánh với người duyệt thay) | AC-3.7.1 → AC-3.7.4 | TV1 | `feat/leave-delegation` | 10, chưa xong thì đầu tuần 11 |
-| Email chung, ẩn lý do nghỉ ốm | UC4 AC-4.6.3, AC-4.7.3 | TV1 | `feat/leave-privacy` | 11 |
+| Tạo đơn hộ (làm chung nhánh với người duyệt thay) | AC-3.7.1 → AC-3.7.4 | TV1 | `feat/leave-delegation` | 12 |
+| Email chung, ẩn lý do nghỉ ốm | UC4 AC-4.6.3, AC-4.7.3 | TV1 | `feat/leave-privacy` | 12 |
 | Xác nhận cách tính phép năm (tỉ lệ, thâm niên), nghỉ theo sự kiện, đơn qua hai năm | AC-3.1.3, AC-3.1.4, AC-3.2.4 | TV2 | `docs/leave-rules-week11` | 11 |
-| Cấp số dư theo luật, đơn qua hai năm, 403 khi chưa gắn hồ sơ | AC-3.1.3, AC-3.1.4, AC-3.2.4, AC-3.2.5 | TV1 | `fix/leave-balance-rules` | 11 |
+| Cấp số dư theo luật, đơn qua hai năm, 403 khi chưa gắn hồ sơ | AC-3.1.3, AC-3.1.4, AC-3.2.4, AC-3.2.5 | TV1 | `fix/leave-balance-rules` | 12 |
 | Lưu trữ 5 năm, legal hold (BR-13) | – | – | – | Ngoài MVP, ghi ở SRS mục 8 |

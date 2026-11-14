@@ -2,6 +2,23 @@
 
 Vai trò: chuẩn bị hạ tầng để lên AWS gọn trong tuần 12–13, giữ chi phí trong hạn mức.
 
+## Cập nhật 14/11
+
+Nhóm chuyển sang làm xong từng chức năng một, bắt đầu UC1 ([kế hoạch tổng mục 7](../ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13)). Mỗi chức năng chỉ "xong" khi sẵn sàng
+lên cloud: tài nguyên của nó đã có trong Terraform, `validate` và `plan` không lỗi.
+
+TV1 đã viết `deploy.md` của UC1 → UC7 (PR #76) và [`configuration.md`](../../development/configuration.md) (#74), là phần thuộc
+vai trò hạ tầng. Người viết là TV1. Việc của TV3 là đọc, đối chiếu với `infra/` và góp ý bằng review trên PR (#74 đã merge thì
+comment trên #74 hoặc mở issue).
+
+| Hạn | Việc |
+|---|---|
+| **CN (15/11), 12:00** | Vẫn giữ: mở PR `infra/idp-hardening` (mục 5) |
+| CN (15/11) – T2 (16/11) | Sửa #68, #69, #70 theo góp ý của TV1 trên PR |
+| **T3 (17/11)** | Review `deploy.md` của UC1 trên #76: biến môi trường, migration, tài nguyên staging, rollback |
+| **T4 (18/11), 21:00** | Mở PR `infra/profile-files` (bước 1, UC1; chỉ `validate`, `plan`) |
+| T6 (20/11) | Review `deploy.md` của UC2 → UC7 trên #76 và `configuration.md`: biến nào trong Terraform chưa có |
+
 > **Thay đổi ngày 10/11:** theo quyết định của nhóm trưởng, staging chỉ chạy trên AWS ở **tuần 12 và 13** để tránh phát sinh chi
 > phí khi chưa cần. Tuần 10 **không `terraform apply`**, không tạo tài nguyên tính tiền. Mọi việc chạy local hoặc chỉ dừng ở mức
 > code Terraform đã `validate` và `plan`.

@@ -121,7 +121,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
 | Tìm đồng nghiệp | Đã có | – |
-| Trích văn bản, full-text, API và giao diện tìm tài liệu | Chưa có | TV1, nhánh `feat/document-search` (tuần 10) |
+| Trích văn bản, full-text, API và giao diện tìm tài liệu | Chưa có | TV1, nhánh `feat/document-search` (tuần 12) |
 | Trợ lý chính sách | Chưa có | Tuần 12; có thể cắt nếu thiếu thời gian (mức C) |
 
 ## 13. Thiết kế đề xuất cho phần chưa có

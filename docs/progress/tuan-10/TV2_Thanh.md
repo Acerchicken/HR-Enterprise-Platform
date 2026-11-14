@@ -2,6 +2,23 @@
 
 Vai trò: chốt quy tắc nghiệp vụ trước khi TV1 code và TV4 viết ca kiểm thử; review nghiệp vụ PR của TV1.
 
+## Cập nhật 14/11: review phần TV1 đã viết thay
+
+Nhóm chuyển sang làm xong từng chức năng một, bắt đầu UC1 ([kế hoạch tổng mục 7](../ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13)). Để kịp tiến độ, TV1 đã viết một số
+tài liệu thuộc vai trò nghiệp vụ của TV2: `requirements.md`, `spec.md` của UC1 → UC7 (PR #76), bảng FR, NFR trong SRS (#71, #76)
+và phần cập nhật `access-control-matrix.md` trong #76. Người viết là TV1. Việc của TV2 là **đọc, đối chiếu và góp ý bằng review
+trên PR** (Comment hoặc Request changes, chỉ rõ dòng sai và cách sửa); TV1 sửa theo góp ý.
+
+| Hạn | Việc |
+|---|---|
+| **T2 (16/11), 21:00** | Review `requirements.md`, `spec.md` của UC1, UC2 trên #76: AC nào sai, thiếu, còn *chưa chốt* |
+| **T2 (16/11), 21:00** | Review bảng FR trong SRS và ma trận phân quyền (#76): trạng thái khớp code trên `dev`, quyền khớp `@Roles`. `docs/matrix-week10` chỉ còn phần TV1 chưa làm (threat model, API tài liệu nếu còn thiếu) |
+| **T2 (16/11), 21:00** | Mở PR `docs/org-integrity-rules` (bước 1, UC1) |
+| T6 (20/11) | Review `requirements.md`, `spec.md` của UC3, UC4 trên #76 |
+| T4 (25/11) | Review `requirements.md`, `spec.md` của UC5, UC6, UC7 trên #76 |
+
+Báo cáo tuần ghi "TV2 review ... trên #76", không ghi TV2 là người viết các tài liệu này.
+
 ## Hạn chót
 
 | Hạn | Việc |

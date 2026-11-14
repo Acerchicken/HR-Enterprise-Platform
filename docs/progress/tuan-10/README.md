@@ -13,6 +13,16 @@ Phân vai theo ADR-11: TV1 Duong code, TV2 Thanh nghiệp vụ + bảo mật ngh
 
 > File này là kế hoạch đầu tuần. Thứ 2 (16/11) nhóm điền mục 1–3 để làm báo cáo.
 
+> **Cập nhật 14/11: chuyển sang làm xong từng chức năng một.** Đến 14/11 chưa chức năng nào xong: các nhánh
+> `feat/document-search`, `feat/audit-ui`, `fix/auth-email-verified`, `feat/leave-delegation` chưa mở. Từ CN (15/11) nhóm làm
+> theo [kế hoạch tổng mục 7](../ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13): UC1 trước (TV1 mở PR `feat/profile-layout` CN 15/11), rồi UC3, UC4 → UC7 → UC5 → UC6.
+> Các nhánh chưa mở ở trên chuyển vào bước của chức năng tương ứng (`feat/document-search` tách phần giao diện kho tài liệu
+> thành `feat/document-ui`). Những việc vẫn giữ hạn tuần 10: `infra/idp-hardening` (TV3, CN 15/11, 12:00), biên bản
+> `docs/test-report-week10` (TV4), `docs/matrix-week10` (TV2, chỉ phần chưa làm), báo cáo T2 (16/11).
+>
+> Một số tài liệu thuộc vai trò của TV2, TV3, TV4 do TV1 viết trong PR #71, #74, #76. Người viết là TV1; TV2, TV3, TV4 đọc
+> và góp ý bằng review trên PR, hạn đầu tiên T2 (16/11), 21:00 ([mục 7.9](../ke-hoach-tong.md#79-phần-tv1-đã-làm-thay-thành-viên-đọc-review-và-góp-ý)).
+
 ## Quy trình
 
 Áp dụng [`CONVENTIONS.md` mục 6](../../CONVENTIONS.md#quy-trình-cho-một-việc): mỗi việc một nhánh tách từ `dev`, mỗi nhánh một PR
@@ -82,7 +92,7 @@ _Điền cuối tuần._
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 11: 16/11 – 23/11)
 
 _Điền cuối tuần._ Kế hoạch tuần 11–13 đã chia theo từng tính năng (cập nhật 13/11):
-[kế hoạch tổng mục 7](../tuan-04-ke-hoach-tong.md#7-kế-hoạch-theo-chức-năng-tuần-11--13). Bảng bảo mật dưới đây đã nằm trong mục 7.2.
+[kế hoạch tổng mục 7](../ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13). Bảng bảo mật dưới đây đã nằm trong mục 7.3 (việc chung).
 
 **Việc bảo mật đã xếp sẵn cho tuần 11 (thêm 13/11).** Các việc này lấy từ những dòng "Chưa có" trong
 [SRS mục 6.6](../../requirements/SRS.md#66-nfr-5--bảo-mật). Khi tạo thư mục `tuan-11`, TV1 chép bảng này vào kế hoạch tuần.

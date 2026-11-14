@@ -64,11 +64,11 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| Trích văn bản, full-text, API và giao diện tìm tài liệu | AC-6.2.1 → AC-6.2.6 | TV1 | `feat/document-search` | 10, chưa xong thì đầu tuần 11 |
+| Trích văn bản, full-text, API và giao diện tìm tài liệu | AC-6.2.1 → AC-6.2.6 | TV1 | `feat/document-search` | 12 |
 | Giới hạn 20 request tìm kiếm mỗi phút | AC-6.2.7 | TV1 | `feat/security-headers-ratelimit` | 11 |
-| Ca kiểm thử tìm tài liệu | AC-6.2.x | TV4 | `docs/test-cases-week11` | 11 |
+| Ca kiểm thử tìm tài liệu | AC-6.2.x | TV4 | `docs/test-cases-uc5-uc6-uc7` | 12 |
 | ADR-14: cách truy hồi, nhà cung cấp LLM, ngưỡng đánh giá | AC-6.3.5 | TV1 | `docs/adr-14-policy-assistant` | 12 |
 | Bộ câu hỏi đánh giá có đáp án | AC-6.3.1 → AC-6.3.3, AC-6.3.5 | TV2 | `docs/assistant-eval-set` | 12 |
-| Trợ lý: API, giao diện, timeout, trích dẫn | AC-6.3.1 → AC-6.3.4 | TV1 | `feat/policy-assistant` | 12 |
+| Trợ lý: API, giao diện, timeout, trích dẫn | AC-6.3.1 → AC-6.3.4 | TV1 | `feat/policy-assistant` | 12–13 (mức C, cắt nếu trễ) |
 | Khóa API LLM trong Secrets Manager, cảnh báo chi phí | NFR-7.1 | TV3 | `infra/llm-secrets-cost` | 12 |
-| Chạy bộ đánh giá, đo độ trễ và chi phí mỗi câu | AC-6.3.x | TV4 | `docs/assistant-eval-report` | 12 |
+| Chạy bộ đánh giá, đo độ trễ và chi phí mỗi câu | AC-6.3.x | TV4 | `docs/assistant-eval-report` | 13 |

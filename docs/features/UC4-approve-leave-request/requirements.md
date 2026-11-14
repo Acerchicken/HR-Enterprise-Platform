@@ -103,11 +103,11 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| Người duyệt thay | AC-4.3.1 → AC-4.3.4 | TV1 | `feat/leave-delegation` | 10, chưa xong thì đầu tuần 11 |
-| Email chung, email đơn CEO cho HR, ẩn lý do nghỉ ốm, audit không chứa ghi chú | AC-4.6.3, AC-4.6.5, AC-4.7.3, AC-4.7.4 | TV1 | `feat/leave-privacy` | 11 |
+| Người duyệt thay | AC-4.3.1 → AC-4.3.4 | TV1 | `feat/leave-delegation` | 12 |
+| Email chung, email đơn CEO cho HR, ẩn lý do nghỉ ốm, audit không chứa ghi chú | AC-4.6.3, AC-4.6.5, AC-4.7.3, AC-4.7.4 | TV1 | `feat/leave-privacy` | 12 |
 | Quy tắc hủy đơn đã duyệt; chỉ hoàn tất sau ngày kết thúc; nhắc đơn chờ lâu | AC-4.5.3 | TV2 | `docs/leave-rules-week11` | 11 |
-| Chỉ hoàn tất sau ngày kết thúc; hủy đơn đã duyệt theo quy tắc TV2 | AC-4.5.3 | TV1 | `fix/leave-balance-rules` | 11 |
-| Ca kiểm thử đổi quản lý khi đơn đang chờ, người duyệt thay, riêng tư | AC-4.2.6, AC-4.3.x, AC-4.6.3, AC-4.7.3 | TV4 | `docs/test-cases-week11` | 11 |
+| Chỉ hoàn tất sau ngày kết thúc; hủy đơn đã duyệt theo quy tắc TV2 | AC-4.5.3 | TV1 | `fix/leave-balance-rules` | 12 |
+| Ca kiểm thử đổi quản lý khi đơn đang chờ, người duyệt thay, riêng tư | AC-4.2.6, AC-4.3.x, AC-4.6.3, AC-4.7.3 | TV4 | `docs/test-cases-uc3-uc4` | 11 |
 | HR duyệt thêm theo loại phép | AC-4.8.1 → AC-4.8.8 | TV1 | `feat/leave-hr-approval` | 12 |
-| Ca kiểm thử HR duyệt thêm | AC-4.8.x | TV4 | `docs/test-cases-week12` | 12 |
+| Ca kiểm thử HR duyệt thêm | AC-4.8.x | TV4 | `docs/test-cases-uc3-uc4` | 11 |
 | Báo cáo MT-2 (thời gian gửi → quyết định) | – | TV2 | `docs/mt2-report` | 13, khi có dữ liệu staging |

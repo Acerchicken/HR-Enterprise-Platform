@@ -145,7 +145,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
 | API đăng, phiên bản, phạm vi, tải qua API, ẩn, khôi phục | Đã có (PR #64) | TV2 cập nhật trạng thái FR-5.x trong SRS |
-| Giao diện kho tài liệu | Chưa có | TV1, nhánh `feat/document-search` (tuần 10) |
+| Giao diện kho tài liệu | Chưa có | TV1, nhánh `feat/document-ui` (tuần 12) |
 | Dọn phiên bản `PENDING` bỏ dở | Chưa có | Đánh đổi đã ghi trong ADR-13 |
 | Staging: biến `STORAGE_*`, bucket tài liệu | Chưa có | TV3, `infra/documents-email` |
 | Ngày hiệu lực, ngày hết hiệu lực của chính sách | Chưa có trong yêu cầu | Thực tế chính sách có ngày áp dụng; TV2 quyết định có thêm vào metadata không |
@@ -153,7 +153,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 ## 13. Thiết kế đề xuất cho phần chưa có: giao diện
 
-> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/document-search`. API đã có, không cần đổi.
+> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/document-ui`. API đã có, không cần đổi.
 
 | Màn hình | Ai | Nội dung | API |
 |---|---|---|---|
