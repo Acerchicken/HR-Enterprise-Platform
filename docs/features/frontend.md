@@ -23,7 +23,7 @@ thì người làm một tính năng phải đọc cả file dài. Hai tầng gi
 | Vị trí | Thành phần | Hành vi | Trạng thái |
 |---|---|---|---|
 | Trái | Logo HRHelper | Bấm về trang chủ `/` | Có chữ, chưa có logo |
-| Giữa | Ô tìm kiếm chung | Gõ từ 2 ký tự thì hiện gợi ý chia nhóm "Đồng nghiệp" (UC2, UC6 FR-6.1) và "Tài liệu" (UC6 FR-6.2); chờ 300 ms sau phím cuối mới gọi API. Phím tắt `/` hoặc `Ctrl+K` để vào ô. Chọn một đồng nghiệp thì mở popup hồ sơ (mục 4). Enter thì sang trang kết quả `/search?q=` | **Chưa có** |
+| Giữa | Ô tìm kiếm chung | Gõ từ 2 ký tự thì hiện gợi ý chia nhóm "Đồng nghiệp" (UC2, UC6 FR-6.1) và "Tài liệu" (UC6 FR-6.2); chờ 300 ms sau phím cuối mới gọi API. Phím tắt `/` hoặc `Ctrl+K` để vào ô. Chọn một đồng nghiệp thì mở thẻ xem nhanh (mục 4.1). Enter thì sang trang kết quả `/search?q=` | **Chưa có** |
 | Phải | Chuông thông báo | Số việc đang chờ mình: đơn chờ duyệt (quản lý), yêu cầu cập nhật hồ sơ chờ duyệt (HR), yêu cầu của mình bị từ chối. Bấm mở danh sách ngắn, mỗi dòng dẫn tới trang xử lý | **Chưa có** |
 | Phải | Ảnh đại diện | Bấm mở menu: tên, vai trò; "Hồ sơ của tôi" (mở popup hồ sơ của mình); "Đăng xuất". Chưa có ảnh thì hiện chữ cái đầu | **Chưa có** (hiện là tên, nhãn vai trò, nút Đăng xuất) |
 
@@ -75,8 +75,18 @@ Nút Back của trình duyệt quay về trang trước.
 
 ## 4. Popup hồ sơ
 
-Hồ sơ mở trong popup khi: bấm ô "Hồ sơ của tôi", bấm "Hồ sơ của tôi" trong menu ảnh đại diện, chọn một đồng nghiệp trong ô tìm
-kiếm, bấm tên một người ở danh bạ, sơ đồ tổ chức, đơn nghỉ. Nội dung popup theo [UC1 spec mục 9.1](UC1-employee-profile/spec.md#91-bố-cục-trang-hồ-sơ).
+Có hai mức, để tra cứu nhanh không phải tải cả hồ sơ:
+
+### 4.1 Thẻ xem nhanh
+
+Mở khi chọn một đồng nghiệp trong ô tìm kiếm, hoặc bấm tên một người ở danh bạ, sơ đồ tổ chức, đơn nghỉ. Thẻ nhỏ (rộng 360 px)
+nổi giữa màn hình, gồm ảnh, họ tên, mã, chức danh, phòng ban, quản lý trực tiếp, số điện thoại, email (nút sao chép, nút gọi,
+nút gửi mail) và nút **"Xem hồ sơ đầy đủ"**. Chỉ gọi `GET /employees/{id}/summary`, chỉ chứa dữ liệu mức danh bạ. Đóng bằng X,
+Esc, bấm ra ngoài. **Chưa có**
+
+### 4.2 Hồ sơ đầy đủ
+
+Mở khi bấm "Xem hồ sơ đầy đủ" trên thẻ xem nhanh, bấm ô "Hồ sơ của tôi", hoặc "Hồ sơ của tôi" trong menu ảnh đại diện. Nội dung popup theo [UC1 spec mục 9.1](UC1-employee-profile/spec.md#91-bố-cục-trang-hồ-sơ).
 
 | Màn hình | Dạng popup |
 |---|---|
@@ -168,6 +178,8 @@ Lucide), không trộn nhiều bộ.
   tác"; của HR thì có. Ô chức năng chưa làm có tên màu `--todo` kèm nhãn "Chưa có".
 - **AC-0.2.2** *(chưa có)* Quản lý có 3 đơn chờ duyệt. Thì ô "Duyệt đơn nghỉ" và chuông đều hiện số 3; dải "Việc cần làm" có
   thẻ "3 đơn chờ bạn duyệt".
+- **AC-0.3.0** *(chưa có)* Chọn một đồng nghiệp trong ô tìm kiếm. Thì thẻ xem nhanh hiện, chỉ có một request `summary`, không có
+  ngày sinh, địa chỉ; bấm "Xem hồ sơ đầy đủ" thì mở hồ sơ đầy đủ.
 - **AC-0.3.1** *(chưa có)* Mở popup hồ sơ của một đồng nghiệp, copy URL, mở ở tab mới. Thì popup hồ sơ người đó mở sẵn. Bấm Back
   thì popup đóng, không rời ứng dụng.
 - **AC-0.3.2** *(chưa có)* Trong popup, bấm một mục con. Thì nội dung trượt sang trang con trong cùng popup, không có popup thứ
