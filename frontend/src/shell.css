@@ -104,7 +104,9 @@ button.row:hover { background: var(--primary-soft); }
 .row + .row::before { content: ""; position: absolute; top: 0; left: 44px; right: 0; border-top: 1px solid var(--line); }
 .row .ri { color: var(--primary); flex: none; }
 .row .t { min-width: 0; }
-.row .v { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; min-width: 0; }
+.row .v { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; min-width: 0; flex: none; max-width: 60%; }
+.chua, .pend { white-space: nowrap; }
+.row .t { padding: 6px 0; }
 .row .ch { color: #94a3b8; flex: none; }
 .row.no .t, .row.no .ri { color: var(--todo); }
 .pend { font-size: 11px; font-weight: 600; color: var(--warn); background: #fffaeb; border: 1px solid #fec84b; border-radius: 6px; padding: 0 6px; }
