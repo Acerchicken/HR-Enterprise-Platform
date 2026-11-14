@@ -2,6 +2,18 @@
 
 Vai trò: code chính, review PR, duyệt `terraform plan`, merge PR, báo cáo thứ 2.
 
+## Cập nhật 14/11
+
+Chưa chức năng nào xong, nên từ CN (15/11) làm xong từng chức năng một theo [kế hoạch tổng mục 7](../ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13).
+Mục 4, 5, 6 bên dưới không làm trong tuần 10 nữa, đã chuyển vào bước của UC tương ứng.
+
+| Hạn | Việc |
+|---|---|
+| **CN (15/11)** | Mở PR `feat/profile-layout` (UC1, AC-1.8.x, AC-1.3.5), bước 1 của kế hoạch |
+| CN (15/11) – T2 (16/11) | Review và merge `infra/idp-hardening`; review #68, #69, #70 của TV3 (góp ý trên PR) |
+| T2 (16/11) | Báo cáo tuần 10: ghi đúng người viết. Tài liệu TV1 viết thay (#71, #74, #76) ghi là của TV1; thành viên được ghi phần review của họ ([mục 7.9](../ke-hoach-tong.md#79-phần-tv1-đã-làm-thay-thành-viên-đọc-review-và-góp-ý)) |
+| Trước khi merge #76 | Xử lý góp ý "cần sửa" của TV2, TV3, TV4 trên #76 |
+
 ## Hạn chót
 
 | Hạn | Việc |

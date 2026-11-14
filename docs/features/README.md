@@ -37,7 +37,7 @@ liệu vẫn thuộc UC5.
 | UC6 – Tra cứu chung và trợ lý | [requirements](UC6-self-service-search/requirements.md) | [spec](UC6-self-service-search/spec.md) | [deploy](UC6-self-service-search/deploy.md) | [test](UC6-self-service-search/test.md) | FR-6.1 → 6.3 | Tìm đồng nghiệp đã có; tìm tài liệu, trợ lý chưa có |
 | UC7 – Lịch sử thao tác | [requirements](UC7-audit-log/requirements.md) | [spec](UC7-audit-log/spec.md) | [deploy](UC7-audit-log/deploy.md) | [test](UC7-audit-log/test.md) | FR-7.1 → 7.3 | Ghi audit, API có; màn hình tra cứu chưa có |
 
-Lịch làm phần còn lại: [kế hoạch theo chức năng tuần 11–13](../progress/tuan-04-ke-hoach-tong.md#7-kế-hoạch-theo-chức-năng-tuần-11--13).
+Lịch làm phần còn lại: [kế hoạch hoàn thành từng chức năng](../progress/ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13).
 
 Phần giao diện dùng chung (nav bar, trang chủ, popup hồ sơ, màu, cách báo lỗi, tải dữ liệu theo nhu cầu) nằm ở
 [`frontend.md`](frontend.md); mục 9 của từng `spec.md` chỉ mô tả màn hình riêng của tính năng và dẫn về file đó.

@@ -227,17 +227,17 @@ dung); NFR-6.1 (audit đủ); NFR-11.1, NFR-11.2 (dữ liệu cá nhân, chỉ t
 
 ## 4. Việc còn lại
 
-Lịch làm theo [kế hoạch theo chức năng tuần 11–13](../../progress/tuan-04-ke-hoach-tong.md#7-kế-hoạch-theo-chức-năng-tuần-11--13).
+Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13).
 Dự án đóng băng ngày 2/12, nên FR-1.12 và FR-1.13 để sau MVP; mục chưa làm vẫn hiện trên trang với tiêu đề đỏ (AC-1.8.2).
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
 | Xác nhận quy tắc nghỉ việc, audit theo nhóm trường, danh sách mục nhân viên được gửi yêu cầu, thời hạn HR xử lý, giới hạn | AC-1.7.1, AC-1.4.3, FR-1.9, FR-1.14 | TV2 | `docs/org-integrity-rules` | 11 |
 | Bắt buộc `version`; audit theo nhóm trường; sửa `hireDate`, `workEmail`; nghỉ việc; chỉ tải trường nhạy cảm khi bấm mắt | AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2 | TV1 | `fix/employee-org-integrity` | 11 |
-| Trang hồ sơ theo nhóm, màu cyan, mục chưa có tiêu đề đỏ, tải theo nhu cầu (`summary` + API từng mục); chủ hồ sơ tự xem lương, tài khoản | AC-1.8.x, AC-1.3.5 | TV1 | `feat/profile-layout` | 11 |
+| Trang hồ sơ theo nhóm, màu cyan, mục chưa có tiêu đề đỏ, tải theo nhu cầu (`summary` + API từng mục); chủ hồ sơ tự xem lương, tài khoản | AC-1.8.x, AC-1.3.5 | TV1 | `feat/profile-layout` | 10–11 (mở PR CN 15/11) |
 | Giới hạn tần suất cho hồ sơ (dùng chung cơ chế NFR-5.21) | AC-1.14.x | TV1 | `feat/security-headers-ratelimit` | 11 |
-| Yêu cầu cập nhật hồ sơ và màn hình duyệt của HR (cả điện thoại, địa chỉ), nhật ký thay đổi | AC-1.2.1, AC-1.9.x, AC-1.6.4, AC-1.11.x | TV1 | `feat/profile-self-service` | 12 |
-| Tệp đính kèm hồ sơ | AC-1.10.x | TV1 | `feat/profile-files` | 12 |
-| Bucket hồ sơ, `PROFILE_STORAGE_BUCKET`, lifecycle xóa file sau 30 ngày, cảnh báo 429 | AC-1.10.7, AC-1.10.9, AC-1.14.4, AC-1.14.5 | TV3 | `infra/profile-files` | 12 |
-| Ca kiểm thử UC1, gồm ca bảo mật file và rate limit | Mọi AC-1.x | TV4 | `docs/test-cases-week11`, `docs/security-test-cases-week11` | 11–12 |
+| Yêu cầu cập nhật hồ sơ và màn hình duyệt của HR (cả điện thoại, địa chỉ), nhật ký thay đổi | AC-1.2.1, AC-1.9.x, AC-1.6.4, AC-1.11.x | TV1 | `feat/profile-self-service` | 11 |
+| Tệp đính kèm hồ sơ | AC-1.10.x | TV1 | `feat/profile-files` | 11 |
+| Bucket hồ sơ, `PROFILE_STORAGE_BUCKET`, lifecycle xóa file sau 30 ngày, cảnh báo 429 | AC-1.10.7, AC-1.10.9, AC-1.14.4, AC-1.14.5 | TV3 | `infra/profile-files` | 11 (code), 12 (apply) |
+| Ca kiểm thử UC1, gồm ca bảo mật file và rate limit | Mọi AC-1.x | TV4 | `docs/test-cases-uc1`, `docs/security-test-cases-week11` | 11 |
 | Mục do HR quản lý, thông tin tự tính | FR-1.12, FR-1.13 | – | – | Sau MVP |

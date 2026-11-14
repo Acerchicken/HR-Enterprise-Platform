@@ -2,6 +2,21 @@
 
 Vai trò: viết ca kiểm thử từ quy tắc nghiệp vụ, chạy thật trên hệ thống và ghi đúng kết quả quan sát được.
 
+## Cập nhật 14/11
+
+Nhóm chuyển sang làm xong từng chức năng một, bắt đầu UC1 ([kế hoạch tổng mục 7](../ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13)). TV4 viết ca kiểm thử trước một
+bước và chạy kiểm thử chức năng vừa code xong.
+
+TV1 đã viết `test.md` của UC1 → UC7 (PR #76), là phần thuộc vai trò kiểm thử. Người viết là TV1. Việc của TV4 là đọc, đối chiếu
+bảng phủ AC với test đang có và góp ý bằng review trên PR; ca còn thiếu thì TV4 tự viết ở nhánh của mình.
+
+| Hạn | Việc |
+|---|---|
+| **T2 (16/11), 21:00** | Review `test.md` của UC1 trên #76: bảng phủ AC đúng chưa, ca nào thiếu |
+| CN (15/11), 12:00 | Vẫn giữ: mở PR `docs/test-report-week10` (chức năng chưa merge đưa vào "Phạm vi chưa kiểm") |
+| **T3 (17/11), 21:00** | Mở PR `docs/test-cases-uc1` (bước 1) |
+| Trước hạn mở PR ca kiểm thử của mỗi bước | Review `test.md` của UC tương ứng trên #76 |
+
 ## Nguyên tắc ghi kết quả kiểm thử (bắt buộc)
 
 Tuần 9, kết quả của #47 và #54 phải chạy lại vì biên bản không tái hiện được. Tuần này:

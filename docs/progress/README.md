@@ -1,23 +1,25 @@
 # Kế hoạch và tiến độ – HRHelper (HR Enterprise Platform)
 
-Thư mục này lưu kế hoạch 10 tuần và báo cáo tiến độ hàng tuần của nhóm. Mỗi báo cáo thứ 2 đăng lên thread
+Thư mục này lưu kế hoạch tổng ([`ke-hoach-tong.md`](ke-hoach-tong.md)) và báo cáo tiến độ hàng tuần của nhóm. Mỗi báo cáo thứ 2 đăng lên thread
 `[Tên nhóm]_Enterprise HR Platform` trên Discussions được lấy từ file `README.md` của tuần tương ứng.
 
 ## Mục lục
 
 | Tuần | Thời gian | Nội dung | File |
 |---|---|---|---|
-| 4 | 28/9 – 5/10 | Khởi động, phạm vi MVP, phân vai, kế hoạch tổng 10 tuần | [tuan-04-ke-hoach-tong.md](tuan-04-ke-hoach-tong.md) |
+| 4 | 28/9 – 5/10 | Khởi động, phạm vi MVP, phân vai, kế hoạch tổng 10 tuần (báo cáo tuần 4 nằm trong kế hoạch tổng) | [ke-hoach-tong.md](ke-hoach-tong.md) |
 | 5 | 5/10 – 12/10 | P1 – Business, Requirements & Cloud Architecture | [tuan-05/](tuan-05/README.md) |
 | 6 | 12/10 – 19/10 | P2 – Application, Data & Integration Architecture | [tuan-06/](tuan-06/README.md) |
 | 7 | 19/10 – 26/10 | Implementation 1 – Nền tảng (code) | [tuan-07/](tuan-07/README.md) |
 | 8 | 26/10 – 2/11 | Implementation 2 – Workflow nghỉ phép | [tuan-08/](tuan-08/README.md) |
 | 9 | 2/11 – 9/11 | P3 – Security & DevOps | [tuan-09/](tuan-09/README.md) |
 | 10 | 9/11 – 16/11 | Hoàn thiện chức năng (kế hoạch, điền kết quả cuối tuần) | [tuan-10/](tuan-10/README.md) |
+| 11 | 16/11 – 23/11 | Hoàn thành UC1, P4 – Production Engineering (kế hoạch) | [tuan-11/](tuan-11/README.md) |
 
 ## Cách tổ chức
 
-- `tuan-04-ke-hoach-tong.md`: kế hoạch tổng của cả dự án, phân vai, phạm vi MVP.
+- `ke-hoach-tong.md`: kế hoạch tổng của cả dự án (phân vai, phạm vi MVP, lịch 10 tuần) và từ 14/11 là lịch hoàn thành từng
+  chức năng UC1 → UC7 ở mục 7. Mục 1 và 6 là báo cáo tuần 4, giữ làm lịch sử. Tên cũ `tuan-04-ke-hoach-tong.md` (đổi 14/11).
 - Mỗi tuần từ tuần 5 là một thư mục:
   - `README.md`: bảng tóm tắt việc đã hoàn thành, tóm tắt kế hoạch tuần sau, các quyết định quan trọng của tuần.
   - `TV1_Duong.md` … `TV4_Duy.md`: chi tiết phần việc và output của từng thành viên. Từ tuần 9 mỗi file có thêm mục

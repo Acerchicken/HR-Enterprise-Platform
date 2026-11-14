@@ -67,5 +67,5 @@ Không đặt `STORAGE_BUCKET` thì e2e vẫn xanh nhưng nhóm "kho tài liệu
 
 - AC-5.1.7 (503 khi chưa cấu hình kho).
 - URL tải lên quá 10 phút bị storage từ chối.
-- Giao diện (AC-5.1.8, AC-5.2.7) khi `feat/document-search` xong.
+- Giao diện (AC-5.1.8, AC-5.2.7) khi `feat/document-ui` xong.
 - Chạy lại toàn bộ trên staging tuần 12.

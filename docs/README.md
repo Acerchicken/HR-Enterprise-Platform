@@ -23,7 +23,7 @@ flowchart LR
 | 7. Cloud | [Ánh xạ dịch vụ và chi phí AWS](cloud/mapping.md) | Dịch vụ cloud cho từng khối, chi phí | – | – |
 | 8. Phát triển | [Biến môi trường](development/configuration.md), [mã lỗi API](development/error-codes.md), [CONVENTIONS](CONVENTIONS.md) | Cấu hình từng môi trường; lỗi API trả gì | – | – |
 
-Quy trình làm việc: [`CONVENTIONS.md`](CONVENTIONS.md). Kế hoạch và báo cáo tuần: [`progress/`](progress/README.md).
+Quy trình làm việc: [`CONVENTIONS.md`](CONVENTIONS.md). Kế hoạch tổng: [`progress/ke-hoach-tong.md`](progress/ke-hoach-tong.md) (mục 7: lịch hoàn thành từng chức năng). Báo cáo tuần: [`progress/`](progress/README.md).
 
 **Khi đổi yêu cầu:** sửa BRD nếu đổi mục tiêu, phạm vi, business rule; sửa SRS nếu đổi FR, NFR, tiêu chí chấp nhận; sửa
 kiến trúc nếu đổi thiết kế. Tăng phiên bản và ghi một dòng vào "Lịch sử thay đổi" của tài liệu bị sửa, trong cùng PR.

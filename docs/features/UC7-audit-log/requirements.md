@@ -49,12 +49,12 @@ NFR-5.10 (audit đăng nhập).
 
 ## 4. Việc còn lại
 
-Lịch làm theo [kế hoạch theo chức năng tuần 11–13](../../progress/tuan-04-ke-hoach-tong.md#7-kế-hoạch-theo-chức-năng-tuần-11--13).
+Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13).
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| Màn hình tra cứu; `to` tính cả ngày kết thúc | AC-7.3.4, AC-7.3.5 | TV1 | `feat/audit-ui` | 10, chưa xong thì đầu tuần 11 |
+| Màn hình tra cứu; `to` tính cả ngày kết thúc | AC-7.3.4, AC-7.3.5 | TV1 | `feat/audit-ui` | 12 |
 | Chốt thời gian lưu audit: BR-13 (5 năm) hay NFR-6.3 (2 năm) | – | TV2 | `docs/org-integrity-rules` | 11 |
-| Ca kiểm thử lọc theo `actor`, thời gian; audit không chứa giá trị nhạy cảm; thao tác lỗi không sinh audit | AC-7.1.2, AC-7.1.3, AC-7.3.1 | TV4 | `docs/test-cases-week11` | 11 |
+| Ca kiểm thử lọc theo `actor`, thời gian; audit không chứa giá trị nhạy cảm; thao tác lỗi không sinh audit | AC-7.1.2, AC-7.1.3, AC-7.3.1 | TV4 | `docs/test-cases-uc5-uc6-uc7` | 12 |
 | Đo NFR-2.4 với 3,75 triệu bản ghi giả | – | TV4 | trong load test tuần 11 | 11 |
 | Audit đăng nhập, cấp và thu hồi vai trò (cắt đầu tiên nếu thiếu thời gian) | AC-7.4.1 | TV3 | `infra/idp-auth-events` | 13 |

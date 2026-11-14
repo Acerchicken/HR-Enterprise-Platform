@@ -8,7 +8,7 @@
 | Thành phần | Phần của UC5 |
 |---|---|
 | API | `backend/src/modules/document` (metadata, phạm vi, phiên bản, presigned URL tải lên, stream tải xuống; `object-storage.ts`) |
-| Web | Chưa có (nhánh `feat/document-search`) |
+| Web | Chưa có (nhánh `feat/document-ui`) |
 | Database | Schema `document` (`document`, `document_scope`, `document_version`); migration `1731300000000-Documents` |
 | Dịch vụ ngoài | Object storage: MinIO (local), S3 (staging) |
 
