@@ -65,6 +65,7 @@ docker compose logs -f seed      # chờ dòng "Seed xong: ... 2000 nhân viên"
 | Keycloak admin | http://localhost:8080 (admin / admin) |
 | RabbitMQ Management | http://localhost:15672 (hr / hr) |
 | Mailpit (Web UI xem email) | http://localhost:8025 |
+| MinIO Console (kho tài liệu) | http://localhost:9001 (minioadmin / minioadmin) |
 
 Tài khoản demo (mật khẩu chung `Passw0rd!`):
 
