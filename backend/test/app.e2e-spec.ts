@@ -91,12 +91,75 @@ describe('HRHelper API (e2e)', () => {
     expect(logs.body.items[0]).toMatchObject({ action: 'VIEW_SENSITIVE' });
   });
 
+  describe('UC1 trang hồ sơ theo mục (AC-1.8.x, AC-1.3.5)', () => {
+    const personalKeys = ['dateOfBirth', 'address', 'hireDate', 'status', 'version'];
+
+    it('/me chỉ có tài khoản, vai trò, mã và tên hồ sơ (AC-1.8.7)', async () => {
+      const me = (await http.get('/api/v1/me').set(EMPLOYEE).expect(200)).body;
+      expect(Object.keys(me.employee).sort()).toEqual(['employeeCode', 'fullName', 'id']);
+    });
+
+    it('summary mức danh bạ: không có trường cá nhân, không có mục nào (AC-1.8.4, AC-1.8.7)', async () => {
+      const s = (await http.get(`/api/v1/employees/${strangerId}/summary`).set(EMPLOYEE).expect(200)).body;
+      expect(s).toMatchObject({ relation: 'OTHER', canEdit: false, sections: [] });
+      expect(s.workEmail).toBeDefined();
+      expect(s).not.toHaveProperty('contractType');
+      for (const k of personalKeys) expect(s).not.toHaveProperty(k);
+      expect(JSON.stringify(s).length).toBeLessThan(4096);
+    });
+
+    it('summary: quản lý thấy mục mức QL, chủ hồ sơ và HR thấy mọi mục; mục chưa làm có available=false', async () => {
+      const asManager = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(MANAGER).expect(200)).body;
+      expect(asManager.relation).toBe('MANAGER');
+      expect(asManager.contractType).toBeNull();
+      expect(asManager.sections.map((x: any) => x.code)).not.toContain('salary');
+      const asOwner = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(EMPLOYEE).expect(200)).body;
+      expect(asOwner.relation).toBe('OWNER');
+      expect(asOwner.sections.find((x: any) => x.code === 'salary')).toMatchObject({ available: true, group: 'finance' });
+      expect(asOwner.sections.find((x: any) => x.code === 'social-insurance')).toMatchObject({ available: false });
+      for (const k of personalKeys) expect(asOwner).not.toHaveProperty(k);
+      const asHr = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(HR).expect(200)).body;
+      expect(asHr).toMatchObject({ relation: 'HR', canEdit: true });
+      expect(asHr.sections).toHaveLength(asOwner.sections.length);
+    });
+
+    it('mục không được xem, chưa làm hoặc không tồn tại đều trả 404 (AC-1.8.6)', async () => {
+      await http.get(`/api/v1/employees/${strangerId}/profile/personal`).set(EMPLOYEE).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/profile/salary`).set(MANAGER).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/profile/social-insurance`).set(EMPLOYEE).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/profile/nope`).set(HR).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(ADMIN).expect(404);
+    });
+
+    it('mục cá nhân: quản lý thấy ngày sinh, địa chỉ; chỉ HR có CCCD đã che', async () => {
+      const asManager = (await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(MANAGER).expect(200)).body;
+      expect(asManager).toMatchObject({ section: 'personal' });
+      expect(asManager).toHaveProperty('dateOfBirth');
+      expect(asManager).not.toHaveProperty('nationalId');
+      const asHr = (await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(HR).expect(200)).body;
+      expect(asHr.nationalId).toEqual({ hasValue: true, value: null });
+      await http.get(`/api/v1/employees/${employeeId}/profile/personal?reveal=true`).set(EMPLOYEE).expect(403);
+    });
+
+    it('chủ hồ sơ bấm mắt xem lương của mình: có giá trị và audit VIEW_SENSITIVE (AC-1.3.5)', async () => {
+      const masked = (await http.get(`/api/v1/employees/${employeeId}/profile/salary`).set(EMPLOYEE).expect(200)).body;
+      expect(masked.salary.value).toBeNull();
+      const shown = (await http.get(`/api/v1/employees/${employeeId}/profile/salary?reveal=true`).set(EMPLOYEE).expect(200)).body;
+      expect(shown.salary.value).toMatch(/^[0-9]+$/);
+      const logs = await http.get(`/api/v1/audit-logs?entity=employee&entityId=${employeeId}`).set(HR).expect(200);
+      expect(logs.body.items[0]).toMatchObject({ action: 'VIEW_SENSITIVE', actorId: employeeId });
+      expect(JSON.stringify(logs.body.items[0])).not.toContain(shown.salary.value);
+      const bank = (await http.get(`/api/v1/employees/${employeeId}/profile/bank-account?reveal=true`).set(EMPLOYEE).expect(200)).body;
+      expect(bank.bankAccount.value).toMatch(/^[0-9]{6,20}$/);
+    });
+  });
+
   it('nhân viên không xem được audit log', async () => {
     await http.get('/api/v1/audit-logs').set(EMPLOYEE).expect(403);
   });
 
   it('nhân viên tự sửa số điện thoại; không sửa được lương hay hồ sơ người khác', async () => {
-    const me = (await http.get('/api/v1/me').set(EMPLOYEE)).body.employee;
+    const me = (await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(EMPLOYEE)).body;
     const phone = `0912 ${String(Date.now()).slice(-6)}`;
     const res = await http
       .patch(`/api/v1/employees/${employeeId}`)
@@ -142,7 +205,7 @@ describe('HRHelper API (e2e)', () => {
   });
 
   it('thành viên phòng ban và nhân viên trực thuộc', async () => {
-    const me = (await http.get('/api/v1/me').set(EMPLOYEE)).body.employee;
+    const me = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(EMPLOYEE)).body;
     const members = await http.get(`/api/v1/departments/${me.departmentId}/members?size=5`).set(EMPLOYEE).expect(200);
     expect(members.body.total).toBeGreaterThan(5);
     const reports = await http.get(`/api/v1/employees/${managerId}/direct-reports`).set(EMPLOYEE).expect(200);
@@ -393,7 +456,7 @@ describe('HRHelper API (e2e)', () => {
     beforeAll(async () => {
       const { DataSource } = await import('typeorm');
       ds = app.get(DataSource);
-      me = (await http.get('/api/v1/me').set(EMPLOYEE)).body.employee;
+      me = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(EMPLOYEE)).body;
       // Storage test (MinIO/S3Mock mới dựng) có thể chưa có bucket.
       const { S3Client, CreateBucketCommand } = await import('@aws-sdk/client-s3');
       const s3 = new S3Client({

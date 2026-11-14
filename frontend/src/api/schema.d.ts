@@ -148,6 +148,38 @@ export interface paths {
         patch: operations["EmployeeController_update"];
         trace?: never;
     };
+    "/api/v1/employees/{id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EmployeeController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/profile/{section}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EmployeeController_section"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/employees/{id}/direct-reports": {
         parameters: {
             query?: never;
@@ -356,6 +388,166 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocumentController_list"];
+        put?: never;
+        post: operations["DocumentController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/manage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocumentController_manageList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/manage/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocumentController_manageGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocumentController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["DocumentController_update"];
+        trace?: never;
+    };
+    "/api/v1/documents/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocumentController_downloadLatest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/{id}/versions/{versionId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocumentController_download"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/{id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DocumentController_addVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/{id}/versions/{versionId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DocumentController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/{id}/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DocumentController_hide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DocumentController_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -376,6 +568,16 @@ export interface components {
             parentId?: Record<string, never> | null;
             headEmployeeId?: Record<string, never> | null;
         };
+        MeEmployee: {
+            id: string;
+            employeeCode: string;
+            fullName: string;
+        };
+        MeResponse: {
+            email: string;
+            roles: string[];
+            employee: components["schemas"]["MeEmployee"] | null;
+        };
         CreateEmployeeDto: {
             /** @example E02001 */
             employeeCode: string;
@@ -394,6 +596,65 @@ export interface components {
             bankAccount?: string;
             /** @description Lương tháng (VND) */
             salary?: string;
+        };
+        SectionSummary: {
+            /** @example personal */
+            code: string;
+            /** @enum {string} */
+            group: "personal" | "work" | "finance" | "benefits" | "other";
+            title: string;
+            /** @description false: mục chưa làm, giao diện hiện tiêu đề đỏ "Chưa có" và không gọi API */
+            available: boolean;
+            /** @description Số yêu cầu cập nhật đang chờ HR (luôn 0 cho tới khi có FR-1.9) */
+            pendingRequests: number;
+        };
+        ProfileSummary: {
+            id: string;
+            employeeCode: string;
+            fullName: string;
+            positionTitle: Record<string, never> | null;
+            departmentId: string;
+            departmentName: Record<string, never> | null;
+            managerId: Record<string, never> | null;
+            managerName: Record<string, never> | null;
+            phone: Record<string, never> | null;
+            workEmail: string;
+            /** @enum {string} */
+            relation: "HR" | "OWNER" | "MANAGER" | "OTHER";
+            /** @description HR: hiện nút "Sửa hồ sơ" */
+            canEdit: boolean;
+            /** @description Loại hợp đồng đang hiệu lực (hàng "Diện đối tượng", mức QL). null: chưa có dữ liệu. Không có trường này ở mức danh bạ */
+            contractType?: Record<string, never> | null;
+            /** @description Mục người xem được thấy, theo thứ tự trên trang */
+            sections: components["schemas"]["SectionSummary"][];
+        };
+        MaskedField: {
+            hasValue: boolean;
+            value: Record<string, never> | null;
+        };
+        PersonalSection: {
+            /** @example personal */
+            section: string;
+            version: number;
+            phone: Record<string, never> | null;
+            workEmail: string;
+            address: Record<string, never> | null;
+            dateOfBirth: Record<string, never> | null;
+            hireDate: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "ON_LEAVE" | "TERMINATED";
+            /** @description CCCD, chỉ HR */
+            nationalId?: components["schemas"]["MaskedField"];
+        };
+        SalarySection: {
+            /** @example salary */
+            section: string;
+            salary: components["schemas"]["MaskedField"];
+        };
+        BankAccountSection: {
+            /** @example bank-account */
+            section: string;
+            bankAccount: components["schemas"]["MaskedField"];
         };
         UpdateEmployeeDto: {
             /** @description Version hiện tại (optimistic locking). Lệch → 409. */
@@ -436,6 +697,41 @@ export interface components {
             version: number;
             /** @description Ghi chú, ví dụ lý do từ chối */
             comment?: string;
+        };
+        DocumentScopeDto: {
+            /** @default false */
+            all: boolean;
+            departmentIds?: string[];
+            roles?: ("EMPLOYEE" | "MANAGER" | "HR" | "ADMIN")[];
+        };
+        CreateDocumentDto: {
+            /** @example quy-che-lam-viec.pdf */
+            fileName: string;
+            /** @example application/pdf */
+            contentType: string;
+            /** @example 4194304 */
+            sizeBytes: number;
+            /** @example Quy chế làm việc */
+            title: string;
+            /** @enum {string} */
+            type: "POLICY" | "PROCESS" | "GUIDE" | "FORM" | "NOTICE";
+            scope: components["schemas"]["DocumentScopeDto"];
+        };
+        FileSpecDto: {
+            /** @example quy-che-lam-viec.pdf */
+            fileName: string;
+            /** @example application/pdf */
+            contentType: string;
+            /** @example 4194304 */
+            sizeBytes: number;
+        };
+        UpdateDocumentDto: {
+            /** @description Version hiện tại của tài liệu (optimistic locking). Lệch → 409. */
+            version: number;
+            title?: string;
+            /** @enum {string} */
+            type?: "POLICY" | "PROCESS" | "GUIDE" | "FORM" | "NOTICE";
+            scope?: components["schemas"]["DocumentScopeDto"];
         };
     };
     responses: never;
@@ -613,7 +909,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
+                };
             };
         };
     };
@@ -702,6 +1000,52 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    EmployeeController_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSummary"];
+                };
+            };
+        };
+    };
+    EmployeeController_section: {
+        parameters: {
+            query?: {
+                /** @description true: giải mã giá trị nhạy cảm của mục (bấm mắt); mỗi lần gọi ghi audit VIEW_SENSITIVE */
+                reveal?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+                section: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalSection"] | components["schemas"]["SalarySection"] | components["schemas"]["BankAccountSection"];
+                };
             };
         };
     };
@@ -979,6 +1323,246 @@ export interface operations {
                 "application/json": components["schemas"]["LeaveDecisionDto"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_list: {
+        parameters: {
+            query?: {
+                type?: "POLICY" | "PROCESS" | "GUIDE" | "FORM" | "NOTICE";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDocumentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_manageList: {
+        parameters: {
+            query?: {
+                type?: "POLICY" | "PROCESS" | "GUIDE" | "FORM" | "NOTICE";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_manageGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDocumentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_downloadLatest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                versionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_addVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileSpecDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                versionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_hide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {

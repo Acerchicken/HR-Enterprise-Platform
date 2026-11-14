@@ -16,7 +16,18 @@ import { OrganizationService } from '../organization/organization.service';
 import { forbiddenFields, viewLevel } from './employee-access';
 import { EmployeeSensitive } from './employee-sensitive.entity';
 import { Employee } from './employee.entity';
-import { CreateEmployeeDto, DirectoryEntry, EmployeeProfile, UpdateEmployeeDto } from './employee.dto';
+import {
+  CreateEmployeeDto,
+  DirectoryEntry,
+  EmployeeProfile,
+  MaskedField,
+  MeEmployee,
+  PersonalSection,
+  ProfileSectionData,
+  ProfileSummary,
+  UpdateEmployeeDto,
+} from './employee.dto';
+import { canReveal, canSeeLevel, findSection, relationTo, visibleSections } from './profile-sections';
 
 export const FIELD_CRYPTO = Symbol('FIELD_CRYPTO');
 
@@ -169,6 +180,101 @@ export class EmployeeService {
       });
     }
     return profile;
+  }
+
+  // ---------- Trang hồ sơ theo mục (UC1 spec 9.1) ----------
+
+  /** Tài khoản đang đăng nhập: chỉ mã, tên của hồ sơ gắn với tài khoản (AC-1.8.7). */
+  async meEmployee(employeeId: string): Promise<MeEmployee | null> {
+    const e = await this.repo.findOne({
+      where: { id: employeeId },
+      select: { id: true, employeeCode: true, fullName: true },
+    });
+    return e ? { id: e.id, employeeCode: e.employeeCode, fullName: e.fullName } : null;
+  }
+
+  /** Phần trang hồ sơ mặc định hiện, cộng danh sách mục người xem được thấy (AC-1.8.1, 1.8.4, 1.8.7). */
+  async summary(id: string, viewer: AuthUser): Promise<ProfileSummary> {
+    const e = await this.getOrThrow(id);
+    const relation = relationTo(viewer, e);
+    const [entry] = await this.toDirectory([e]);
+    const summary: ProfileSummary = {
+      id: e.id,
+      employeeCode: e.employeeCode,
+      fullName: e.fullName,
+      positionTitle: entry.positionTitle,
+      departmentId: e.departmentId,
+      departmentName: entry.departmentName,
+      managerId: e.managerId,
+      managerName: entry.managerName ?? null,
+      phone: e.phone,
+      workEmail: e.workEmail,
+      relation,
+      canEdit: relation === 'HR',
+      sections: visibleSections(relation).map((s) => ({
+        code: s.code,
+        group: s.group,
+        title: s.title,
+        available: s.available,
+        pendingRequests: 0,
+      })),
+    };
+    // Hàng "Diện đối tượng" ở đầu trang có mức QL; hợp đồng chưa có dữ liệu (FR-1.12) nên luôn null.
+    if (canSeeLevel(relation, 'QL')) summary.contractType = null;
+    return summary;
+  }
+
+  /**
+   * Dữ liệu của một mục, chỉ khi người dùng bấm vào mục đó (AC-1.8.8). Mục không tồn tại, chưa làm hoặc người xem không được
+   * thấy đều trả 404 giống nhau (AC-1.8.6, E7). Giá trị nhạy cảm chỉ giải mã khi `reveal` và mỗi lần đều ghi audit.
+   */
+  async section(id: string, code: string, viewer: AuthUser, reveal: boolean, meta: RequestMeta = {}): Promise<ProfileSectionData> {
+    const e = await this.getOrThrow(id);
+    const relation = relationTo(viewer, e);
+    const def = findSection(code);
+    if (!def || !def.available || !canSeeLevel(relation, def.level)) {
+      throw new NotFoundException('Không tìm thấy mục hồ sơ');
+    }
+
+    const field = code === 'salary' ? 'salary' : code === 'bank-account' ? 'bankAccount' : 'nationalId';
+    const hasSensitive = code !== 'personal' || relation === 'HR';
+    if (reveal && (!hasSensitive || !canReveal(relation, field))) {
+      throw new ForbiddenException('Bạn không được xem giá trị này');
+    }
+
+    let masked: MaskedField | undefined;
+    if (hasSensitive) {
+      const s = await this.sensitiveRepo.findOneBy({ employeeId: id });
+      const enc = field === 'salary' ? s?.salaryEnc : field === 'bankAccount' ? s?.bankAccountEnc : s?.nationalIdEnc;
+      masked = { hasValue: !!enc, value: null };
+      if (reveal) {
+        masked.value = this.crypto.decrypt(enc);
+        // NFR-6.1: mọi lượt đọc giá trị nhạy cảm đều có audit; chỉ ghi tên trường, không ghi giá trị.
+        await this.audit.record({
+          actorId: viewer.employeeId,
+          action: 'VIEW_SENSITIVE',
+          entityType: 'employee',
+          entityId: id,
+          changedFields: { fields: [field], section: code },
+          ...meta,
+        });
+      }
+    }
+
+    if (code === 'salary') return { section: 'salary', salary: masked! };
+    if (code === 'bank-account') return { section: 'bank-account', bankAccount: masked! };
+    const personal: PersonalSection = {
+      section: 'personal',
+      version: e.version,
+      phone: e.phone,
+      workEmail: e.workEmail,
+      address: e.address,
+      dateOfBirth: e.dateOfBirth,
+      hireDate: e.hireDate,
+      status: e.status,
+    };
+    if (masked) personal.nationalId = masked;
+    return personal;
   }
 
   async update(id: string, dto: UpdateEmployeeDto, actor: AuthUser, meta: RequestMeta = {}): Promise<EmployeeProfile> {
