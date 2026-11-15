@@ -152,7 +152,7 @@ và email (email gửi bằng SES API theo quyết định 14/11, người nhậ
 
 ### 7.4 Bước 1 – UC1 (CN 15/11 → T2 23/11)
 
-> **Rà soát 14/11:** [UC1 – Rà soát hiện trạng và kế hoạch `feat/profile-layout`](../features/UC1-employee-profile/ra-soat.md).
+> **Rà soát 14/11:** kết luận và quyết định ghi ở [UC1 spec mục 12](../features/UC1-employee-profile/spec.md#12-hiện-trạng-và-việc-còn-lại).
 > **Cập nhật 15/11:** `feat/profile-layout` đã mở PR #80 (đủ sáu bước), chờ TV2, TV4 review. Bản vẽ giao diện UC2 → UC7 ở
 > PR #81 (TV1), TV2 và TV4 review theo mục 7.9.
 > Quyết định cùng ngày: nhánh `feat/profile-self-service` đổi tên thành `feat/profile-change-requests` để khỏi nhầm với UC6;
@@ -161,7 +161,7 @@ và email (email gửi bằng SES API theo quyết định 14/11, người nhậ
 
 | Nhánh | Người | Việc | Tiêu chí | Mở PR | Merge | Review |
 |---|---|---|---|---|---|---|
-| `feat/profile-layout` | TV1 Duong | Không có migration. Backend: danh mục mục và quyền theo mục, `GET /employees/{id}/summary`, `GET /employees/{id}/profile/{section}` (cá nhân, lương, tài khoản), thu gọn `GET /me`. Frontend: màu cyan, nav bar (logo, ô tìm **chỉ đồng nghiệp**, chuông, menu ảnh), trang chủ có ô chức năng, popup hồ sơ có URL, mục chưa có tiêu đề đỏ, thẻ xem nhanh, `lucide-react`. Sáu bước ở [rà soát UC1](../features/UC1-employee-profile/ra-soat.md#6-kế-hoạch-featprofile-layout); chậm thì tách PR backend merge trước | AC-1.8.x, AC-1.3.5, AC-0.1.1, AC-0.1.2, AC-0.2.1, AC-0.3.x, AC-0.4.1, AC-6.1.x | **CN (15/11)** | T3 (17/11) | TV2, TV4 |
+| `feat/profile-layout` | TV1 Duong | Không có migration. Backend: danh mục mục và quyền theo mục, `GET /employees/{id}/summary`, `GET /employees/{id}/profile/{section}` (cá nhân, lương, tài khoản), thu gọn `GET /me`. Frontend: màu cyan, nav bar (logo, ô tìm **chỉ đồng nghiệp**, chuông, menu ảnh), trang chủ có ô chức năng, popup hồ sơ có URL, mục chưa có tiêu đề đỏ, thẻ xem nhanh, `lucide-react`. Chậm thì tách PR backend merge trước | AC-1.8.x, AC-1.3.5, AC-0.1.1, AC-0.1.2, AC-0.2.1, AC-0.3.x, AC-0.4.1, AC-6.1.x | **CN (15/11)** | T3 (17/11) | TV2, TV4 |
 | `docs/org-integrity-rules` | TV2 Thanh | Chốt: chấm dứt nhân viên còn cấp dưới; ý nghĩa `headEmployeeId`; audit có ghi giá trị trường cá nhân không; thời gian lưu audit (BR-13 5 năm hay NFR-6.3 2 năm); danh sách mục nhân viên được gửi yêu cầu sửa, thời hạn HR xử lý | AC-1.7.1, AC-1.4.3, FR-1.9, FR-1.14 | T2 (16/11), 21:00 | T3 (17/11) | TV1, TV4 |
 | `docs/test-cases-uc1` | TV4 Duy | Ca còn thiếu ở mục 7 `test.md` của UC1, gồm ca bảo mật file và giới hạn tần suất | Mọi AC-1.x | T3 (17/11), 21:00 | T4 (18/11) | TV2, TV1 |
 | `fix/employee-org-integrity` | TV1 Duong | Bắt buộc `version`; audit theo nhóm trường; HR sửa `hireDate`, `workEmail`; chặn nghỉ việc khi còn cấp dưới, chặn người đã nghỉ; chỉ tải trường nhạy cảm khi bấm hiện; UC2: chặn gốc thứ hai, kiểm `headEmployeeId` | AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2, AC-2.4.6, AC-2.4.7 | T4 (18/11) | T5 (19/11) | TV2, TV4 |

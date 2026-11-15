@@ -27,8 +27,8 @@ Vai trò: code chính, review PR, merge PR, báo cáo thứ 2. Tuần này chỉ
 Theo [`spec.md` UC1](../../features/UC1-employee-profile/spec.md) mục 9 và [`frontend.md`](../../features/frontend.md):
 trang hồ sơ theo nhóm (cá nhân, công việc, tài chính, phúc lợi, khác), màu cyan, mục chưa có hiện tiêu đề đỏ, tải `summary` trước
 rồi API từng mục; chủ hồ sơ tự xem lương, số tài khoản. e2e cho chủ hồ sơ, quản lý, HR.
-Cùng nhánh: nav bar (ô tìm chỉ tìm đồng nghiệp), trang chủ có ô chức năng, popup hồ sơ có URL. Sáu bước và hiện trạng ở
-[rà soát UC1](../../features/UC1-employee-profile/ra-soat.md).
+Cùng nhánh: nav bar (ô tìm chỉ tìm đồng nghiệp), trang chủ có ô chức năng, popup hồ sơ có URL. Hiện trạng ở
+[UC1 spec mục 12](../../features/UC1-employee-profile/spec.md#12-hiện-trạng-và-việc-còn-lại).
 
 ### 2. `fix/employee-org-integrity` – sau khi `docs/org-integrity-rules` merge
 
