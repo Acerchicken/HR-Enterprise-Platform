@@ -70,9 +70,13 @@ services:
   s3mock:
     image: adobe/s3mock:3.3.0
     environment:
-      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: hr-documents
+      initialBuckets: hr-documents
+      root: /s3mockroot
+      retainFilesOnExit: "true"
     ports:
       - "9090:9090"
+    volumes:
+      - s3mock-data:/s3mockroot
 
   api:
     build: ./backend
@@ -182,3 +186,4 @@ services:
 volumes:
   db-data:
   rabbitmq-data:
+  s3mock-data:
