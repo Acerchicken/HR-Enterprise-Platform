@@ -133,9 +133,41 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 |---|---|---|
 | 4.1 | `/directory` | `GET /employees` |
 | 4.2 | `/org` | `GET /departments/tree`, `GET /departments/{id}`, `GET /departments/{id}/members`, `GET /employees/{id}/direct-reports`, `GET /positions` |
-| 4.3, 4.5 | Chưa có màn hình (`/org/manage`) | `POST /departments`, `PATCH /departments/{id}` |
+| 4.3, 4.5 | `/org`, `/org/{id}` (nút "Thêm phòng ban", "Sửa phòng ban" chỉ HR, ADMIN thấy; chưa có) | `POST /departments`, `PATCH /departments/{id}` |
 | 4.4 | Nút "Điều chuyển" trong hồ sơ (chế độ HR); mục "Quá trình công tác" của popup hồ sơ (UC1) | `POST /employees/{id}/transfers`, `DELETE /employees/{id}/transfers/{transferId}` (hủy khi chưa hiệu lực), `GET /employees/{id}/profile/career-history` |
 | FR-2.6 | `/org/positions` (HR) | `GET /positions`, `POST /positions`, `PATCH /positions/{id}` (tên, cấp bậc, `active`) |
+
+### 9.1 Bản vẽ giao diện
+
+Bản vẽ để duyệt bố cục trước khi code (15/11/2026), cùng phong cách với bản vẽ UC1 ở
+[giao diện chung mục 10](../frontend.md#10-bản-vẽ-giao-diện). Nguồn ở [`mockups.html`](../mockups/mockups.html), dữ liệu là người
+mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác chữ trong spec thì chữ đúng.
+
+**Danh bạ `/directory` (4.1)**
+
+![Danh bạ có ô tìm, lọc phòng ban, phân trang](../mockups/uc2-directory.png)
+
+**Sơ đồ tổ chức `/org/{id}` (4.2, FR-2.9): cây bên trái, phòng ban đang chọn bên phải, trưởng phòng và phó phòng lên đầu**
+
+![Sơ đồ tổ chức](../mockups/uc2-org.png)
+
+**HR sửa phòng ban, gán trưởng phòng, phó phòng (4.3, 4.5)**
+
+![Hộp thoại sửa phòng ban](../mockups/uc2-dept-edit.png)
+
+**HR điều chuyển trong popup hồ sơ (4.4, FR-2.7)**
+
+![Form điều chuyển có ngày hiệu lực](../mockups/uc2-transfer.png)
+
+**Danh mục chức danh `/org/positions` (FR-2.6)**
+
+![Danh mục chức danh](../mockups/uc2-positions.png)
+
+**Trên điện thoại: phòng ban theo từng cấp; mục "Quá trình công tác" trong hồ sơ (FR-2.8)**
+
+| Phòng ban | Quá trình công tác |
+|---|---|
+| ![Phòng ban trên điện thoại](../mockups/uc2-org-mobile.png) | ![Quá trình công tác](../mockups/uc2-career-mobile.png) |
 
 ## 10. Yêu cầu phi chức năng liên quan
 

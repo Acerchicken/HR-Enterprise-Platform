@@ -107,6 +107,22 @@ danh sách tài liệu của UC5. Không đặt trên nav bar (quyết định 1
 | 4.2 | Trang "Tra cứu tài liệu" `/documents`, ô tìm tài liệu (chưa có) | Chưa có (nhánh `feat/document-search`) |
 | 4.3 | Cùng trang `/documents`, khung hỏi trợ lý (chưa có) | Chưa có (tuần 12) |
 
+### 9.1 Bản vẽ giao diện
+
+Bản vẽ để duyệt bố cục trước khi code (15/11/2026), cùng phong cách với bản vẽ UC1 ở
+[giao diện chung mục 10](../frontend.md#10-bản-vẽ-giao-diện). Nguồn ở [`mockups.html`](../mockups/mockups.html), dữ liệu là người
+mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác chữ trong spec thì chữ đúng.
+
+Ô tìm đồng nghiệp trên nav bar (4.1) đã vẽ ở [giao diện chung 10.3](../frontend.md#103-tìm-đồng-nghiệp-trên-nav-bar). Trang "Tra cứu tài liệu" khi chưa gõ gì xem [UC5 mục 9.1](../UC5-document-repository/spec.md#91-bản-vẽ-giao-diện).
+
+**Kết quả tìm tài liệu, xếp theo mức khớp, có đoạn trích (4.2)**
+
+![Kết quả tìm tài liệu](../mockups/uc6-search.png)
+
+**Trợ lý chính sách: câu trả lời có trích dẫn; câu hỏi ngoài phạm vi (4.3)**
+
+![Trợ lý chính sách](../mockups/uc6-assistant.png)
+
 ## 10. Yêu cầu phi chức năng liên quan
 
 - NFR-1.3: tìm kiếm p95 < 1 s với 2.000 nhân viên, 500 tài liệu.
