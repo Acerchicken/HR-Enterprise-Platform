@@ -38,9 +38,8 @@
 
 ### FR-1.2 Nhân viên sửa liên hệ qua yêu cầu (M; code chưa đạt: đang lưu thẳng)
 
-- **AC-1.2.1** *(chưa đạt)* Giả sử nhân viên đã đăng nhập. Khi sửa `phone`, `address` của chính mình với giá trị hợp lệ và bấm
-  "Gửi yêu cầu". Thì trả 202, tạo yêu cầu `PENDING` (FR-1.9); hồ sơ **chưa đổi**, `version` giữ nguyên. Code hiện lưu thẳng,
-  trả 200.
+- **AC-1.2.1** Giả sử nhân viên đã đăng nhập. Khi sửa `phone`, `address` của chính mình với giá trị hợp lệ và bấm
+  "Gửi yêu cầu". Thì trả 202, tạo yêu cầu `PENDING` (FR-1.9); hồ sơ **chưa đổi**, `version` giữ nguyên.
 - **AC-1.2.2** Khi nhân viên sửa trường khác (ví dụ `jobTitle`) hoặc sửa hồ sơ người khác. Thì trả 403, không tạo yêu cầu.
 - **AC-1.2.3** Khi số điện thoại sai mẫu. Thì trả 400 kèm `fields.phone`, không tạo yêu cầu.
 
@@ -77,7 +76,7 @@
   liệu của HR1 giữ nguyên.
 - **AC-1.6.2** Khi gửi yêu cầu sửa không kèm `version`. Thì trả 400.
 - **AC-1.6.3** Giả sử HR1, HR2 cùng mở hồ sơ. Khi HR1 chỉ sửa lương rồi HR2 lưu. Thì HR2 nhận 409.
-- **AC-1.6.4** *(chưa có)* Mỗi dòng trong các mục (FR-1.9, FR-1.12) có `version` riêng; yêu cầu cập nhật lưu `version` gốc lúc
+- **AC-1.6.4** Mỗi dòng trong các mục (FR-1.9, FR-1.12) có `version` riêng; yêu cầu cập nhật lưu `version` gốc lúc
   gửi; duyệt khi `version` đã đổi trả 409 (AC-1.9.6).
 
 ### FR-1.7 Nghỉ việc (M, chưa đạt)
@@ -113,35 +112,35 @@ Nhân viên được sửa các trường và mục có cột "Nhập" là NV (s
 người phụ thuộc, chuyên môn và bằng cấp, tài khoản ngân hàng, nơi khám chữa bệnh ban đầu, ảnh đại diện, CV. Bấm "Gửi yêu cầu"
 chỉ tạo một **yêu cầu cập nhật**; HR kiểm, đúng thì duyệt và dữ liệu mới được ghi vào hồ sơ. HR tự sửa hồ sơ thì lưu thẳng.
 
-- **AC-1.9.1** *(chưa có)* Khi nhân viên gửi yêu cầu thêm một người liên hệ khẩn cấp hợp lệ. Thì trả 202, yêu cầu `PENDING` gồm
+- **AC-1.9.1** Khi nhân viên gửi yêu cầu thêm một người liên hệ khẩn cấp hợp lệ. Thì trả 202, yêu cầu `PENDING` gồm
   mục, thao tác (thêm, sửa, xóa), giá trị đề xuất; hồ sơ chưa đổi; audit `PROFILE_CHANGE_SUBMIT` ghi mục, mã yêu cầu, tên các
   trường, không ghi giá trị.
-- **AC-1.9.2** *(chưa có)* Giả sử có yêu cầu `PENDING`. Khi nhân viên mở mục đó. Thì thấy dữ liệu hiện tại kèm khung "Đang chờ HR
+- **AC-1.9.2** Giả sử có yêu cầu `PENDING`. Khi nhân viên mở mục đó. Thì thấy dữ liệu hiện tại kèm khung "Đang chờ HR
   xác nhận" với giá trị đề xuất; nhân viên hủy được yêu cầu (`CANCELLED`, audit `PROFILE_CHANGE_CANCEL`). Người khác (kể cả quản
   lý trực tiếp) chỉ thấy dữ liệu hiện tại.
-- **AC-1.9.3** *(chưa có)* Khi HR mở "Yêu cầu cập nhật hồ sơ". Thì thấy các yêu cầu `PENDING`, cũ nhất trước, lọc theo mục,
+- **AC-1.9.3** Khi HR mở "Yêu cầu cập nhật hồ sơ". Thì thấy các yêu cầu `PENDING`, cũ nhất trước, lọc theo mục,
   phòng ban; mở một yêu cầu thấy giá trị hiện tại và giá trị đề xuất cạnh nhau, file đính kèm tải được. Giá trị nhạy cảm hiện
   `********` cho tới khi HR bấm mắt (audit `VIEW_SENSITIVE`).
-- **AC-1.9.4** *(chưa có)* Khi HR duyệt. Thì trong một giao dịch: thay đổi được ghi vào hồ sơ, `version` của hồ sơ hoặc dòng tăng
+- **AC-1.9.4** *(một phần: file kèm chuyển `READY` làm ở `feat/profile-files`)* Khi HR duyệt. Thì trong một giao dịch: thay đổi được ghi vào hồ sơ, `version` của hồ sơ hoặc dòng tăng
   1, yêu cầu `APPROVED` kèm người duyệt và thời điểm, audit `PROFILE_CHANGE_APPROVE` ghi mục, mã yêu cầu, tên trường; file đính
   kèm chuyển `READY`. Nhân viên nhận email báo chung "Yêu cầu cập nhật hồ sơ của bạn đã được xử lý".
-- **AC-1.9.5** *(chưa có)* Khi HR từ chối kèm lý do (bắt buộc, tối đa 500 ký tự). Thì yêu cầu `REJECTED`, hồ sơ không đổi, nhân
+- **AC-1.9.5** Khi HR từ chối kèm lý do (bắt buộc, tối đa 500 ký tự). Thì yêu cầu `REJECTED`, hồ sơ không đổi, nhân
   viên thấy lý do trong ứng dụng và nhận email báo chung; audit `PROFILE_CHANGE_REJECT` không chứa lý do. File đính kèm bị xóa
   sau 30 ngày.
-- **AC-1.9.6** *(chưa có)* Giả sử sau khi nhân viên gửi yêu cầu, HR đã sửa trực tiếp cùng trường. Khi HR duyệt yêu cầu cũ. Thì
+- **AC-1.9.6** Giả sử sau khi nhân viên gửi yêu cầu, HR đã sửa trực tiếp cùng trường. Khi HR duyệt yêu cầu cũ. Thì
   trả 409 (giá trị gốc đã đổi); HR từ chối hoặc nhân viên gửi lại.
-- **AC-1.9.7** *(chưa có)* Mỗi trường hoặc dòng chỉ có tối đa một yêu cầu `PENDING`. Khi nhân viên gửi yêu cầu mới cho cùng chỗ.
+- **AC-1.9.7** Mỗi trường hoặc dòng chỉ có tối đa một yêu cầu `PENDING`. Khi nhân viên gửi yêu cầu mới cho cùng chỗ.
   Thì yêu cầu cũ chuyển `CANCELLED`, yêu cầu mới thay thế. Một người có tối đa 20 yêu cầu `PENDING`; vượt trả 409.
-- **AC-1.9.8** *(chưa có)* Khi nhân viên gửi yêu cầu ở mục do HR quản lý (hợp đồng, lương, BHXH, phụ cấp, khen thưởng kỷ luật),
+- **AC-1.9.8** Khi nhân viên gửi yêu cầu ở mục do HR quản lý (hợp đồng, lương, BHXH, phụ cấp, khen thưởng kỷ luật),
   ở hồ sơ người khác, hoặc khi người không phải HR gọi duyệt, từ chối. Thì trả 403.
-- **AC-1.9.9** *(chưa có)* Khi dữ liệu đề xuất sai (thiếu trường bắt buộc, sai mẫu, ngày sinh ở tương lai, quá độ dài) hoặc làm
+- **AC-1.9.9** Khi dữ liệu đề xuất sai (thiếu trường bắt buộc, sai mẫu, ngày sinh ở tương lai, quá độ dài) hoặc làm
   vượt số dòng tối đa của mục. Thì trả 400 kèm `fields` hoặc 409, không tạo yêu cầu.
-- **AC-1.9.10** *(chưa có)* Khi HR duyệt yêu cầu đổi tài khoản ngân hàng. Thì ngoài email báo xử lý, nhân viên nhận email "thông
+- **AC-1.9.10** Khi HR duyệt yêu cầu đổi tài khoản ngân hàng. Thì ngoài email báo xử lý, nhân viên nhận email "thông
   tin tài khoản ngân hàng trên HRHelper vừa thay đổi" (không kèm số tài khoản), để phát hiện yêu cầu không phải do mình gửi.
-- **AC-1.9.11** *(chưa có)* Khi duyệt thân nhân là người phụ thuộc. Thì mã số thuế hoặc CCCD của người đó được mã hóa khi lưu;
+- **AC-1.9.11** *(một phần: mã số thuế đã mã hóa; mục "Thông tin thuế TNCN" chưa có)* Khi duyệt thân nhân là người phụ thuộc. Thì mã số thuế hoặc CCCD của người đó được mã hóa khi lưu;
   "Thông tin thuế TNCN" tự đếm số người phụ thuộc đang hiệu lực.
-- **AC-1.9.12** *(chưa có)* Khi gửi lại cùng `Idempotency-Key`. Thì trả lại yêu cầu đã tạo, không tạo yêu cầu thứ hai.
-- **AC-1.9.13** *(chưa có)* Khi có yêu cầu mới. Thì HR nhận email báo chung "Có yêu cầu cập nhật hồ sơ cần xử lý" (gộp tối đa một
+- **AC-1.9.12** Khi gửi lại cùng `Idempotency-Key`. Thì trả lại yêu cầu đã tạo, không tạo yêu cầu thứ hai.
+- **AC-1.9.13** Khi có yêu cầu mới. Thì HR nhận email báo chung "Có yêu cầu cập nhật hồ sơ cần xử lý" (gộp tối đa một
   email mỗi giờ); yêu cầu chờ quá 2 ngày làm việc hiện nhãn "Quá hạn" trong danh sách của HR.
 
 ### FR-1.10 Tệp đính kèm hồ sơ (S, chưa có)
@@ -168,15 +167,15 @@ chỉ tạo một **yêu cầu cập nhật**; HR kiểm, đúng thì duyệt v�
 
 ### FR-1.11 Nhật ký thay đổi hồ sơ (S, chưa có)
 
-- **AC-1.11.1** *(chưa có)* Khi chủ hồ sơ mở "Lịch sử thay đổi" trong hồ sơ của mình. Thì thấy danh sách: thời điểm, người
+- **AC-1.11.1** Khi chủ hồ sơ mở "Lịch sử thay đổi" trong hồ sơ của mình. Thì thấy danh sách: thời điểm, người
   làm, thao tác (gửi yêu cầu, hủy, HR duyệt, HR từ chối, HR sửa trực tiếp, tải lên, HR xem trường nhạy cảm), mục, tên trường; không có giá trị; mới nhất trước,
   phân trang.
-- **AC-1.11.2** *(chưa có)* HR xem được lịch sử của mọi hồ sơ, lọc theo mục, người làm, khoảng ngày. Quản lý trực tiếp và người
+- **AC-1.11.2** HR xem được lịch sử của mọi hồ sơ, lọc theo mục, người làm, khoảng ngày. Quản lý trực tiếp và người
   khác không xem được (403).
-- **AC-1.11.3** *(chưa có)* Mọi thao tác gửi, hủy, duyệt, từ chối yêu cầu (FR-1.9), tải file (FR-1.10) và mọi lần HR sửa trực tiếp
+- **AC-1.11.3** *(một phần: thao tác file làm ở `feat/profile-files`)* Mọi thao tác gửi, hủy, duyệt, từ chối yêu cầu (FR-1.9), tải file (FR-1.10) và mọi lần HR sửa trực tiếp
   (FR-1.4, FR-1.12) có đúng một bản ghi audit, ghi cùng giao dịch với thay
   đổi; thao tác thất bại không có audit.
-- **AC-1.11.4** *(chưa có)* Trong audit, log API và log worker không có giá trị của trường cá nhân, trường nhạy cảm, tên file gốc
+- **AC-1.11.4** Trong audit, log API và log worker không có giá trị của trường cá nhân, trường nhạy cảm, tên file gốc
   hay nội dung file (NFR-5.18).
 
 ### FR-1.12 Mục do HR quản lý (C, chưa có)
