@@ -44,7 +44,7 @@ tuyển dụng nằm ngoài phạm vi.
 | Chỉ số | Giá trị |
 |---|---|
 | Số nhân viên | ~2.000 (dự phòng tăng tới 10.000) |
-| Phòng ban | 25, tổ chức dạng cây, gốc là Ban Giám đốc |
+| Đơn vị tổ chức | 25, dạng cây có loại đơn vị (ADR-14): Công ty (CEO) → Trung tâm (Giám đốc) → Phòng (Trưởng, Phó phòng) → Nhóm (Trưởng nhóm); phòng có thể nằm thẳng dưới Công ty |
 | Văn phòng | 3: Hà Nội, Đà Nẵng, TP.HCM |
 | Quản lý trực tiếp | ~150 |
 | Nhân sự HR | ~15 |
@@ -82,7 +82,7 @@ flowchart LR
 | Use case | Nội dung | Mục tiêu |
 |---|---|---|
 | UC1 Hồ sơ nhân viên | Xem, cập nhật hồ sơ; trường nhạy cảm chỉ HR | MT-1, MT-3 |
-| UC2 Thông tin tổ chức | Phòng ban, sơ đồ tổ chức, quản lý trực tiếp, chức danh, điều chuyển, quá trình công tác, trưởng/phó phòng | MT-1 |
+| UC2 Thông tin tổ chức | Cây đơn vị Công ty, Trung tâm, Phòng, Nhóm; sơ đồ tổ chức, quản lý trực tiếp, chức danh, điều chuyển, quá trình công tác, trưởng/phó mọi cấp | MT-1 |
 | UC3 Tạo đơn nghỉ | Nhân viên tạo, gửi, hủy đơn | MT-2 |
 | UC4 Duyệt đơn | Quản lý trực tiếp duyệt/từ chối, HR hoàn tất | MT-2 |
 | UC5 Kho tài liệu | HR đăng tài liệu chính sách, phân phạm vi xem | MT-4 |
@@ -139,7 +139,7 @@ nhận và trạng thái trên `dev`.
 | Use case (mục 4.1) | Yêu cầu trong SRS |
 |---|---|
 | UC1 Hồ sơ nhân viên | FR-1.1 → FR-1.14 |
-| UC2 Thông tin tổ chức | FR-2.1 → FR-2.9 |
+| UC2 Thông tin tổ chức | FR-2.1 → FR-2.10 |
 | UC3 Tạo đơn nghỉ | FR-3.1 → FR-3.7 |
 | UC4 Duyệt đơn | FR-4.1 → FR-4.8 |
 | UC5 Kho tài liệu chính sách | FR-5.1 → FR-5.3 |

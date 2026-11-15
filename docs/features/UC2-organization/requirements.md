@@ -10,12 +10,13 @@
 | US-2.1 | Nhân viên | Tìm đồng nghiệp theo tên, email, mã, lọc theo phòng ban | Liên lạc đúng người | FR-2.1 |
 | US-2.2 | Nhân viên | Xem cây tổ chức và thành viên từng phòng ban | Hiểu công ty tổ chức thế nào | FR-2.2 |
 | US-2.3 | Nhân viên | Xem quản lý trực tiếp và cấp dưới của một người | Biết ai duyệt việc của ai | FR-2.3 |
-| US-2.4 | HR, ADMIN | Tạo, sửa phòng ban | Cây tổ chức luôn đúng thực tế | FR-2.4 |
+| US-2.4 | HR, ADMIN | Tạo, sửa đơn vị (Công ty, Trung tâm, Phòng, Nhóm) | Cây tổ chức luôn đúng thực tế, đúng cấp | FR-2.4 |
 | US-2.5 | HR | Mỗi nhân viên có đúng một quản lý trực tiếp, trừ CEO | Đơn nghỉ luôn có người duyệt | FR-2.5 |
 | US-2.6 | HR | Quản lý danh mục chức danh và cấp bậc | Chức danh thống nhất, không gõ tự do mỗi người một kiểu | FR-2.6 |
 | US-2.7 | HR | Điều chuyển nhân viên sang phòng ban, chức danh, quản lý mới từ một ngày hiệu lực | Đổi đúng ngày, không phải nhớ để sửa tay | FR-2.7 |
 | US-2.8 | Nhân viên, quản lý, HR | Xem quá trình công tác: ở phòng nào, chức danh gì, ai quản lý, từ ngày nào | Hồ sơ có lịch sử thật (UC1 mục "Quá trình công tác") | FR-2.8 |
-| US-2.9 | HR, nhân viên | Biết trưởng phòng và phó phòng của mỗi phòng ban | Biết ai phụ trách phòng, ai thay khi trưởng phòng vắng | FR-2.9 |
+| US-2.9 | HR, nhân viên | Biết trưởng và phó của mỗi đơn vị (Tổng Giám đốc, Giám đốc trung tâm, trưởng phòng, trưởng nhóm) | Biết ai phụ trách đơn vị, ai thay khi trưởng vắng | FR-2.9 |
+| US-2.10 | HR | Ngừng hoạt động một đơn vị bị giải thể, sáp nhập | Cây chỉ còn đơn vị đang hoạt động mà lịch sử công tác vẫn đúng | FR-2.10 |
 
 ## 2. Tiêu chí chấp nhận
 
@@ -29,6 +30,8 @@
 ### FR-2.2 Cây tổ chức (M, đã có)
 
 - **AC-2.2.1** Khi mở cây tổ chức. Thì cây có đúng một gốc và chứa mọi phòng ban, không cần nhập mã phòng ban (issue #21).
+- **AC-2.2.3** *(chưa có)* Khi mở cây tổ chức. Thì gốc là đơn vị loại Công ty; mỗi đơn vị hiện loại (Trung tâm, Phòng, Nhóm) và
+  trưởng đơn vị với đúng tên vai trò theo loại (ADR-14); đơn vị đã ngừng hoạt động không hiện.
 - **AC-2.2.2** Khi mở thành viên một phòng ban. Thì chỉ thấy trường danh bạ của từng người.
 
 ### FR-2.3 Quản lý và cấp dưới (M, đã có)
@@ -45,6 +48,10 @@
 - **AC-2.4.6** *(chưa đạt)* Khi tạo phòng ban không có `parentId`, hoặc sửa `parentId` thành `null`. Thì trả 400; cây giữ
   đúng một gốc. Hiện API chấp nhận và tạo thêm gốc.
 - **AC-2.4.7** *(chưa đạt)* Khi `headEmployeeId` không phải nhân viên đang làm việc. Thì trả 400. Hiện API không kiểm.
+- **AC-2.4.8** *(chưa có)* Khi tạo hoặc sửa đơn vị sai luật loại cha, loại con (ADR-14): Trung tâm không thuộc Công ty; Phòng
+  không thuộc Công ty hoặc Trung tâm; Nhóm không thuộc Phòng; tạo đơn vị Công ty thứ hai. Thì trả 400. Đổi loại một đơn vị
+  làm đơn vị con của nó sai luật cũng trả 400.
+- **AC-2.4.9** *(chưa có)* Khi tạo Phòng Pháp chế thẳng dưới Công ty (không qua Trung tâm). Thì trả 201.
 
 ### FR-2.5 Một quản lý trực tiếp, trừ CEO (M, đã có, PR #60)
 
@@ -80,21 +87,43 @@
 - **AC-2.8.3** *(chưa có)* Khi HR tạo nhân viên. Thì có dòng đầu tiên mở từ ngày vào làm, lý do "Tuyển mới". Dòng lịch sử
   không sửa, không xóa; sai thì HR thêm điều chỉnh có ghi lý do.
 
-### FR-2.9 Trưởng phòng, phó phòng (S, chưa có; thay quy tắc chờ chốt về `headEmployeeId`)
+### FR-2.9 Trưởng và phó đơn vị mọi cấp (S, chưa có; ADR-14)
 
-- **AC-2.9.1** *(chưa có)* Mỗi phòng ban có tối đa một trưởng phòng và tối đa 3 phó phòng, đều là nhân viên đang làm việc
-  **thuộc chính phòng ban đó**. Gán người ngoài phòng hoặc đã nghỉ việc thì trả 400.
-- **AC-2.9.2** *(chưa có)* Khi HR tạo nhân viên mới vào phòng X. Thì ô "Quản lý trực tiếp" điền sẵn trưởng phòng X (HR đổi được).
-  Trưởng phòng X thì mặc định do trưởng phòng của phòng cha quản lý.
-- **AC-2.9.3** *(chưa có)* Khi HR tạo phân công duyệt thay cho trưởng phòng X (UC4 FR-4.3). Thì danh sách chọn người thay đưa
-  phó phòng X lên đầu. Phó phòng **không** tự động có quyền duyệt đơn của cả phòng.
-- **AC-2.9.4** *(chưa có)* Trang phòng ban trong sơ đồ tổ chức hiện trưởng phòng, phó phòng trước, rồi tới thành viên.
-- **AC-2.9.5** *(chưa có)* Đổi trưởng phòng, phó phòng có audit; không tự đổi quản lý trực tiếp của ai.
+| Loại đơn vị | Trưởng | Phó (tối đa) |
+|---|---|---|
+| Công ty | Tổng Giám đốc (CEO) | Phó Tổng Giám đốc (5) |
+| Trung tâm | Giám đốc trung tâm | Phó Giám đốc trung tâm (3) |
+| Phòng | Trưởng phòng | Phó phòng (3) |
+| Nhóm | Trưởng nhóm | Không có |
 
-**Quy tắc (chốt 14/11/2026, soạn thay TV2, TV1 và TV2 rà lại):** trưởng phòng là **vai trò của phòng ban**, quản lý trực tiếp là
-**quan hệ giữa hai người**. Hai thứ thường trùng (trưởng phòng quản lý trực tiếp các thành viên) nhưng không bắt buộc, vì phòng
-lớn có nhóm do phó phòng hoặc trưởng nhóm quản lý. Quyền duyệt đơn nghỉ luôn theo quản lý trực tiếp (BR-05), không theo chức
-danh trưởng, phó phòng.
+- **AC-2.9.1** *(chưa có)* Trưởng và phó là nhân viên đang làm việc, thuộc **chính đơn vị đó hoặc một đơn vị cha của nó**
+  (kiêm nhiệm, ví dụ Giám đốc trung tâm kiêm trưởng một phòng của trung tâm). Gán người ngoài nhánh, người đã nghỉ việc, hoặc
+  quá số phó theo bảng trên thì trả 400. Một người làm trưởng nhiều đơn vị được.
+- **AC-2.9.2** *(chưa có)* Khi HR tạo nhân viên mới vào đơn vị X. Thì ô "Quản lý trực tiếp" điền sẵn trưởng của X (HR đổi được).
+  Nếu người mới là trưởng của X thì điền sẵn trưởng của đơn vị cha gần nhất có trưởng. HR được chọn người khác, ví dụ Giám
+  đốc trung tâm báo cáo một Phó Tổng Giám đốc phụ trách.
+- **AC-2.9.3** *(chưa có)* Khi HR tạo phân công duyệt thay cho trưởng đơn vị X (UC4 FR-4.3). Thì danh sách chọn người thay đưa
+  phó của X lên đầu. Phó **không** tự động có quyền duyệt đơn của cả đơn vị.
+- **AC-2.9.4** *(chưa có)* Trang đơn vị trong sơ đồ tổ chức hiện trưởng, phó trước (đúng tên vai trò theo loại), rồi tới thành
+  viên, rồi tới đơn vị con.
+- **AC-2.9.5** *(chưa có)* Đổi trưởng, phó có audit; không tự đổi quản lý trực tiếp của ai.
+- **AC-2.9.6** *(chưa có)* Khi HR đánh dấu trưởng X là "Quyền" (`headActing = true`). Thì sơ đồ tổ chức và hồ sơ hiện
+  "Quyền Trưởng phòng" (hoặc "Quyền Giám đốc trung tâm"…); quyền hạn không khác trưởng chính thức.
+- **AC-2.9.7** *(chưa có)* CEO là trưởng của đơn vị Công ty và thuộc đơn vị đó. Đơn nghỉ của CEO do HR xử lý (UC4 E8).
+
+**Quy tắc (chốt 14/11/2026, mở rộng cho mọi cấp theo ADR-14 ngày 15/11/2026; soạn thay TV2, TV1 và TV2 rà lại):** trưởng đơn
+vị là **vai trò của đơn vị**, quản lý trực tiếp là **quan hệ giữa hai người**. Hai thứ thường trùng (trưởng phòng quản lý trực
+tiếp các thành viên) nhưng không bắt buộc, vì phòng lớn có nhóm do trưởng nhóm quản lý, và Giám đốc trung tâm có thể báo cáo
+Phó Tổng Giám đốc. Quyền duyệt đơn nghỉ luôn theo quản lý trực tiếp (BR-05), không theo chức danh trưởng, phó.
+
+### FR-2.10 Ngừng hoạt động đơn vị (C, chưa có; ADR-14)
+
+- **AC-2.10.1** *(chưa có)* Giả sử đơn vị X còn nhân viên đang làm việc hoặc còn đơn vị con đang hoạt động. Khi HR ngừng hoạt
+  động X. Thì trả 409 và nói rõ còn bao nhiêu người, bao nhiêu đơn vị con.
+- **AC-2.10.2** *(chưa có)* Khi HR ngừng hoạt động đơn vị X đã trống. Thì X không còn trong cây, danh bạ, danh sách chọn khi
+  tạo, điều chuyển nhân viên; quá trình công tác cũ vẫn hiện tên X; có audit. Không xóa hẳn đơn vị.
+- **AC-2.10.3** *(chưa có)* Sáp nhập phòng A vào phòng B: HR điều chuyển hết người của A sang B (FR-2.7, cùng ngày hiệu lực) rồi
+  ngừng hoạt động A. Không có thao tác "sáp nhập" riêng.
 
 ## 3. Yêu cầu phi chức năng liên quan
 
@@ -107,8 +136,8 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| Rà lại quy tắc trưởng, phó phòng (FR-2.9) đã soạn thay | – | TV2 | `docs/org-integrity-rules` | 11 |
-| Chặn gốc thứ hai, kiểm `headEmployeeId` | AC-2.4.6, AC-2.4.7 | TV1 | `fix/employee-org-integrity` | 11 |
+| Rà lại quy tắc trưởng, phó đơn vị (FR-2.9) và ADR-14 đã soạn thay | – | TV2 | `docs/org-integrity-rules` | 11 |
+| Chặn gốc thứ hai, kiểm `headEmployeeId`; thêm loại đơn vị, luật cha con, đổi seed (Công ty, Trung tâm, Nhóm) | AC-2.4.6 → AC-2.4.9, AC-2.2.3 | TV1 | `fix/employee-org-integrity` | 11 |
 | Giao diện quản lý phòng ban (mức S, cắt đầu tiên nếu thiếu thời gian) | AC-2.4.5 | TV1 | `feat/department-admin-ui` | 13 |
-| Trưởng, phó phòng; danh mục chức danh | AC-2.9.x, AC-2.6.x | TV1 | `feat/department-admin-ui` (cùng nhánh) | 13 |
+| Trưởng, phó đơn vị mọi cấp; danh mục chức danh; ngừng hoạt động đơn vị | AC-2.9.x, AC-2.6.x, AC-2.10.x | TV1 | `feat/department-admin-ui` (cùng nhánh) | 13 |
 | Quá trình công tác, điều chuyển có ngày hiệu lực | AC-2.8.x, AC-2.7.x | TV1 | `feat/employee-transfer` | 13 (mức S; nếu không kịp thì chỉ làm AC-2.8.x với dòng ghi khi tạo, sửa hồ sơ) |

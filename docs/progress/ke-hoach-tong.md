@@ -214,7 +214,7 @@ Các việc dưới đây chỉ làm khi bước 1 → 5 xong trước T3 (1/12)
 
 | Thứ tự cắt | Nhánh | Người | Việc |
 |---|---|---|---|
-| 1 | `feat/department-admin-ui` | TV1 Duong | UC2 AC-2.4.5, trưởng/phó phòng AC-2.9.x, chức danh AC-2.6.x |
+| 1 | `feat/department-admin-ui` | TV1 Duong | UC2 AC-2.4.5, trưởng/phó đơn vị mọi cấp AC-2.9.x (ADR-14), chức danh AC-2.6.x, ngừng hoạt động đơn vị AC-2.10.x |
 | 2 | `feat/employee-transfer` | TV1 Duong | UC2 quá trình công tác AC-2.8.x, điều chuyển có ngày hiệu lực AC-2.7.x |
 | 3 | `infra/idp-auth-events` | TV3 Bảo | UC7 AC-7.4.1: ghi đăng nhập, cấp và thu hồi vai trò từ Keycloak, Cognito |
 | 4 | `feat/approvals-inbox` | TV1 Duong | Trang "Việc cần duyệt" `/approvals` có tab, chuyển tiếp `/leave/approvals`, `/leave/hr` (AC-0.6.1 → 0.6.4) |
