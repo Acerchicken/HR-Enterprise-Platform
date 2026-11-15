@@ -202,3 +202,86 @@ export class EmployeeProfile extends DirectoryEntry {
 }
 
 export type ViewLevel = 'PUBLIC' | 'PERSONAL' | 'HR';
+
+// ----- Trang hồ sơ theo mục (UC1 spec 9.1, AC-1.8.x) -----
+
+export class ProfileSectionQuery {
+  @ApiPropertyOptional({ description: 'true: giải mã giá trị nhạy cảm của mục (bấm mắt); mỗi lần gọi ghi audit VIEW_SENSITIVE' })
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  reveal?: 'true' | 'false';
+}
+
+export class SectionSummary {
+  @ApiProperty({ example: 'personal' }) code: string;
+  @ApiProperty({ enum: ['personal', 'work', 'finance', 'benefits', 'other'] }) group: string;
+  @ApiProperty() title: string;
+  @ApiProperty({ description: 'false: mục chưa làm, giao diện hiện tiêu đề đỏ "Chưa có" và không gọi API' }) available: boolean;
+  @ApiProperty({ description: 'Số yêu cầu cập nhật đang chờ HR (luôn 0 cho tới khi có FR-1.9)' }) pendingRequests: number;
+}
+
+/** Đúng những gì trang hồ sơ mặc định hiện (AC-1.8.7): không có ngày sinh, địa chỉ, dòng của mục hay giá trị nhạy cảm. */
+export class ProfileSummary {
+  @ApiProperty() id: string;
+  @ApiProperty() employeeCode: string;
+  @ApiProperty() fullName: string;
+  @ApiProperty({ nullable: true }) positionTitle: string | null;
+  @ApiProperty() departmentId: string;
+  @ApiProperty({ nullable: true }) departmentName: string | null;
+  @ApiProperty({ nullable: true }) managerId: string | null;
+  @ApiProperty({ nullable: true }) managerName: string | null;
+  @ApiProperty({ nullable: true }) phone: string | null;
+  @ApiProperty() workEmail: string;
+  @ApiProperty({ enum: ['HR', 'OWNER', 'MANAGER', 'OTHER'] }) relation: 'HR' | 'OWNER' | 'MANAGER' | 'OTHER';
+  @ApiProperty({ description: 'HR: hiện nút "Sửa hồ sơ"' }) canEdit: boolean;
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Loại hợp đồng đang hiệu lực (hàng "Diện đối tượng", mức QL). null: chưa có dữ liệu. Không có trường này ở mức danh bạ',
+  })
+  contractType?: string | null;
+  @ApiProperty({ type: [SectionSummary], description: 'Mục người xem được thấy, theo thứ tự trên trang' })
+  sections: SectionSummary[];
+}
+
+/** Giá trị nhạy cảm: `value` chỉ có khi gọi với `reveal=true` và người xem được phép. */
+export class MaskedField {
+  @ApiProperty() hasValue: boolean;
+  @ApiProperty({ nullable: true }) value: string | null;
+}
+
+export class PersonalSection {
+  @ApiProperty({ example: 'personal' }) section: 'personal';
+  @ApiProperty() version: number;
+  @ApiProperty({ nullable: true }) phone: string | null;
+  @ApiProperty() workEmail: string;
+  @ApiProperty({ nullable: true }) address: string | null;
+  @ApiProperty({ nullable: true }) dateOfBirth: string | null;
+  @ApiProperty() hireDate: string;
+  @ApiProperty({ enum: ['ACTIVE', 'ON_LEAVE', 'TERMINATED'] }) status: EmployeeStatus;
+  @ApiPropertyOptional({ type: MaskedField, description: 'CCCD, chỉ HR' }) nationalId?: MaskedField;
+}
+
+export class SalarySection {
+  @ApiProperty({ example: 'salary' }) section: 'salary';
+  @ApiProperty({ type: MaskedField }) salary: MaskedField;
+}
+
+export class BankAccountSection {
+  @ApiProperty({ example: 'bank-account' }) section: 'bank-account';
+  @ApiProperty({ type: MaskedField }) bankAccount: MaskedField;
+}
+
+export type ProfileSectionData = PersonalSection | SalarySection | BankAccountSection;
+
+export class MeEmployee {
+  @ApiProperty() id: string;
+  @ApiProperty() employeeCode: string;
+  @ApiProperty() fullName: string;
+}
+
+/** `GET /me`: chỉ tài khoản, vai trò và hồ sơ gắn với tài khoản (mã, tên); dữ liệu hồ sơ lấy qua `summary` (AC-1.8.7). */
+export class MeResponse {
+  @ApiProperty() email: string;
+  @ApiProperty({ type: [String] }) roles: string[];
+  @ApiProperty({ type: MeEmployee, nullable: true }) employee: MeEmployee | null;
+}

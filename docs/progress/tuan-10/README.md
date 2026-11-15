@@ -13,6 +13,16 @@ Phân vai theo ADR-11: TV1 Duong code, TV2 Thanh nghiệp vụ + bảo mật ngh
 
 > File này là kế hoạch đầu tuần. Thứ 2 (16/11) nhóm điền mục 1–3 để làm báo cáo.
 
+> **Cập nhật 14/11: chuyển sang làm xong từng chức năng một.** Đến 14/11 chưa chức năng nào xong: các nhánh
+> `feat/document-search`, `feat/audit-ui`, `fix/auth-email-verified`, `feat/leave-delegation` chưa mở. Từ CN (15/11) nhóm làm
+> theo [kế hoạch tổng mục 7](../ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13): UC1 trước (TV1 mở PR `feat/profile-layout` CN 15/11), rồi UC3, UC4 → UC7 → UC5 → UC6.
+> Các nhánh chưa mở ở trên chuyển vào bước của chức năng tương ứng (`feat/document-search` tách phần giao diện kho tài liệu
+> thành `feat/document-ui`). Những việc vẫn giữ hạn tuần 10: `infra/idp-hardening` (TV3, CN 15/11, 12:00), biên bản
+> `docs/test-report-week10` (TV4), `docs/matrix-week10` (TV2, chỉ phần chưa làm), báo cáo T2 (16/11).
+>
+> Một số tài liệu thuộc vai trò của TV2, TV3, TV4 do TV1 viết trong PR #71, #74, #76. Người viết là TV1; TV2, TV3, TV4 đọc
+> và góp ý bằng review trên PR, hạn đầu tiên T2 (16/11), 21:00 ([mục 7.9](../ke-hoach-tong.md#79-phần-tv1-đã-làm-thay-thành-viên-đọc-review-và-góp-ý)).
+
 ## Quy trình
 
 Áp dụng [`CONVENTIONS.md` mục 6](../../CONVENTIONS.md#quy-trình-cho-một-việc): mỗi việc một nhánh tách từ `dev`, mỗi nhánh một PR
@@ -43,6 +53,7 @@ Theo mức độ trong BRD. Nếu không đủ thời gian thì cắt từ dư�
 | `feat/documents-api` | TV1 Duong | API tài liệu, upload presigned URL, lọc theo phạm vi, phiên bản; ADR-13 | PR code + e2e | T5 (12/11) | T6 (13/11) | TV2, TV3 |
 | `infra/documents-email` | TV3 Bảo | Code Terraform: S3 tài liệu (CORS, IAM), email SES, alarm; chỉ `validate`/`plan` | `infra/` | T6 (13/11), 21:00 | T7 (14/11) | TV1 |
 | `feat/document-search` | TV1 Duong | Worker trích văn bản, full-text PostgreSQL, tìm theo quyền; giao diện tài liệu | PR code + e2e | T6 (13/11) | T7 (14/11) | TV2, TV4 |
+| `infra/idp-hardening` | TV3 Bảo | Siết cấu hình đăng nhập Cognito và Keycloak: tắt tự đăng ký, mật khẩu có chữ hoa, khóa sau 5 lần sai, thời hạn token và phiên (NFR-5.2, 5.3, 5.5, 5.9; thêm 13/11) | `infra/staging/cognito.tf`, `keycloak/realm-hr.json` | CN (15/11), 12:00 | T2 (16/11), 9:00 | TV1, TV4 |
 | `docs/aws-rollout-plan` | TV3 Bảo | Kế hoạch lên AWS tuần 12–13: thứ tự, chi phí 2 tuần, rollback, dọn dẹp | `infra/README.md` | T7 (14/11), 21:00 | CN (15/11) | TV1 |
 | `docs/test-cases-week10` | TV4 Duy | Ca kiểm thử tài liệu, tìm kiếm, hồ sơ, audit, quy tắc một quản lý | `docs/business/test-cases-tuan-10.md` | T5 (12/11), 21:00 | T6 (13/11) | TV2, TV1 |
 | `feat/audit-ui`, `fix/auth-email-verified` | TV1 Duong | Màn hình xem audit; kiểm `email_verified` | PR code + e2e | T7 (14/11) | CN (15/11) | TV2 |
@@ -80,7 +91,24 @@ _Điền cuối tuần._
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 11: 16/11 – 23/11)
 
-_Điền cuối tuần. Dự kiến theo kế hoạch tổng: load test 50 RPS, SLO, chi phí._
+_Điền cuối tuần._ Kế hoạch chi tiết tuần 11 cho từng thành viên: [`tuan-11/`](../tuan-11/README.md) (lập 14/11). Kế hoạch tuần 11–13 đã chia theo từng tính năng (cập nhật 13/11):
+[kế hoạch tổng mục 7](../ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13). Bảng bảo mật dưới đây đã nằm trong mục 7.3 (việc chung).
+
+**Việc bảo mật đã xếp sẵn cho tuần 11 (thêm 13/11).** Các việc này lấy từ những dòng "Chưa có" trong
+[SRS mục 6.6](../../requirements/SRS.md#66-nfr-5--bảo-mật). Khi tạo thư mục `tuan-11`, TV1 chép bảng này vào kế hoạch tuần.
+
+| Nhánh | Người | Việc | Yêu cầu (SRS) | Mở PR | Merge | Review |
+|---|---|---|---|---|---|---|
+| `feat/security-headers-ratelimit` | TV1 Duong | Header bảo mật (CSP, HSTS, `nosniff`, chặn iframe); giới hạn 100 request/phút cho mỗi người dùng, 20 request/phút cho tìm kiếm, vượt thì trả 429. Ngưỡng đặt qua biến môi trường | NFR-5.21, NFR-5.22 | T3 (17/11) | T4 (18/11) | TV3, TV4 |
+| `infra/idp-mfa` | TV3 Bảo | MFA bằng ứng dụng TOTP. Keycloak: luồng đăng nhập bắt OTP với role `hr`, `admin`. Cognito: bật TOTP, đặt MFA bắt buộc cho tài khoản HR, ADMIN; ghi cách làm vào `infra/README.md` | NFR-5.4 | T5 (19/11), 21:00 | T6 (20/11) | TV1 |
+| `docs/security-test-cases-week11` | TV4 Duy | Thêm ca kiểm thử: tự đăng ký, mật khẩu yếu, khóa sau 5 lần sai, hết phiên, MFA, 429, header bảo mật | NFR-5.2 → 5.5, 5.9, 5.21, 5.22 | T4 (18/11), 21:00 | T5 (19/11) | TV1, TV3 |
+
+Thứ tự:
+
+- **Rate limit trước load test.** `feat/security-headers-ratelimit` merge trước load test. Khi load test, dùng nhiều tài khoản
+  hoặc nâng ngưỡng qua biến môi trường, để số đo NFR-1 không bị 429 làm sai.
+- **Chốt MFA trước khi làm `infra/idp-mfa`.** Việc này cần chốt câu hỏi số 2 ở
+  [SRS mục 8](../../requirements/SRS.md#8-vấn-đề-còn-mở): MFA có bắt buộc từ version 1 không.
 
 ## 3. Quyết định quan trọng
 
@@ -103,38 +131,4 @@ không dùng. Chạy 2 tuần cuối giảm chi phí khoảng một nửa.
 
 ### ADR-13 – Kho tài liệu: tải lên trực tiếp, tải xuống qua API, lọc phạm vi trong truy vấn
 
-**Bối cảnh:** UC5 cần lưu file PDF/DOCX tối đa 20 MiB, nhiều phiên bản, phạm vi xem theo toàn công ty, phòng ban (gồm phòng ban
-con) và vai trò (`document-rules.md` DR-01 → DR-08). DR-06 yêu cầu mất quyền là không tải được ngay, kể cả bằng link đã cấp;
-DR-08 yêu cầu không lộ tài liệu ngoài phạm vi, kể cả tiêu đề hay số lượng.
-
-**Các giải pháp:**
-
-| # | Giải pháp |
-|---|---|
-| A | File đi qua API cả hai chiều |
-| B | Tải lên bằng presigned URL PUT; tải xuống qua API (API đọc từ storage và stream về) |
-| C | Presigned URL cả hai chiều |
-
-**Tiêu chí lựa chọn:**
-
-| Tiêu chí | A | B | C |
-|---|---|---|---|
-| Đáp ứng DR-06 (thu hồi quyền tải ngay) | 5 | 5 | 1 |
-| Tải lên không chiếm băng thông, bộ nhớ của API (FR-5.1) | 2 | 5 | 5 |
-| Độ phức tạp | 4 | 3 | 4 |
-| **Tổng** | **11** | **13** | **10** |
-
-**Giải pháp được chọn:** B.
-
-- Tải lên: HR khai báo tên file, loại, dung lượng → API kiểm DR-01 và ký URL PUT 10 phút; trình duyệt PUT thẳng lên storage
-  (MinIO/S3); HR gọi `confirm`, API kiểm file đã có, đúng dung lượng, đúng định dạng thực (magic number) rồi mới cho phiên bản
-  thành `READY`. Sai thì xóa file, phiên bản `REJECTED`.
-- Tải xuống: `GET /documents/{id}/download` kiểm quyền ở mỗi lần gọi rồi stream từ storage; không phát link tải.
-- Phạm vi xem: tính lại mỗi request từ phòng ban hiện tại (kèm phòng ban cha) và vai trò hiện tại; lọc bằng điều kiện SQL ngay
-  trong truy vấn danh sách, nên phân trang và số lượng không lộ tài liệu ngoài phạm vi. Ngoài phạm vi trả 404 như không tồn tại.
-- Tìm kiếm (`feat/document-search`) dùng full-text PostgreSQL trên cùng điều kiện phạm vi, không thêm dịch vụ search riêng.
-
-**Đánh đổi:** tải xuống tốn băng thông API (file ≤ 20 MiB, lượng tải thấp); thêm bước `confirm` sau khi upload; phiên bản
-`PENDING` bỏ dở cần dọn định kỳ (chưa làm).
-
-**Khi nào xem lại:** tải xuống làm API chậm rõ rệt khi load test tuần 11, hoặc cần file lớn hơn 20 MiB.
+> Đã chuyển sang file riêng: [ADR-13 – Kho tài liệu: tải lên trực tiếp, tải xuống qua API, lọc phạm vi trong truy vấn](../../architecture/adr/ADR-13-document-storage.md). Danh sách toàn bộ ADR: [`architecture/adr/`](../../architecture/adr/README.md).

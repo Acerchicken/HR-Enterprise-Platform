@@ -5,8 +5,9 @@
 Đồ án môn Cloud Application Development – đề tài số 3. Hệ thống HR nội bộ cho doanh nghiệp ~2,000 nhân viên:
 hồ sơ nhân viên, sơ đồ tổ chức, đơn nghỉ phép có duyệt, kho tài liệu chính sách, tìm kiếm, audit.
 
-Trạng thái: **tuần 7 – Implementation 1 (nền tảng)**. Đã có: đăng nhập OIDC, module Employee, Organization, Audit,
-model + state machine của Leave, dữ liệu mẫu 2,000 nhân viên, frontend (hồ sơ, danh bạ, sơ đồ tổ chức).
+Trạng thái (tuần 10, 13/11/2026): đã có đăng nhập OIDC (Keycloak local, Cognito cho staging), hồ sơ nhân viên, sơ đồ tổ chức,
+audit, quy trình nghỉ phép đầy đủ (tạo, duyệt, từ chối, hủy, hoàn tất) kèm email thông báo qua outbox + queue + worker, kho tài
+liệu HR, dữ liệu mẫu 2,000 nhân viên, Terraform cho staging AWS. Tiến độ từng tuần: [docs/progress/](docs/progress/README.md).
 
 ## Kiến trúc (tóm tắt)
 
@@ -14,7 +15,10 @@ Kiến trúc đầy đủ: [kiến trúc hệ thống](docs/architecture/SAD-1-s
 Bộ tài liệu yêu cầu và thiết kế đi theo thứ tự BRD → SRS → SAD: mục lục ở [`docs/README.md`](docs/README.md).
 
 - **Modular monolith** (ADR-01): một API NestJS, mỗi module một thư mục và một schema PostgreSQL.
-- **PostgreSQL** (ADR-02): schema `org`, `employee`, `iam`, `leave`, `audit`. Không có foreign key chéo schema.
+- **PostgreSQL** (ADR-02): schema `org`, `employee`, `iam`, `leave`, `notification`, `audit`, `document`. Không có foreign key
+  chéo schema. Chi tiết bảng, cột, khóa: [database schema](docs/architecture/database-schema.md).
+- **Event bất đồng bộ**: transactional outbox → RabbitMQ (local) / SQS (AWS) → notification worker gửi email
+  ([hợp đồng event](docs/architecture/event-contract.md)).
 - **Đăng nhập**: Keycloak (OIDC, Authorization Code + PKCE). API kiểm tra chữ ký JWT bằng JWKS.
   Trên cloud, Keycloak và PostgreSQL được thay bằng dịch vụ managed (ADR-00).
 - **Bảo mật dữ liệu**: CCCD, số tài khoản, lương mã hóa AES-256-GCM ở tầng ứng dụng; chỉ HR được xem, mỗi lần xem đều ghi audit.
@@ -27,16 +31,20 @@ HR-Enterprise-Platform/
 │   │   ├── common/          lỗi chuẩn {code,message,traceId}, traceId, phân trang, cache TTL, mã hóa trường
 │   │   ├── config/          đọc biến môi trường
 │   │   ├── database/        data-source, migrations/, seed.ts
+│   │   ├── messaging/       EventBus: driver RabbitMQ và SQS
+│   │   ├── worker/          notification worker (nhận event, gửi email)
 │   │   └── modules/
 │   │       ├── identity/    xác thực token, map tài khoản ↔ nhân viên, role, guard
 │   │       ├── organization/ phòng ban, chức danh, cây tổ chức
 │   │       ├── employee/    hồ sơ, danh bạ, quy tắc phân quyền, trường nhạy cảm
 │   │       ├── audit/       ghi/tra cứu audit log
-│   │       └── leave/       entity + state machine (API ở tuần 8)
+│   │       ├── leave/       đơn nghỉ phép, state machine, số dư, ngày lễ, outbox
+│   │       └── document/    kho tài liệu HR, phiên bản file trên object storage
 │   └── test/                e2e test
 ├── frontend/                React + Vite (TypeScript)
 ├── keycloak/realm-hr.json   realm "hr": client, role, 4 tài khoản demo
-├── docs/                    openapi.yaml, CONVENTIONS.md, progress/ (kế hoạch + báo cáo tuần)
+├── infra/                   Terraform cho AWS staging (xem infra/README.md)
+├── docs/                    BRD, SRS, SAD, openapi.yaml, tài liệu cho dev, CONVENTIONS.md, progress/
 └── docker-compose.yml
 ```
 
@@ -122,25 +130,26 @@ npm test                     # unit test (state machine, phân quyền, mã hóa
 npm run test:e2e             # e2e với DB thật: cần đã migrate + seed
 ```
 
-## API hiện có (tuần 7)
+## API
 
-Chi tiết: [docs/openapi.yaml](docs/openapi.yaml) hoặc Swagger. Mọi endpoint cần Bearer token, trừ `/health`.
+Hợp đồng API đầy đủ (endpoint, request, response, quyền): [`docs/openapi.yaml`](docs/openapi.yaml), hoặc Swagger tại
+http://localhost:3000/api/docs khi đang chạy. File này sinh từ code bằng `npm run openapi` (backend), nên luôn khớp với code.
+Mọi endpoint có tiền tố `/api/v1` và cần Bearer token, trừ `/health`.
 
-| Method | Endpoint | Ai gọi được |
-|---|---|---|
-| GET | `/health` | Không cần đăng nhập |
-| GET | `/me` | Mọi người |
-| GET | `/employees?q=&dept=&page=&size=` | Mọi người (danh bạ) |
-| GET | `/employees/{id}` (`?include=sensitive` cho HR) | Theo quyền |
-| PATCH | `/employees/{id}` | Chính mình (phone, address), HR (mọi trường) |
-| POST | `/employees` | HR |
-| GET | `/employees/{id}/direct-reports` | Mọi người |
-| GET | `/departments`, `/departments/tree`, `/departments/{id}` | Mọi người |
-| GET | `/departments/{id}/members` | Mọi người |
-| POST / PATCH | `/departments`, `/departments/{id}` | HR, Admin |
-| GET | `/positions`, `/leave-types` | Mọi người |
-| GET | `/leave-balances/me` | Mọi người |
-| GET | `/audit-logs?entity=&entityId=&actor=&from=&to=` | HR, Admin |
+Nhóm endpoint: `employee` (hồ sơ, danh bạ, `/me`), `organization` (phòng ban, chức danh, cây tổ chức), `leave` (loại phép,
+ngày lễ, số dư, đơn nghỉ và duyệt), `documents` (kho tài liệu), `audit` (tra cứu audit log).
+
+## Tài liệu cho người viết code
+
+| Tài liệu | Nội dung |
+|---|---|
+| [CONVENTIONS](docs/CONVENTIONS.md) | Ranh giới module, đặt tên, API, migration, git và review |
+| [Biến môi trường](docs/development/configuration.md) | Mỗi biến dùng làm gì, mặc định, giá trị trên staging, biến nào bắt buộc |
+| [Mã lỗi API](docs/development/error-codes.md) | Format `{ code, message, traceId }`, mã lỗi và message theo từng module |
+| [Database schema](docs/architecture/database-schema.md) | ERD, bảng, cột, khóa, index, lịch sử migration |
+| [Hợp đồng event và queue](docs/architecture/event-contract.md) | 5 event nghỉ phép, payload, exchange/queue, chống trùng |
+| [SAD phần 2](docs/architecture/SAD-2-software-architecture.md) | Kiến trúc phần mềm: module, luồng request, pattern |
+| [Hạ tầng staging](infra/README.md) | Terraform, deploy, rollback (TV3) |
 
 ## Kế hoạch và tiến độ
 
