@@ -88,4 +88,6 @@ export interface LeaveRequestView {
   createdAt: Date;
   updatedAt: Date;
   history?: LeaveHistoryView[];
+  /** Chỉ có ở API xem chi tiết: người gọi được duyệt/từ chối đơn này (quản lý trực tiếp, hoặc HR với đơn của CEO). */
+  canDecide?: boolean;
 }

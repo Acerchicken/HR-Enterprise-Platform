@@ -16,7 +16,7 @@ export function Layout() {
           <NavLink to="/directory">Danh bạ</NavLink>
           <NavLink to="/org">Sơ đồ tổ chức</NavLink>
           <NavLink to="/leave" end>Nghỉ phép</NavLink>
-          {me?.roles.includes('MANAGER') && <NavLink to="/leave/approvals">Duyệt đơn</NavLink>}
+          {(me?.roles.includes('MANAGER') || me?.roles.includes('HR')) && <NavLink to="/leave/approvals">Duyệt đơn</NavLink>}
           {me?.roles.includes('HR') && <NavLink to="/leave/hr">HR hoàn tất</NavLink>}
         </nav>
         <div className="who">

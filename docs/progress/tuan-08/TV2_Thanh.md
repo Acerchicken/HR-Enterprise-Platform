@@ -5,7 +5,7 @@ Vai trò: viết business rule trước khi TV1 code, vẽ quy trình nghiệp v
 ## Cập nhật 31/10: việc còn lại đến hết tuần
 
 Tình trạng: business rule đã vào `dev` (PR #1). BR-03 được TV1 sửa để trừ ngày lễ (PR #8, đã ghi chú trên PR #1). Nhánh
-`docs/uc1-uc2-review` có bản nháp `docs/business/uc1-uc2-review-draft.md` từ 29/10 nhưng **chưa mở PR và chưa có issue
+`docs/uc1-uc2-review` có bản nháp `docs/progress/tuan-08/uc1-uc2-review-draft.md` từ 29/10 nhưng **chưa mở PR và chưa có issue
 nào** trên GitHub (hạn thứ 6 30/10).
 
 | Hạn | Việc | Output |

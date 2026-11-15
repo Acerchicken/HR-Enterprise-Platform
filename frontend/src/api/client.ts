@@ -8,6 +8,8 @@ export class ApiError extends Error {
     public code: string,
     message: string,
     public traceId?: string,
+    /** Lỗi validation theo từng trường (tên trường → lỗi), để form hiện lỗi đúng ô. */
+    public fields?: Record<string, string>,
   ) {
     super(message);
   }
@@ -23,7 +25,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const body = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) {
     const msg = Array.isArray(body?.message) ? body.message.join('; ') : (body?.message ?? res.statusText);
-    throw new ApiError(res.status, body?.code ?? 'HTTP_ERROR', msg, body?.traceId);
+    throw new ApiError(res.status, body?.code ?? 'HTTP_ERROR', msg, body?.traceId, body?.fields);
   }
   return body as T;
 }
@@ -39,6 +41,7 @@ export interface DirectoryEntry {
   phone: string | null;
   departmentId: string;
   departmentName: string | null;
+  positionId: string;
   positionTitle: string | null;
   managerId: string | null;
   managerName: string | null;
@@ -74,6 +77,12 @@ export interface Department {
   office: string;
   parentId: string | null;
   headEmployeeId: string | null;
+}
+
+export interface Position {
+  id: string;
+  code: string;
+  title: string;
 }
 
 export interface DepartmentNode extends Department {
@@ -125,4 +134,6 @@ export interface LeaveRequest {
   createdAt: string;
   updatedAt: string;
   history?: LeaveHistory[];
+  /** Có ở API xem chi tiết: người gọi được duyệt/từ chối đơn này. */
+  canDecide?: boolean;
 }

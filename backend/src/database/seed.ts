@@ -107,7 +107,7 @@ const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 async function main() {
   const reset = process.argv.includes('--reset');
   faker.seed(2026);
-  const cfg = loadConfig();
+  const cfg = loadConfig(process.env, { needsAuth: false }); // seed không xác thực token, chạy được bằng task của worker
   const crypto = new FieldCrypto(cfg.fieldEncryptionKey);
   await dataSource.initialize();
 

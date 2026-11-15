@@ -3,7 +3,7 @@
 Vai trò: mô tả **ai được làm gì với dữ liệu nào** (ma trận phân quyền) và **cái gì có thể bị tấn công** (threat model) từ góc
 nhìn nghiệp vụ; chốt các điểm nghiệp vụ còn mở từ tuần 8. TV1 dùng ma trận để viết e2e test, TV4 dùng để viết ca kiểm thử.
 
-Bản đối chiếu UC1/UC2 tuần 8 (`docs/business/uc1-uc2-review-draft.md`) làm rất tốt ở chỗ dẫn chứng code cụ thể và tách điểm đã
+Bản đối chiếu UC1/UC2 tuần 8 (`docs/progress/tuan-08/uc1-uc2-review-draft.md`) làm rất tốt ở chỗ dẫn chứng code cụ thể và tách điểm đã
 xác nhận với điểm cần làm rõ. Tuần này giữ cách làm đó.
 
 ## Hạn chót
@@ -110,4 +110,13 @@ _Từ 7/11 góp ý ghi trực tiếp trên PR (CONVENTIONS mục 6). Bảng dư�
 
 ## Việc đã làm
 
-_Điền T2 (9/11), 9:00._
+_Chốt ngày 9/11/2026, TV1 tổng hợp từ các PR và issue trên GitHub._
+
+| Việc | Output | Tình trạng |
+|---|---|---|
+| Sửa mục "Việc đã làm" tuần 8 | PR #35 | Đã merge 5/11 (hạn 4/11) |
+| Ma trận phân quyền RBAC/ABAC, phủ 27/27 API | PR #36, `docs/security/access-control-matrix.md` | Đã merge 5/11, đúng hạn |
+| Threat model STRIDE: 18 mối đe dọa cho 3 luồng, sơ đồ luồng dữ liệu, việc cần làm tiếp | PR #48, `docs/security/threat-model.md` | Đã merge 8/11 (hạn 7/11) |
+| Chốt issue #21, #22, BR-06; thêm BR-12 tạo đơn hộ; cập nhật ma trận | PR #49, `docs/business/leave-rules.md` | Đã merge 8/11 (hạn 6/11) |
+| Comment quyết định vào issue #21, #22 | – | **Chưa làm** |
+| Review nghiệp vụ PR của TV1 (#46) và TV4 (#47) | – | **Chưa làm:** không có review trên GitHub |

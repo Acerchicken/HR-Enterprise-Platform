@@ -9,7 +9,7 @@ Mục tiêu tuần:
 
 Phân vai theo ADR-11: TV1 Duong code, TV2 Thanh nghiệp vụ + bảo mật nghiệp vụ, TV3 Bảo cloud, IaC, CI/CD, TV4 Duy kiểm thử.
 
-> File này là kế hoạch đầu tuần. Thứ 2 (9/11) nhóm điền mục 1–3 để làm báo cáo.
+> Đã chốt ngày 9/11/2026. Bản chốt trên `main` có tag [`week-09`](https://github.com/Acerchicken/HR-Enterprise-Platform/releases/tag/week-09).
 
 ## Quy trình tuần này (mới)
 
@@ -70,27 +70,36 @@ web trên S3/CloudFront + Cognito; worker và SQS chuyển sang tuần 10.
 
 ## 1. Các công việc đã hoàn thành
 
-_Điền cuối tuần._
+Số liệu chốt ngày 9/11/2026, tình trạng PR theo GitHub.
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (Duong, nhóm trưởng) | | | [TV1_Duong.md](TV1_Duong.md) |
-| TV2 (Thanh) | | | [TV2_Thanh.md](TV2_Thanh.md) |
-| TV3 (Bảo) | | | [TV3_Bao.md](TV3_Bao.md) |
-| TV4 (Duy) | | | [TV4_Duy.md](TV4_Duy.md) |
+| TV1 (Duong, nhóm trưởng) | Secret production, nhận token Cognito, queue adapter RabbitMQ/SQS, e2e theo ma trận phân quyền (36 e2e); BRD và tài liệu kiến trúc; review PR của nhóm | PR #37–#46, #55 (đã merge) | [TV1_Duong.md](TV1_Duong.md) |
+| TV2 (Thanh) | Ma trận phân quyền 27/27 API, threat model STRIDE, chốt issue #21, #22, BR-06, BR-12 | PR #35, #36, #48, #49 (đã merge) | [TV2_Thanh.md](TV2_Thanh.md) |
+| TV3 (Bảo) | ADR-12 chọn AWS, CI build và quét image, Terraform staging, pipeline deploy (trễ 1–3 ngày so với hạn) | PR #50–#53 (đã merge) | [TV3_Bao.md](TV3_Bao.md) |
+| TV4 (Duy) | Ca kiểm thử phân quyền SEC-01 → SEC-58 | PR #47 (đã merge); PR #54 do TV1 chạy lại phần kết quả | [TV4_Duy.md](TV4_Duy.md) |
+
+**Chưa làm được theo kế hoạch:**
+- **Staging trên AWS:** chưa có `terraform plan` thật, chưa `apply`, chưa deploy lần đầu. Mục tiêu deploy staging của tuần không đạt, chuyển sang đầu tuần 10. Workflow deploy sẽ báo lỗi trên `dev` cho tới khi có hạ tầng.
+- **Smoke test staging (TV4):** chưa kiểm vì staging chưa sẵn sàng.
+- **Driver SQS:** mới kiểm bằng unit test với client giả.
+- **Kiểm thử của TV4:** 6 ca SEC và toàn bộ kết quả TC-01 → TC-22 do TV1 chạy thay, vì kết quả nộp lần đầu không tái hiện được hoặc không có số liệu quan sát được.
+- **Review chéo:** TV2, TV3, TV4 chưa để lại review nào trên GitHub cho PR của TV1 (#43–#46).
+- **Issue #21, #22:** chưa có comment quyết định; #21 chưa đóng, #22 giữ mở tới khi code xong ở tuần 10.
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 10: 9/11 – 16/11)
 
-_Điền cuối tuần. Dự kiến theo kế hoạch tổng: hoàn thiện chức năng (kho tài liệu HR, self-service search, chặn truy cập trái
-phép, deploy/rollback, logging/metrics cơ bản)._
+Hoàn thiện chức năng. Kế hoạch chi tiết, nhánh và hạn ở [`tuan-10/README.md`](../tuan-10/README.md).
 
-Đã chốt thêm trong tuần 9 (đưa vào kế hoạch tuần 10):
-- TV1: màn hình HR tạo và sửa hồ sơ nhân viên (`feat/hr-employee-form`, chi tiết trong [TV1_Duong.md](TV1_Duong.md#chuẩn-bị-cho-tuần-10-đã-chốt-511-đưa-vào-kế-hoạch-tuần-10));
-  code BR-06 (người duyệt thay), BR-12 (HR, quản lý tạo đơn hộ) và quyết định issue #22.
+| Thành viên | Công việc | Output |
+|---|---|---|
+| TV1 (Duong) | Quy tắc một quản lý, HR duyệt đơn CEO; giao diện HR tạo/sửa hồ sơ; kho tài liệu, tìm kiếm; giao diện audit; BR-06, BR-12 nếu còn thời gian | PR code + e2e, ADR-13 |
+| TV2 (Thanh) | Quy tắc kho tài liệu; thời gian lưu dữ liệu, quyền xem lý do nghỉ; cập nhật ma trận, BRD, threat model | `document-rules.md`, `leave-rules.md`, ma trận |
+| TV3 (Bảo) | MinIO local; `terraform plan` thật (không `apply`); code Terraform tài liệu, email, alarm; kế hoạch lên AWS tuần 12–13 | `infra/` |
+| TV4 (Duy) | Ca kiểm thử chức năng mới; chạy và ghi kết quả thật trên local | `test-cases-tuan-10.md`, `test-report-tuan-10.md` |
 
 ## 3. Quyết định quan trọng
 
 ### ADR-12 – Chọn cloud provider
 
-_TV3 viết theo khung (chuyển từ tuần 8): bối cảnh, các giải pháp, tiêu chí lựa chọn, giải pháp được chọn, trade-off, tiêu chí
-nghiệm thu, khi nào xem lại._
+> Đã chuyển sang file riêng: [ADR-12 – Chọn cloud provider](../../architecture/adr/ADR-12-cloud-provider.md). Danh sách toàn bộ ADR: [`architecture/adr/`](../../architecture/adr/README.md).

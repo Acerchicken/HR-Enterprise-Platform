@@ -1,7 +1,7 @@
-# Kiến trúc hệ thống – HRHelper (HR Enterprise Platform)
+# SAD phần 1 – Kiến trúc hệ thống – HRHelper (HR Enterprise Platform)
 
 Tài liệu mô tả hệ thống **nhìn từ bên ngoài**: gồm những khối nào, nói chuyện với ai, chạy ở đâu, bảo mật hạ tầng, sẵn sàng,
-phục hồi, quan sát, CI/CD và chi phí. Bên trong từng khối nằm ở [kiến trúc phần mềm](software-architecture.md).
+phục hồi, quan sát, CI/CD và chi phí. Bên trong từng khối nằm ở [kiến trúc phần mềm](SAD-2-software-architecture.md).
 
 Tài liệu có hai phần:
 
@@ -28,7 +28,7 @@ Cập nhật: 6/11/2026 (tuần 9). Trạng thái: ✅ đã chạy · 🟡 đang
 | Chi phí | < 100 USD/tháng cho staging | Dịch vụ tier nhỏ nhất, tắt môi trường ngoài giờ demo |
 | Đội ngũ | 4 người, 10 tuần, không có người vận hành | Ưu tiên dịch vụ managed (ADR-00) |
 
-Nguồn: [NFR và workload tuần 5](../progress/tuan-05/README.md), [BRD mục 10](../business/BRD.md#10-yêu-cầu-phi-chức-năng).
+Nguồn: [NFR và workload tuần 5](../progress/tuan-05/README.md), [SRS mục 6](../requirements/SRS.md#6-yêu-cầu-phi-chức-năng-nfr).
 
 ## 2. Ngữ cảnh hệ thống (C4 mức 1)
 
@@ -57,7 +57,7 @@ flowchart TB
 |---|---|---|---|
 | Identity provider (OIDC) | Redirect đăng nhập + kiểm chữ ký token bằng khóa công khai (JWKS) | Đồng bộ | Không đăng nhập mới được; token còn hạn vẫn dùng |
 | Dịch vụ gửi email | Queue → worker gọi SMTP | Bất đồng bộ | Gửi lại; lỗi đưa vào hàng đợi chết (DLQ); trạng thái đơn không đổi |
-| Object storage | Link tải lên/tải xuống ký sẵn (presigned URL) | Tải lên đồng bộ, xử lý sau bất đồng bộ | Metadata "pending" tới khi file có thật |
+| Object storage | Tải lên bằng link ký sẵn (presigned URL); tải xuống qua API để kiểm quyền mỗi lần (ADR-13) | Tải lên đồng bộ, xử lý sau bất đồng bộ | Metadata "pending" tới khi file có thật |
 | LLM API | REST có timeout | Đồng bộ | Hết thời gian thì chỉ tới tài liệu gốc |
 | Payroll | File CSV hằng đêm | Batch | Chạy lại được, idempotent theo ngày |
 

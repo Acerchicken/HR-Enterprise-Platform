@@ -30,6 +30,7 @@ export function EmployeePage() {
       <section className="card">
         <h2>{e.fullName}</h2>
         <p className="muted small">{VISIBILITY_LABEL[e.visibility]}</p>
+        {isHr && <p><Link className="button" to={`/employees/${e.id}/edit`}>Sửa hồ sơ</Link></p>}
         <dl>
           <dt>Mã nhân viên</dt><dd>{e.employeeCode}</dd>
           <dt>Email</dt><dd>{e.workEmail}</dd>

@@ -134,4 +134,14 @@ _Từ 7/11 góp ý ghi trực tiếp trên PR (CONVENTIONS mục 6). Bảng dư�
 
 ## Việc đã làm
 
-_Điền T2 (9/11), 9:00._
+_Chốt ngày 9/11/2026, TV1 tổng hợp từ các PR và issue trên GitHub._
+
+| Việc | Output | Tình trạng |
+|---|---|---|
+| ADR-12 chọn AWS, mapping dịch vụ, dự toán ~56,80 USD/tháng, NAT instance | PR #52, `docs/cloud/mapping.md` | Đã merge 8/11 (hạn 5/11); PR đầu #30 đã đóng |
+| CI build và quét image bằng Trivy; frontend chạy bằng user không phải root | PR #51 | Đã merge 8/11 (hạn 6/11); PR đầu #31 đã đóng |
+| Terraform staging và bootstrap trên AWS | PR #53, `infra/` | Đã merge 9/11 (hạn 7/11); PR đầu #32 đã đóng. TV1 sửa nốt 1 góp ý |
+| Pipeline deploy staging, rollback theo image SHA | PR #50, `.github/workflows/deploy-staging.yml` | Đã merge 9/11 (hạn 8/11); PR đầu #33 đã đóng |
+| `terraform plan` thật, `apply`, deploy staging lần đầu | – | **Chưa làm:** staging chưa lên; workflow deploy đang lỗi vì chưa có hạ tầng |
+| Cấu hình gửi email trên staging | – | Chuyển sang tuần 10 |
+| Review phần cấu hình trong PR của TV1 (#43, #44, #45) | – | **Chưa làm:** không có review trên GitHub |

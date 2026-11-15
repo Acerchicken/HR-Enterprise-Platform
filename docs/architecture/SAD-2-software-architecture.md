@@ -1,8 +1,8 @@
-# Kiến trúc phần mềm – HRHelper (HR Enterprise Platform)
+# SAD phần 2 – Kiến trúc phần mềm – HRHelper (HR Enterprise Platform)
 
 Tài liệu mô tả **bên trong** các khối của hệ thống: cách tổ chức code, module, luồng xử lý một request, dữ liệu, các pattern
 dùng để đảm bảo đúng nghiệp vụ, giao diện web và cách kiểm thử. Các khối chạy ở đâu, mạng, hạ tầng nằm ở
-[kiến trúc hệ thống](system-architecture.md).
+[kiến trúc hệ thống](SAD-1-system-architecture.md).
 
 Cập nhật: 6/11/2026 (tuần 9), theo code trên nhánh `dev`. Trạng thái: ✅ có trên `dev` · 🟡 đang review · ⬜ chưa làm.
 
@@ -123,12 +123,14 @@ sequenceDiagram
 
 - **Một PostgreSQL, mỗi module một schema** (ADR-02); foreign key chỉ trong cùng schema.
 - **Migration** TypeORM, `synchronize` luôn tắt; có `up` và `down`; migration đã merge không sửa lại. Hiện có:
-  `InitSchemas` (tuần 7), `LeaveWorkflow` (ngày lễ, nửa ngày), `LeaveOutbox` (outbox, `processed_event`).
+  `InitSchemas` (tuần 7), `LeaveWorkflow` (ngày lễ, nửa ngày), `LeaveOutbox` (outbox, `processed_event`), `Documents`
+  (schema `document`, tuần 10).
 - **Trường nhạy cảm** (CCCD, tài khoản, lương) nằm ở bảng riêng `employee_sensitive`, mã hóa AES-256-GCM bằng `FieldCrypto`
   trước khi ghi (ADR-08); audit chỉ ghi tên trường.
 - **Audit** append-only: trigger chặn UPDATE/DELETE (ADR-09).
 - **Số dư phép** có ràng buộc `used + pending <= entitled` ở database, là chốt chặn cuối nếu code sai.
-- Mô hình dữ liệu chi tiết: [tuần 6](../progress/tuan-06/TV2_Thanh.md#2-data-model--data-ownership).
+- **Mô hình dữ liệu chi tiết** (sơ đồ ERD từng schema, mô tả bảng, cột, khóa, index, tham chiếu chéo schema):
+  [database-schema.md](database-schema.md). Bản thiết kế ban đầu ở tuần 6: [TV2_Thanh](../progress/tuan-06/TV2_Thanh.md#2-data-model--data-ownership).
 
 ## 7. Pattern đảm bảo đúng nghiệp vụ
 
@@ -145,12 +147,15 @@ sequenceDiagram
 | Queue giao một event nhiều lần | **Consumer idempotent**: lưu id event đã xử lý | `worker/notification-worker.ts` |
 | Dữ liệu tham chiếu đọc nhiều | **Cache-aside** in-memory 10 phút (ADR-07) | `common/ttl-cache.ts`, Organization |
 
+Tên event, payload, exchange/queue và cách chống trùng: [hợp đồng event và queue](event-contract.md).
+
 ## 8. API
 
 - REST, tiền tố `/api/v1`; tài nguyên số nhiều, kebab-case; hành động đặc biệt dùng POST: `/leave-requests/{id}/approve`.
 - Danh sách luôn phân trang `?page=&size=` (tối đa 100), trả `{ items, page, size, total }`.
 - Hợp đồng sinh từ code ra [`openapi.yaml`](../openapi.yaml); Swagger ở `/api/docs`.
 - Quy ước đầy đủ: [CONVENTIONS mục 4](../CONVENTIONS.md#4-api).
+- Lỗi trả `{ code, message, traceId }`; danh sách mã lỗi và message theo module: [mã lỗi API](../development/error-codes.md).
 
 ## 9. Frontend
 
@@ -169,6 +174,7 @@ Kế hoạch tuần 10: form hồ sơ dựng từ một file mô tả trường 
 ## 10. Cấu hình và secret trong code
 
 - Mọi cấu hình đọc từ biến môi trường qua `loadConfig()` (12-factor); một chỗ duy nhất, có giá trị mặc định cho local.
+  Danh sách từng biến, mặc định và giá trị staging: [biến môi trường](../development/configuration.md).
 - `AUTH_MODE=dev` (token giả cho test) bị chặn khi `NODE_ENV=production`.
 - 🟡 Nhánh `feat/secret-config`: production thiếu secret hoặc dùng khóa dev thì không khởi động; tùy chọn TLS tới database.
 - 🟡 Nhánh `feat/auth-cognito`: claim client, claim role, userinfo cấu hình được để dùng identity provider khác Keycloak.

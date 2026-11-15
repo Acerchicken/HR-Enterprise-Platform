@@ -3,6 +3,11 @@ import { Link } from 'react-router-dom';
 import { api, LeaveBalance, Me } from '../api/client';
 import { useApi } from '../api/useApi';
 import { ErrorBox } from '../components/ErrorBox';
+import { formFields } from './employee/employee-fields';
+import { FieldInput } from './employee/FieldInput';
+
+/** Trường nhân viên tự sửa (phone, address), lấy từ cùng bộ mô tả trường với form của HR. */
+const SELF_FIELDS = formFields('edit', 'SELF');
 
 export function ProfilePage() {
   const me = useApi(() => api<Me>('/me'), []);
@@ -63,8 +68,15 @@ export function ProfilePage() {
       <section className="card">
         <h3>Cập nhật thông tin liên hệ</h3>
         <form onSubmit={save}>
-          <label>Số điện thoại<input value={phone} onChange={(x) => setPhone(x.target.value)} /></label>
-          <label>Địa chỉ<input value={address} onChange={(x) => setAddress(x.target.value)} /></label>
+          {SELF_FIELDS.map((f) => (
+            <FieldInput
+              key={f.key}
+              field={f}
+              value={f.key === 'phone' ? phone : address}
+              onChange={f.key === 'phone' ? setPhone : setAddress}
+              lookups={{ departments: [], positions: [] }}
+            />
+          ))}
           <button className="primary" disabled={saving}>{saving ? 'Đang lưu…' : 'Lưu'}</button>
           {saved && <span className="ok"> Đã lưu</span>}
         </form>

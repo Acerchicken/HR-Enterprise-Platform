@@ -22,7 +22,7 @@ Hệ thống là **modular monolith** (ADR-01). Để sau này tách được mo
 | document, worker (tuần 8–10) | TV1 | `document` | TV2 / TV4 |
 
 Hạ tầng (`docker-compose.yml`, `.github/workflows/`, IaC) do TV3 (Bảo) phụ trách. Business rule do TV2 (Thanh), ca kiểm thử và kiểm thử chức năng do TV4 (Duy) phụ trách. TV1 (Duong) code toàn bộ module
-(xem ADR-11 trong `docs/progress/tuan-07/README.md`).
+(xem [ADR-11](architecture/adr/ADR-11-role-adjustment.md)).
 
 ## 2. Cấu trúc một module
 
@@ -90,7 +90,9 @@ Danh sách nhánh của từng tuần ghi trong `docs/progress/tuan-NN/README.md
 Mỗi việc một nhánh, mỗi nhánh **một PR duy nhất**. Review diễn ra ngay trên PR: chưa đạt thì sửa tiếp trên cùng nhánh, PR tự
 cập nhật, không đóng PR để mở PR mới. Lịch sử thảo luận và các lần sửa nằm hết trong PR đó.
 
-1. Tách nhánh từ `dev` mới nhất: `git checkout dev && git pull && git checkout -b <nhánh>`.
+1. Việc thuộc một tính năng (UC1 → UC7) thì đọc thư mục tính năng trong [`docs/features/`](features/README.md) trước:
+   `requirements.md` (chọn mã `AC` sẽ làm), `spec.md` (luồng, ngoại lệ), `deploy.md`, `test.md`. Tách nhánh từ `dev` mới nhất:
+   `git checkout dev && git pull && git checkout -b <nhánh>`.
 2. Mỗi nhánh **chỉ một việc**, sống tối đa vài ngày. Việc lớn thì chia thành nhiều nhánh nối tiếp nhau, mỗi nhánh một PR nhỏ.
 3. Commit theo Conventional Commits: `feat(leave): add approve endpoint`, `fix(employee): ...`, `docs(business): ...`,
    `chore(infra): ...`, `ci: ...`, `test: ...`.
@@ -102,7 +104,8 @@ cập nhật, không đóng PR để mở PR mới. Lịch sử thảo luận v�
 6. **Người làm sửa trên chính nhánh đó**, commit rồi `git push`. PR tự thêm commit mới. Trả lời từng comment ("đã sửa ở
    <commit>") hoặc bấm "Resolve conversation", rồi bấm "Re-request review". Lặp lại bước 5–6 tới khi được approve.
 7. Trước khi merge: đã kéo `dev` mới nhất về nhánh (`git pull origin dev`) và hết xung đột; PR code thì CI xanh
-   (lint, test, build).
+   (lint, test, build). PR làm tính năng thì cập nhật 4 file của tính năng trong cùng PR (trạng thái AC, hiện trạng, migration
+   và biến môi trường mới, test mới), theo [`docs/features/README.md`](features/README.md#làm-một-tính-năng-theo-tài-liệu-này).
 8. Sau khi được approve và CI xanh, **Duong merge** bằng **squash merge** (các commit sửa gộp thành một, lịch sử `dev` vẫn
    gọn), rồi xóa nhánh. Người mở PR không tự merge.
 9. Thứ 2 hằng tuần, TV1 mở PR `dev` → `main` và merge bằng **merge commit** (không squash) để giữ commit và tên tác giả của
@@ -137,6 +140,15 @@ Ngoài 3 trường hợp này, PR chưa đạt thì để mở và sửa tiếp.
   vào mục "chưa kiểm", không ghi Đạt/Không đạt.
 - Branch protection (ruleset trên GitHub): `main` và `dev` bắt buộc qua PR, có approve của Duong, cấm force push và xóa nhánh, chỉ Duong merge được. Khi CI chạy được thì thêm điều kiện CI phải xanh.
 - Không sửa lịch sử của nhánh người khác (không force push lên nhánh không phải của mình, không bao giờ force push `dev`, `main`).
+
+### Checklist: thêm một trường hồ sơ nhân viên
+
+1. Migration thêm cột (trường nhạy cảm: thêm vào `employee.employee_sensitive`, mã hóa qua `FieldCrypto`).
+2. Entity và DTO (`CreateEmployeeDto`, `UpdateEmployeeDto`) kèm validation; trường nhân viên tự sửa thì thêm vào `SELF_EDITABLE`.
+3. `npm run openapi` (backend) rồi `npm run gen:api` (frontend) để sinh lại type; TypeScript sẽ báo các chỗ chưa xử lý.
+4. Thêm một dòng `FieldDef` trong `frontend/src/pages/employee/employee-fields.ts`; form tạo/sửa và trang hồ sơ tự hiện trường mới.
+   Test `employee-fields.spec.ts` (backend) kiểm `editableBy` khớp `SELF_EDITABLE`.
+5. TV2 thêm dòng vào ma trận phân quyền; TV4 thêm ca kiểm thử.
 
 ## 7. Test
 

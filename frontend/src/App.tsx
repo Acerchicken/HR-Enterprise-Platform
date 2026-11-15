@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import { CallbackPage } from './pages/CallbackPage';
 import { DirectoryPage } from './pages/DirectoryPage';
 import { EmployeePage } from './pages/EmployeePage';
+import { EmployeeFormPage } from './pages/employee/EmployeeFormPage';
 import { LeaveDetailPage } from './pages/leave/LeaveDetailPage';
 import { LeaveListPage } from './pages/leave/LeaveListPage';
 import { NewLeavePage } from './pages/leave/NewLeavePage';
@@ -24,6 +25,8 @@ export function App() {
         <Route element={<Layout />}>
           <Route index element={<ProfilePage />} />
           <Route path="directory" element={<DirectoryPage />} />
+          <Route path="employees/new" element={<EmployeeFormPage key="new" mode="create" />} />
+          <Route path="employees/:id/edit" element={<EmployeeFormPage key="edit" mode="edit" />} />
           <Route path="employees/:id" element={<EmployeePage />} />
           <Route path="org" element={<OrgPage />} />
           <Route path="leave" element={<LeaveListPage key="mine" mode="mine" />} />

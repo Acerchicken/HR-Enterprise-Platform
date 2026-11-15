@@ -1,0 +1,11 @@
+# Example Terraform variables for staging environment
+aws_region         = "ap-southeast-1"
+project_name       = "hr-platform"
+environment        = "staging"
+vpc_cidr           = "10.0.0.0/16"
+db_name            = "hr"
+db_username        = "hr_admin"
+alert_emails       = ["devops-alerts@hr.local"]
+budget_limit_usd   = 50
+github_repository  = "Acerchicken/HR-Enterprise-Platform"
+api_container_port = 3000

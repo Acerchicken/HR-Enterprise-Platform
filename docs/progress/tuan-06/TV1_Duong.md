@@ -6,8 +6,8 @@
 |---|---|---|
 | Lập business capability map | Mục 1 | Xong |
 | Thiết kế application components | Mục 2 | Xong |
-| Viết ADR-01 (Monolith vs Microservices) | [README tuần 6](README.md#adr-01--modular-monolith-thay-vì-microservices) | Xong |
-| Viết ADR-03 (Sync vs Async) | [README tuần 6](README.md#adr-03--workflow-đồng-bộ-thông-báo-và-index-bất-đồng-bộ) | Xong |
+| Viết ADR-01 (Monolith vs Microservices) | [README tuần 6](../../architecture/adr/ADR-01-modular-monolith.md) | Xong |
+| Viết ADR-03 (Sync vs Async) | [README tuần 6](../../architecture/adr/ADR-03-sync-workflow-async-notification.md) | Xong |
 
 ## 1. Business capability map
 
