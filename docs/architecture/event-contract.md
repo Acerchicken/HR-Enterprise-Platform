@@ -10,6 +10,7 @@
 | Phiên bản | Ngày | Người viết | Nội dung |
 |---|---|---|---|
 | 1.0 | 13/11/2026 | TV1 Duong | Bản đầu: 5 event nghỉ phép, RabbitMQ (local) và SQS (staging) |
+| 1.1 | 15/11/2026 | TV1 Duong | Thêm mục 7: thay đổi dự kiến theo ADR-15 (chưa áp dụng) |
 
 ## 1. Luồng tổng quát
 
@@ -169,3 +170,15 @@ hai. Chấp nhận được với email thông báo.
 3. **Thêm loại event mới**: thêm vào `LeaveEventType`, routing key theo dạng `<module>.<Event>`; thêm consumer nếu cần.
    Module khác phát event thì dùng outbox của schema mình (ví dụ `document.outbox`), không ghi vào `leave.outbox`.
 4. Đổi tên exchange/queue phải sửa đồng thời code (`rabbitmq.ts`), Terraform (`sqs_worker.tf`) và file này.
+
+## 7. Thay đổi dự kiến theo ADR-15 (chưa áp dụng)
+
+[ADR-15](adr/ADR-15-service-extraction.md) tách Notification và Search thành service riêng. Khi làm, các thay đổi sau đi
+cùng PR code và cập nhật lại các mục ở trên:
+
+| Thay đổi | Theo quy tắc | Ghi chú |
+|---|---|---|
+| Thêm `recipientEmail`, `recipientName` vào payload event gửi email | Quy tắc 1 (thêm trường) | Notification service không còn đọc `employee.*`, `iam.*` |
+| Thêm `document.outbox` và event `document.<Event>` (phiên bản `READY`, ẩn tài liệu, đổi phạm vi) | Quy tắc 3 | Search service nhận để cập nhật index |
+| Thêm queue `search.document` bind vào `hr.events` (local); SNS topic `hr-events` trước các queue SQS (AWS) | Quy tắc 4 | Fan-out: một event đến nhiều consumer; sửa `rabbitmq.ts`, Terraform và file này |
+| Thêm `traceparent` (W3C Trace Context) vào header RabbitMQ và message attribute SQS | Quy tắc 1 | Truy vết OpenTelemetry xuyên qua queue |

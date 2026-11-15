@@ -32,9 +32,10 @@ Thư mục này giữ **mỗi ADR một file**, theo cách làm của Michael Ny
 | [ADR-12](ADR-12-cloud-provider.md) | Chọn cloud provider | Hệ thống | Đã chấp nhận | 8/11/2026 (PR #52) | TV3 (Bảo) |
 | [ADR-13](ADR-13-document-storage.md) | Kho tài liệu: tải lên trực tiếp, tải xuống qua API, lọc phạm vi trong truy vấn | Phần mềm | Đã chấp nhận | 12/11/2026 | TV1 (Dương) |
 | [ADR-14](ADR-14-org-unit-types.md) | Cây đơn vị tổ chức có loại đơn vị (Công ty, Trung tâm, Phòng, Nhóm), số cấp linh hoạt | Nghiệp vụ | Đề xuất (Duong chọn 15/11/2026) | Ngày merge PR | TV1 (Dương) |
+| [ADR-15](ADR-15-service-extraction.md) | Tách Notification và Search thành service riêng qua event, lõi vẫn là modular monolith | Cả hai | Đề xuất (Duong chọn 15/11/2026) | Ngày merge PR | TV1 (Dương) |
 
 Số thứ tự không trùng với thứ tự thời gian. ADR-00 → ADR-04 được đánh số ngay khi ra quyết định; ADR-05 → ADR-11 được ghi lại
-sau theo cùng khung. ADR tiếp theo là **ADR-15**.
+sau theo cùng khung. ADR tiếp theo là **ADR-16**.
 
 ## Trạng thái
 
