@@ -29,7 +29,7 @@ mở nhánh của chức năng khác (trừ việc chung).
 
 | Nhánh | Người | Việc | Tiêu chí | Mở PR | Merge | Review |
 |---|---|---|---|---|---|---|
-| `feat/profile-layout` | TV1 Duong | Trang hồ sơ theo nhóm, màu cyan, mục chưa có tiêu đề đỏ, tải theo nhu cầu; chủ hồ sơ tự xem lương, số tài khoản | AC-1.8.x, AC-1.3.5 | CN (15/11) | T3 (17/11) | TV2, TV4 |
+| `feat/profile-layout` (PR #80, mở 15/11) | TV1 Duong | Trang hồ sơ theo nhóm, màu cyan, mục chưa có tiêu đề đỏ, tải theo nhu cầu; chủ hồ sơ tự xem lương, số tài khoản | AC-1.8.x, AC-1.3.5 | CN (15/11) | T3 (17/11) | TV2, TV4 |
 | `docs/org-integrity-rules` | TV2 Thanh | Chốt nghỉ việc khi còn cấp dưới, `headEmployeeId`, audit theo nhóm trường, thời gian lưu audit, mục được gửi yêu cầu sửa, thời hạn HR xử lý | AC-1.7.1, AC-1.4.3, FR-1.9, FR-1.14 | T2 (16/11), 21:00 | T3 (17/11) | TV1, TV4 |
 | `docs/test-cases-uc1` | TV4 Duy | Ca còn thiếu ở mục 7 `test.md` UC1 | Mọi AC-1.x | T3 (17/11), 21:00 | T4 (18/11) | TV2, TV1 |
 | `fix/employee-org-integrity` | TV1 Duong | Bắt buộc `version`, audit theo nhóm trường, sửa `hireDate`/`workEmail`, nghỉ việc, trường nhạy cảm tải khi bấm hiện; UC2 gốc thứ hai, `headEmployeeId` | AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2, AC-2.4.6, AC-2.4.7 | T4 (18/11) | T5 (19/11) | TV2, TV4 |
@@ -42,7 +42,7 @@ mở nhánh của chức năng khác (trừ việc chung).
 
 | Nhánh | Người | Việc | Tiêu chí | Mở PR | Merge | Review |
 |---|---|---|---|---|---|---|
-| `infra/idp-hardening` | TV3 Bảo | Việc tuần 10: tắt tự đăng ký, chính sách mật khẩu, khóa 5 lần sai, thời hạn token và phiên | NFR-5.2, 5.3, 5.5, 5.9 | CN (15/11), 12:00 | T2 (16/11), 9:00 | TV1, TV4 |
+| `infra/idp-hardening` | TV3 Bảo | Việc tuần 10: tắt tự đăng ký, chính sách mật khẩu, khóa 5 lần sai, thời hạn token và phiên (12:00 CN 15/11 chưa có PR nên dời hạn) | NFR-5.2, 5.3, 5.5, 5.9 | T2 (16/11), 21:00 | T3 (17/11) | TV1, TV4 |
 | `feat/security-headers-ratelimit` | TV1 Duong | Header bảo mật; 100 request/phút mỗi người, 20/phút cho tìm kiếm, vượt thì 429; ngưỡng qua biến môi trường | NFR-5.21, 5.22, AC-1.14.x | T3 (17/11) | T4 (18/11) | TV3, TV4 |
 | `fix/auth-email-verified` | TV1 Duong | Chỉ liên kết tài khoản khi email đã xác minh (T-02) | – | T4 (18/11) | T5 (19/11) | TV3, TV4 |
 | `docs/security-test-cases-week11` | TV4 Duy | Tự đăng ký, mật khẩu yếu, khóa 5 lần sai, hết phiên, MFA, 429, header | NFR-5.2 → 5.5, 5.9, 5.21, 5.22 | T4 (18/11), 21:00 | T5 (19/11) | TV1, TV3 |
@@ -57,6 +57,11 @@ mở nhánh của chức năng khác (trừ việc chung).
 | `docs/leave-rules-week11` | TV2 Thanh | Cách tính phép năm, nghỉ theo sự kiện, đơn qua hai năm, hủy đơn đã duyệt, hoàn tất sau ngày kết thúc, nhắc đơn chờ lâu | AC-3.1.3, AC-3.1.4, AC-3.2.4, AC-4.5.3 | T5 (19/11), 21:00 | T6 (20/11) | TV1, TV4 |
 | `docs/test-cases-uc3-uc4` | TV4 Duy | Đổi quản lý khi đơn đang chờ, người duyệt thay, tạo đơn hộ, riêng tư, HR duyệt thêm | AC-3.7.x, AC-4.2.6, AC-4.3.x, AC-4.6.3, AC-4.7.3, AC-4.8.x | T7 (21/11), 21:00 | CN (22/11) | TV2, TV1 |
 
+### Việc tuần 10 còn tồn
+
+Đến 12:00 CN (15/11) chưa có PR `infra/idp-hardening` (TV3), `docs/test-report-week10` (TV4), `docs/matrix-week10` (TV2).
+Hạn mới: mở PR trước **T2 (16/11), 21:00**, merge T3 (17/11). Báo cáo tuần 10 ghi đúng là trễ hạn.
+
 ### Review phần TV1 đã viết thay
 
 Theo [kế hoạch tổng mục 7.9](../ke-hoach-tong.md#79-phần-tv1-đã-làm-thay-thành-viên-đọc-review-và-góp-ý). Người viết là TV1;
@@ -70,10 +75,12 @@ thành viên đọc, đối chiếu và góp ý bằng review trên PR. Báo cá
 | TV3 Bảo | `deploy.md` UC2 → UC7, `configuration.md` | #76, #74 | T6 (20/11) |
 | TV4 Duy | `test.md` UC1 | #76 | T2 (16/11), 21:00 |
 | TV4 Duy | `test.md` UC3, UC4 | #76 | T6 (20/11) |
+| TV2 Thanh | Bản vẽ giao diện UC2 → UC7, đề xuất `frontend.md` mục 10.8 | #81 | T4 (18/11), 21:00 |
+| TV4 Duy | Bản vẽ giao diện UC3, UC4 (cho ca kiểm thử giao diện) | #81 | T6 (20/11) |
 
 Thứ tự phụ thuộc:
 
-1. T2 (16/11): TV2, TV4 review UC1 trên #76 → TV1 sửa đặc tả trước khi code tiếp.
+1. T2 (16/11): TV2, TV4 review UC1 trên #76 và PR #80 → TV1 sửa, merge #80 T3 (17/11). TV3 sửa #68 (#69, #70 trước T3).
 2. T3 (17/11): `docs/org-integrity-rules` merge → TV1 làm `fix/employee-org-integrity`.
 3. T4 (18/11): rate limit merge trước load test; `infra/profile-files` merge trước `feat/profile-files`.
 4. T5–T6: TV2 chốt quy tắc nghỉ phép → TV4 viết ca UC3, UC4.

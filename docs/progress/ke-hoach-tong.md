@@ -133,7 +133,7 @@ nhiều chức năng cùng lúc. Load test (P4, tuần 11) chạy trên các API
 
 | Nhánh | Người | Việc | Tiêu chí | Mở PR | Merge | Review |
 |---|---|---|---|---|---|---|
-| `infra/idp-hardening` | TV3 Bảo | Tắt tự đăng ký, chính sách mật khẩu, khóa sau 5 lần sai, thời hạn token và phiên (việc tuần 10) | NFR-5.2, 5.3, 5.5, 5.9 | CN (15/11), 12:00 | T2 (16/11), 9:00 | TV1, TV4 |
+| `infra/idp-hardening` | TV3 Bảo | Tắt tự đăng ký, chính sách mật khẩu, khóa sau 5 lần sai, thời hạn token và phiên (việc tuần 10; 12:00 CN 15/11 chưa có PR nên dời hạn) | NFR-5.2, 5.3, 5.5, 5.9 | T2 (16/11), 21:00 | T3 (17/11) | TV1, TV4 |
 | `feat/security-headers-ratelimit` | TV1 Duong | Header bảo mật; 100 request/phút mỗi người, 20/phút cho tìm kiếm; ngưỡng qua biến môi trường. Dùng cho AC-1.14.x và AC-6.2.7 | NFR-5.21, 5.22 | T3 (17/11) | T4 (18/11) | TV3, TV4 |
 | `fix/auth-email-verified` | TV1 Duong | Chỉ liên kết tài khoản khi email đã xác minh (threat model T-02; dời từ tuần 10) | – | T4 (18/11) | T5 (19/11) | TV3, TV4 |
 | `docs/security-test-cases-week11` | TV4 Duy | Tự đăng ký, mật khẩu yếu, khóa 5 lần sai, hết phiên, MFA, 429, header | NFR-5.2 → 5.5, 5.9, 5.21, 5.22 | T4 (18/11), 21:00 | T5 (19/11) | TV1, TV3 |
@@ -144,12 +144,17 @@ nhiều chức năng cùng lúc. Load test (P4, tuần 11) chạy trên các API
 | (không có nhánh) | TV3 Bảo | `terraform apply` staging theo `docs/aws-rollout-plan`, gồm bucket tài liệu và bucket hồ sơ; chạy Deploy Staging với seed | `deploy.md` mục 5 của các UC đã xong | T3 (24/11) xong | – | TV1 |
 | `infra/llm-secrets-cost` | TV3 Bảo | Khóa LLM trong Secrets Manager, budget alarm chi phí LLM | NFR-7.1 | T4 (25/11), 21:00 | T5 (26/11) | TV1 |
 
-TV1 review các PR đang mở của TV3 (#68 MinIO local, #69 kế hoạch lên AWS, #70 Terraform tài liệu và email) trước T2 (16/11);
-TV3 sửa theo góp ý trên cùng PR. Bước 1 (file hồ sơ) và bước 4 (tài liệu) cần các PR này.
+TV1 đã review ba PR đang mở của TV3 ngày 14/11 (Request changes): #68 MinIO local (image MinIO không pull được, làm hỏng
+`docker compose up`), #69 kế hoạch lên AWS (còn nhắc ECR `hr-web`, kịch bản rollback deploy từ nhánh test), #70 Terraform tài liệu
+và email (email gửi bằng SES API theo quyết định 14/11, người nhận sandbox, alarm). TV3 sửa trên cùng PR: #68 trước T2 (16/11),
+21:00; #69, #70 trước T3 (17/11), 21:00. TV1 merge trong 24 giờ sau khi đạt. Bước 1 (file hồ sơ), `feat/mail-driver-ses` và
+`apply` staging T3 (24/11) cần các PR này.
 
 ### 7.4 Bước 1 – UC1 (CN 15/11 → T2 23/11)
 
 > **Rà soát 14/11:** [UC1 – Rà soát hiện trạng và kế hoạch `feat/profile-layout`](../features/UC1-employee-profile/ra-soat.md).
+> **Cập nhật 15/11:** `feat/profile-layout` đã mở PR #80 (đủ sáu bước), chờ TV2, TV4 review. Bản vẽ giao diện UC2 → UC7 ở
+> PR #81 (TV1), TV2 và TV4 review theo mục 7.9.
 > Quyết định cùng ngày: nhánh `feat/profile-self-service` đổi tên thành `feat/profile-change-requests` để khỏi nhầm với UC6;
 > ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp, tìm tài liệu và trợ lý AI ở trang riêng "Tra cứu tài liệu"; biểu tượng dùng
 > `lucide-react`.
@@ -214,7 +219,7 @@ Các việc dưới đây chỉ làm khi bước 1 → 5 xong trước T3 (1/12)
 
 | Thứ tự cắt | Nhánh | Người | Việc |
 |---|---|---|---|
-| 1 | `feat/department-admin-ui` | TV1 Duong | UC2 AC-2.4.5, trưởng/phó phòng AC-2.9.x, chức danh AC-2.6.x |
+| 1 | `feat/department-admin-ui` | TV1 Duong | UC2 AC-2.4.5, trưởng/phó đơn vị mọi cấp AC-2.9.x (ADR-14), chức danh AC-2.6.x, ngừng hoạt động đơn vị AC-2.10.x |
 | 2 | `feat/employee-transfer` | TV1 Duong | UC2 quá trình công tác AC-2.8.x, điều chuyển có ngày hiệu lực AC-2.7.x |
 | 3 | `infra/idp-auth-events` | TV3 Bảo | UC7 AC-7.4.1: ghi đăng nhập, cấp và thu hồi vai trò từ Keycloak, Cognito |
 | 4 | `feat/approvals-inbox` | TV1 Duong | Trang "Việc cần duyệt" `/approvals` có tab, chuyển tiếp `/leave/approvals`, `/leave/hr` (AC-0.6.1 → 0.6.4) |
@@ -242,6 +247,8 @@ Báo cáo tuần ghi đúng việc đã làm, ví dụ "TV2 review `requirements
 | `deploy.md` của UC1 | #76 | TV3 (hạ tầng) | TV3 Bảo | Biến môi trường, migration, tài nguyên staging, rollback có đúng với `infra/` không | T3 (17/11) |
 | `deploy.md` của UC2 → UC7; [`configuration.md`](../development/configuration.md) | #76, #74 | TV3 | TV3 Bảo | Như trên; biến nào trong Terraform chưa có trong `configuration.md` | T6 (20/11) |
 | `test.md` của UC1 | #76 | TV4 (kiểm thử) | TV4 Duy | Bảng phủ AC có đúng với test đang có không; ca nào thiếu. Sau đó tự viết ca thiếu ở `docs/test-cases-uc1` | T2 (16/11), 21:00 |
+| Bản vẽ giao diện UC2 → UC7 và các đề xuất ở `frontend.md` mục 10.8 | #81 | Chung (TV1 viết) | TV2 Thanh | Bố cục, trường, nút khớp `spec.md` và business rule; đồng ý hay không từng đề xuất mục 10.8 | T4 (18/11), 21:00 |
+| Bản vẽ giao diện UC3, UC4 | #81 | Chung (TV1 viết) | TV4 Duy | Đủ màn hình, trạng thái lỗi, trạng thái rỗng để viết ca kiểm thử giao diện | T6 (20/11) |
 | `test.md` của UC2 → UC7 | #76 | TV4 | TV4 Duy | Như trên, trước khi viết ca kiểm thử của bước tương ứng | Trước hạn mở PR ca kiểm thử của bước đó |
 
 TV1 xử lý mọi góp ý "cần sửa" trước khi merge #76, hoặc ở PR sau nếu #76 đã merge.

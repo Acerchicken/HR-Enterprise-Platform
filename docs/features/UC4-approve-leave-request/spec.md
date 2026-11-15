@@ -141,10 +141,36 @@ stateDiagram-v2
 | A2 | Tab Hoàn tất đơn nghỉ: `/approvals?type=leave-complete`, `/approvals/leave-complete/:id` | `GET /leave-requests`, `POST …/complete` |
 | A3 | `/approvals?type=leave` (HR) | Như luồng chính |
 | A6 | `/approvals?type=leave` (HR), `/approvals/leave/:id` | `GET /leave-requests/pending-hr`, `POST …/hr-approve`, `POST …/hr-reject` |
-| A4 | Chưa có | Chưa có |
+| A4 | `/approvals/delegations` (HR, vào từ nút "Phân công duyệt thay"; chưa có) | Chưa có |
 
 Hiện code có `/leave/approvals`, `/leave/hr` là trang riêng; khi làm trang `/approvals` thì hai đường dẫn này chuyển tiếp sang
 tab tương ứng.
+
+### 9.1 Bản vẽ giao diện
+
+Bản vẽ để duyệt bố cục trước khi code (15/11/2026), cùng phong cách với bản vẽ UC1 ở
+[giao diện chung mục 10](../frontend.md#10-bản-vẽ-giao-diện). Nguồn ở [`mockups.html`](../mockups/mockups.html), dữ liệu là người
+mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác chữ trong spec thì chữ đúng.
+
+**Quản lý duyệt đơn: chỉ một loại nên không có thanh tab (luồng chính, A1)**
+
+![Quản lý duyệt đơn nghỉ](../mockups/uc4-manager.png)
+
+**HR, tab "Đơn nghỉ": đơn Chờ HR duyệt kèm quyết định của quản lý (A3, A6)**
+
+![HR duyệt thêm](../mockups/uc4-hr.png)
+
+**HR, tab "Hoàn tất đơn nghỉ" (A2)**
+
+![HR hoàn tất đơn](../mockups/uc4-complete.png)
+
+**HR phân công duyệt thay `/approvals/delegations` (A4, FR-4.3)**
+
+![Phân công duyệt thay](../mockups/uc4-delegation.png)
+
+**Trên điện thoại: chi tiết đơn, từ chối bắt buộc ghi chú**
+
+![Duyệt đơn trên điện thoại](../mockups/uc4-mobile.png)
 
 ## 10. Yêu cầu phi chức năng liên quan
 

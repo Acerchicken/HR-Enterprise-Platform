@@ -1,6 +1,6 @@
 # Giao diện chung (frontend)
 
-> Phiên bản 1.3 – 14/11/2026 (1.1: bản vẽ giao diện mục 10; 1.2: gộp mọi loại duyệt vào trang "Việc cần duyệt", mục 2.4; 1.3: ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp, tìm tài liệu và trợ lý AI chuyển vào trang "Tra cứu tài liệu"; chốt `lucide-react`). Áp dụng cho mọi tính năng UC1 → UC7. Bộ tài liệu: [`docs/README.md`](../README.md).
+> Phiên bản 1.4 – 15/11/2026 (1.4: bản vẽ UC2 → UC7, mục 10.8; 1.1: bản vẽ giao diện mục 10; 1.2: gộp mọi loại duyệt vào trang "Việc cần duyệt", mục 2.4; 1.3: ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp, tìm tài liệu và trợ lý AI chuyển vào trang "Tra cứu tài liệu"; chốt `lucide-react`). Áp dụng cho mọi tính năng UC1 → UC7. Bộ tài liệu: [`docs/README.md`](../README.md).
 > Mỗi UC chỉ mô tả màn hình riêng của mình ở mục 9 trong `spec.md` và dẫn về file này cho phần dùng chung.
 > Mục còn ghi **Chưa có** là phần code chưa làm; tiêu chí `AC-0.x.y` dùng cho các PR giao diện như `AC` của từng UC.
 
@@ -312,3 +312,28 @@ Tab theo loại kèm số việc chờ. Danh sách bên trái, chi tiết bên p
 bắt buộc khi từ chối. Tab "Đơn nghỉ" cùng bố cục, phần chi tiết là thông tin đơn và số dư phép.
 
 ![Trang Việc cần duyệt, tab Sửa hồ sơ](mockups/approvals.png)
+
+### 10.8 Bản vẽ UC2 → UC7
+
+Bản vẽ màn hình riêng của từng UC nằm ở mục 9.1 trong `spec.md` của UC đó (theo cách chia hai tầng ở mục 1), cùng nguồn
+`mockups.html`. Mỗi màn hình có bản máy tính 1280 px; màn hình có bố cục khác trên điện thoại thì có thêm bản 390 px.
+
+| UC | Màn hình đã vẽ | Ở đâu |
+|---|---|---|
+| UC2 | Danh bạ, sơ đồ tổ chức, sửa phòng ban (trưởng, phó phòng), điều chuyển, chức danh; phòng ban và quá trình công tác trên điện thoại | [UC2 spec 9.1](UC2-organization/spec.md#91-bản-vẽ-giao-diện) |
+| UC3 | Đăng ký nghỉ, đơn nghỉ của tôi và chi tiết; form và hủy đơn trên điện thoại | [UC3 spec 9.1](UC3-create-leave-request/spec.md#91-bản-vẽ-giao-diện) |
+| UC4 | Quản lý duyệt (không có tab), HR duyệt thêm, HR hoàn tất, phân công duyệt thay; duyệt trên điện thoại | [UC4 spec 9.1](UC4-approve-leave-request/spec.md#91-bản-vẽ-giao-diện) |
+| UC5 | Trang "Tra cứu tài liệu", chi tiết và phiên bản, quản lý tài liệu, đăng tài liệu; điện thoại | [UC5 spec 9.1](UC5-document-repository/spec.md#91-bản-vẽ-giao-diện) |
+| UC6 | Kết quả tìm tài liệu, trợ lý chính sách có trích dẫn | [UC6 spec 9.1](UC6-self-service-search/spec.md#91-bản-vẽ-giao-diện) |
+| UC7 | Lịch sử thao tác: bộ lọc, bảng, chi tiết một dòng | [UC7 spec 9.1](UC7-audit-log/spec.md#91-bản-vẽ-giao-diện) |
+
+Điểm cần duyệt trong bản vẽ (đề xuất, chưa có trong spec):
+
+- **Phân công duyệt thay** là trang `/approvals/delegations`, vào từ nút trên trang "Việc cần duyệt" của HR, không thêm ô ở trang
+  chủ. API cho UC4 FR-4.3 chưa có.
+- **Đơn nghỉ trùng ngày trong nhóm** hiện cho quản lý khi duyệt (chỉ tên và ngày) như mục 2.4 đã ghi; cần API trả danh sách này.
+- **Số ngày tính sẵn ở trình duyệt** trên form đăng ký nghỉ, cùng quy tắc BR-03; backend vẫn là nơi quyết định.
+- **Sơ đồ tổ chức trên điện thoại** đi từng cấp phòng ban thay vì vẽ cây.
+- **Trang "Tra cứu tài liệu" trên điện thoại** chia hai tab Tài liệu và Hỏi trợ lý.
+- **Lịch sử thao tác** chỉ lọc theo các trường API đang có (đối tượng, ID, người thực hiện, khoảng ngày); chưa lọc theo hành động.
+

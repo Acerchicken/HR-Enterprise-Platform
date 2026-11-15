@@ -135,6 +135,26 @@ sequenceDiagram
 | A1, A2 | `/leave`, `/leave/:id` | `GET /leave-requests/me`, `GET /leave-requests/{id}`, `POST /leave-requests/{id}/cancel` |
 | A3 | Chưa có | Chưa có |
 
+### 9.1 Bản vẽ giao diện
+
+Bản vẽ để duyệt bố cục trước khi code (15/11/2026), cùng phong cách với bản vẽ UC1 ở
+[giao diện chung mục 10](../frontend.md#10-bản-vẽ-giao-diện). Nguồn ở [`mockups.html`](../mockups/mockups.html), dữ liệu là người
+mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác chữ trong spec thì chữ đúng.
+
+**Đăng ký nghỉ `/leave/new`: form bên trái, số dư bên phải, số ngày tính sẵn trước khi gửi**
+
+![Form đăng ký nghỉ](../mockups/uc3-new.png)
+
+**Đơn nghỉ của tôi `/leave`, chi tiết `/leave/{id}` (A1, A2)**
+
+![Danh sách đơn của tôi](../mockups/uc3-list.png)
+
+**Trên điện thoại: form có lỗi trùng lịch và ghi chú BR-16; xác nhận hủy đơn**
+
+| Đăng ký nghỉ | Hủy đơn |
+|---|---|
+| ![Đăng ký nghỉ trên điện thoại](../mockups/uc3-new-mobile.png) | ![Xác nhận hủy đơn](../mockups/uc3-detail-mobile.png) |
+
 ## 10. Yêu cầu phi chức năng liên quan
 
 - NFR-1.2: tạo, hủy đơn p95 < 500 ms. NFR-1.4: email tới hộp thư p95 < 1 phút.

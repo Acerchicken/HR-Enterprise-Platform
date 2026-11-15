@@ -123,9 +123,35 @@ sequenceDiagram
 
 | Luồng | Màn hình | API |
 |---|---|---|
-| Chính, A2 | Chưa có | `POST /documents`, `POST /documents/{id}/versions`, `POST …/confirm` |
-| A1 | Chưa có | `GET /documents`, `GET /documents/{id}`, `GET …/download` |
-| A3, A4, A5 | Chưa có | `PATCH /documents/{id}`, `POST …/hide`, `POST …/restore`, `GET /documents/manage` |
+| Chính, A2 | `/documents/manage`, hộp "Đăng tài liệu", "Thêm phiên bản" (chưa có) | `POST /documents`, `POST /documents/{id}/versions`, `POST …/confirm` |
+| A1 | `/documents` (trang "Tra cứu tài liệu", chung với UC6), `/documents/{id}` (chưa có) | `GET /documents`, `GET /documents/{id}`, `GET …/download` |
+| A3, A4, A5 | `/documents/manage` (chưa có) | `PATCH /documents/{id}`, `POST …/hide`, `POST …/restore`, `GET /documents/manage` |
+
+### 9.1 Bản vẽ giao diện
+
+Bản vẽ để duyệt bố cục trước khi code (15/11/2026), cùng phong cách với bản vẽ UC1 ở
+[giao diện chung mục 10](../frontend.md#10-bản-vẽ-giao-diện). Nguồn ở [`mockups.html`](../mockups/mockups.html), dữ liệu là người
+mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác chữ trong spec thì chữ đúng.
+
+**Trang "Tra cứu tài liệu" `/documents`: danh sách (A1) cùng ô tìm và khung trợ lý của UC6**
+
+![Trang tra cứu tài liệu](../mockups/uc56-documents.png)
+
+**Chi tiết `/documents/{id}` với các phiên bản (A1, FR-5.3)**
+
+![Chi tiết tài liệu](../mockups/uc5-detail.png)
+
+**HR quản lý tài liệu `/documents/manage` (A3, A4, A5)**
+
+![Quản lý tài liệu](../mockups/uc5-manage.png)
+
+**HR đăng tài liệu: phạm vi, file, tiến độ tải lên (luồng chính)**
+
+![Hộp đăng tài liệu](../mockups/uc5-upload.png)
+
+**Trên điện thoại: tài liệu và trợ lý là hai tab**
+
+![Tra cứu tài liệu trên điện thoại](../mockups/uc56-mobile.png)
 
 ## 10. Yêu cầu phi chức năng liên quan
 

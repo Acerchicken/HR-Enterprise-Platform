@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { api, ApiError, Department, DirectoryEntry, EmployeeProfile, Me, Position } from '../../api/client';
+import { invalidateSummary } from '../../api/cache';
 import { useApi } from '../../api/useApi';
 import { ErrorBox } from '../../components/ErrorBox';
 import { CreateEmployeeBody, FieldGroup, FieldKey, formFields, GROUP_LABEL, UpdateEmployeeBody } from './employee-fields';
@@ -73,6 +74,7 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
           if (body[f.key] === '') delete body[f.key];
         }
         await api<EmployeeProfile>(`/employees/${id}`, { method: 'PATCH', body: JSON.stringify(body as unknown as UpdateEmployeeBody) });
+        invalidateSummary(id!);
         navigate(`/employees/${id}`);
       }
     } catch (e) {

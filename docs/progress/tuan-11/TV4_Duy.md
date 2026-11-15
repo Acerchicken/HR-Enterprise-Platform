@@ -8,10 +8,12 @@ như [tuần 10](../tuan-10/TV4_Duy.md#nguyên-tắc-ghi-kết-quả-kiểm-th�
 | Hạn | Việc |
 |---|---|
 | **T2 (16/11), 21:00** | Review `test.md` UC1 trên #76 |
+| **T2 (16/11), 21:00** | Việc tuần 10 còn tồn: mở PR `docs/test-report-week10` (chạy trên `dev` những gì đã merge tuần 10: #60, #63, #64) |
+| **T2 (16/11), 21:00** | Review PR #80 (`feat/profile-layout`): chạy thử trên local theo mục "Cách kiểm tra" của PR, đối chiếu AC-1.8.x |
 | **T3 (17/11), 21:00** | Mở PR `docs/test-cases-uc1` |
 | **T4 (18/11), 21:00** | Mở PR `docs/security-test-cases-week11` |
 | Trong 24 giờ kể từ khi PR mở | Review `feat/profile-layout`, `fix/employee-org-integrity`, `feat/profile-change-requests`, `feat/profile-files`: kết quả có khớp ca kiểm thử không |
-| **T6 (20/11)** | Review `test.md` UC3, UC4 trên #76; mở PR `test/load-k6` |
+| **T6 (20/11)** | Review `test.md` UC3, UC4 trên #76 và bản vẽ UC3, UC4 trên #81; mở PR `test/load-k6` |
 | **T7 (21/11), 21:00** | Mở PR `docs/test-cases-uc3-uc4` |
 | **CN (22/11), 12:00** | Mở PR `docs/test-report-uc1` |
 | **T2 (23/11), 9:00** | Điền mục "Việc đã làm" |
