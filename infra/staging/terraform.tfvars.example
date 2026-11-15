@@ -6,6 +6,7 @@ vpc_cidr           = "10.0.0.0/16"
 db_name            = "hr"
 db_username        = "hr_admin"
 alert_emails       = ["devops-alerts@hr.local"]
+sender_email       = "devops-sender@yourdomain.com" # Must be a verified email in Amazon SES
 budget_limit_usd   = 50
 github_repository  = "Acerchicken/HR-Enterprise-Platform"
 api_container_port = 3000

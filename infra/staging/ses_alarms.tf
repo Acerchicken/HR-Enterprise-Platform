@@ -22,7 +22,7 @@ resource "aws_iam_policy" "worker_ses_policy" {
           "ses:SendEmail",
           "ses:SendRawEmail"
         ]
-        Resource = "*"
+        Resource = aws_ses_email_identity.sender.arn
       }
     ]
   })

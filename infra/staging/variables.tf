@@ -40,9 +40,8 @@ variable "alert_emails" {
 }
 
 variable "sender_email" {
-  description = "Verified sender email address for SES notifications"
+  description = "Verified sender email address in Amazon SES (required in sandbox mode, set in terraform.tfvars)"
   type        = string
-  default     = "no-reply@hr.local"
 }
 
 variable "budget_limit_usd" {
