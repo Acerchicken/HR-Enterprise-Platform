@@ -178,9 +178,9 @@ Căn cứ quyết định của Nhóm trưởng (10/11/2026), hạ tầng AWS St
 | Bước | Nội dung công việc | Người thực hiện | Thời gian ước tính | Tiêu chí nghiệm thu |
 |---|---|---|---|---|
 | **1** | Khởi tạo Remote State Bootstrap (`infra/bootstrap/`) | TV3 (Bảo) | 15 phút | S3 bucket & DynamoDB table khóa trạng thái hoạt động |
-| **2** | Kích hoạt S3 backend và tạo trước ECR Repositories | TV3 (Bảo) | 15 phút | `terraform apply -target=aws_ecr_repository.api -target=aws_ecr_repository.web` thành công |
-| **3** | Build và push image khởi tạo (`:latest`) lên ECR | TV3 (Bảo) | 20 phút | ECR `hr-api` và `hr-web` có ít nhất 1 image tag `:latest` |
-| **4** | Chạy `terraform plan` toàn bộ staging và gửi review | TV3 (Bảo) | 10 phút | File plan sạch, không lộ secret, TV1 phê duyệt |
+| **2** | Kích hoạt S3 backend và tạo trước ECR Repository | TV3 (Bảo) | 15 phút | `terraform apply -target=aws_ecr_repository.api` thành công (chỉ giữ `hr-api`, web deploy lên S3) |
+| **3** | Build và push image khởi tạo (`:latest`) lên ECR | TV3 (Bảo) | 20 phút | ECR `hr-api` có ít nhất 1 image tag `:latest` |
+| **4** | Chạy `terraform plan` toàn bộ staging và gửi review | TV3 (Bảo) | 10 phút | Gửi dòng nguyên văn `Plan: N to add, 0 to change, 0 to destroy` cho TV1 duyệt trước khi chạy bước 5 |
 | **5** | Áp dụng hạ tầng staging (`terraform apply`) | TV3 (Bảo) | 25 phút | Toàn bộ 40+ tài nguyên AWS tạo thành công |
 | **6** | Cấu hình GitHub Actions Secrets & Variables | TV3 (Bảo) | 10 phút | Đủ 9 biến theo bảng mục 6 trong repo settings |
 | **7** | Kích hoạt tự động deploy hoặc chạy tay pipeline | TV3 & TV1 | 15 phút | Workflow `deploy-staging.yml` chạy qua và API health check 200 |
@@ -202,11 +202,11 @@ Căn cứ quyết định của Nhóm trưởng (10/11/2026), hạ tầng AWS St
 
 ### 7.3. Kịch bản diễn tập Rollback (Tuần 12)
 
-Nhóm sẽ thực hiện một lượt diễn tập rollback có kiểm soát trong Tuần 12:
-1. Ghi nhận `IMAGE_TAG` của bản build ổn định trước đó (ví dụ tag commit PR tuần 11).
-2. TV1 cố ý tạo một commit gắn nhãn lỗi thử nghiệm trên nhánh test và trigger deploy.
-3. TV3 kích hoạt workflow **Deploy Staging** với tham số `IMAGE_TAG` của bản cũ.
-4. TV4 kiểm tra lại endpoint `/health` và giao diện web xác nhận hệ thống đã khôi phục về trạng thái ổn định trong vòng < 5 phút.
+Nhóm sẽ thực hiện một lượt diễn tập rollback có kiểm soát trong Tuần 12 mà không cần tạo commit lỗi hay dùng nhánh test (vì GitHub OIDC deploy role chỉ tin cậy nhánh `dev`):
+1. Nhóm deploy một commit mới trên nhánh `dev` qua workflow Deploy Staging như bình thường và kiểm tra hệ thống hoạt động ổn định với version mới.
+2. Để diễn tập rollback: TV3 vào GitHub Actions -> chọn workflow **Deploy Staging** -> bấm **Run workflow** (kích hoạt thủ công `workflow_dispatch`), nhập tham số `IMAGE_TAG` là commit SHA của bản build trước đó.
+3. Pipeline sẽ trỏ lại App Runner API và ECS Worker sang image SHA cũ mà không cần build lại image.
+4. Đo thời gian App Runner và ECS Worker cập nhật xong, TV4 kiểm tra lại endpoint `/health` và giao diện web để xác nhận hệ thống đã khôi phục về trạng thái ổn định trong vòng < 5 phút.
 
 ### 7.4. Kế hoạch dọn dẹp hoàn toàn sau Tuần 13 (Teardown)
 
