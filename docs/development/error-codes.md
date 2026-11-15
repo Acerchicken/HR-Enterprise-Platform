@@ -39,7 +39,9 @@ Client có thể gửi header `X-Trace-Id` (tối đa 64 ký tự) để tự đ
 | 403 | `FORBIDDEN` | Đã đăng nhập nhưng không đủ quyền (theo role hoặc theo dữ liệu) | Hiện "không có quyền", không thử lại |
 | 404 | `NOT_FOUND` | Không có đối tượng, hoặc đường dẫn API không tồn tại | Hiện "không tìm thấy" |
 | 409 | `CONFLICT` | Xung đột: optimistic locking (`version` cũ), trùng dữ liệu unique, trạng thái không cho phép, trùng lịch | Với lỗi `version`: tải lại dữ liệu rồi cho người dùng làm lại |
+| 413 | `PAYLOAD_TOO_LARGE` | Body JSON vượt 64 KiB | Báo dữ liệu quá lớn, không thử lại |
 | 422 | `UNPROCESSABLE` | Khai báo sẵn, **hiện chưa endpoint nào dùng** | – |
+| 429 | `TOO_MANY_REQUESTS` | Vượt giới hạn tần suất; header `Retry-After` là số giây phải chờ; `message` nêu giới hạn bị vượt | Hiện `message`, khóa nút gửi tới hết `Retry-After` |
 | 500 | `INTERNAL` | Lỗi không lường trước; `message` luôn là `Lỗi hệ thống` (không lộ chi tiết) | Hiện lỗi chung kèm `traceId` |
 | 503 | `HTTP_503` | Kho tài liệu chưa cấu hình (`STORAGE_BUCKET` trống) | Hiện "chức năng chưa sẵn sàng" |
 
