@@ -57,11 +57,61 @@ export interface EmployeeProfile extends DirectoryEntry {
   sensitive?: { nationalId: string | null; bankAccount: string | null; salary: string | null };
 }
 
+/** `GET /me`: chỉ tài khoản, vai trò, mã và tên hồ sơ (UC1 AC-1.8.7). Dữ liệu hồ sơ lấy qua `summary`. */
 export interface Me {
   email: string;
   roles: Role[];
-  employee: EmployeeProfile | null;
+  employee: { id: string; employeeCode: string; fullName: string } | null;
 }
+
+// ----- Trang hồ sơ theo mục (UC1 spec 9.1) -----
+export type Relation = 'HR' | 'OWNER' | 'MANAGER' | 'OTHER';
+export type SectionGroup = 'personal' | 'work' | 'finance' | 'benefits' | 'other';
+
+export interface SectionSummary {
+  code: string;
+  group: SectionGroup;
+  title: string;
+  available: boolean;
+  pendingRequests: number;
+}
+
+export interface ProfileSummary {
+  id: string;
+  employeeCode: string;
+  fullName: string;
+  positionTitle: string | null;
+  departmentId: string;
+  departmentName: string | null;
+  managerId: string | null;
+  managerName: string | null;
+  phone: string | null;
+  workEmail: string;
+  relation: Relation;
+  canEdit: boolean;
+  /** Không có ở mức danh bạ; null là chưa có dữ liệu hợp đồng. */
+  contractType?: string | null;
+  sections: SectionSummary[];
+}
+
+export interface MaskedField {
+  hasValue: boolean;
+  value: string | null;
+}
+
+export interface PersonalSection {
+  section: 'personal';
+  version: number;
+  phone: string | null;
+  workEmail: string;
+  address: string | null;
+  dateOfBirth: string | null;
+  hireDate: string;
+  status: string;
+  nationalId?: MaskedField;
+}
+export interface SalarySection { section: 'salary'; salary: MaskedField }
+export interface BankAccountSection { section: 'bank-account'; bankAccount: MaskedField }
 
 export interface Page<T> {
   items: T[];

@@ -7,7 +7,7 @@
 | Viết business problem statement có số đo | Mục 1 | Xong |
 | Xác định users và stakeholders | Mục 2 | Xong |
 | Tổng hợp Architecture Canvas từ output của cả nhóm | Mục 3 | Xong |
-| Viết ADR-00 | [README tuần 5](README.md#adr-00--dùng-managed-services-cho-database-storage-và-identity) | Xong |
+| Viết ADR-00 | [README tuần 5](../../architecture/adr/ADR-00-managed-services.md) | Xong |
 
 ## 1. Business problem statement
 

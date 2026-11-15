@@ -6,7 +6,7 @@
 |---|---|---|
 | Viết API specification REST /api/v1 | Mục 1 | Xong |
 | Thiết kế data model và data ownership | Mục 2 | Xong |
-| Viết ADR-02 (PostgreSQL vs NoSQL) | [README tuần 6](README.md#adr-02--postgresql-thay-vì-nosql) | Xong |
+| Viết ADR-02 (PostgreSQL vs NoSQL) | [README tuần 6](../../architecture/adr/ADR-02-postgresql.md) | Xong |
 
 ## 1. API specification (REST, /api/v1)
 
