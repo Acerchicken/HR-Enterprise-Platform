@@ -4,6 +4,7 @@ import { invalidateSummary } from '../api/cache';
 import { useApi } from '../api/useApi';
 import { errorText, formatDate, formatMoney, MaskedValue, Skeleton, useCooldown } from '../components/ui';
 import { FieldEditor, newKey, RequestBox } from './fields';
+import { FilesSectionPage } from './FilesSectionPage';
 import { RowSectionPage } from './RowSectionPage';
 
 const STATUS_LABEL: Record<string, string> = { ACTIVE: 'Đang làm việc', ON_LEAVE: 'Tạm nghỉ', TERMINATED: 'Đã nghỉ việc' };
@@ -16,6 +17,7 @@ export function SectionPage({ summary, code, def }: { summary: ProfileSummary; c
   if (code === 'personal') return <Personal s={summary} />;
   if (code === 'salary') return <Salary s={summary} />;
   if (code === 'history') return <History s={summary} />;
+  if (code === 'cv') return <FilesSectionPage s={summary} code={code} />;
   if (ROW_SECTIONS.has(code)) return <RowSectionPage s={summary} code={code} />;
   return <ComingSoon known />;
 }

@@ -1,10 +1,13 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, ApiError, ChangeDetail, ChangeListItem, FieldSpec, Page } from '../api/client';
 import { invalidateSummary } from '../api/cache';
 import { useApi } from '../api/useApi';
 import { useShell } from '../components/shell';
 import { EmptyState, errorText, Skeleton, useCooldown } from '../components/ui';
+import { BASE_URL } from '../api/client';
+import { getToken } from '../auth/auth';
+import { FileList } from '../components/files';
 import { formatValue, visible } from '../profile/fields';
 
 const SECTION_TITLE: Record<string, string> = {
@@ -13,6 +16,8 @@ const SECTION_TITLE: Record<string, string> = {
   relatives: 'Thân nhân, người phụ thuộc',
   qualifications: 'Chuyên môn',
   'bank-account': 'Tài khoản ngân hàng',
+  cv: 'Sơ yếu lý lịch',
+  avatar: 'Ảnh đại diện',
 };
 const ACTION_TEXT = { CREATE: 'Thêm', UPDATE: 'Sửa', DELETE: 'Xóa' } as const;
 const DT = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
@@ -171,6 +176,13 @@ function Detail({ id, onDone }: { id: string; onDone: (id: string) => void }) {
           })}
         </tbody>
       </table>
+      {r.files && r.files.length > 0 && (
+        <div className="attach">
+          <b className="small">File đính kèm</b>
+          <FileList employeeId={r.employeeId} files={r.files} />
+        </div>
+      )}
+      {r.section === 'avatar' && r.files?.[0] && <AvatarPreview employeeId={r.employeeId} fileId={r.files[0].id} />}
       {hasSensitive && !reveal && (
         <button type="button" className="link" onClick={() => setReveal(true)}>Hiện giá trị nhạy cảm (ghi audit)</button>
       )}
@@ -198,4 +210,24 @@ function Detail({ id, onDone }: { id: string; onDone: (id: string) => void }) {
       )}
     </div>
   );
+}
+
+/** Xem trước ảnh đại diện đang chờ duyệt (tải qua API bằng token). */
+function AvatarPreview({ employeeId, fileId }: { employeeId: string; fileId: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    let made: string | null = null;
+    fetch(`${BASE_URL}/employees/${employeeId}/files/${fileId}/download`, { headers: { Authorization: `Bearer ${getToken()}` } })
+      .then((r) => (r.ok ? r.blob() : null))
+      .then((b) => {
+        if (b && live) setUrl((made = URL.createObjectURL(b)));
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+      if (made) URL.revokeObjectURL(made);
+    };
+  }, [employeeId, fileId]);
+  return url ? <img className="avatar avatar-lg" src={url} alt="Ảnh đại diện đề xuất" /> : null;
 }
