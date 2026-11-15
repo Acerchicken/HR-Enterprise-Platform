@@ -267,6 +267,32 @@ paths:
                   - $ref: "#/components/schemas/BankAccountSection"
       tags: *a3
       security: *a4
+    post:
+      operationId: ProfileChangeController_hrCreate
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: section
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HrItemDto"
+      responses:
+        "204":
+          description: ""
+      tags: &a5
+        - employee
+      security: &a6
+        - bearer: []
   /api/v1/employees/{id}/direct-reports:
     get:
       operationId: EmployeeController_directReports
@@ -295,6 +321,248 @@ paths:
           description: ""
       tags: *a3
       security: *a4
+  /api/v1/employees/{id}/change-requests:
+    post:
+      operationId: ProfileChangeController_submit
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitChangeDto"
+      responses:
+        "202":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/employees/{id}/change-requests/{requestId}:
+    delete:
+      operationId: ProfileChangeController_cancel
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: requestId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "204":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/employees/{id}/change-requests/{requestId}/acknowledge:
+    post:
+      operationId: ProfileChangeController_acknowledge
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: requestId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "204":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/change-requests:
+    get:
+      operationId: ProfileChangeController_list
+      parameters:
+        - name: status
+          required: false
+          in: query
+          schema:
+            enum:
+              - PENDING
+              - APPROVED
+              - REJECTED
+              - CANCELLED
+            type: string
+        - name: section
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: departmentId
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/change-requests/{requestId}:
+    get:
+      operationId: ProfileChangeController_detail
+      parameters:
+        - name: requestId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: reveal
+          required: false
+          in: query
+          description: "true: HR xem giá trị nhạy cảm của đề xuất (ghi audit
+            VIEW_SENSITIVE)"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/change-requests/{requestId}/approve:
+    post:
+      operationId: ProfileChangeController_approve
+      parameters:
+        - name: requestId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/change-requests/{requestId}/reject:
+    post:
+      operationId: ProfileChangeController_reject
+      parameters:
+        - name: requestId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/employees/{id}/profile/{section}/{itemId}:
+    patch:
+      operationId: ProfileChangeController_hrUpdate
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: section
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: itemId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HrItemDto"
+      responses:
+        "204":
+          description: ""
+      tags: *a5
+      security: *a6
+    delete:
+      operationId: ProfileChangeController_hrDelete
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: section
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: itemId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: version
+          required: false
+          in: query
+          description: version của dòng (bắt buộc khi sửa, xóa)
+          schema:
+            type: number
+      responses:
+        "204":
+          description: ""
+      tags: *a5
+      security: *a6
+  /api/v1/employees/{id}/history:
+    get:
+      operationId: ProfileChangeController_history
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: section
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: actorId
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: from
+          required: false
+          in: query
+          schema:
+            example: 2026-11-01
+            type: string
+        - name: to
+          required: false
+          in: query
+          schema:
+            example: 2026-12-01
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
   /api/v1/leave-types:
     get:
       operationId: LeaveController_types
@@ -302,9 +570,9 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a5
+      tags: &a7
         - leave
-      security: &a6
+      security: &a8
         - bearer: []
   /api/v1/leave-holidays:
     get:
@@ -319,8 +587,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
-      security: *a6
+      tags: *a7
+      security: *a8
   /api/v1/leave-balances/me:
     get:
       operationId: LeaveController_myBalances
@@ -328,8 +596,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
-      security: *a6
+      tags: *a7
+      security: *a8
   /api/v1/leave-requests:
     post:
       operationId: LeaveController_create
@@ -350,8 +618,8 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a5
-      security: *a6
+      tags: *a7
+      security: *a8
     get:
       operationId: LeaveController_all
       parameters:
@@ -369,8 +637,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
-      security: *a6
+      tags: *a7
+      security: *a8
   /api/v1/leave-requests/me:
     get:
       operationId: LeaveController_mine
@@ -389,8 +657,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
-      security: *a6
+      tags: *a7
+      security: *a8
   /api/v1/leave-requests/pending-approval:
     get:
       operationId: LeaveController_pendingApproval
@@ -409,8 +677,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
-      security: *a6
+      tags: *a7
+      security: *a8
   /api/v1/leave-requests/{id}:
     get:
       operationId: LeaveController_get
@@ -423,8 +691,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
-      security: *a6
+      tags: *a7
+      security: *a8
   /api/v1/leave-requests/{id}/approve:
     post:
       operationId: LeaveController_approve
@@ -443,8 +711,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
-      security: *a6
+      tags: *a7
+      security: *a8
   /api/v1/leave-requests/{id}/reject:
     post:
       operationId: LeaveController_reject
@@ -463,8 +731,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
-      security: *a6
+      tags: *a7
+      security: *a8
   /api/v1/leave-requests/{id}/cancel:
     post:
       operationId: LeaveController_cancel
@@ -483,8 +751,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
-      security: *a6
+      tags: *a7
+      security: *a8
   /api/v1/leave-requests/{id}/complete:
     post:
       operationId: LeaveController_complete
@@ -503,8 +771,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
-      security: *a6
+      tags: *a7
+      security: *a8
   /api/v1/documents:
     get:
       operationId: DocumentController_list
@@ -523,9 +791,9 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a7
+      tags: &a9
         - documents
-      security: &a8
+      security: &a10
         - bearer: []
     post:
       operationId: DocumentController_create
@@ -539,8 +807,8 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/documents/manage:
     get:
       operationId: DocumentController_manageList
@@ -559,8 +827,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/documents/manage/{id}:
     get:
       operationId: DocumentController_manageGet
@@ -573,8 +841,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/documents/{id}:
     get:
       operationId: DocumentController_get
@@ -587,8 +855,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
     patch:
       operationId: DocumentController_update
       parameters:
@@ -606,8 +874,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/documents/{id}/download:
     get:
       operationId: DocumentController_downloadLatest
@@ -620,8 +888,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/documents/{id}/versions/{versionId}/download:
     get:
       operationId: DocumentController_download
@@ -639,8 +907,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/documents/{id}/versions:
     post:
       operationId: DocumentController_addVersion
@@ -659,8 +927,8 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/documents/{id}/versions/{versionId}/confirm:
     post:
       operationId: DocumentController_confirm
@@ -678,8 +946,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/documents/{id}/hide:
     post:
       operationId: DocumentController_hide
@@ -692,8 +960,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/documents/{id}/restore:
     post:
       operationId: DocumentController_restore
@@ -706,8 +974,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
 info:
   title: HRHelper API (HR Enterprise Platform)
   description: "REST API /api/v1. Xác thực: Bearer JWT do Keycloak (OIDC) cấp.
@@ -934,6 +1202,13 @@ components:
         section:
           type: string
           example: personal
+        relation:
+          type: string
+          enum:
+            - HR
+            - OWNER
+            - MANAGER
+            - OTHER
         version:
           type: number
         phone:
@@ -961,6 +1236,7 @@ components:
             - $ref: "#/components/schemas/MaskedField"
       required:
         - section
+        - relation
         - version
         - phone
         - workEmail
@@ -1035,6 +1311,46 @@ components:
           description: Lương tháng (VND)
       required:
         - version
+    SubmitChangeDto:
+      type: object
+      properties:
+        section:
+          type: string
+          example: emergency-contacts
+        action:
+          type: string
+          enum:
+            - CREATE
+            - UPDATE
+            - DELETE
+        itemId:
+          type: object
+          nullable: true
+        baseVersion:
+          type: number
+          description: version của dòng lúc mở form (sửa, xóa)
+        proposed:
+          type: object
+          description: Giá trị đề xuất theo mô tả trường của mục (fields trong GET mục)
+      required:
+        - section
+        - action
+    RejectDto:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+      required:
+        - reason
+    HrItemDto:
+      type: object
+      properties:
+        version:
+          type: number
+          description: version của dòng (bắt buộc khi sửa, xóa)
+        data:
+          type: object
     CreateLeaveRequestDto:
       type: object
       properties:
@@ -1108,7 +1424,7 @@ components:
           example: Quy chế làm việc
         type:
           type: string
-          enum: &a9
+          enum: &a11
             - POLICY
             - PROCESS
             - GUIDE
@@ -1150,7 +1466,7 @@ components:
           type: string
         type:
           type: string
-          enum: *a9
+          enum: *a11
         scope:
           $ref: "#/components/schemas/DocumentScopeDto"
       required:

@@ -18,6 +18,8 @@ import {
   UpdateEmployeeDto,
 } from './employee.dto';
 import { EmployeeService, RequestMeta } from './employee.service';
+import { ProfileChangeService } from './profile-change.service';
+import { SECTION_SCHEMAS } from './profile-schema';
 
 const meta = (req: Request & { traceId?: string }): RequestMeta => ({ ip: req.ip ?? null, traceId: req.traceId ?? null });
 
@@ -28,6 +30,7 @@ export class EmployeeController {
   constructor(
     private readonly employees: EmployeeService,
     private readonly org: OrganizationService,
+    private readonly changes: ProfileChangeService,
   ) {}
 
   /** Chỉ tài khoản, vai trò và mã, tên hồ sơ; dữ liệu hồ sơ lấy qua `summary` khi mở popup (AC-1.8.7). */
@@ -75,14 +78,25 @@ export class EmployeeController {
   @ApiOkResponse({
     schema: { oneOf: [PersonalSection, SalarySection, BankAccountSection].map((m) => ({ $ref: getSchemaPath(m) })) },
   })
-  section(
+  async section(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('section') section: string,
     @Query() q: ProfileSectionQuery,
     @CurrentUser() user: AuthUser,
     @Req() req: Request,
   ) {
-    return this.employees.section(id, section, user, q.reveal === 'true', meta(req));
+    const schema = SECTION_SCHEMAS[section];
+    if (schema && schema.kind !== 'main') return this.changes.readSection(id, section, user, q.reveal === 'true', meta(req));
+    const data = await this.employees.section(id, section, user, q.reveal === 'true', meta(req));
+    if (data.section !== 'personal') return data;
+    // Trường chính nhân viên đề xuất được (điện thoại, địa chỉ) và yêu cầu đang chờ của chủ hồ sơ (AC-1.9.2).
+    const own = data.relation === 'OWNER' || data.relation === 'HR';
+    return {
+      ...data,
+      fields: SECTION_SCHEMAS.personal!.fields,
+      canPropose: data.relation === 'OWNER',
+      requests: own ? await this.changes.openRequests(id, 'personal') : [],
+    };
   }
 
   @Patch('employees/:id')

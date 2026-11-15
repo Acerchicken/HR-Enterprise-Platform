@@ -47,8 +47,10 @@ describe('profile sections (UC1 spec 9.1)', () => {
     expect(canReveal('HR', 'nationalId')).toBe(true);
   });
 
-  it('mục đã làm: cá nhân, lương, tài khoản ngân hàng; mã mục không trùng', () => {
-    expect(PROFILE_SECTIONS.filter((s) => s.available).map((s) => s.code)).toEqual(['personal', 'salary', 'bank-account']);
+  it('mục đã làm (FR-1.8, FR-1.9, FR-1.11); mã mục không trùng', () => {
+    expect(PROFILE_SECTIONS.filter((s) => s.available).map((s) => s.code)).toEqual([
+      'personal', 'emergency-contacts', 'relatives', 'salary', 'bank-account', 'qualifications', 'history',
+    ]);
     expect(new Set(PROFILE_SECTIONS.map((s) => s.code)).size).toBe(PROFILE_SECTIONS.length);
     expect(findSection('salary')?.level).toBe('NC');
     expect(findSection('nope')).toBeUndefined();

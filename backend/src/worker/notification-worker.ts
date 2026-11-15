@@ -7,6 +7,13 @@ import { EmployeeService } from '../modules/employee/employee.service';
 import { EventConsumer } from '../messaging/event-bus';
 import { createEventConsumer } from '../messaging/factory';
 import { buildEmail, LeaveEventPayload, LeaveEventType, recipientOf } from '../modules/leave/outbox/leave-events';
+import {
+  buildProfileEmail,
+  HR_DIGEST_INTERVAL_MINUTES,
+  isProfileEvent,
+  ProfileEventPayload,
+  ProfileEventType,
+} from '../modules/employee/profile-events';
 
 /**
  * Worker nhận event nghỉ phép từ queue (RabbitMQ khi local, SQS trên AWS) và gửi email (local: Mailpit).
@@ -41,6 +48,15 @@ export class NotificationWorker implements OnApplicationShutdown {
       return false;
     }
 
+    if (isProfileEvent(type)) {
+      await this.handleProfile(type, payload as unknown as ProfileEventPayload);
+      await this.ds.query(
+        'INSERT INTO notification.processed_event (event_id, event_type) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [eventId, type],
+      );
+      return true;
+    }
+
     const recipientId =
       recipientOf(type) === 'MANAGER' ? await this.employees.managerIdOf(payload.employeeId) : payload.employeeId;
     if (recipientId) {
@@ -62,6 +78,34 @@ export class NotificationWorker implements OnApplicationShutdown {
       [eventId, type],
     );
     return true;
+  }
+
+  /** Email của yêu cầu cập nhật hồ sơ: nhân viên nhận kết quả; HR nhận báo chung, gộp tối đa một email mỗi giờ. */
+  private async handleProfile(type: ProfileEventType, p: ProfileEventPayload) {
+    const mail = buildProfileEmail(type);
+    if (type !== 'ProfileChangeSubmitted') {
+      const to = await this.employees.contactOf(p.employeeId);
+      if (to) await this.mailer.sendMail({ from: this.cfg.smtp.from, to: to.email, ...mail });
+      this.logger.log(`${type} ${p.requestId}`);
+      return;
+    }
+    const recent = await this.ds.query(
+      `SELECT 1 FROM notification.processed_event WHERE event_type = 'ProfileHrDigest' AND processed_at > now() - make_interval(mins => $1) LIMIT 1`,
+      [HR_DIGEST_INTERVAL_MINUTES],
+    );
+    if (recent.length) return;
+    const hr: { email: string }[] = await this.ds.query(
+      `SELECT DISTINCT a.email FROM iam.user_account a JOIN iam.role_assignment r ON r.user_id = a.id WHERE r.role = 'HR'`,
+    );
+    if (!hr.length) {
+      this.logger.warn('Không có tài khoản HR nào để báo yêu cầu cập nhật hồ sơ');
+      return;
+    }
+    await this.mailer.sendMail({ from: this.cfg.smtp.from, to: hr.map((h) => h.email).join(', '), ...mail });
+    await this.ds.query(`INSERT INTO notification.processed_event (event_id, event_type) VALUES ($1, 'ProfileHrDigest')`, [
+      `profile-digest-${Date.now()}`,
+    ]);
+    this.logger.log(`ProfileHrDigest → ${hr.length} HR`);
   }
 
   async onApplicationShutdown() {
