@@ -107,6 +107,15 @@ terraform apply plan.tfplan
 | **Giám sát ngân sách** | AWS Budgets | Cảnh báo tự động gửi email tới ban quản trị khi chi phí chạm mốc **25 USD (50%)**, **40 USD (80%)**, và **50 USD (100%)**. |
 | **CI/CD Deployment** | IAM OIDC Provider | Xác thực GitHub Actions qua OIDC Federation (không tạo static access keys lâu dài), cấp quyền tối thiểu để push ECR, update App Runner, ECS, và S3. |
 
+### 4.1. Lưu ý về Amazon SES Sandbox & Kiểm thử Email trên Staging
+
+Do tài khoản AWS mới mặc định nằm trong **Amazon SES Sandbox**:
+1. **Người gửi (`var.sender_email`):** Phải là email thật được xác minh trong AWS SES Console (`Verified identities`), ví dụ email cá nhân của TV3 (Bảo).
+2. **Người nhận:** SES Sandbox chỉ cho phép gửi tới các địa chỉ người nhận đã được xác minh trước trong AWS SES. Các tài khoản demo mang email nội bộ `@hr.local` sẽ bị SES từ chối gửi.
+3. **Cách kiểm thử khi demo:**
+   - *Cách 1 (Nhận email thật):* Thêm địa chỉ email cá nhân của người kiểm thử vào SES Verified Identities và cập nhật email của tài khoản demo tương ứng để nhận email thật.
+   - *Cách 2 (Kiểm tra qua hệ thống giám sát):* Khi gửi tới `@hr.local` chưa xác minh, SES trả lỗi; worker ghi nhận vào CloudWatch Logs (`/ecs/hr-platform-staging-worker`) và message sau 5 lần retry sẽ được chuyển vào Dead-Letter Queue (DLQ), kích hoạt CloudWatch Alarm `hr-platform-staging-sqs-dlq-messages`.
+
 ---
 
 ## 5. Hướng dẫn Deploy, Rollback và Tắt Staging để tiết kiệm chi phí

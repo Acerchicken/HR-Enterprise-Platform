@@ -61,7 +61,7 @@ resource "aws_cloudwatch_metric_alarm" "api_5xx" {
   alarm_name          = "${var.project_name}-${var.environment}-api-5xx-errors"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
-  metric_name         = "5xxStatusAnswers"
+  metric_name         = "5xxStatusResponses"
   namespace           = "AWS/AppRunner"
   period              = 300
   statistic           = "Sum"
@@ -81,7 +81,7 @@ resource "aws_cloudwatch_metric_alarm" "api_latency_p95" {
   alarm_name          = "${var.project_name}-${var.environment}-api-p95-latency"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 2
-  metric_name         = "ResponseTime"
+  metric_name         = "RequestLatency"
   namespace           = "AWS/AppRunner"
   period              = 300
   extended_statistic  = "p95"
@@ -139,8 +139,8 @@ resource "aws_cloudwatch_metric_alarm" "sqs_dlq" {
   evaluation_periods  = 1
   metric_name         = "ApproximateNumberOfMessagesVisible"
   namespace           = "AWS/SQS"
-  period              = 60
-  statistic           = "Sum"
+  period              = 300
+  statistic           = "Maximum"
   threshold           = 1
   alarm_description   = "One or more failed notification messages arrived in the SQS Dead-Letter Queue"
   alarm_actions       = [aws_sns_topic.system_alerts.arn]

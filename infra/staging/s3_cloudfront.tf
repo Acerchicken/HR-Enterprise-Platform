@@ -64,8 +64,7 @@ resource "aws_s3_bucket_cors_configuration" "documents" {
     allowed_headers = ["*"]
     allowed_methods = ["PUT", "GET", "HEAD"]
     allowed_origins = [
-      "https://${aws_cloudfront_distribution.web.domain_name}",
-      "http://localhost:5173"
+      "https://${aws_cloudfront_distribution.web.domain_name}"
     ]
     expose_headers  = ["ETag"]
     max_age_seconds = 3600

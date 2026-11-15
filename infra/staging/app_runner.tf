@@ -98,8 +98,7 @@ resource "aws_iam_policy" "apprunner_instance_policy" {
         Action = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:HeadObject"
+          "s3:DeleteObject"
         ]
         Resource = [
           "${aws_s3_bucket.documents.arn}/*"
