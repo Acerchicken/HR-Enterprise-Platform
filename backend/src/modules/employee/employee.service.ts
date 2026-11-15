@@ -14,6 +14,7 @@ import { AuditService } from '../audit/audit.service';
 import { AuthUser } from '../identity/roles';
 import { OrganizationService } from '../organization/organization.service';
 import { forbiddenFields, viewLevel } from './employee-access';
+import { auditFields } from './employee-audit';
 import { EmployeeSensitive } from './employee-sensitive.entity';
 import { Employee } from './employee.entity';
 import {
@@ -37,6 +38,10 @@ export interface RequestMeta {
 }
 
 const SENSITIVE_KEYS = ['nationalId', 'bankAccount', 'salary'] as const;
+/** Trường chính HR sửa được; `employeeCode` không sửa (AC-1.4.4). */
+const EDITABLE_KEYS = [
+  'phone', 'address', 'fullName', 'dateOfBirth', 'workEmail', 'departmentId', 'positionId', 'managerId', 'status', 'hireDate',
+] as const;
 
 
 /** Mã chức danh của Tổng Giám đốc trong danh mục chức danh. */
@@ -285,7 +290,8 @@ export class EmployeeService {
       const repo = m.getRepository(Employee);
       const e = await repo.findOne({ where: { id }, lock: { mode: 'pessimistic_write' } });
       if (!e) throw new NotFoundException('Không tìm thấy nhân viên');
-      if (dto.version !== undefined && dto.version !== e.version) {
+      // AC-1.6.1, E3: version bắt buộc (DTO kiểm), lệch thì 409.
+      if (dto.version !== e.version) {
         throw new ConflictException('Hồ sơ đã được người khác cập nhật, hãy tải lại');
       }
 
@@ -300,16 +306,29 @@ export class EmployeeService {
           managerId: dto.managerId !== undefined ? dto.managerId : e.managerId,
         });
       }
+      // A4, E10 (AC-1.7.1): không cho nghỉ việc khi còn cấp dưới đang làm việc, để cây tổ chức không mất gốc nhánh.
+      if (dto.status === 'TERMINATED' && e.status !== 'TERMINATED') {
+        const reports = await repo.count({ where: { managerId: id, status: In(['ACTIVE', 'ON_LEAVE']) } });
+        if (reports > 0) {
+          throw new BadRequestException(
+            `Nhân viên còn ${reports} cấp dưới đang làm việc. Hãy chuyển họ sang quản lý khác trước khi cho nghỉ việc`,
+          );
+        }
+      }
+      // AC-1.4.4: HR sửa được email công ty; email lưu chữ thường và không trùng.
+      const workEmail = dto.workEmail?.toLowerCase();
+      if (workEmail && workEmail !== e.workEmail && (await repo.exists({ where: { workEmail } }))) {
+        throw new ConflictException('Email công ty đã được dùng cho nhân viên khác');
+      }
 
       const changes: Partial<Employee> = {};
-      for (const key of ['phone', 'address', 'fullName', 'dateOfBirth', 'departmentId', 'positionId', 'managerId', 'status'] as const) {
-        if (dto[key] !== undefined && dto[key] !== e[key]) (changes as any)[key] = dto[key];
+      const incoming = { ...dto, workEmail };
+      for (const key of EDITABLE_KEYS) {
+        if (incoming[key] !== undefined && incoming[key] !== e[key]) (changes as any)[key] = incoming[key];
       }
       const sensitiveChanged = SENSITIVE_KEYS.filter((k) => dto[k] !== undefined);
+      if (!Object.keys(changes).length && !sensitiveChanged.length) return;
 
-      if (Object.keys(changes).length) {
-        await repo.save({ ...e, ...changes });
-      }
       if (sensitiveChanged.length) {
         const sRepo = m.getRepository(EmployeeSensitive);
         const current = (await sRepo.findOneBy({ employeeId: id })) ?? sRepo.create({ employeeId: id });
@@ -318,14 +337,21 @@ export class EmployeeService {
         if (dto.salary !== undefined) current.salaryEnc = this.crypto.encrypt(dto.salary);
         await sRepo.save(current);
       }
-      if (Object.keys(changes).length || sensitiveChanged.length) {
-        // Giá trị trường nhạy cảm không bao giờ ghi vào log, chỉ ghi tên trường.
-        const masked = Object.fromEntries(sensitiveChanged.map((k) => [k, '***']));
-        await this.audit.record(
-          { actorId: actor.employeeId, action: 'UPDATE', entityType: 'employee', entityId: id, changedFields: { ...changes, ...masked }, ...meta },
-          m,
-        );
+      if (Object.keys(changes).length) {
+        await repo.save({ ...e, ...changes });
+      } else {
+        // AC-1.6.3: chỉ đổi trường nhạy cảm vẫn tăng version, để người đang mở form cũ nhận 409.
+        await repo.increment({ id }, 'version', 1);
       }
+      // AC-1.4.3: trường tổ chức ghi giá trị cũ và mới; trường cá nhân, nhạy cảm chỉ ghi tên.
+      const changedFields = auditFields(
+        { ...changes, ...Object.fromEntries(sensitiveChanged.map((k) => [k, true])) },
+        e as unknown as Record<string, unknown>,
+      );
+      await this.audit.record(
+        { actorId: actor.employeeId, action: 'UPDATE', entityType: 'employee', entityId: id, changedFields, ...meta },
+        m,
+      );
     });
     return this.profile(id, actor, false);
   }
@@ -354,10 +380,10 @@ export class EmployeeService {
           }),
         );
       }
-      // Giá trị trường nhạy cảm không bao giờ ghi vào log, chỉ ghi tên trường.
-      const masked = Object.fromEntries(sensitiveGiven.map((k) => [k, '***']));
+      // AC-1.4.3: trường tổ chức ghi giá trị; trường cá nhân, nhạy cảm chỉ ghi tên.
+      const changedFields = auditFields({ ...plain, ...Object.fromEntries(sensitiveGiven.map((k) => [k, true])) }, null);
       await this.audit.record(
-        { actorId: actor.employeeId, action: 'CREATE', entityType: 'employee', entityId: saved.id, changedFields: { ...plain, ...masked }, ...meta },
+        { actorId: actor.employeeId, action: 'CREATE', entityType: 'employee', entityId: saved.id, changedFields, ...meta },
         m,
       );
       return saved.id;

@@ -12,6 +12,8 @@ import { configureApp } from '../src/bootstrap';
 import { loadConfig } from '../src/config/config';
 
 const as = (email: string) => ({ Authorization: `Bearer dev:${email}` });
+/** Version hiện tại của hồ sơ (PATCH bắt buộc gửi version, E9). */
+let versionOf: (id: string) => Promise<number>;
 const EMPLOYEE = as('employee@hr.local');
 const MANAGER = as('manager@hr.local');
 const HR = as('hr@hr.local');
@@ -30,6 +32,7 @@ describe('HRHelper API (e2e)', () => {
     configureApp(app, loadConfig());
     await app.init();
     http = request(app.getHttpServer());
+    versionOf = async (id: string) => (await http.get(`/api/v1/employees/${id}`).set(HR)).body.version;
 
     employeeId = (await http.get('/api/v1/me').set(EMPLOYEE)).body.employee.id;
     managerId = (await http.get('/api/v1/me').set(MANAGER)).body.employee.id;
@@ -169,8 +172,8 @@ describe('HRHelper API (e2e)', () => {
     expect(res.body.phone).toBe(phone);
     expect(res.body.version).toBe(me.version + 1);
 
-    await http.patch(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).send({ salary: '999999999' }).expect(403);
-    await http.patch(`/api/v1/employees/${strangerId}`).set(EMPLOYEE).send({ phone: '0912000222' }).expect(403);
+    await http.patch(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).send({ salary: '999999999', version: 1 }).expect(403);
+    await http.patch(`/api/v1/employees/${strangerId}`).set(EMPLOYEE).send({ phone: '0912000222', version: 1 }).expect(403);
   });
 
   it('version cũ → 409 (optimistic locking)', async () => {
@@ -185,11 +188,13 @@ describe('HRHelper API (e2e)', () => {
   });
 
   it('HR không gán được quản lý tạo vòng lặp', async () => {
-    await http.patch(`/api/v1/employees/${managerId}`).set(HR).send({ managerId: employeeId }).expect(400);
+    const v1 = await versionOf(managerId);
+    await http.patch(`/api/v1/employees/${managerId}`).set(HR).send({ managerId: employeeId, version: v1 }).expect(400);
   });
 
   it('HR cập nhật lương: audit chỉ ghi tên trường, không ghi giá trị', async () => {
-    await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ salary: '25000000' }).expect(200);
+    const v2 = await versionOf(employeeId);
+    await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ salary: '25000000', version: v2 }).expect(200);
     const logs = await http.get(`/api/v1/audit-logs?entity=employee&entityId=${employeeId}`).set(HR);
     const update = logs.body.items.find((l: any) => l.action === 'UPDATE' && 'salary' in (l.changedFields ?? {}));
     expect(update.changedFields.salary).toBe('***');
@@ -300,7 +305,7 @@ describe('HRHelper API (e2e)', () => {
     });
 
     it('lỗi validation trả thêm fields theo từng trường', async () => {
-      const res = await http.patch(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).send({ phone: 'abc' }).expect(400);
+      const res = await http.patch(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).send({ phone: 'abc', version: 1 }).expect(400);
       expect(res.body.fields).toEqual({ phone: 'Số điện thoại không hợp lệ' });
       expect(res.body.message).toEqual(['Số điện thoại không hợp lệ']);
     });
@@ -315,10 +320,10 @@ describe('HRHelper API (e2e)', () => {
     });
 
     it('sửa hồ sơ: quản lý không sửa hồ sơ cấp dưới; ADMIN không sửa hồ sơ người khác hay trường nhạy cảm', async () => {
-      await http.patch(`/api/v1/employees/${employeeId}`).set(MANAGER).send({ phone: '0912000444' }).expect(403);
-      await http.patch(`/api/v1/employees/${employeeId}`).set(MANAGER).send({ nationalId: '001234567890' }).expect(403);
-      await http.patch(`/api/v1/employees/${employeeId}`).set(ADMIN).send({ phone: '0912000555' }).expect(403);
-      await http.patch(`/api/v1/employees/${employeeId}`).set(ADMIN).send({ salary: '1000' }).expect(403);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(MANAGER).send({ phone: '0912000444', version: 1 }).expect(403);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(MANAGER).send({ nationalId: '001234567890', version: 1 }).expect(403);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(ADMIN).send({ phone: '0912000555', version: 1 }).expect(403);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(ADMIN).send({ salary: '1000', version: 1 }).expect(403);
     });
 
     it('/me và số dư phép của tôi: mọi role, chưa đăng nhập thì 401', async () => {
@@ -380,9 +385,12 @@ describe('HRHelper API (e2e)', () => {
     });
 
     it('gán quản lý đã nghỉ việc → 400; gán quản lý cho CEO → 400; bỏ quản lý của nhân viên → 400', async () => {
-      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ managerId: terminatedId }).expect(400);
-      await http.patch(`/api/v1/employees/${ceo.id}`).set(HR).send({ managerId: managerId }).expect(400);
-      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ managerId: null }).expect(400);
+      const v3 = await versionOf(employeeId);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ managerId: terminatedId, version: v3 }).expect(400);
+      const v4 = await versionOf(ceo.id);
+      await http.patch(`/api/v1/employees/${ceo.id}`).set(HR).send({ managerId: managerId, version: v4 }).expect(400);
+      const v5 = await versionOf(employeeId);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ managerId: null, version: v5 }).expect(400);
     });
 
     it('HR duyệt đơn của CEO; quản lý khác không duyệt được; HR thấy đơn CEO trong danh sách chờ duyệt', async () => {
@@ -573,6 +581,120 @@ describe('HRHelper API (e2e)', () => {
       await http.patch(`/api/v1/documents/${e.id}`).set(HR).send({ title: 'E2E Đã đổi tên', version: cur.version + 3 }).expect(409);
       const ok = await http.patch(`/api/v1/documents/${e.id}`).set(HR).send({ title: 'E2E Đã đổi tên', version: cur.version }).expect(200);
       expect(ok.body.title).toBe('E2E Đã đổi tên');
+    });
+  });
+
+  describe('UC1 toàn vẹn hồ sơ (AC-1.4.3, 1.4.4, 1.6.2, 1.6.3, 1.7.1, 1.7.2; UC2 AC-2.4.6, 2.4.7)', () => {
+    const auditOf = async (id: string) =>
+      (await http.get(`/api/v1/audit-logs?entity=employee&entityId=${id}`).set(HR).expect(200)).body.items;
+
+    it('sửa hồ sơ không kèm version → 400 (AC-1.6.2)', async () => {
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ address: 'Không version' }).expect(400);
+    });
+
+    it('chỉ đổi lương cũng tăng version: người mở form cũ nhận 409 (AC-1.6.3)', async () => {
+      const v = await versionOf(employeeId);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ salary: '26000000', version: v }).expect(200);
+      expect(await versionOf(employeeId)).toBe(v + 1);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ address: 'HR2 ghi đè', version: v }).expect(409);
+    });
+
+    it('audit theo nhóm trường: ngày vào làm có giá trị cũ, mới; địa chỉ chỉ có tên (AC-1.4.3, AC-1.4.4)', async () => {
+      const before = (await http.get(`/api/v1/employees/${employeeId}`).set(HR)).body;
+      const newDate = before.hireDate === '2016-03-08' ? '2016-03-09' : '2016-03-08';
+      await http
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set(HR)
+        .send({ hireDate: newDate, address: `${Date.now() % 1000} Đường Kiểm Thử`, version: before.version })
+        .expect(200);
+      const log = (await auditOf(employeeId)).find((l: any) => l.action === 'UPDATE' && l.changedFields?.hireDate);
+      expect(log.changedFields.hireDate).toEqual({ from: before.hireDate, to: newDate });
+      expect(log.changedFields.address).toBe('***');
+      expect(JSON.stringify(log.changedFields)).not.toContain('Kiểm Thử');
+      const v6 = await versionOf(employeeId);
+      await http
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set(HR)
+        .send({ hireDate: before.hireDate, address: before.address, version: v6 })
+        .expect(200);
+    });
+
+    it('HR sửa email công ty: trùng thì 409; mã nhân viên không sửa được (AC-1.4.4)', async () => {
+      const other = (await http.get(`/api/v1/employees/${strangerId}`).set(HR)).body;
+      const v7 = await versionOf(employeeId);
+      await http
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set(HR)
+        .send({ workEmail: other.workEmail.toUpperCase(), version: v7 })
+        .expect(409);
+      const v8 = await versionOf(employeeId);
+      await http
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set(HR)
+        .send({ employeeCode: 'E99999', version: v8 })
+        .expect(400);
+    });
+
+    it('không cho nghỉ việc khi còn cấp dưới (AC-1.7.1)', async () => {
+      const v9 = await versionOf(managerId);
+      const res = await http
+        .patch(`/api/v1/employees/${managerId}`)
+        .set(HR)
+        .send({ status: 'TERMINATED', version: v9 })
+        .expect(400);
+      expect(res.body.message).toMatch(/cấp dưới/);
+    });
+
+    it('người đã nghỉ việc gọi API bằng token còn hạn → 403 (AC-1.7.2)', async () => {
+      const positions = (await http.get('/api/v1/positions').set(HR)).body;
+      const me = (await http.get(`/api/v1/employees/${employeeId}`).set(HR)).body;
+      const email = `leaver-${Date.now() % 100000}@hr.local`;
+      const created = (
+        await http
+          .post('/api/v1/employees')
+          .set(HR)
+          .send({
+            employeeCode: `E9${String(Date.now()).slice(-4)}`,
+            fullName: 'Người Sắp Nghỉ',
+            workEmail: email,
+            departmentId: me.departmentId,
+            positionId: positions.find((p: any) => p.code !== 'CEO').id,
+            managerId,
+            hireDate: '2026-11-01',
+          })
+          .expect(201)
+      ).body;
+      const { DataSource } = await import('typeorm');
+      const ds = app.get(DataSource);
+      try {
+        await http.get('/api/v1/me').set(as(email)).expect(200);
+        const v10 = await versionOf(created.id);
+        await http
+          .patch(`/api/v1/employees/${created.id}`)
+          .set(HR)
+          .send({ status: 'TERMINATED', version: v10 })
+          .expect(200);
+        await http.get('/api/v1/me').set(as(email)).expect(403);
+      } finally {
+        await ds.query('DELETE FROM iam.user_account WHERE employee_id = $1', [created.id]);
+        await ds.query('DELETE FROM employee.employee WHERE id = $1', [created.id]);
+      }
+    });
+
+    it('cây tổ chức chỉ một gốc; trưởng đơn vị phải đang làm việc (UC2 AC-2.4.6, AC-2.4.7)', async () => {
+      const depts = (await http.get('/api/v1/departments').set(HR)).body;
+      const bod = depts.find((d: any) => d.code === 'BOD');
+      const child = depts.find((d: any) => d.parentId === bod.id);
+      const code = () => `T-${Math.floor(Math.random() * 1e5)}`;
+      await http.post('/api/v1/departments').set(HR).send({ code: code(), name: 'Gốc thứ hai', office: 'Hà Nội' }).expect(400);
+      await http.patch(`/api/v1/departments/${child.id}`).set(HR).send({ parentId: null }).expect(400);
+      const { DataSource } = await import('typeorm');
+      const [{ id: leaver }] = await app.get(DataSource).query(`SELECT id FROM employee.employee WHERE status = 'TERMINATED' LIMIT 1`);
+      await http
+        .post('/api/v1/departments')
+        .set(HR)
+        .send({ code: code(), name: 'Trưởng đã nghỉ', office: 'Hà Nội', parentId: bod.id, headEmployeeId: leaver })
+        .expect(400);
     });
   });
 

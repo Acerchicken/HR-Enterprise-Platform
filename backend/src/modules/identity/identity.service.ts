@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EmployeeService } from '../employee/employee.service';
@@ -47,6 +47,10 @@ export class IdentityService {
     }
     for (const ra of await this.roleRepo.findBy({ userId: account.id })) roles.add(ra.role);
     if (account.employeeId) {
+      // AC-1.7.2: người đã nghỉ việc không dùng được hệ thống, kể cả khi token cũ còn hạn.
+      if ((await this.employees.placementOf(account.employeeId))?.status === 'TERMINATED') {
+        throw new ForbiddenException('Tài khoản đã nghỉ việc, không còn quyền truy cập');
+      }
       roles.add('EMPLOYEE');
       if (await this.employees.hasDirectReports(account.employeeId)) roles.add('MANAGER');
     }

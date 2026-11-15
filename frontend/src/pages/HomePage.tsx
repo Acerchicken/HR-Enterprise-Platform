@@ -56,7 +56,7 @@ const DAY = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', 
 
 /** Trang chủ (frontend.md 2.2): lời chào, ô chức năng theo vai trò, số dư phép năm. */
 export function HomePage() {
-  const { me } = useShell();
+  const { me, meError } = useShell();
   const openProfile = useOpenProfile();
   const hasEmployee = !!me?.employee;
   const balance = useApi(
@@ -64,6 +64,8 @@ export function HomePage() {
     [hasEmployee],
   );
 
+  // Ví dụ tài khoản đã nghỉ việc (AC-1.7.2): API trả 403 kèm lý do.
+  if (meError) return <p className="warn-box">{meError.message}</p>;
   if (!me) return <Skeleton lines={4} />;
   const canSee = (t: Tile) =>
     !t.who || t.who.some((w) => (w === 'employee' ? hasEmployee : me.roles.includes(w)));

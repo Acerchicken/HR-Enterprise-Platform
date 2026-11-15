@@ -35,12 +35,12 @@ describe('employee access rules', () => {
 
   it('nhân viên chỉ tự sửa phone, address', () => {
     expect(forbiddenFields(user('e1'), 'e1', { phone: '0912345678', version: 3 })).toEqual([]);
-    expect(forbiddenFields(user('e1'), 'e1', { phone: '0912345678', salary: '1' })).toEqual(['salary']);
+    expect(forbiddenFields(user('e1'), 'e1', { version: 1, phone: '0912345678', salary: '1' })).toEqual(['salary']);
   });
 
   it('không sửa được hồ sơ người khác, trừ HR', () => {
-    expect(forbiddenFields(user('e2'), 'e1', { phone: '0912345678' })).toEqual(['phone']);
-    expect(forbiddenFields(user('m1', 'MANAGER'), 'e1', { address: 'x' })).toEqual(['address']);
-    expect(forbiddenFields(user('h1', 'HR'), 'e1', { salary: '1', departmentId: 'd' })).toEqual([]);
+    expect(forbiddenFields(user('e2'), 'e1', { version: 1, phone: '0912345678' })).toEqual(['phone']);
+    expect(forbiddenFields(user('m1', 'MANAGER'), 'e1', { version: 1, address: 'x' })).toEqual(['address']);
+    expect(forbiddenFields(user('h1', 'HR'), 'e1', { version: 1, salary: '1', departmentId: 'd' })).toEqual([]);
   });
 });

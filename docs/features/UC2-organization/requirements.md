@@ -45,9 +45,9 @@
 - **AC-2.4.3** Khi mã phòng ban đã tồn tại. Thì trả 409.
 - **AC-2.4.4** Khi nhân viên hoặc quản lý tạo, sửa phòng ban. Thì trả 403.
 - **AC-2.4.5** *(chưa có)* HR, ADMIN tạo và sửa phòng ban trên giao diện, lỗi hiện đúng ô.
-- **AC-2.4.6** *(chưa đạt)* Khi tạo phòng ban không có `parentId`, hoặc sửa `parentId` thành `null`. Thì trả 400; cây giữ
-  đúng một gốc. Hiện API chấp nhận và tạo thêm gốc.
-- **AC-2.4.7** *(chưa đạt)* Khi `headEmployeeId` không phải nhân viên đang làm việc. Thì trả 400. Hiện API không kiểm.
+- **AC-2.4.6** Khi tạo phòng ban không có `parentId`, hoặc sửa `parentId` thành `null`. Thì trả 400; cây giữ
+  đúng một gốc.
+- **AC-2.4.7** Khi `headEmployeeId` không phải nhân viên đang làm việc. Thì trả 400.
 - **AC-2.4.8** *(chưa có)* Khi tạo hoặc sửa đơn vị sai luật loại cha, loại con (ADR-14): Trung tâm không thuộc Công ty; Phòng
   không thuộc Công ty hoặc Trung tâm; Nhóm không thuộc Phòng; tạo đơn vị Công ty thứ hai. Thì trả 400. Đổi loại một đơn vị
   làm đơn vị con của nó sai luật cũng trả 400.
