@@ -48,6 +48,15 @@ describe('kiểm dữ liệu đề xuất theo mục (AC-1.9.9, spec mục 8)', 
   it('trường chính chỉ nhận điện thoại, địa chỉ; sửa một phần không bắt các trường còn lại', () => {
     const v = validateSection('personal', { phone: '0912 000 111' }, TODAY, true);
     expect(v).toEqual({ data: { phone: '0912 000 111' }, sensitive: {}, errors: {} });
-    expect(validateSection('salary', {}, TODAY).errors).toHaveProperty('section');
+    expect(validateSection('nope', {}, TODAY).errors).toHaveProperty('section');
+  });
+
+  it('mục HR quản lý: hợp đồng không thời hạn không cần ngày kết thúc; lương là số dương (FR-1.12)', () => {
+    expect(validateSection('contracts', { type: 'INDEFINITE', number: 'HĐ-01', startDate: '2026-01-01' }, TODAY).errors).toEqual({});
+    expect(validateSection('contracts', { type: 'FIXED_TERM', number: 'HĐ-02', startDate: '2026-01-01' }, TODAY).errors).toHaveProperty('endDate');
+    expect(validateSection('contracts', { type: 'FIXED_TERM', number: 'HĐ-02', startDate: '2026-01-01', endDate: '2025-01-01' }, TODAY).errors).toHaveProperty('endDate');
+    const salary = validateSection('salary', { amount: '25000000', effectiveDate: '2026-01-01' }, TODAY);
+    expect(salary).toMatchObject({ errors: {}, sensitive: { amount: '25000000' } });
+    expect(validateSection('salary', { amount: '0', effectiveDate: '2026-01-01' }, TODAY).errors).toHaveProperty('amount');
   });
 });

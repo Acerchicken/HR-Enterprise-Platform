@@ -1,21 +1,24 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { api, ApiError, HistoryEntry, Page, PersonalSection, ProfileSummary, SalarySection, SectionSummary } from '../api/client';
+import { api, ApiError, HistoryEntry, Page, PersonalSection, ProfileSummary, SectionSummary } from '../api/client';
 import { invalidateSummary } from '../api/cache';
 import { useApi } from '../api/useApi';
-import { errorText, formatDate, formatMoney, MaskedValue, Skeleton, useCooldown } from '../components/ui';
+import { errorText, formatDate, MaskedValue, Skeleton, useCooldown } from '../components/ui';
 import { FieldEditor, newKey, RequestBox } from './fields';
 import { FilesSectionPage } from './FilesSectionPage';
 import { RowSectionPage } from './RowSectionPage';
 
 const STATUS_LABEL: Record<string, string> = { ACTIVE: 'Đang làm việc', ON_LEAVE: 'Tạm nghỉ', TERMINATED: 'Đã nghỉ việc' };
-const ROW_SECTIONS = new Set(['emergency-contacts', 'relatives', 'qualifications', 'bank-account']);
+const ROW_SECTIONS = new Set([
+  'emergency-contacts', 'relatives', 'qualifications', 'bank-account',
+  // Mục HR quản lý (FR-1.12): cùng trang dòng, nhân viên chỉ xem.
+  'contracts', 'salary', 'insurance-salary', 'tax', 'social-insurance', 'health-insurance', 'allowances', 'rewards-discipline',
+]);
 
 /** Trang con của một mục, mở bên trong popup (frontend.md 4.2). Chỉ lúc này mới gọi API của mục (AC-1.8.8). */
 export function SectionPage({ summary, code, def }: { summary: ProfileSummary; code: string; def?: SectionSummary }) {
   // Mục chưa làm hoặc không được xem: không gọi API (AC-1.8.2).
   if (!def || !def.available) return <ComingSoon known={!!def} />;
   if (code === 'personal') return <Personal s={summary} />;
-  if (code === 'salary') return <Salary s={summary} />;
   if (code === 'history') return <History s={summary} />;
   if (code === 'cv') return <FilesSectionPage s={summary} code={code} />;
   if (ROW_SECTIONS.has(code)) return <RowSectionPage s={summary} code={code} />;
@@ -152,25 +155,6 @@ function Personal({ s }: { s: ProfileSummary }) {
         </form>
       )}
     </>
-  );
-}
-
-function Salary({ s }: { s: ProfileSummary }) {
-  const data = useApi<SalarySection>(() => api(`/employees/${s.id}/profile/salary`), [s.id]);
-  if (data.error) return <p className="error pad">{errorText(data.error)}</p>;
-  if (!data.data) return <div className="pad"><Skeleton lines={2} /></div>;
-  return (
-    <div className="fld">
-      <Kv k="Mức lương">
-        <MaskedValue
-          label="lương mục tiêu"
-          hasValue={data.data.salary.hasValue}
-          format={formatMoney}
-          load={() => api<SalarySection>(`/employees/${s.id}/profile/salary?reveal=true`).then((r) => r.salary.value)}
-        />
-      </Kv>
-      <p className="muted small">Lịch sử lương theo ngày hiệu lực sẽ có khi làm FR-1.12.</p>
-    </div>
   );
 }
 

@@ -2,7 +2,7 @@
  * Mô tả trường của các mục nhân viên đề xuất được (UC1 spec mục 8, cột "Nhập" là NV). Một chỗ dùng cho: kiểm dữ liệu ở API,
  * tách phần nhạy cảm để mã hóa, và trả về cho giao diện dựng form (giao diện không tự khai lại trường).
  */
-export type FieldType = 'text' | 'phone' | 'date' | 'month' | 'year' | 'select' | 'boolean' | 'digits' | 'upper';
+export type FieldType = 'text' | 'phone' | 'date' | 'month' | 'year' | 'select' | 'boolean' | 'digits' | 'upper' | 'money';
 
 export interface FieldSpec {
   key: string;
@@ -20,6 +20,10 @@ export interface FieldSpec {
   max?: number;
   /** Ghi chú dưới ô nhập. */
   hint?: string;
+  /** Chỉ HR nhập (mục có cả trường NV và HR, ví dụ bảo hiểm y tế: số thẻ do HR, nơi khám do NV). */
+  hrOnly?: boolean;
+  /** Bắt buộc trừ khi trường khác có giá trị này (ngày kết thúc hợp đồng, trừ hợp đồng không xác định thời hạn). */
+  requiredUnless?: { key: string; equals: unknown };
 }
 
 /** main: trường chính của hồ sơ; single: mục có đúng một dòng; rows: nhiều dòng; files: mục chỉ gồm file (CV, ảnh đại diện). */
@@ -31,6 +35,8 @@ export interface SectionSchema {
   fields: FieldSpec[];
   /** Câu nhắc ở đầu form (NFR-11: dữ liệu người thứ ba). */
   notice?: string;
+  /** NV: nhân viên đề xuất qua yêu cầu, HR duyệt; HR: chỉ HR ghi, nhân viên chỉ xem (FR-1.12, AC-1.9.8). */
+  proposeBy: 'NV' | 'HR';
 }
 
 const RELATIONS = ['Cha', 'Mẹ', 'Vợ', 'Chồng', 'Con', 'Anh chị em', 'Khác'].map((v) => ({ value: v, label: v }));
@@ -40,9 +46,10 @@ const BANKS = ['Vietcombank', 'VietinBank', 'BIDV', 'Agribank', 'Techcombank', '
 );
 
 export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
-  cv: { kind: 'files', maxRows: 5, fields: [], notice: 'CV hoặc sơ yếu lý lịch: PDF, DOCX, JPG, PNG, tối đa 10 MiB mỗi file. Bản mới nhất hiện đầu.' },
-  avatar: { kind: 'files', maxRows: 1, fields: [], notice: 'Ảnh JPG, PNG tối đa 2 MiB; ảnh được cắt về 512 × 512 và bỏ thông tin vị trí.' },
+  cv: { kind: 'files', proposeBy: 'NV', maxRows: 5, fields: [], notice: 'CV hoặc sơ yếu lý lịch: PDF, DOCX, JPG, PNG, tối đa 10 MiB mỗi file. Bản mới nhất hiện đầu.' },
+  avatar: { kind: 'files', proposeBy: 'NV', maxRows: 1, fields: [], notice: 'Ảnh JPG, PNG tối đa 2 MiB; ảnh được cắt về 512 × 512 và bỏ thông tin vị trí.' },
   personal: {
+    proposeBy: 'NV',
     kind: 'main',
     maxRows: 1,
     fields: [
@@ -51,6 +58,7 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
     ],
   },
   'emergency-contacts': {
+    proposeBy: 'NV',
     kind: 'rows',
     maxRows: 3,
     fields: [
@@ -61,6 +69,7 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
     ],
   },
   relatives: {
+    proposeBy: 'NV',
     kind: 'rows',
     maxRows: 20,
     notice: 'Chỉ khai thân nhân khi cần cho giảm trừ gia cảnh hoặc liên hệ khẩn cấp.',
@@ -85,6 +94,7 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
     ],
   },
   qualifications: {
+    proposeBy: 'NV',
     kind: 'rows',
     maxRows: 30,
     fields: [
@@ -100,6 +110,7 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
     ],
   },
   'bank-account': {
+    proposeBy: 'NV',
     kind: 'single',
     maxRows: 1,
     notice: 'Chỉ một tài khoản nhận lương. Sau khi HR duyệt, bạn sẽ nhận email báo thông tin tài khoản đã thay đổi.',
@@ -111,6 +122,114 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
     ],
   },
 };
+
+
+const CONTRACT_TYPES = [
+  { value: 'PROBATION', label: 'Thử việc' },
+  { value: 'APPRENTICE', label: 'Học việc' },
+  { value: 'FIXED_TERM', label: 'Xác định thời hạn' },
+  { value: 'INDEFINITE', label: 'Không xác định thời hạn' },
+];
+export const CONTRACT_LABEL = Object.fromEntries(CONTRACT_TYPES.map((o) => [o.value, o.label]));
+const ALLOWANCES = ['Ăn trưa', 'Đi lại', 'Điện thoại', 'Trách nhiệm', 'Khác'].map((v) => ({ value: v, label: v }));
+
+/** Mục HR quản lý (FR-1.12): nhân viên chỉ xem theo mức của mục, không gửi yêu cầu được (trừ trường NV của BHYT). */
+export const HR_SCHEMAS: Record<string, SectionSchema> = {
+  contracts: {
+    proposeBy: 'HR',
+    kind: 'rows',
+    maxRows: 50,
+    fields: [
+      { key: 'type', label: 'Loại hợp đồng', type: 'select', required: true, options: CONTRACT_TYPES },
+      { key: 'number', label: 'Số hợp đồng', type: 'text', required: true, max: 50 },
+      { key: 'startDate', label: 'Ngày bắt đầu', type: 'date', required: true },
+      { key: 'endDate', label: 'Ngày kết thúc', type: 'date', requiredUnless: { key: 'type', equals: 'INDEFINITE' }, hint: 'Bỏ trống nếu không xác định thời hạn' },
+    ],
+  },
+  salary: {
+    proposeBy: 'HR',
+    kind: 'rows',
+    maxRows: 200,
+    notice: 'Mỗi mức lương có ngày hiệu lực; mức cũ giữ lại thành lịch sử.',
+    fields: [
+      { key: 'amount', label: 'Mức lương (VND/tháng)', type: 'money', required: true, sensitive: true },
+      { key: 'effectiveDate', label: 'Ngày hiệu lực', type: 'date', required: true },
+    ],
+  },
+  'insurance-salary': {
+    proposeBy: 'HR',
+    kind: 'rows',
+    maxRows: 200,
+    fields: [
+      { key: 'amount', label: 'Mức lương đóng BHXH (VND/tháng)', type: 'money', required: true, sensitive: true },
+      { key: 'effectiveDate', label: 'Ngày hiệu lực', type: 'date', required: true },
+    ],
+  },
+  tax: {
+    proposeBy: 'HR',
+    kind: 'single',
+    maxRows: 1,
+    notice: 'Số người phụ thuộc tự đếm từ mục "Thân nhân và người phụ thuộc" đang trong thời gian giảm trừ.',
+    fields: [{ key: 'taxCode', label: 'Mã số thuế cá nhân', type: 'digits', sensitive: true, min: 10, max: 12, hint: 'Từ 1/7/2025 mặc định là số CCCD' }],
+  },
+  'social-insurance': {
+    proposeBy: 'HR',
+    kind: 'single',
+    maxRows: 1,
+    fields: [
+      { key: 'number', label: 'Mã số BHXH', type: 'digits', required: true, min: 10, max: 10 },
+      { key: 'startDate', label: 'Ngày bắt đầu đóng', type: 'date' },
+    ],
+  },
+  'health-insurance': {
+    proposeBy: 'NV',
+    kind: 'single',
+    maxRows: 1,
+    notice: 'Nơi khám chữa bệnh ban đầu đổi tối đa một lần mỗi quý.',
+    fields: [
+      { key: 'cardNumber', label: 'Số thẻ BHYT', type: 'text', max: 20, hrOnly: true },
+      { key: 'hospital', label: 'Nơi khám chữa bệnh ban đầu', type: 'text', max: 255 },
+    ],
+  },
+  allowances: {
+    proposeBy: 'HR',
+    kind: 'rows',
+    maxRows: 50,
+    fields: [
+      { key: 'type', label: 'Loại phụ cấp', type: 'select', required: true, options: ALLOWANCES },
+      { key: 'amount', label: 'Số tiền mỗi tháng (VND)', type: 'money', required: true, sensitive: true },
+      { key: 'from', label: 'Từ ngày', type: 'date', required: true },
+      { key: 'to', label: 'Đến ngày', type: 'date' },
+    ],
+  },
+  'rewards-discipline': {
+    proposeBy: 'HR',
+    kind: 'rows',
+    maxRows: 200,
+    fields: [
+      { key: 'kind', label: 'Loại', type: 'select', required: true, options: [{ value: 'REWARD', label: 'Khen thưởng' }, { value: 'DISCIPLINE', label: 'Kỷ luật' }] },
+      { key: 'form', label: 'Hình thức', type: 'text', required: true, max: 255 },
+      { key: 'decisionNo', label: 'Số quyết định', type: 'text', max: 50 },
+      { key: 'date', label: 'Ngày', type: 'date', required: true },
+      { key: 'reason', label: 'Lý do', type: 'text', max: 500 },
+    ],
+  },
+  'career-history': {
+    proposeBy: 'HR',
+    kind: 'rows',
+    maxRows: 100,
+    notice: 'HR nhập các giai đoạn trước khi có hệ thống; các lần đổi phòng ban, chức danh, quản lý sau đó tự lấy từ nhật ký.',
+    fields: [
+      { key: 'from', label: 'Từ ngày', type: 'date', required: true },
+      { key: 'to', label: 'Đến ngày', type: 'date' },
+      { key: 'department', label: 'Phòng ban', type: 'text', required: true, max: 255 },
+      { key: 'position', label: 'Chức danh', type: 'text', required: true, max: 255 },
+      { key: 'manager', label: 'Quản lý trực tiếp', type: 'text', max: 150 },
+      { key: 'reason', label: 'Lý do', type: 'text', required: true, max: 255 },
+    ],
+  },
+};
+Object.assign(SECTION_SCHEMAS, HR_SCHEMAS);
 
 const PHONE = /^\+?[0-9 .-]{8,20}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -137,7 +256,7 @@ export function validateSection(code: string, input: Record<string, unknown>, to
   for (const f of schema.fields) {
     if (!matches(f.showIf, input)) continue;
     const raw = input[f.key];
-    const required = f.required || (f.requiredIf && matches(f.requiredIf, input));
+    const required = f.required || (f.requiredIf && matches(f.requiredIf, input)) || (f.requiredUnless && !matches(f.requiredUnless, input));
     if (empty(raw)) {
       if (required && !(partial && raw === undefined)) out.errors[f.key] = `${f.label} là bắt buộc`;
       else if (!partial || raw !== undefined) {
@@ -157,6 +276,12 @@ export function validateSection(code: string, input: Record<string, unknown>, to
   // Ngày hết hạn chứng chỉ sau ngày cấp; giảm trừ đến tháng không trước từ tháng.
   if (out.data.issuedDate && out.data.expiryDate && String(out.data.expiryDate) <= String(out.data.issuedDate)) {
     out.errors.expiryDate = 'Ngày hết hạn phải sau ngày cấp';
+  }
+  if (out.data.startDate && out.data.endDate && String(out.data.endDate) <= String(out.data.startDate)) {
+    out.errors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu';
+  }
+  if (out.data.from && out.data.to && String(out.data.to) < String(out.data.from)) {
+    out.errors.to = 'Đến ngày phải sau từ ngày';
   }
   if (out.data.dependentFrom && out.data.dependentTo && String(out.data.dependentTo) < String(out.data.dependentFrom)) {
     out.errors.dependentTo = 'Đến tháng phải sau từ tháng';
@@ -183,6 +308,8 @@ function checkValue(f: FieldSpec, raw: unknown, today: string): string | null {
       return f.options?.some((o) => o.value === s) ? null : `${f.label} không hợp lệ`;
     case 'boolean':
       return typeof raw === 'boolean' ? null : `${f.label} không hợp lệ`;
+    case 'money':
+      return /^\d{1,12}$/.test(s) && Number(s) > 0 ? null : `${f.label} phải là số dương`;
     case 'digits':
       if (!/^\d+$/.test(s)) return `${f.label} chỉ gồm chữ số`;
       if (f.key === 'taxId') return s.length === 10 || s.length === 12 ? null : 'Mã số thuế 10 số hoặc CCCD 12 số';

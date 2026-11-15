@@ -122,7 +122,7 @@ export interface PersonalSection {
 export interface SalarySection { section: 'salary'; salary: MaskedField }
 
 // ----- Yêu cầu cập nhật hồ sơ (UC1 FR-1.9) -----
-export type FieldType = 'text' | 'phone' | 'date' | 'month' | 'year' | 'select' | 'boolean' | 'digits' | 'upper';
+export type FieldType = 'text' | 'phone' | 'date' | 'month' | 'year' | 'select' | 'boolean' | 'digits' | 'upper' | 'money';
 export interface FieldSpec {
   key: string;
   label: string;
@@ -135,6 +135,8 @@ export interface FieldSpec {
   min?: number;
   max?: number;
   hint?: string;
+  hrOnly?: boolean;
+  requiredUnless?: { key: string; equals: unknown };
 }
 export type ChangeAction = 'CREATE' | 'UPDATE' | 'DELETE';
 export interface ChangeRequest {
@@ -171,6 +173,11 @@ export interface RowSection {
   rows: ProfileRow[];
   files?: import('../components/files').FileView[];
   requests: ChangeRequest[];
+  /** Lương, lương đóng BHXH: mức đang hiệu lực. */
+  current?: MaskedField;
+  currentEffectiveDate?: string | null;
+  /** Thuế TNCN: số người phụ thuộc đang giảm trừ. */
+  dependents?: number;
 }
 export interface ChangeListItem extends ChangeRequest {
   employeeName: string;

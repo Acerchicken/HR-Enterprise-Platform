@@ -137,7 +137,7 @@ chỉ tạo một **yêu cầu cập nhật**; HR kiểm, đúng thì duyệt v�
   vượt số dòng tối đa của mục. Thì trả 400 kèm `fields` hoặc 409, không tạo yêu cầu.
 - **AC-1.9.10** Khi HR duyệt yêu cầu đổi tài khoản ngân hàng. Thì ngoài email báo xử lý, nhân viên nhận email "thông
   tin tài khoản ngân hàng trên HRHelper vừa thay đổi" (không kèm số tài khoản), để phát hiện yêu cầu không phải do mình gửi.
-- **AC-1.9.11** *(một phần: mã số thuế đã mã hóa; mục "Thông tin thuế TNCN" chưa có)* Khi duyệt thân nhân là người phụ thuộc. Thì mã số thuế hoặc CCCD của người đó được mã hóa khi lưu;
+- **AC-1.9.11** Khi duyệt thân nhân là người phụ thuộc. Thì mã số thuế hoặc CCCD của người đó được mã hóa khi lưu;
   "Thông tin thuế TNCN" tự đếm số người phụ thuộc đang hiệu lực.
 - **AC-1.9.12** Khi gửi lại cùng `Idempotency-Key`. Thì trả lại yêu cầu đã tạo, không tạo yêu cầu thứ hai.
 - **AC-1.9.13** Khi có yêu cầu mới. Thì HR nhận email báo chung "Có yêu cầu cập nhật hồ sơ cần xử lý" (gộp tối đa một
@@ -178,18 +178,18 @@ chỉ tạo một **yêu cầu cập nhật**; HR kiểm, đúng thì duyệt v�
 - **AC-1.11.4** Trong audit, log API và log worker không có giá trị của trường cá nhân, trường nhạy cảm, tên file gốc
   hay nội dung file (NFR-5.18).
 
-### FR-1.12 Mục do HR quản lý (C, chưa có)
+### FR-1.12 Mục do HR quản lý (C)
 
 Hợp đồng (diện đối tượng), lương mục tiêu theo thời gian, hệ số lương bảo hiểm, BHXH, số thẻ BHYT, phụ cấp, khen thưởng kỷ
 luật, quá trình công tác trước khi có hệ thống.
 
-- **AC-1.12.1** *(chưa có)* Khi HR thêm hợp đồng với loại, số, ngày bắt đầu, ngày kết thúc (trừ không xác định thời hạn) và file
+- **AC-1.12.1** Khi HR thêm hợp đồng với loại, số, ngày bắt đầu, ngày kết thúc (trừ không xác định thời hạn) và file
   đã ký. Thì hàng "Diện đối tượng" ở đầu trang hiện loại của hợp đồng đang hiệu lực.
-- **AC-1.12.2** *(chưa có)* Khi HR thêm hợp đồng trùng khoảng ngày với hợp đồng khác của cùng người. Thì trả 409.
-- **AC-1.12.3** *(chưa có)* Khi HR thêm mức lương mới có ngày hiệu lực. Thì mức cũ giữ lại thành lịch sử; "Lương mục tiêu" hiện
+- **AC-1.12.2** Khi HR thêm hợp đồng trùng khoảng ngày với hợp đồng khác của cùng người. Thì trả 409.
+- **AC-1.12.3** Khi HR thêm mức lương mới có ngày hiệu lực. Thì mức cũ giữ lại thành lịch sử; "Lương mục tiêu" hiện
   mức đang hiệu lực. Giá trị mã hóa khi lưu.
-- **AC-1.12.4** *(chưa có)* Nhân viên xem được mục HR quản lý của chính mình theo quyền ở spec 9.1, không sửa được (AC-1.9.3).
-- **AC-1.12.5** *(chưa có)* Khi hợp đồng còn 30 ngày nữa hết hạn. Thì HR thấy hồ sơ đó trong danh sách "Hợp đồng sắp hết hạn".
+- **AC-1.12.4** Nhân viên xem được mục HR quản lý của chính mình theo quyền ở spec 9.1, không sửa được (AC-1.9.3).
+- **AC-1.12.5** Khi hợp đồng còn 30 ngày nữa hết hạn. Thì HR thấy hồ sơ đó trong danh sách "Hợp đồng sắp hết hạn".
 
 ### FR-1.13 Thông tin tự tính (C, chưa có)
 

@@ -1,5 +1,5 @@
 import { ChangeRequest, FieldSpec, MaskedField } from '../api/client';
-import { formatDate } from '../components/ui';
+import { formatDate, formatMoney } from '../components/ui';
 
 /** Trường có hiện với dữ liệu này không (`showIf` trong mô tả mục của API). */
 export const visible = (f: FieldSpec, values: Record<string, unknown>) => !f.showIf || values[f.showIf.key] === f.showIf.equals;
@@ -8,6 +8,7 @@ export const visible = (f: FieldSpec, values: Record<string, unknown>) => !f.sho
 export function formatValue(f: FieldSpec, v: unknown): string {
   if (v === undefined || v === null || v === '') return '—';
   if (f.type === 'boolean') return v ? 'Có' : 'Không';
+  if (f.type === 'money') return formatMoney(String(v));
   if (f.type === 'date') return formatDate(String(v));
   if (f.type === 'month') {
     const [y, m] = String(v).split('-');
@@ -58,11 +59,12 @@ export function FieldEditor({
     );
   } else {
     const type = field.type === 'date' ? 'date' : field.type === 'month' ? 'month' : field.type === 'year' ? 'number' : field.type === 'phone' ? 'tel' : 'text';
+    const numeric = field.type === 'digits' || field.type === 'year' || field.type === 'money';
     input = (
       <input
         id={id}
         type={type}
-        inputMode={field.type === 'digits' || field.type === 'year' ? 'numeric' : undefined}
+        inputMode={numeric ? 'numeric' : undefined}
         value={String(value ?? '')}
         maxLength={field.type === 'text' || field.type === 'upper' ? field.max : undefined}
         placeholder={sensitiveHint ? 'Để trống là giữ nguyên' : undefined}

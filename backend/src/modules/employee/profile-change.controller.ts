@@ -15,7 +15,7 @@ import {
 import { ApiBearerAuth, ApiHeader, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Length, Matches } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Length, Matches, Max, Min } from 'class-validator';
 import { Request } from 'express';
 import { PageQuery } from '../../common/pagination';
 import { RateLimit } from '../../common/rate-limit/rate-limit.interceptor';
@@ -102,6 +102,16 @@ export class HrItemDto {
   @IsOptional()
   @IsObject()
   data?: Record<string, unknown>;
+}
+
+export class ExpiringQuery {
+  @ApiPropertyOptional({ default: 30, minimum: 1, maximum: 365 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  days?: number;
 }
 
 export class HistoryQuery extends PageQuery {
@@ -256,6 +266,13 @@ export class ProfileChangeController {
     @Req() req: Request,
   ) {
     await this.changes.hrWrite(id, section, 'DELETE', itemId, { version: q.version }, user, meta(req));
+  }
+
+  /** AC-1.12.5: hợp đồng sắp hết hạn trong `days` ngày tới (mặc định 30). */
+  @Get('contracts/expiring')
+  @Roles('HR')
+  expiring(@Query() q: ExpiringQuery) {
+    return this.changes.expiringContracts(q.days ?? 30);
   }
 
   @Get('employees/:id/history')

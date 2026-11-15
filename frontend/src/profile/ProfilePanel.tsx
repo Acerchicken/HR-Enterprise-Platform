@@ -140,10 +140,10 @@ function ProfileHome({ s }: { s: ProfileSummary }) {
     <>
       <div className="profile-head">
         <Avatar name={s.fullName} size="lg" src={avatarUrl} />
-        {s.relation === 'OWNER' && <AvatarChange s={s} />}
         <span className="code-badge">{s.employeeCode}</span>
         <div className="profile-name">{s.fullName}</div>
         <div className="profile-role">{s.positionTitle ?? '—'}</div>
+        {s.relation === 'OWNER' && <AvatarChange s={s} />}
       </div>
 
       <div className="cards">
@@ -189,8 +189,21 @@ function ProfileHome({ s }: { s: ProfileSummary }) {
               </span>
             </div>
           )}
-          {insurance && (
-            <SectionRow s={s} def={insurance} label="Hệ số lương bảo hiểm" />
+          {insurance && !insurance.available && <SectionRow s={s} def={insurance} label="Hệ số lương bảo hiểm" />}
+          {insurance?.available && (
+            <div className="row static">
+              <ShieldCheck size={18} className="ri" aria-hidden="true" />
+              <span className="t">Hệ số lương bảo hiểm</span>
+              <span className="v">
+                <MaskedValue
+                  label="lương đóng bảo hiểm"
+                  format={formatMoney}
+                  load={() =>
+                    api<{ current: { value: string | null } }>(`/employees/${s.id}/profile/insurance-salary?reveal=true`).then((r) => r.current.value)
+                  }
+                />
+              </span>
+            </div>
           )}
           {s.contractType !== undefined && (
             <div className={`row static ${s.contractType ? '' : 'no'}`}>

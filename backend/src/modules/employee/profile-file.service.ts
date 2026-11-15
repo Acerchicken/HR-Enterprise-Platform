@@ -99,6 +99,7 @@ export class ProfileFileService implements OnApplicationBootstrap, OnApplication
     // Chủ hồ sơ tải file cho mục NV; HR tải được cho mọi mục. Người khác: 404 như không tồn tại (E7).
     if (relation !== 'OWNER' && relation !== 'HR') throw new NotFoundException('Không tìm thấy hồ sơ');
     if (!conf) throw new BadRequestException('Mục này không nhận file');
+    if (conf.by === 'HR' && relation !== 'HR') throw new ForbiddenException('File của mục này do HR tải lên');
     const declared = checkDeclared(input.section, input.fileName, input.contentType, input.size);
     if (declared) throw new BadRequestException(declared);
     if (!SHA256.test(input.sha256)) throw new BadRequestException('SHA-256 không hợp lệ');
