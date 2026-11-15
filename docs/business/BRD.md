@@ -44,7 +44,7 @@ tuyển dụng nằm ngoài phạm vi.
 | Chỉ số | Giá trị |
 |---|---|
 | Số nhân viên | ~2.000 (dự phòng tăng tới 10.000) |
-| Phòng ban | 25, tổ chức dạng cây, gốc là Ban Giám đốc |
+| Đơn vị tổ chức | 25, dạng cây có loại đơn vị (ADR-14): Công ty (CEO) → Trung tâm (Giám đốc) → Phòng (Trưởng, Phó phòng) → Nhóm (Trưởng nhóm); phòng có thể nằm thẳng dưới Công ty |
 | Văn phòng | 3: Hà Nội, Đà Nẵng, TP.HCM |
 | Quản lý trực tiếp | ~150 |
 | Nhân sự HR | ~15 |
@@ -82,11 +82,11 @@ flowchart LR
 | Use case | Nội dung | Mục tiêu |
 |---|---|---|
 | UC1 Hồ sơ nhân viên | Xem, cập nhật hồ sơ; trường nhạy cảm chỉ HR | MT-1, MT-3 |
-| UC2 Thông tin tổ chức | Phòng ban, sơ đồ tổ chức, quản lý trực tiếp | MT-1 |
+| UC2 Thông tin tổ chức | Cây đơn vị Công ty, Trung tâm, Phòng, Nhóm; sơ đồ tổ chức, quản lý trực tiếp, chức danh, điều chuyển, quá trình công tác, trưởng/phó mọi cấp | MT-1 |
 | UC3 Tạo đơn nghỉ | Nhân viên tạo, gửi, hủy đơn | MT-2 |
 | UC4 Duyệt đơn | Quản lý trực tiếp duyệt/từ chối, HR hoàn tất | MT-2 |
 | UC5 Kho tài liệu | HR đăng tài liệu chính sách, phân phạm vi xem | MT-4 |
-| UC6 Tự tra cứu | Tìm đồng nghiệp, tài liệu; trợ lý chính sách (mở rộng) | MT-4 |
+| UC6 Tra cứu chung và trợ lý | Ô tìm đồng nghiệp trên mọi trang; trang "Tra cứu tài liệu" gồm tìm tài liệu và trợ lý chính sách (mở rộng) | MT-4 |
 | UC7 Lịch sử thao tác | Audit log append-only, tra cứu cho HR/Admin | MT-3 |
 
 ### 4.2 Ngoài phạm vi version 1
@@ -133,17 +133,17 @@ Mọi bước ghi lịch sử (ai, lúc nào, từ trạng thái nào sang trạ
 
 ## 7. Yêu cầu chức năng
 
-Đã chuyển sang [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng): 34 yêu cầu `FR-x.y`, mỗi yêu cầu có mức ưu tiên MoSCoW, tiêu chí chấp
+Đã chuyển sang [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng-fr): 34 yêu cầu `FR-x.y`, mỗi yêu cầu có mức ưu tiên MoSCoW, tiêu chí chấp
 nhận và trạng thái trên `dev`.
 
 | Use case (mục 4.1) | Yêu cầu trong SRS |
 |---|---|
-| UC1 Hồ sơ nhân viên | FR-1.1 → FR-1.6 |
-| UC2 Thông tin tổ chức | FR-2.1 → FR-2.5 |
+| UC1 Hồ sơ nhân viên | FR-1.1 → FR-1.14 |
+| UC2 Thông tin tổ chức | FR-2.1 → FR-2.10 |
 | UC3 Tạo đơn nghỉ | FR-3.1 → FR-3.7 |
-| UC4 Duyệt đơn | FR-4.1 → FR-4.7 |
+| UC4 Duyệt đơn | FR-4.1 → FR-4.8 |
 | UC5 Kho tài liệu chính sách | FR-5.1 → FR-5.3 |
-| UC6 Tự tra cứu | FR-6.1 → FR-6.3 |
+| UC6 Tra cứu chung và trợ lý | FR-6.1 → FR-6.3 |
 | UC7 Lịch sử thao tác | FR-7.1 → FR-7.3 |
 
 ## 8. Business rule
@@ -163,8 +163,8 @@ ngân hàng và lương là dữ liệu nhạy cảm, chỉ HR được xem và 
 
 ## 10. Yêu cầu phi chức năng
 
-Đã chuyển sang [SRS mục 6](../requirements/SRS.md#6-yêu-cầu-phi-chức-năng) (`NFR-1` → `NFR-7`: hiệu năng, mở rộng, sẵn sàng, phục hồi, bảo mật,
-truy vết, chi phí). Các con số NFR suy ra từ quy mô doanh nghiệp ở mục 2.1 và mục tiêu ở mục 3.
+Đã chuyển sang [SRS mục 6](../requirements/SRS.md#6-yêu-cầu-phi-chức-năng-nfr) (`NFR-1` → `NFR-11`: hiệu năng, mở rộng, sẵn sàng, phục hồi, bảo mật,
+truy vết, chi phí, vận hành, bảo trì, khả dụng, tuân thủ; kèm SLI/SLO/SLA và kịch bản lỗi). Các con số NFR suy ra từ quy mô doanh nghiệp ở mục 2.1 và mục tiêu ở mục 3.
 
 ## 11. Giả định, ràng buộc, phụ thuộc
 
@@ -196,7 +196,7 @@ truy vết, chi phí). Các con số NFR suy ra từ quy mô doanh nghiệp ở 
 ## 13. Tiêu chí nghiệm thu version 1
 
 1. Luồng nghỉ phép chạy trên staging: tạo → duyệt/từ chối → hoàn tất, có email, đúng BR-01 → BR-12.
-2. Mọi yêu cầu mức **M** ở [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng) đạt tiêu chí chấp nhận, có e2e test hoặc biên bản kiểm thử chức năng.
+2. Mọi yêu cầu mức **M** ở [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng-fr) đạt tiêu chí chấp nhận, có e2e test hoặc biên bản kiểm thử chức năng.
 3. Mọi dòng của ma trận phân quyền có ca kiểm thử được phép và bị chặn.
 4. Load test tuần 11 đạt NFR-1, NFR-3 (SRS mục 6).
 5. Chi phí staging thực tế dưới NFR-7 (SRS mục 6).

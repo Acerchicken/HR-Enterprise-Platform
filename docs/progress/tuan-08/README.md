@@ -87,5 +87,4 @@ nhánh, góp ý ghi trong file cá nhân, chỉ mở PR khi đạt điều kiệ
 
 ### ADR-12 – Chọn cloud provider
 
-_Chưa chốt trong tuần 8: PR #12 đã đóng vì còn 2 điểm cần sửa. TV3 hoàn tất ở tuần 9 (hạn 4/11), ADR được ghi vào mục 3 của
-[`tuan-09/README.md`](../tuan-09/README.md#adr-12--chọn-cloud-provider)._
+> Đã chuyển sang file riêng: [ADR-12 – Chọn cloud provider](../../architecture/adr/ADR-12-cloud-provider.md). Danh sách toàn bộ ADR: [`architecture/adr/`](../../architecture/adr/README.md).

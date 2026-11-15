@@ -2,11 +2,13 @@ import { Link, useOutletContext, useParams } from 'react-router-dom';
 import { api, LeaveAction, LeaveRequest, Me } from '../../api/client';
 import { useApi } from '../../api/useApi';
 import { ErrorBox } from '../../components/ErrorBox';
+import { useShell } from '../../components/shell';
 import { ActionButtons, period, STATUS_LABEL, StatusBadge } from './leave-ui';
 
 /** Chi tiết đơn và lịch sử chuyển trạng thái. Nút thao tác hiện theo vai trò; backend vẫn kiểm tra quyền. */
 export function LeaveDetailPage() {
   const { id } = useParams();
+  const { openQuickView } = useShell();
   const me = useOutletContext<Me | null>();
   const req = useApi(() => api<LeaveRequest>(`/leave-requests/${id}`), [id]);
   const r = req.data;
@@ -26,7 +28,7 @@ export function LeaveDetailPage() {
       <section className="card">
         <h2>Đơn nghỉ phép <StatusBadge status={r.status} /></h2>
         <dl>
-          <dt>Nhân viên</dt><dd><Link to={`/employees/${r.employeeId}`}>{r.employeeName}</Link></dd>
+          <dt>Nhân viên</dt><dd><button type="button" className="link" onClick={() => openQuickView(r.employeeId)}>{r.employeeName}</button></dd>
           <dt>Loại phép</dt><dd>{r.leaveType}</dd>
           <dt>Thời gian</dt><dd>{period(r)}</dd>
           <dt>Số ngày</dt><dd>{r.days}</dd>

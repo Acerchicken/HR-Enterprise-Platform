@@ -134,6 +134,10 @@ paths:
       responses:
         "200":
           description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
       tags: &a3
         - employee
       security: &a4
@@ -210,6 +214,57 @@ paths:
       responses:
         "200":
           description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/employees/{id}/summary:
+    get:
+      operationId: EmployeeController_summary
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileSummary"
+      tags: *a3
+      security: *a4
+  /api/v1/employees/{id}/profile/{section}:
+    get:
+      operationId: EmployeeController_section
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: section
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: reveal
+          required: false
+          in: query
+          description: "true: giải mã giá trị nhạy cảm của mục (bấm mắt); mỗi lần gọi ghi
+            audit VIEW_SENSITIVE"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/PersonalSection"
+                  - $ref: "#/components/schemas/SalarySection"
+                  - $ref: "#/components/schemas/BankAccountSection"
       tags: *a3
       security: *a4
   /api/v1/employees/{id}/direct-reports:
@@ -701,6 +756,36 @@ components:
         headEmployeeId:
           type: object
           nullable: true
+    MeEmployee:
+      type: object
+      properties:
+        id:
+          type: string
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+      required:
+        - id
+        - employeeCode
+        - fullName
+    MeResponse:
+      type: object
+      properties:
+        email:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        employee:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/MeEmployee"
+      required:
+        - email
+        - roles
+        - employee
     CreateEmployeeDto:
       type: object
       properties:
@@ -741,6 +826,170 @@ components:
         - departmentId
         - positionId
         - hireDate
+    SectionSummary:
+      type: object
+      properties:
+        code:
+          type: string
+          example: personal
+        group:
+          type: string
+          enum:
+            - personal
+            - work
+            - finance
+            - benefits
+            - other
+        title:
+          type: string
+        available:
+          type: boolean
+          description: 'false: mục chưa làm, giao diện hiện tiêu đề đỏ "Chưa có" và không
+            gọi API'
+        pendingRequests:
+          type: number
+          description: Số yêu cầu cập nhật đang chờ HR (luôn 0 cho tới khi có FR-1.9)
+      required:
+        - code
+        - group
+        - title
+        - available
+        - pendingRequests
+    ProfileSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        positionTitle:
+          type: object
+          nullable: true
+        departmentId:
+          type: string
+        departmentName:
+          type: object
+          nullable: true
+        managerId:
+          type: object
+          nullable: true
+        managerName:
+          type: object
+          nullable: true
+        phone:
+          type: object
+          nullable: true
+        workEmail:
+          type: string
+        relation:
+          type: string
+          enum:
+            - HR
+            - OWNER
+            - MANAGER
+            - OTHER
+        canEdit:
+          type: boolean
+          description: 'HR: hiện nút "Sửa hồ sơ"'
+        contractType:
+          type: object
+          nullable: true
+          description: 'Loại hợp đồng đang hiệu lực (hàng "Diện đối tượng", mức QL). null:
+            chưa có dữ liệu. Không có trường này ở mức danh bạ'
+        sections:
+          description: Mục người xem được thấy, theo thứ tự trên trang
+          type: array
+          items:
+            $ref: "#/components/schemas/SectionSummary"
+      required:
+        - id
+        - employeeCode
+        - fullName
+        - positionTitle
+        - departmentId
+        - departmentName
+        - managerId
+        - managerName
+        - phone
+        - workEmail
+        - relation
+        - canEdit
+        - sections
+    MaskedField:
+      type: object
+      properties:
+        hasValue:
+          type: boolean
+        value:
+          type: object
+          nullable: true
+      required:
+        - hasValue
+        - value
+    PersonalSection:
+      type: object
+      properties:
+        section:
+          type: string
+          example: personal
+        version:
+          type: number
+        phone:
+          type: object
+          nullable: true
+        workEmail:
+          type: string
+        address:
+          type: object
+          nullable: true
+        dateOfBirth:
+          type: object
+          nullable: true
+        hireDate:
+          type: string
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - ON_LEAVE
+            - TERMINATED
+        nationalId:
+          description: CCCD, chỉ HR
+          allOf:
+            - $ref: "#/components/schemas/MaskedField"
+      required:
+        - section
+        - version
+        - phone
+        - workEmail
+        - address
+        - dateOfBirth
+        - hireDate
+        - status
+    SalarySection:
+      type: object
+      properties:
+        section:
+          type: string
+          example: salary
+        salary:
+          $ref: "#/components/schemas/MaskedField"
+      required:
+        - section
+        - salary
+    BankAccountSection:
+      type: object
+      properties:
+        section:
+          type: string
+          example: bank-account
+        bankAccount:
+          $ref: "#/components/schemas/MaskedField"
+      required:
+        - section
+        - bankAccount
     UpdateEmployeeDto:
       type: object
       properties:
