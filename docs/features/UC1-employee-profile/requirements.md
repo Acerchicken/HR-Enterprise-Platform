@@ -191,13 +191,13 @@ luật, quá trình công tác trước khi có hệ thống.
 - **AC-1.12.4** Nhân viên xem được mục HR quản lý của chính mình theo quyền ở spec 9.1, không sửa được (AC-1.9.3).
 - **AC-1.12.5** Khi hợp đồng còn 30 ngày nữa hết hạn. Thì HR thấy hồ sơ đó trong danh sách "Hợp đồng sắp hết hạn".
 
-### FR-1.13 Thông tin tự tính (C, chưa có)
+### FR-1.13 Thông tin tự tính (C)
 
-- **AC-1.13.1** *(chưa có)* "Quá trình công tác" liệt kê các lần đổi phòng ban, chức danh, quản lý trực tiếp, lấy từ audit nhóm
+- **AC-1.13.1** "Quá trình công tác" liệt kê các lần đổi phòng ban, chức danh, quản lý trực tiếp, lấy từ audit nhóm
   trường tổ chức (AC-1.4.3) cộng các dòng HR nhập cho giai đoạn trước khi có hệ thống.
-- **AC-1.13.2** *(chưa có)* Giả sử ngày vào làm 1/3/2016. Khi xem "Các mốc trong công ty" ngày 14/11/2026. Thì thấy thâm niên 10
+- **AC-1.13.2** Giả sử ngày vào làm 1/3/2016. Khi xem "Các mốc trong công ty" ngày 14/11/2026. Thì thấy thâm niên 10
   năm 8 tháng, các mốc 5 năm (1/3/2021, 1/3/2026) và số ngày phép năm được cộng theo thâm niên (UC3 AC-3.1.3).
-- **AC-1.13.3** *(chưa có)* "Ngày nghỉ dài" liệt kê các đơn nghỉ từ 14 ngày làm việc trở lên đã duyệt hoặc hoàn tất (UC3) và các
+- **AC-1.13.3** "Ngày nghỉ dài" liệt kê các đơn nghỉ từ 14 ngày làm việc trở lên đã duyệt hoặc hoàn tất (UC3) và các
   khoảng trạng thái `ON_LEAVE`.
 
 ### FR-1.14 Chống spam và lạm dụng (M, chưa có)
@@ -227,7 +227,7 @@ dung); NFR-6.1 (audit đủ); NFR-11.1, NFR-11.2 (dữ liệu cá nhân, chỉ t
 ## 4. Việc còn lại
 
 Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13).
-Dự án đóng băng ngày 2/12, nên FR-1.12 và FR-1.13 để sau MVP; mục chưa làm vẫn hiện trên trang với tiêu đề đỏ (AC-1.8.2).
+FR-1.12 và FR-1.13 ban đầu để sau MVP, đã làm ngày 15/11 (#89, #90). Mục chưa làm vẫn hiện trên trang với tiêu đề đỏ (AC-1.8.2).
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
@@ -239,4 +239,4 @@ Dự án đóng băng ngày 2/12, nên FR-1.12 và FR-1.13 để sau MVP; mục 
 | Tệp đính kèm hồ sơ | AC-1.10.x | TV1 | `feat/profile-files` | 11 |
 | Bucket hồ sơ, `PROFILE_STORAGE_BUCKET`, lifecycle xóa file sau 30 ngày, cảnh báo 429 | AC-1.10.7, AC-1.10.9, AC-1.14.4, AC-1.14.5 | TV3 | `infra/profile-files` | 11 (code), 12 (apply) |
 | Ca kiểm thử UC1, gồm ca bảo mật file và rate limit | Mọi AC-1.x | TV4 | `docs/test-cases-uc1`, `docs/security-test-cases-week11` | 11 |
-| Mục do HR quản lý, thông tin tự tính | FR-1.12, FR-1.13 | – | – | Sau MVP |
+| Mục do HR quản lý, thông tin tự tính | FR-1.12, FR-1.13 | TV1 | `feat/profile-hr-sections`, `feat/profile-computed` | 11 (đã mở PR #89, #90) |

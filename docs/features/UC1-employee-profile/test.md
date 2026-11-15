@@ -57,7 +57,7 @@ tiếp. Rủi ro thứ ba là **lạm dụng**: tải file độc hại, spam y�
 | AC-1.10.1 → AC-1.10.9 | e2e nhóm "UC1 file hồ sơ" với bucket giả trong bộ nhớ (`test/fake-storage.ts`) | Chạy lại với MinIO hoặc S3 thật: PUT bằng URL ký, lifecycle 30 ngày (TV3) | Đã có (#87); AC-1.10.7 phần lifecycle chờ `infra/profile-files` |
 | AC-1.11.1 → AC-1.11.4 | e2e "lịch sử thay đổi…", kiểm audit không chứa giá trị, lý do từ chối, tên file | Quét log API, worker tìm giá trị mẫu | Đã có (#86, #87) |
 | AC-1.12.1 → AC-1.12.5, AC-1.9.11 | e2e nhóm "UC1 mục HR quản lý và thuế TNCN" (hợp đồng trùng ngày 409, diện đối tượng, sắp hết hạn, lịch sử lương, mã hóa, thuế TNCN, BHYT một lần mỗi quý) | Kiểm tay trang "Hợp đồng sắp hết hạn" | Đã có (#89) |
-| AC-1.13.x | – | – | Sau MVP |
+| AC-1.13.1 → AC-1.13.3 | Unit test `profile-computed.spec.ts`; e2e nhóm "UC1 thông tin tự tính" | Kiểm tay dòng thời gian với nhân viên có đơn nghỉ dài | Đã có (#90) |
 | AC-1.14.1 → AC-1.14.7 | Unit test `rate-limit.spec.ts`; e2e "lệnh ghi hồ sơ thứ 31… 429", "body quá 64 KiB → 413" | 11 lệnh xin URL trong 1 giờ, 101 lượt xem nhạy cảm; cảnh báo dashboard (AC-1.14.5, TV3) | Đã có (#85), trừ AC-1.14.5 |
 
 ## 4. Dữ liệu và tài khoản

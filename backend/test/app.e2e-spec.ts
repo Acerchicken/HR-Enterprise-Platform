@@ -128,7 +128,7 @@ describe('HRHelper API (e2e)', () => {
       const asOwner = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(EMPLOYEE).expect(200)).body;
       expect(asOwner.relation).toBe('OWNER');
       expect(asOwner.sections.find((x: any) => x.code === 'salary')).toMatchObject({ available: true, group: 'finance' });
-      expect(asOwner.sections.find((x: any) => x.code === 'milestones')).toMatchObject({ available: false });
+      expect(asOwner.sections.every((x: any) => x.available)).toBe(true);
       for (const k of personalKeys) expect(asOwner).not.toHaveProperty(k);
       const asHr = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(HR).expect(200)).body;
       expect(asHr).toMatchObject({ relation: 'HR', canEdit: true });
@@ -138,7 +138,7 @@ describe('HRHelper API (e2e)', () => {
     it('mục không được xem, chưa làm hoặc không tồn tại đều trả 404 (AC-1.8.6)', async () => {
       await http.get(`/api/v1/employees/${strangerId}/profile/personal`).set(EMPLOYEE).expect(404);
       await http.get(`/api/v1/employees/${employeeId}/profile/salary`).set(MANAGER).expect(404);
-      await http.get(`/api/v1/employees/${employeeId}/profile/milestones`).set(EMPLOYEE).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/profile/contracts`).set(MANAGER).expect(404);
       await http.get(`/api/v1/employees/${employeeId}/profile/nope`).set(HR).expect(404);
       await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(ADMIN).expect(404);
     });
@@ -1104,6 +1104,44 @@ describe('HRHelper API (e2e)', () => {
       const row = (await http.get(`/api/v1/employees/${employeeId}/profile/health-insurance`).set(EMPLOYEE)).body.rows[0];
       expect(row.data).toMatchObject({ cardNumber: 'DN4010123456789', hospital: 'Bệnh viện Bạch Mai' });
       await send({ hospital: 'Bệnh viện E' }).expect(409);
+    });
+  });
+
+  describe('UC1 thông tin tự tính (FR-1.13)', () => {
+    it('các mốc trong công ty: thâm niên, mốc 5 năm, phép cộng thêm; quản lý xem được, người khác 404 (AC-1.13.2)', async () => {
+      const hire = (await http.get(`/api/v1/employees/${employeeId}`).set(HR)).body.hireDate;
+      const m = (await http.get(`/api/v1/employees/${employeeId}/profile/milestones`).set(MANAGER).expect(200)).body;
+      expect(m).toMatchObject({ kind: 'computed', hireDate: hire });
+      expect(m.annualLeaveBonus).toBe(Math.floor(m.years / 5));
+      expect(m.milestones).toHaveLength(Math.floor(m.years / 5));
+      await http.get(`/api/v1/employees/${employeeId}/profile/milestones`).set(ADMIN).expect(404);
+    });
+
+    it('quá trình công tác: lần đổi chức danh tự vào dòng thời gian; HR thêm giai đoạn trước hệ thống (AC-1.13.1)', async () => {
+      const me = (await http.get(`/api/v1/employees/${employeeId}`).set(HR)).body;
+      const positions = (await http.get('/api/v1/positions').set(HR)).body;
+      const other = positions.find((p: any) => p.id !== me.positionId && p.code !== 'CEO');
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ positionId: other.id, version: me.version }).expect(200);
+      const v = await versionOf(employeeId);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ positionId: me.positionId, version: v }).expect(200);
+      await http
+        .post(`/api/v1/employees/${employeeId}/profile/career-history`)
+        .set(HR)
+        .send({ data: { from: '2010-01-01', to: '2015-12-31', department: 'Chi nhánh cũ', position: 'Nhân viên', reason: 'Trước khi có hệ thống' } })
+        .expect(204);
+      const c = (await http.get(`/api/v1/employees/${employeeId}/profile/career-history`).set(MANAGER).expect(200)).body;
+      // Đổi rồi đổi lại trong ngày được gộp: giai đoạn hiện tại vẫn là chức danh cũ.
+      expect(c.periods[0]).toMatchObject({ source: 'AUTO', to: null, position: positions.find((p: any) => p.id === me.positionId).title });
+      expect(c.periods.some((p: any) => p.source === 'HR' && p.department === 'Chi nhánh cũ')).toBe(true);
+      const raw = (await http.get(`/api/v1/employees/${employeeId}/profile/career-history?raw=true`).set(HR).expect(200)).body;
+      expect(raw.rows.length).toBeGreaterThanOrEqual(1);
+      await http.get(`/api/v1/employees/${employeeId}/profile/career-history`).set(ADMIN).expect(404);
+    });
+
+    it('ngày nghỉ dài: danh sách đơn ≥ 14 ngày làm việc và khoảng tạm nghỉ (AC-1.13.3)', async () => {
+      const l = (await http.get(`/api/v1/employees/${employeeId}/profile/long-leaves`).set(MANAGER).expect(200)).body;
+      expect(Array.isArray(l.rows)).toBe(true);
+      expect(l.rows.every((r: any) => r.source === 'STATUS' || r.days >= 14)).toBe(true);
     });
   });
 

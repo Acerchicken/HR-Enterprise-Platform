@@ -4,6 +4,7 @@ import { invalidateSummary } from '../api/cache';
 import { useApi } from '../api/useApi';
 import { errorText, formatDate, MaskedValue, Skeleton, useCooldown } from '../components/ui';
 import { FieldEditor, newKey, RequestBox } from './fields';
+import { ComputedSectionPage } from './ComputedSectionPage';
 import { FilesSectionPage } from './FilesSectionPage';
 import { RowSectionPage } from './RowSectionPage';
 
@@ -21,6 +22,7 @@ export function SectionPage({ summary, code, def }: { summary: ProfileSummary; c
   if (code === 'personal') return <Personal s={summary} />;
   if (code === 'history') return <History s={summary} />;
   if (code === 'cv') return <FilesSectionPage s={summary} code={code} />;
+  if (code === 'career-history' || code === 'milestones' || code === 'long-leaves') return <ComputedSectionPage s={summary} code={code} />;
   if (ROW_SECTIONS.has(code)) return <RowSectionPage s={summary} code={code} />;
   return <ComingSoon known />;
 }
