@@ -8,8 +8,11 @@ Vai trò: chốt quy tắc nghiệp vụ trước khi TV1 code và TV4 viết ca
 |---|---|
 | **T2 (16/11), 21:00** | Review `requirements.md`, `spec.md` UC1, UC2, bảng FR trong SRS, ma trận phân quyền trên #76 |
 | **T2 (16/11), 21:00** | Mở PR `docs/org-integrity-rules` |
+| **T2 (16/11), 21:00** | Việc tuần 10 còn tồn: mở PR `docs/matrix-week10` (chỉ phần TV1 chưa làm: threat model, API tài liệu nếu thiếu) |
+| **T2 (16/11), 21:00** | Review nghiệp vụ PR #80 (`feat/profile-layout`): quyền xem từng mục theo vai trò, mục chưa có |
 | T3 (17/11) | Sửa theo góp ý, được merge |
 | Trong 24 giờ kể từ khi PR mở | Review nghiệp vụ `feat/profile-layout`, `fix/employee-org-integrity`, `feat/profile-change-requests` |
+| **T4 (18/11), 21:00** | Review bản vẽ giao diện UC2 → UC7 trên #81, cho ý kiến từng đề xuất ở `frontend.md` mục 10.8 |
 | **T5 (19/11), 21:00** | Mở PR `docs/leave-rules-week11` |
 | **T6 (20/11)** | Review `requirements.md`, `spec.md` UC3, UC4 trên #76; `docs/leave-rules-week11` được merge |
 | **T2 (23/11), 9:00** | Điền mục "Việc đã làm" |

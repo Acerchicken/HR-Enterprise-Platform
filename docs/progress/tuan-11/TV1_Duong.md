@@ -6,8 +6,11 @@ Vai trò: code chính, review PR, merge PR, báo cáo thứ 2. Tuần này chỉ
 
 | Hạn | Việc |
 |---|---|
-| **CN (15/11)** | Mở PR `feat/profile-layout` |
-| T2 (16/11), 9:00 | Merge `infra/idp-hardening` (TV3) nếu đạt; review xong #68, #69, #70 của TV3 |
+| **CN (15/11)** | ~~Mở PR `feat/profile-layout`~~ Đã mở #80 (15/11) |
+| T3 (17/11) | Sửa #80 theo review của TV2, TV4, merge |
+| Trong 24 giờ kể từ khi TV3 sửa xong | Review lại #68, #69, #70 (đã Request changes 14/11), merge khi đạt |
+| T3 (17/11) | Review, merge `infra/idp-hardening` (TV3, hạn mở PR dời sang T2 16/11, 21:00) |
+| T4 (18/11) – T6 (20/11) | Xử lý góp ý của TV2, TV4 trên #81 (bản vẽ UC2 → UC7), merge |
 | Trong 24 giờ kể từ khi PR mở | Review PR của TV2, TV3, TV4 trên GitHub |
 | T2 (16/11) – T3 (17/11) | Xử lý góp ý của TV2, TV3, TV4 trên #76 (phần UC1) |
 | **T3 (17/11)** | Mở PR `feat/security-headers-ratelimit` |
