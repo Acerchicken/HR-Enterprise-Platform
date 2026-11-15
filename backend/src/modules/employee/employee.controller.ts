@@ -2,6 +2,8 @@ import { Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Patch, 
 import { ApiBearerAuth, ApiExtraModels, ApiOkResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PageQuery } from '../../common/pagination';
+import { RateLimit } from '../../common/rate-limit/rate-limit.interceptor';
+import { RateLimitService } from '../../common/rate-limit/rate-limit.service';
 import { CurrentUser, Roles } from '../identity/auth.decorators';
 import { AuthUser } from '../identity/roles';
 import { OrganizationService } from '../organization/organization.service';
@@ -28,6 +30,7 @@ export class EmployeeController {
   constructor(
     private readonly employees: EmployeeService,
     private readonly org: OrganizationService,
+    private readonly limiter: RateLimitService,
   ) {}
 
   /** Chỉ tài khoản, vai trò và mã, tên hồ sơ; dữ liệu hồ sơ lấy qua `summary` khi mở popup (AC-1.8.7). */
@@ -42,23 +45,28 @@ export class EmployeeController {
   }
 
   @Get('employees')
-  directory(@Query() q: DirectoryQuery) {
+  async directory(@Query() q: DirectoryQuery, @CurrentUser() user: AuthUser) {
+    // NFR-5.21: tìm kiếm có giới hạn riêng 20 lượt/phút (ô tìm đồng nghiệp gọi API này).
+    if (q.q) await this.limiter.consume(user.userId, 'search');
     return this.employees.directory(q);
   }
 
   @Post('employees')
   @Roles('HR')
+  @RateLimit('profile-write')
   create(@Body() dto: CreateEmployeeDto, @CurrentUser() user: AuthUser, @Req() req: Request) {
     return this.employees.create(dto, user, meta(req));
   }
 
   @Get('employees/:id')
-  profile(
+  async profile(
     @Param('id', ParseUUIDPipe) id: string,
     @Query() q: ProfileQuery,
     @CurrentUser() user: AuthUser,
     @Req() req: Request,
   ) {
+    // AC-1.14.4: xem trường nhạy cảm tối đa 100 lần/giờ, kể cả HR.
+    if (q.include === 'sensitive') await this.limiter.consume(user.userId, 'sensitive-view');
     return this.employees.profile(id, user, q.include === 'sensitive', meta(req));
   }
 
@@ -75,17 +83,19 @@ export class EmployeeController {
   @ApiOkResponse({
     schema: { oneOf: [PersonalSection, SalarySection, BankAccountSection].map((m) => ({ $ref: getSchemaPath(m) })) },
   })
-  section(
+  async section(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('section') section: string,
     @Query() q: ProfileSectionQuery,
     @CurrentUser() user: AuthUser,
     @Req() req: Request,
   ) {
+    if (q.reveal === 'true') await this.limiter.consume(user.userId, 'sensitive-view');
     return this.employees.section(id, section, user, q.reveal === 'true', meta(req));
   }
 
   @Patch('employees/:id')
+  @RateLimit('profile-write')
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateEmployeeDto,

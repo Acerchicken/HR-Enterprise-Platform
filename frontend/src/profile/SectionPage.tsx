@@ -10,7 +10,7 @@ import {
 } from '../api/client';
 import { invalidateSummary } from '../api/cache';
 import { useApi } from '../api/useApi';
-import { errorText, formatDate, formatMoney, MaskedValue, Skeleton } from '../components/ui';
+import { errorText, formatDate, formatMoney, MaskedValue, Skeleton, useCooldown } from '../components/ui';
 import { formFields } from '../pages/employee/employee-fields';
 import { FieldInput } from '../pages/employee/FieldInput';
 
@@ -59,6 +59,7 @@ function Personal({ s }: { s: ProfileSummary }) {
   const [error, setError] = useState<Error | null>(null);
   const [saving, setSaving] = useState(false);
   const d = data.data;
+  const cooldown = useCooldown(error);
 
   useEffect(() => {
     if (d) setValues({ phone: d.phone ?? '', address: d.address ?? '' });
@@ -130,7 +131,7 @@ function Personal({ s }: { s: ProfileSummary }) {
           ))}
           {error && !Object.keys(errors).length && <p className="error">{errorText(error)}</p>}
           <div className="actions">
-            <button className="primary" disabled={saving}>{saving ? 'Đang lưu…' : 'Lưu'}</button>
+            <button className="primary" disabled={saving || cooldown > 0}>{saving ? 'Đang lưu…' : cooldown ? `Thử lại sau ${cooldown} giây` : 'Lưu'}</button>
             <button type="button" onClick={() => setEditing(false)}>Hủy</button>
           </div>
           <p className="muted small">Các trường khác do HR cập nhật.</p>

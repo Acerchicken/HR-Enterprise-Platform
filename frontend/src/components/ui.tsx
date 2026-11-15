@@ -1,5 +1,5 @@
 import { Eye, EyeOff } from 'lucide-react';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { ApiError } from '../api/client';
 
 /** Chữ cái đầu của họ và tên (ảnh đại diện chưa có, FR-1.10). "Nguyễn Văn An" → "VA". */
@@ -105,4 +105,20 @@ export function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
   const [y, m, d] = iso.slice(0, 10).split('-');
   return `${d}/${m}/${y}`;
+}
+
+/**
+ * Sau lỗi 429, khóa nút gửi tới hết thời gian `Retry-After` (frontend.md mục 6, AC-0.5.1). Trả số giây còn lại, 0 là đã mở.
+ */
+export function useCooldown(error: Error | null): number {
+  const [left, setLeft] = useState(0);
+  useEffect(() => {
+    if (!(error instanceof ApiError) || error.status !== 429) return;
+    const until = Date.now() + (error.retryAfter ?? 60) * 1000;
+    const tick = () => setLeft(Math.max(0, Math.ceil((until - Date.now()) / 1000)));
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [error]);
+  return left;
 }

@@ -4,6 +4,7 @@ import { api, ApiError, Department, DirectoryEntry, EmployeeProfile, Me, Positio
 import { invalidateSummary } from '../../api/cache';
 import { useApi } from '../../api/useApi';
 import { ErrorBox } from '../../components/ErrorBox';
+import { useCooldown } from '../../components/ui';
 import { CreateEmployeeBody, FieldGroup, FieldKey, formFields, GROUP_LABEL, UpdateEmployeeBody } from './employee-fields';
 import { FieldInput } from './FieldInput';
 
@@ -29,6 +30,7 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<Error | null>(null);
   const [saving, setSaving] = useState(false);
+  const cooldown = useCooldown(error);
   const [suggested, setSuggested] = useState<DirectoryEntry | null>(null);
 
   // Nạp giá trị hiện tại khi sửa.
@@ -116,7 +118,7 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
         ))}
         <p className="small muted">Mọi nhân viên trừ CEO phải có quản lý trực tiếp. Trường nhạy cảm được mã hóa khi lưu; audit chỉ ghi tên trường.</p>
         <div className="actions">
-          <button className="primary" disabled={saving}>{saving ? 'Đang lưu…' : mode === 'create' ? 'Tạo nhân viên' : 'Lưu'}</button>
+          <button className="primary" disabled={saving || cooldown > 0}>{saving ? 'Đang lưu…' : cooldown ? `Thử lại sau ${cooldown} giây` : mode === 'create' ? 'Tạo nhân viên' : 'Lưu'}</button>
           <Link className="button" to={mode === 'create' ? '/directory' : `/employees/${id}`}>Hủy</Link>
         </div>
       </form>
