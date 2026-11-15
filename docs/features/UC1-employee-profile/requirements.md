@@ -50,18 +50,18 @@
   đã giải mã, và có audit `VIEW_SENSITIVE` ghi người xem, nhân viên bị xem, `traceId`.
 - **AC-1.3.2** Khi người không phải HR, không phải chủ hồ sơ gọi `include=sensitive`. Thì trả 403 và không có audit đọc.
 - **AC-1.3.3** Khi HR mở hồ sơ không kèm `include=sensitive`. Thì không có trường nhạy cảm, không ghi `VIEW_SENSITIVE`.
-- **AC-1.3.4** *(chưa đạt)* Khi HR mở form sửa hồ sơ. Thì giá trị nhạy cảm không tự tải, không sinh `VIEW_SENSITIVE`; chỉ khi
+- **AC-1.3.4** Khi HR mở form sửa hồ sơ. Thì giá trị nhạy cảm không tự tải, không sinh `VIEW_SENSITIVE`; chỉ khi
   HR bấm biểu tượng mắt mới tải và ghi audit.
-- **AC-1.3.5** *(chưa có)* Khi nhân viên A bấm mắt ở "Lương mục tiêu" hoặc "Tài khoản ngân hàng" của chính mình. Thì thấy giá
+- **AC-1.3.5** Khi nhân viên A bấm mắt ở "Lương mục tiêu" hoặc "Tài khoản ngân hàng" của chính mình. Thì thấy giá
   trị, có audit `VIEW_SENSITIVE` ghi A xem hồ sơ A. A không xem được CCCD của mình qua đường này (đã có trên giấy tờ của A).
 
 ### FR-1.4 HR sửa mọi trường (M, đã có API và giao diện, PR #63)
 
 - **AC-1.4.1** Khi HR sửa lương. Thì trả 200; audit `UPDATE` có tên trường `salary`, không có giá trị cũ hay mới.
 - **AC-1.4.2** Khi HR nhập sai định dạng trên giao diện. Thì lỗi hiện đúng ô theo `fields` của response 400.
-- **AC-1.4.3** *(chưa đạt)* Khi HR đổi phòng ban, chức danh, quản lý, trạng thái hoặc ngày vào làm. Thì audit ghi tên trường,
+- **AC-1.4.3** Khi HR đổi phòng ban, chức danh, quản lý, trạng thái hoặc ngày vào làm. Thì audit ghi tên trường,
   giá trị cũ và mới. Khi đổi họ tên, điện thoại, địa chỉ, ngày sinh. Thì audit chỉ ghi tên trường.
-- **AC-1.4.4** *(chưa đạt)* HR sửa được `hireDate` và `workEmail`; `employeeCode` không sửa được.
+- **AC-1.4.4** HR sửa được `hireDate` và `workEmail`; `employeeCode` không sửa được.
 
 ### FR-1.5 HR tạo nhân viên (M, đã có API và giao diện, PR #63)
 
@@ -75,36 +75,36 @@
 
 - **AC-1.6.1** Giả sử HR1 và HR2 cùng mở hồ sơ ở `version` 3, HR1 lưu trước. Khi HR2 lưu với `version` 3. Thì trả 409, dữ
   liệu của HR1 giữ nguyên.
-- **AC-1.6.2** *(chưa đạt)* Khi gửi yêu cầu sửa không kèm `version`. Thì trả 400.
-- **AC-1.6.3** *(chưa đạt)* Giả sử HR1, HR2 cùng mở hồ sơ. Khi HR1 chỉ sửa lương rồi HR2 lưu. Thì HR2 nhận 409.
+- **AC-1.6.2** Khi gửi yêu cầu sửa không kèm `version`. Thì trả 400.
+- **AC-1.6.3** Giả sử HR1, HR2 cùng mở hồ sơ. Khi HR1 chỉ sửa lương rồi HR2 lưu. Thì HR2 nhận 409.
 - **AC-1.6.4** *(chưa có)* Mỗi dòng trong các mục (FR-1.9, FR-1.12) có `version` riêng; yêu cầu cập nhật lưu `version` gốc lúc
   gửi; duyệt khi `version` đã đổi trả 409 (AC-1.9.6).
 
 ### FR-1.7 Nghỉ việc (M, chưa đạt)
 
-- **AC-1.7.1** *(chưa đạt)* Khi HR chuyển nhân viên còn cấp dưới đang làm việc sang `TERMINATED`. Thì trả 400, nêu số cấp dưới
+- **AC-1.7.1** Khi HR chuyển nhân viên còn cấp dưới đang làm việc sang `TERMINATED`. Thì trả 400, nêu số cấp dưới
   cần chuyển sang quản lý khác trước.
-- **AC-1.7.2** *(chưa đạt)* Giả sử hồ sơ đã `TERMINATED`. Khi tài khoản gắn với hồ sơ đó gọi API bằng token còn hạn. Thì bị từ
+- **AC-1.7.2** Giả sử hồ sơ đã `TERMINATED`. Khi tài khoản gắn với hồ sơ đó gọi API bằng token còn hạn. Thì bị từ
   chối (403).
 
 ### FR-1.8 Trang hồ sơ theo nhóm (S, chưa có)
 
 Bố cục ở [spec mục 9.1](spec.md#91-bố-cục-trang-hồ-sơ).
 
-- **AC-1.8.1** *(chưa có)* Khi nhân viên mở "Hồ sơ của tôi". Thì thấy đầu trang (ảnh hoặc chữ cái đầu, mã nhân viên, họ tên,
+- **AC-1.8.1** Khi nhân viên mở "Hồ sơ của tôi". Thì thấy đầu trang (ảnh hoặc chữ cái đầu, mã nhân viên, họ tên,
   chức danh), thẻ quản lý trực tiếp, thẻ sơ đồ tổ chức, ba hàng nhanh, rồi các nhóm Thông tin cá nhân, Công việc, Tài chính,
   Phúc lợi, Khác theo đúng thứ tự ở spec mục 9.1.
-- **AC-1.8.2** *(chưa có)* Giả sử mục "Bảo hiểm xã hội" chưa làm. Khi xem trang. Thì tiêu đề mục màu đỏ `#DC2626` kèm nhãn
+- **AC-1.8.2** Giả sử mục "Bảo hiểm xã hội" chưa làm. Khi xem trang. Thì tiêu đề mục màu đỏ `#DC2626` kèm nhãn
   "Chưa có"; bấm vào mở trang "Chức năng đang phát triển", không gọi API. Mục đã làm có tiêu đề màu thường.
-- **AC-1.8.3** *(chưa có)* Trên mọi trang, nút chính, link, tiêu đề nhóm dùng `--primary: #0E7490` (cyan); không còn `#2457C5`.
-- **AC-1.8.4** *(chưa có)* Giả sử B chỉ ở mức danh bạ với A. Khi B mở hồ sơ A. Thì chỉ thấy đầu trang, điện thoại, email.
+- **AC-1.8.3** Trên mọi trang, nút chính, link, tiêu đề nhóm dùng `--primary: #0E7490` (cyan); không còn `#2457C5`.
+- **AC-1.8.4** Giả sử B chỉ ở mức danh bạ với A. Khi B mở hồ sơ A. Thì chỉ thấy đầu trang, điện thoại, email.
   Quản lý trực tiếp thấy thêm đúng các mục spec 9.1 cho phép; HR thấy mọi nhóm và nút "Sửa hồ sơ".
-- **AC-1.8.5** *(chưa có)* Trên màn hình rộng 375 px, trang một cột, không cuộn ngang.
-- **AC-1.8.6** *(chưa có)* Mục người xem không có quyền thì không hiện, và API của mục đó trả 404 giống mục không tồn tại.
-- **AC-1.8.7** *(chưa đạt)* Khi mở trang hồ sơ. Thì trình duyệt chỉ gọi `GET /employees/{id}/summary` (và `GET /me` nếu chưa có);
+- **AC-1.8.5** Trên màn hình rộng 375 px, trang một cột, không cuộn ngang.
+- **AC-1.8.6** Mục người xem không có quyền thì không hiện, và API của mục đó trả 404 giống mục không tồn tại.
+- **AC-1.8.7** Khi mở trang hồ sơ. Thì trình duyệt chỉ gọi `GET /employees/{id}/summary` (và `GET /me` nếu chưa có);
   response chỉ gồm trường hiện ở trang mặc định (spec 9.1) và danh sách mục, không có ngày sinh, địa chỉ, dòng của mục nào hay
-  giá trị nhạy cảm. Hiện `GET /me`, `GET /employees/{id}` trả mọi trường cá nhân ngay khi mở trang.
-- **AC-1.8.8** *(chưa có)* Khi bấm vào một mục. Thì mới có đúng một request lấy dữ liệu của mục đó; các mục chưa bấm không có
+  giá trị nhạy cảm.
+- **AC-1.8.8** Khi bấm vào một mục. Thì mới có đúng một request lấy dữ liệu của mục đó; các mục chưa bấm không có
   request nào. Bấm mắt mới có request lấy giá trị nhạy cảm.
 
 ### FR-1.9 Nhân viên gửi yêu cầu cập nhật, HR xác nhận (S, chưa có)

@@ -657,13 +657,17 @@ export interface components {
             bankAccount: components["schemas"]["MaskedField"];
         };
         UpdateEmployeeDto: {
-            /** @description Version hiện tại (optimistic locking). Lệch → 409. */
-            version?: number;
+            /** @description Version hiện tại (optimistic locking). Bắt buộc (E9); lệch → 409. */
+            version: number;
             /** @example 0912 345 678 */
             phone?: string;
             address?: string;
             fullName?: string;
             dateOfBirth?: string;
+            /** @description Email công ty (AC-1.4.4). Đổi cùng lúc với tài khoản ở identity provider */
+            workEmail?: string;
+            /** @description Ngày vào làm (sửa sai sót, AC-1.4.4) */
+            hireDate?: string;
             departmentId?: string;
             positionId?: string;
             managerId?: Record<string, never> | null;
