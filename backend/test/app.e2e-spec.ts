@@ -3,6 +3,8 @@
  *   npm run migration:run && npm run seed && npm run test:e2e
  */
 process.env.AUTH_MODE = 'dev';
+// Cả bộ e2e gọi API rất nhanh bằng vài tài khoản: nới giới hạn chung, giữ nguyên giới hạn hồ sơ để kiểm AC-1.14.x.
+process.env.RATE_LIMIT_OVERRIDES = JSON.stringify({ global: { minute: 100000 }, search: { minute: 100000 } });
 
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -33,6 +35,8 @@ describe('HRHelper API (e2e)', () => {
     await app.init();
     http = request(app.getHttpServer());
     versionOf = async (id: string) => (await http.get(`/api/v1/employees/${id}`).set(HR)).body.version;
+    // Bộ đếm theo ngày lưu trong DB: xóa để chạy lại e2e nhiều lần trong ngày không bị 429.
+    await app.get((await import('typeorm')).DataSource).query('DELETE FROM iam.rate_limit_counter');
 
     employeeId = (await http.get('/api/v1/me').set(EMPLOYEE)).body.employee.id;
     managerId = (await http.get('/api/v1/me').set(MANAGER)).body.employee.id;
@@ -154,6 +158,44 @@ describe('HRHelper API (e2e)', () => {
       expect(JSON.stringify(logs.body.items[0])).not.toContain(shown.salary.value);
       const bank = (await http.get(`/api/v1/employees/${employeeId}/profile/bank-account?reveal=true`).set(EMPLOYEE).expect(200)).body;
       expect(bank.rows[0].sensitive.accountNumber.value).toMatch(/^[0-9]{6,20}$/);
+    });
+  });
+
+  describe('header bảo mật và giới hạn tần suất (NFR-5.21, NFR-5.22, AC-1.14.1, AC-1.14.6, AC-1.14.7)', () => {
+    it('mọi response có header bảo mật', async () => {
+      const res = await http.get('/api/v1/health').expect(200);
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+      expect(res.headers['x-frame-options']).toBe('DENY');
+      expect(res.headers['content-security-policy']).toContain("frame-ancestors 'none'");
+      expect(res.headers['x-powered-by']).toBeUndefined();
+    });
+
+    it('body quá 64 KiB → 413', async () => {
+      const res = await http
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set(EMPLOYEE)
+        .send({ address: 'x'.repeat(70 * 1024), version: 1 })
+        .expect(413);
+      expect(res.body.code).toBe('PAYLOAD_TOO_LARGE');
+    });
+
+    it('lệnh ghi hồ sơ thứ 31 trong một phút → 429 kèm Retry-After, câu báo nêu giới hạn', async () => {
+      // Tài khoản riêng (một đồng nghiệp bất kỳ) để không ảnh hưởng test khác.
+      const other = (await http.get(`/api/v1/employees/${strangerId}`).set(HR)).body;
+      const who = as(other.workEmail);
+      for (let i = 0; i < 30; i++) {
+        // Nhân viên không ghi thẳng hồ sơ (403) nhưng lệnh vẫn được đếm.
+        const r = await http.patch(`/api/v1/employees/${strangerId}`).set(who).send({ phone: '0912000999', version: -1 });
+        expect(r.status).toBe(403);
+      }
+      const res = await http
+        .patch(`/api/v1/employees/${strangerId}`)
+        .set(who)
+        .send({ phone: '0912000999', version: -1 })
+        .expect(429);
+      expect(Number(res.headers['retry-after'])).toBeGreaterThan(0);
+      expect(res.body).toMatchObject({ code: 'TOO_MANY_REQUESTS' });
+      expect(res.body.message).toMatch(/30 lệnh ghi hồ sơ mỗi phút/);
     });
   });
 

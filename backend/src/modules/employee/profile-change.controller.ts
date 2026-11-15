@@ -18,6 +18,8 @@ import { Type } from 'class-transformer';
 import { IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Length, Matches } from 'class-validator';
 import { Request } from 'express';
 import { PageQuery } from '../../common/pagination';
+import { RateLimit } from '../../common/rate-limit/rate-limit.interceptor';
+import { RateLimitService } from '../../common/rate-limit/rate-limit.service';
 import { CurrentUser, Roles } from '../identity/auth.decorators';
 import { AuthUser } from '../identity/roles';
 import { RequestMeta } from './employee.service';
@@ -122,9 +124,13 @@ export class HistoryQuery extends PageQuery {
 @ApiBearerAuth()
 @Controller()
 export class ProfileChangeController {
-  constructor(private readonly changes: ProfileChangeService) {}
+  constructor(
+    private readonly changes: ProfileChangeService,
+    private readonly limiter: RateLimitService,
+  ) {}
 
   @Post('employees/:id/change-requests')
+  @RateLimit('profile-write')
   @HttpCode(202)
   @ApiHeader({ name: 'Idempotency-Key', required: true })
   submit(
@@ -138,6 +144,7 @@ export class ProfileChangeController {
   }
 
   @Delete('employees/:id/change-requests/:requestId')
+  @RateLimit('profile-write')
   @HttpCode(204)
   async cancel(
     @Param('id', ParseUUIDPipe) id: string,
@@ -166,16 +173,18 @@ export class ProfileChangeController {
   }
 
   @Get('change-requests/:requestId')
-  detail(
+  async detail(
     @Param('requestId', ParseUUIDPipe) requestId: string,
     @Query() q: RevealQuery,
     @CurrentUser() user: AuthUser,
     @Req() req: Request,
   ) {
+    if (q.reveal === 'true') await this.limiter.consume(user.userId, 'sensitive-view');
     return this.changes.detail(requestId, user, q.reveal === 'true', meta(req));
   }
 
   @Post('change-requests/:requestId/approve')
+  @RateLimit('profile-write')
   @Roles('HR')
   @HttpCode(200)
   approve(@Param('requestId', ParseUUIDPipe) requestId: string, @CurrentUser() user: AuthUser, @Req() req: Request) {
@@ -183,6 +192,7 @@ export class ProfileChangeController {
   }
 
   @Post('change-requests/:requestId/reject')
+  @RateLimit('profile-write')
   @Roles('HR')
   @HttpCode(200)
   reject(
@@ -197,6 +207,7 @@ export class ProfileChangeController {
   // ----- HR sửa trực tiếp các dòng của mục (ghi thẳng, không qua yêu cầu) -----
 
   @Post('employees/:id/profile/:section')
+  @RateLimit('profile-write')
   @Roles('HR')
   @HttpCode(204)
   async hrCreate(
@@ -211,6 +222,7 @@ export class ProfileChangeController {
 
   /** `itemId` là `main` với mục một dòng (tài khoản ngân hàng). */
   @Patch('employees/:id/profile/:section/:itemId')
+  @RateLimit('profile-write')
   @Roles('HR')
   @HttpCode(204)
   async hrUpdate(
@@ -225,6 +237,7 @@ export class ProfileChangeController {
   }
 
   @Delete('employees/:id/profile/:section/:itemId')
+  @RateLimit('profile-write')
   @Roles('HR')
   @HttpCode(204)
   async hrDelete(

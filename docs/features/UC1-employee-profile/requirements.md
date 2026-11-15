@@ -206,16 +206,16 @@ luật, quá trình công tác trước khi có hệ thống.
 Giới hạn tính theo từng người dùng. Vượt giới hạn trả 429 kèm `Retry-After`; không có thay đổi dữ liệu, không có audit nghiệp
 vụ, có log và metric để cảnh báo.
 
-- **AC-1.14.1** *(chưa có)* Khi một người gửi quá 30 lệnh ghi hồ sơ (gửi yêu cầu cập nhật, HR sửa hồ sơ, duyệt, từ chối) trong 1 phút. Thì lệnh thứ
+- **AC-1.14.1** Khi một người gửi quá 30 lệnh ghi hồ sơ (gửi yêu cầu cập nhật, HR sửa hồ sơ, duyệt, từ chối) trong 1 phút. Thì lệnh thứ
   31 trả 429. Quá 300 lệnh ghi trong 1 ngày cũng trả 429.
-- **AC-1.14.2** *(chưa có)* Khi một người xin quá 10 URL tải lên trong 1 giờ, hoặc quá 30 trong 1 ngày. Thì trả 429. Đổi ảnh
+- **AC-1.14.2** *(chưa có: nhóm giới hạn đã có, áp khi làm `feat/profile-files`)* Khi một người xin quá 10 URL tải lên trong 1 giờ, hoặc quá 30 trong 1 ngày. Thì trả 429. Đổi ảnh
   đại diện tối đa 5 lần mỗi ngày.
-- **AC-1.14.3** *(chưa có)* Khi một người tải xuống quá 60 file trong 1 giờ. Thì trả 429.
-- **AC-1.14.4** *(chưa có)* Khi một người gọi xem trường nhạy cảm (`include=sensitive`, kể cả HR) quá 100 lần trong 1 giờ. Thì
+- **AC-1.14.3** *(chưa có: nhóm giới hạn đã có, áp khi làm `feat/profile-files`)* Khi một người tải xuống quá 60 file trong 1 giờ. Thì trả 429.
+- **AC-1.14.4** Khi một người gọi xem trường nhạy cảm (`include=sensitive`, kể cả HR) quá 100 lần trong 1 giờ. Thì
   trả 429 và gửi cảnh báo tới kênh vận hành (nghi cào dữ liệu).
 - **AC-1.14.5** *(chưa có)* Khi một người nhận 429 quá 20 lần trong 10 phút. Thì có cảnh báo trên dashboard vận hành.
-- **AC-1.14.6** *(chưa có)* Giới hạn độ dài từng trường (spec mục 8) và kích thước body request ≤ 64 KiB; vượt trả 400 hoặc 413.
-- **AC-1.14.7** *(chưa có)* Giới hạn của UC1 cộng với giới hạn chung 100 request/phút (NFR-5.21); request bị chặn bởi giới hạn
+- **AC-1.14.6** Giới hạn độ dài từng trường (spec mục 8) và kích thước body request ≤ 64 KiB; vượt trả 400 hoặc 413.
+- **AC-1.14.7** Giới hạn của UC1 cộng với giới hạn chung 100 request/phút (NFR-5.21); request bị chặn bởi giới hạn
   nào thì câu báo nêu giới hạn đó.
 
 ## 3. Yêu cầu phi chức năng liên quan

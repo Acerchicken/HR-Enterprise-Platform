@@ -85,6 +85,13 @@ Dùng cho outbox publisher (trong API) và notification worker. Chi tiết: [h�
 | `SMTP_PORT` | `1025` | | Staging | Worker | Kết nối không TLS (`secure: false`) |
 | `SMTP_FROM` | `no-reply@hr.local` | | Staging | Worker | Địa chỉ người gửi |
 
+### Giới hạn tần suất (NFR-5.21, UC1 FR-1.14)
+
+| Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
+|---|---|---|---|---|---|
+| `RATE_LIMIT_ENABLED` | `true` | `true` | Không | API | `false` tắt hẳn giới hạn (chỉ dùng khi debug local) |
+| `RATE_LIMIT_OVERRIDES` | (không có) | Để trống | Không | API | JSON đổi ngưỡng từng nhóm, ví dụ `{"global":{"minute":1000}}` khi load test. Nhóm và ngưỡng mặc định ở `backend/src/common/rate-limit/rate-limit-rules.ts`: `global` 100/phút, `search` 20/phút, `profile-write` 30/phút và 300/ngày, `profile-upload` 10/giờ và 30/ngày, `avatar-upload` 5/ngày, `profile-download` 60/giờ, `sensitive-view` 100/giờ. Giới hạn ngày đếm trong bảng `iam.rate_limit_counter` |
+
 ### Kho tài liệu (object storage)
 
 | Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |

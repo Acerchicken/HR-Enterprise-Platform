@@ -10,6 +10,8 @@ export class ApiError extends Error {
     public traceId?: string,
     /** Lỗi validation theo từng trường (tên trường → lỗi), để form hiện lỗi đúng ô. */
     public fields?: Record<string, string>,
+    /** 429: số giây phải chờ (header Retry-After), để khóa nút gửi (frontend.md mục 6). */
+    public retryAfter?: number,
   ) {
     super(message);
   }
@@ -25,7 +27,8 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const body = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) {
     const msg = Array.isArray(body?.message) ? body.message.join('; ') : (body?.message ?? res.statusText);
-    throw new ApiError(res.status, body?.code ?? 'HTTP_ERROR', msg, body?.traceId, body?.fields);
+    const retry = Number(res.headers.get('Retry-After')) || undefined;
+    throw new ApiError(res.status, body?.code ?? 'HTTP_ERROR', msg, body?.traceId, body?.fields, retry);
   }
   return body as T;
 }
