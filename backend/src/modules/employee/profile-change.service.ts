@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, IsNull, Repository } from 'typeorm';
+import { EntityManager, In, IsNull, Not, Repository } from 'typeorm';
 import { FieldCrypto } from '../../common/field-crypto';
 import { Page } from '../../common/pagination';
 import { AuditService } from '../audit/audit.service';
@@ -16,7 +16,8 @@ import { OrganizationService } from '../organization/organization.service';
 import { EmployeeSensitive } from './employee-sensitive.entity';
 import { Employee } from './employee.entity';
 import { FIELD_CRYPTO, RequestMeta } from './employee.service';
-import { ChangeAction, ProfileChangeRequest, ProfileItem } from './profile-change.entity';
+import { ChangeAction, ProfileChangeRequest, ProfileFile, ProfileItem } from './profile-change.entity';
+import { FileView, fileView, ProfileFileService } from './profile-file.service';
 import { ProfileEventType } from './profile-events';
 import { FieldSpec, SECTION_SCHEMAS, SectionSchema, validateSection } from './profile-schema';
 import { canSeeLevel, findSection, relationTo } from './profile-sections';
@@ -32,6 +33,8 @@ export interface SubmitInput {
   itemId?: string | null;
   baseVersion?: number | null;
   proposed?: Record<string, unknown>;
+  /** File đã tải lên (luồng 4.3) gắn vào yêu cầu; với mục chỉ gồm file và thao tác DELETE là file cần xóa. */
+  fileIds?: string[];
 }
 
 export interface MaskedValue {
@@ -44,6 +47,7 @@ export interface RowView {
   version: number;
   data: Record<string, unknown>;
   sensitive: Record<string, MaskedValue>;
+  files?: FileView[];
 }
 
 export interface RequestView {
@@ -60,6 +64,8 @@ export interface RequestView {
   submittedAt: Date;
   reviewedAt: Date | null;
   rejectReason?: string | null;
+  fileIds: string[];
+  files?: FileView[];
 }
 
 /** Số ngày làm việc (thứ Hai → thứ Sáu) giữa hai thời điểm, không tính ngày lễ. */
@@ -90,6 +96,8 @@ export class ProfileChangeService {
     private readonly audit: AuditService,
     private readonly org: OrganizationService,
     @Inject(FIELD_CRYPTO) private readonly crypto: FieldCrypto,
+    @InjectRepository(ProfileFile) private readonly fileRepo: Repository<ProfileFile>,
+    private readonly fileService: ProfileFileService,
   ) {}
 
   // ---------- Đọc ----------
@@ -112,7 +120,14 @@ export class ProfileChangeService {
       ],
       order: { submittedAt: 'ASC' },
     });
-    return list.map((r) => this.view(r, true));
+    return this.withFiles(list.map((r) => this.view(r, true)));
+  }
+
+  private async withFiles(views: RequestView[]): Promise<RequestView[]> {
+    const ids = views.flatMap((v) => v.fileIds);
+    if (!ids.length) return views;
+    const byId = new Map((await this.fileRepo.findBy({ id: In(ids) })).map((f) => [f.id, fileView(f)]));
+    return views.map((v) => ({ ...v, files: v.fileIds.map((id) => byId.get(id)).filter((x): x is FileView => !!x) }));
   }
 
   /** Mục nhiều dòng hoặc một dòng (liên hệ khẩn cấp, thân nhân, chuyên môn, tài khoản ngân hàng). */
@@ -130,7 +145,28 @@ export class ProfileChangeService {
     // NC (tài khoản ngân hàng) và trường nhạy cảm của dòng: chỉ chủ hồ sơ và HR giải mã.
     if (reveal && relation !== 'OWNER' && relation !== 'HR') throw new ForbiddenException('Bạn không được xem giá trị này');
 
+    if (schema.kind === 'files') {
+      if (relation !== 'OWNER' && relation !== 'HR') throw new NotFoundException('Không tìm thấy mục hồ sơ');
+      return {
+        section: code,
+        kind: schema.kind,
+        maxRows: schema.maxRows,
+        notice: schema.notice ?? null,
+        fields: [],
+        canPropose: relation === 'OWNER',
+        canEdit: relation === 'HR',
+        rows: [],
+        files: await this.fileService.list(employeeId, code, viewer),
+        requests: await this.openRequests(employeeId, code),
+      };
+    }
     const rows = await this.rowsOf(employeeId, code, schema, reveal);
+    // File gắn vào từng dòng (bằng cấp, giấy tờ người phụ thuộc): mức CN, quản lý trực tiếp không thấy.
+    if (relation === 'OWNER' || relation === 'HR') {
+      const ids = rows.map((r) => r.id).filter((x): x is string => !!x);
+      const files = ids.length ? await this.fileRepo.find({ where: { employeeId, itemId: In(ids), status: 'READY' }, order: { createdAt: 'DESC' } }) : [];
+      for (const r of rows) r.files = files.filter((f) => f.itemId === r.id).map(fileView);
+    }
     if (reveal && rows.some((r) => Object.values(r.sensitive).some((v) => v.hasValue))) {
       await this.audit.record({
         actorId: viewer.employeeId,
@@ -196,19 +232,29 @@ export class ProfileChangeService {
     if (again) return this.view(again, true);
 
     const action = input.action;
-    if (schema.kind !== 'rows' && action !== 'UPDATE') throw new BadRequestException('Mục này chỉ cho phép sửa');
+    const fileIds = [...new Set(input.fileIds ?? [])];
+    if (schema.kind === 'files') {
+      if (action === 'UPDATE' || (input.section === 'avatar' && action !== 'CREATE')) throw new BadRequestException('Mục này chỉ cho phép thêm hoặc xóa file');
+      if (!fileIds.length) throw new BadRequestException('Chưa chọn file');
+    } else if (schema.kind !== 'rows' && action !== 'UPDATE') throw new BadRequestException('Mục này chỉ cho phép sửa');
     if (schema.kind === 'rows' && action !== 'CREATE' && !input.itemId) throw new BadRequestException('Thiếu itemId của dòng cần sửa, xóa');
     if (schema.kind === 'rows' && action === 'CREATE' && input.itemId) throw new BadRequestException('Thêm dòng mới không kèm itemId');
 
     let data: Record<string, unknown> = {};
     let sensitive: Record<string, string> = {};
-    if (action !== 'DELETE') {
+    if (action !== 'DELETE' && schema.kind !== 'files') {
       const v = validateSection(input.section, input.proposed ?? {}, today(), schema.kind === 'main');
       if (Object.keys(v.errors).length) throw new BadRequestException({ message: Object.values(v.errors), fields: v.errors });
       data = v.data;
       sensitive = v.sensitive;
-      if (!Object.keys(data).length && !Object.keys(sensitive).length) throw new BadRequestException('Không có thay đổi nào');
+      if (!Object.keys(data).length && !Object.keys(sensitive).length && !fileIds.length) throw new BadRequestException('Không có thay đổi nào');
     }
+    if (schema.kind === 'main' && fileIds.length) throw new BadRequestException('Mục này không nhận file');
+    // File đính kèm: đã tải lên xong, của chính mình, đúng mục. Yêu cầu xóa file: file đang dùng, không phải HR tải (E14).
+    const attached =
+      schema.kind === 'files' && action === 'DELETE'
+        ? await this.fileService.assertDeletable(employeeId, input.section, fileIds)
+        : await this.fileService.assertAttachable(employeeId, input.section, fileIds, viewer);
 
     return this.requests.manager.transaction(async (m) => {
       // Khóa theo nhân viên để đếm số dòng, số yêu cầu đúng khi gửi đồng thời.
@@ -223,6 +269,15 @@ export class ProfileChangeService {
         const item = await m.getRepository(ProfileItem).findOneBy({ employeeId, section: input.section, deletedAt: IsNull() });
         itemId = item?.id ?? null;
         baseVersion = item?.version ?? 0;
+      } else if (schema.kind === 'files') {
+        baseVersion = 0;
+        if (action === 'CREATE' && input.section !== 'avatar') {
+          const ready = await m.getRepository(ProfileFile).countBy({ employeeId, section: input.section, status: 'READY' });
+          const pending = await m.getRepository(ProfileFile).count({ where: { employeeId, section: input.section, status: 'PENDING_REVIEW', changeRequestId: Not(IsNull()) } });
+          if (ready + pending + attached.length > schema.maxRows) {
+            throw new ConflictException(`Mục này tối đa ${schema.maxRows} file (tính cả file đang chờ duyệt)`);
+          }
+        }
       } else if (action === 'CREATE') {
         baseVersion = 0;
         const rows = await m.getRepository(ProfileItem).countBy({ employeeId, section: input.section, deletedAt: IsNull() });
@@ -238,7 +293,9 @@ export class ProfileChangeService {
       }
 
       // AC-1.9.7: cùng chỗ đã có yêu cầu đang chờ thì yêu cầu cũ bị thay.
-      if (schema.kind !== 'rows' || action !== 'CREATE') {
+      if (input.section === 'avatar') {
+        await reqRepo.update({ employeeId, section: 'avatar', status: 'PENDING' }, { status: 'CANCELLED' });
+      } else if (schema.kind !== 'files' && (schema.kind !== 'rows' || action !== 'CREATE')) {
         await reqRepo.update(
           itemId ? { employeeId, section: input.section, itemId, status: 'PENDING' } : { employeeId, section: input.section, itemId: IsNull(), action: 'UPDATE', status: 'PENDING' },
           { status: 'CANCELLED' },
@@ -259,8 +316,12 @@ export class ProfileChangeService {
           proposedSensitive: Object.keys(sensitive).length ? this.crypto.encrypt(JSON.stringify(sensitive)) : null,
           submittedBy: viewer.employeeId!,
           idempotencyKey,
+          fileIds,
         }),
       );
+      if (attached.length && action !== 'DELETE') {
+        await m.getRepository(ProfileFile).update({ id: In(attached.map((f) => f.id)) }, { changeRequestId: saved.id });
+      }
       const fields = [...Object.keys(data), ...Object.keys(sensitive)];
       await this.audit.record(
         {
@@ -268,13 +329,13 @@ export class ProfileChangeService {
           action: 'PROFILE_CHANGE_SUBMIT',
           entityType: 'employee',
           entityId: employeeId,
-          changedFields: { section: input.section, requestId: saved.id, action, itemId, fields },
+          changedFields: { section: input.section, requestId: saved.id, action, itemId, fields, fileIds },
           ...meta,
         },
         m,
       );
       await this.outbox(m, 'ProfileChangeSubmitted', saved);
-      return this.view(saved, true);
+      return (await this.withFiles([this.view(saved, true)]))[0]!;
     });
   }
 
@@ -284,6 +345,7 @@ export class ProfileChangeService {
       if (!r || r.submittedBy !== viewer.employeeId) throw new NotFoundException('Không tìm thấy yêu cầu');
       if (r.status !== 'PENDING') throw new ConflictException('Yêu cầu không còn chờ xác nhận');
       await m.getRepository(ProfileChangeRequest).update(r.id, { status: 'CANCELLED' });
+      await this.releaseFiles(m, r);
       await this.audit.record(
         {
           actorId: viewer.employeeId,
@@ -373,8 +435,9 @@ export class ProfileChangeService {
       });
     }
     const lookups = await this.org.lookups();
+    const [withFiles] = await this.withFiles([view]);
     return {
-      ...view,
+      ...withFiles!,
       employee: { id: e.id, fullName: e.fullName, employeeCode: e.employeeCode, departmentName: lookups.department.get(e.departmentId)?.name ?? null },
       fields: schema?.fields ?? [],
       current,
@@ -392,7 +455,7 @@ export class ProfileChangeService {
       if (r.status === 'APPROVED') return this.view(r, true);
       if (r.status !== 'PENDING') throw new ConflictException('Yêu cầu không còn chờ xác nhận');
       const sensitive = r.proposedSensitive ? (JSON.parse(this.crypto.decrypt(r.proposedSensitive) ?? '{}') as Record<string, string>) : {};
-      await this.applyChange(m, {
+      const itemId = await this.applyChange(m, {
         employeeId: r.employeeId,
         section: r.section,
         action: r.action,
@@ -403,6 +466,7 @@ export class ProfileChangeService {
         actorId: hr.employeeId,
         changeRequestId: r.id,
       });
+      await this.applyFiles(m, r, itemId);
       r.status = 'APPROVED';
       r.reviewedBy = hr.employeeId;
       r.reviewedAt = new Date();
@@ -436,6 +500,7 @@ export class ProfileChangeService {
       r.reviewedAt = new Date();
       r.rejectReason = reason;
       await repo.save(r);
+      await this.releaseFiles(m, r);
       // Audit không chứa lý do từ chối (AC-1.9.5).
       await this.audit.record(
         {
@@ -526,6 +591,7 @@ export class ProfileChangeService {
     },
   ): Promise<string | null> {
     const schema = SECTION_SCHEMAS[c.section]!;
+    if (schema.kind === 'files') return null;
     const stale = () => new ConflictException('Dữ liệu đã thay đổi sau khi gửi yêu cầu; hãy từ chối hoặc để nhân viên gửi lại');
 
     if (schema.kind === 'main') {
@@ -640,6 +706,7 @@ export class ProfileChangeService {
       proposedSensitive: Object.fromEntries(keys.map((k) => [k, { hasValue: true, value: null }])),
       submittedAt: r.submittedAt,
       reviewedAt: r.reviewedAt,
+      fileIds: r.fileIds ?? [],
       ...(withReason ? { rejectReason: r.rejectReason } : {}),
     };
   }
@@ -647,6 +714,32 @@ export class ProfileChangeService {
   private fieldNames(r: ProfileChangeRequest, sensitive?: Record<string, string>): string[] {
     const s = sensitive ?? (r.proposedSensitive ? JSON.parse(this.crypto.decrypt(r.proposedSensitive) ?? '{}') : {});
     return [...Object.keys(r.proposed), ...Object.keys(s)];
+  }
+
+  /** Duyệt: file kèm chuyển READY (gắn vào dòng nếu có); yêu cầu xóa file thì file DELETED; ảnh đại diện mới thay ảnh cũ. */
+  private async applyFiles(m: EntityManager, r: ProfileChangeRequest, itemId: string | null) {
+    if (!r.fileIds.length) return;
+    const repo = m.getRepository(ProfileFile);
+    const list = await repo.findBy({ id: In(r.fileIds), employeeId: r.employeeId });
+    if (SECTION_SCHEMAS[r.section]?.kind === 'files' && r.action === 'DELETE') {
+      if (list.some((f) => f.status !== 'READY')) throw new ConflictException('File đã thay đổi sau khi gửi yêu cầu');
+      await this.fileService.markDeleted(list);
+      return;
+    }
+    if (list.some((f) => f.status !== 'PENDING_REVIEW')) throw new ConflictException('File đính kèm không còn hợp lệ');
+    await repo.update({ id: In(list.map((f) => f.id)) }, { status: 'READY', ...(itemId ? { itemId } : {}) });
+    if (r.section === 'avatar') {
+      const e = await m.getRepository(Employee).findOneByOrFail({ id: r.employeeId });
+      const old = e.avatarFileId ? await repo.findBy({ id: e.avatarFileId }) : [];
+      await m.getRepository(Employee).update(e.id, { avatarFileId: list[0]!.id });
+      if (old.length) await this.fileService.markDeleted(old);
+    }
+  }
+
+  /** Từ chối, hủy: file kèm (chưa dùng) chuyển REJECTED, lifecycle xóa sau 30 ngày. */
+  private async releaseFiles(m: EntityManager, r: ProfileChangeRequest) {
+    if (!r.fileIds.length || (SECTION_SCHEMAS[r.section]?.kind === 'files' && r.action === 'DELETE')) return;
+    await m.getRepository(ProfileFile).update({ id: In(r.fileIds), status: 'PENDING_REVIEW' }, { status: 'REJECTED' });
   }
 
   /** Event cho worker gửi email (outbox dùng chung `leave.outbox`, ghi cùng giao dịch). Payload không có giá trị hồ sơ. */

@@ -356,6 +356,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/employees/{id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileFileController_list"];
+        put?: never;
+        post: operations["ProfileFileController_requestUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/files/{fileId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProfileFileController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/files/{fileId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileFileController_download"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileFileController_avatar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/files/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ProfileFileController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/leave-types": {
         parameters: {
             query?: never;
@@ -767,6 +847,8 @@ export interface components {
             relation: "HR" | "OWNER" | "MANAGER" | "OTHER";
             /** @description HR: hiện nút "Sửa hồ sơ" */
             canEdit: boolean;
+            /** @description Có ảnh đại diện đã duyệt: tải ở GET /employees/{id}/avatar */
+            hasAvatar: boolean;
             /** @description Loại hợp đồng đang hiệu lực (hàng "Diện đối tượng", mức QL). null: chưa có dữ liệu. Không có trường này ở mức danh bạ */
             contractType?: Record<string, never> | null;
             /** @description Mục người xem được thấy, theo thứ tự trên trang */
@@ -835,6 +917,8 @@ export interface components {
             baseVersion?: number;
             /** @description Giá trị đề xuất theo mô tả trường của mục (fields trong GET mục) */
             proposed?: Record<string, never>;
+            /** @description File đã tải lên gắn vào yêu cầu (luồng 4.3) */
+            fileIds?: string[];
         };
         RejectDto: {
             reason: string;
@@ -843,6 +927,20 @@ export interface components {
             /** @description version của dòng (bắt buộc khi sửa, xóa) */
             version?: number;
             data?: Record<string, never>;
+        };
+        UploadRequestDto: {
+            /** @example cv */
+            section: string;
+            /** @description Dòng gắn file (bằng cấp, người phụ thuộc); null khi đính kèm dòng mới */
+            itemId?: Record<string, never> | null;
+            /** @example cv.pdf */
+            fileName: string;
+            /** @example application/pdf */
+            contentType: string;
+            /** @example 102400 */
+            size: number;
+            /** @description SHA-256 hex do trình duyệt tính */
+            sha256: string;
         };
         CreateLeaveRequestDto: {
             /**
@@ -1496,6 +1594,129 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileFileController_list: {
+        parameters: {
+            query: {
+                section: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileFileController_requestUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileFileController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileFileController_download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileFileController_avatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileFileController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

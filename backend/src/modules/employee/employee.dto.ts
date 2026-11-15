@@ -243,6 +243,7 @@ export class ProfileSummary {
   @ApiProperty() workEmail: string;
   @ApiProperty({ enum: ['HR', 'OWNER', 'MANAGER', 'OTHER'] }) relation: 'HR' | 'OWNER' | 'MANAGER' | 'OTHER';
   @ApiProperty({ description: 'HR: hiện nút "Sửa hồ sơ"' }) canEdit: boolean;
+  @ApiProperty({ description: 'Có ảnh đại diện đã duyệt: tải ở GET /employees/{id}/avatar' }) hasAvatar: boolean;
   @ApiPropertyOptional({
     nullable: true,
     description: 'Loại hợp đồng đang hiệu lực (hàng "Diện đối tượng", mức QL). null: chưa có dữ liệu. Không có trường này ở mức danh bạ',

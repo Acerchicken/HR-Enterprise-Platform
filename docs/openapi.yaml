@@ -563,6 +563,118 @@ paths:
           description: ""
       tags: *a5
       security: *a6
+  /api/v1/employees/{id}/files:
+    post:
+      operationId: ProfileFileController_requestUpload
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadRequestDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a7
+        - employee
+      security: &a8
+        - bearer: []
+    get:
+      operationId: ProfileFileController_list
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: section
+          required: true
+          in: query
+          schema:
+            example: cv
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/employees/{id}/files/{fileId}/confirm:
+    post:
+      operationId: ProfileFileController_confirm
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: fileId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/employees/{id}/files/{fileId}/download:
+    get:
+      operationId: ProfileFileController_download
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: fileId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/employees/{id}/avatar:
+    get:
+      operationId: ProfileFileController_avatar
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+      security: *a8
+  /api/v1/employees/{id}/files/{fileId}:
+    delete:
+      operationId: ProfileFileController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: fileId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "204":
+          description: ""
+      tags: *a7
+      security: *a8
   /api/v1/leave-types:
     get:
       operationId: LeaveController_types
@@ -570,9 +682,9 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a7
+      tags: &a9
         - leave
-      security: &a8
+      security: &a10
         - bearer: []
   /api/v1/leave-holidays:
     get:
@@ -587,8 +699,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/leave-balances/me:
     get:
       operationId: LeaveController_myBalances
@@ -596,8 +708,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/leave-requests:
     post:
       operationId: LeaveController_create
@@ -618,8 +730,8 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
     get:
       operationId: LeaveController_all
       parameters:
@@ -637,8 +749,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/leave-requests/me:
     get:
       operationId: LeaveController_mine
@@ -657,8 +769,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/leave-requests/pending-approval:
     get:
       operationId: LeaveController_pendingApproval
@@ -677,8 +789,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/leave-requests/{id}:
     get:
       operationId: LeaveController_get
@@ -691,8 +803,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/leave-requests/{id}/approve:
     post:
       operationId: LeaveController_approve
@@ -711,8 +823,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/leave-requests/{id}/reject:
     post:
       operationId: LeaveController_reject
@@ -731,8 +843,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/leave-requests/{id}/cancel:
     post:
       operationId: LeaveController_cancel
@@ -751,8 +863,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/leave-requests/{id}/complete:
     post:
       operationId: LeaveController_complete
@@ -771,8 +883,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
   /api/v1/documents:
     get:
       operationId: DocumentController_list
@@ -791,9 +903,9 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a9
+      tags: &a11
         - documents
-      security: &a10
+      security: &a12
         - bearer: []
     post:
       operationId: DocumentController_create
@@ -807,8 +919,8 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a11
+      security: *a12
   /api/v1/documents/manage:
     get:
       operationId: DocumentController_manageList
@@ -827,8 +939,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a11
+      security: *a12
   /api/v1/documents/manage/{id}:
     get:
       operationId: DocumentController_manageGet
@@ -841,8 +953,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a11
+      security: *a12
   /api/v1/documents/{id}:
     get:
       operationId: DocumentController_get
@@ -855,8 +967,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a11
+      security: *a12
     patch:
       operationId: DocumentController_update
       parameters:
@@ -874,8 +986,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a11
+      security: *a12
   /api/v1/documents/{id}/download:
     get:
       operationId: DocumentController_downloadLatest
@@ -888,8 +1000,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a11
+      security: *a12
   /api/v1/documents/{id}/versions/{versionId}/download:
     get:
       operationId: DocumentController_download
@@ -907,8 +1019,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a11
+      security: *a12
   /api/v1/documents/{id}/versions:
     post:
       operationId: DocumentController_addVersion
@@ -927,8 +1039,8 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a11
+      security: *a12
   /api/v1/documents/{id}/versions/{versionId}/confirm:
     post:
       operationId: DocumentController_confirm
@@ -946,8 +1058,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a11
+      security: *a12
   /api/v1/documents/{id}/hide:
     post:
       operationId: DocumentController_hide
@@ -960,8 +1072,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a11
+      security: *a12
   /api/v1/documents/{id}/restore:
     post:
       operationId: DocumentController_restore
@@ -974,8 +1086,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a11
+      security: *a12
 info:
   title: HRHelper API (HR Enterprise Platform)
   description: "REST API /api/v1. Xác thực: Bearer JWT do Keycloak (OIDC) cấp.
@@ -1161,6 +1273,9 @@ components:
         canEdit:
           type: boolean
           description: 'HR: hiện nút "Sửa hồ sơ"'
+        hasAvatar:
+          type: boolean
+          description: "Có ảnh đại diện đã duyệt: tải ở GET /employees/{id}/avatar"
         contractType:
           type: object
           nullable: true
@@ -1184,6 +1299,7 @@ components:
         - workEmail
         - relation
         - canEdit
+        - hasAvatar
         - sections
     MaskedField:
       type: object
@@ -1332,6 +1448,11 @@ components:
         proposed:
           type: object
           description: Giá trị đề xuất theo mô tả trường của mục (fields trong GET mục)
+        fileIds:
+          description: File đã tải lên gắn vào yêu cầu (luồng 4.3)
+          type: array
+          items:
+            type: string
       required:
         - section
         - action
@@ -1351,6 +1472,34 @@ components:
           description: version của dòng (bắt buộc khi sửa, xóa)
         data:
           type: object
+    UploadRequestDto:
+      type: object
+      properties:
+        section:
+          type: string
+          example: cv
+        itemId:
+          type: object
+          nullable: true
+          description: Dòng gắn file (bằng cấp, người phụ thuộc); null khi đính kèm dòng mới
+        fileName:
+          type: string
+          example: cv.pdf
+        contentType:
+          type: string
+          example: application/pdf
+        size:
+          type: number
+          example: 102400
+        sha256:
+          type: string
+          description: SHA-256 hex do trình duyệt tính
+      required:
+        - section
+        - fileName
+        - contentType
+        - size
+        - sha256
     CreateLeaveRequestDto:
       type: object
       properties:
@@ -1424,7 +1573,7 @@ components:
           example: Quy chế làm việc
         type:
           type: string
-          enum: &a11
+          enum: &a13
             - POLICY
             - PROCESS
             - GUIDE
@@ -1466,7 +1615,7 @@ components:
           type: string
         type:
           type: string
-          enum: *a11
+          enum: *a13
         scope:
           $ref: "#/components/schemas/DocumentScopeDto"
       required:

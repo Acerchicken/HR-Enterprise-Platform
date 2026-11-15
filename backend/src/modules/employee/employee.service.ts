@@ -228,6 +228,7 @@ export class EmployeeService {
       workEmail: e.workEmail,
       relation,
       canEdit: relation === 'HR',
+      hasAvatar: !!e.avatarFileId,
       sections: visibleSections(relation).map((s) => ({
         code: s.code,
         group: s.group,

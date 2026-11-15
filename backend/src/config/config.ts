@@ -66,6 +66,11 @@ export interface AppConfig {
     secretAccessKey: string | null;
   };
   /**
+   * Bucket riêng cho file hồ sơ (UC1 FR-1.10): chặn public, SSE-KMS, lifecycle xóa object gắn tag `deleted=true` sau 30
+   * ngày. Dùng chung endpoint và khóa của `storage`. Để trống thì thao tác file hồ sơ trả 503 (AC-1.10.9).
+   */
+  profileStorage: { bucket: string | null };
+  /**
    * Giới hạn tần suất (NFR-5.21, UC1 FR-1.14). `overrides`: đổi ngưỡng của từng nhóm, ví dụ
    * RATE_LIMIT_OVERRIDES='{"global":{"minute":1000}}' khi chạy e2e hoặc load test. `enabled=false` tắt hẳn (chỉ dùng local).
    */
@@ -125,6 +130,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
       accessKeyId: env.STORAGE_ACCESS_KEY_ID || null,
       secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY || null,
     },
+    profileStorage: { bucket: env.PROFILE_STORAGE_BUCKET || null },
     rateLimit: {
       enabled: env.RATE_LIMIT_ENABLED !== 'false',
       overrides: parseOverrides(env.RATE_LIMIT_OVERRIDES),

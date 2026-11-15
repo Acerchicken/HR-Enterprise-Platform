@@ -100,3 +100,55 @@ export class ProfileChangeRequest {
   @Column({ name: 'idempotency_key', type: 'varchar', length: 100 })
   idempotencyKey: string;
 }
+
+export type FileStatus = 'PENDING' | 'PENDING_REVIEW' | 'READY' | 'REJECTED' | 'DELETED';
+
+/** File hồ sơ (FR-1.10). Object nằm ở `profiles/{employeeId}/{fileId}` trên bucket hồ sơ; tên file gốc không vào log, audit. */
+@Entity({ schema: 'employee', name: 'profile_file' })
+export class ProfileFile {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ name: 'employee_id', type: 'uuid' })
+  employeeId: string;
+
+  @Column({ type: 'varchar', length: 40 })
+  section: string;
+
+  @Column({ name: 'item_id', type: 'uuid', nullable: true })
+  itemId: string | null;
+
+  @Column({ name: 'storage_key', type: 'varchar', length: 200 })
+  storageKey: string;
+
+  @Column({ name: 'original_name', type: 'varchar', length: 255 })
+  originalName: string;
+
+  @Column({ name: 'content_type', type: 'varchar', length: 100 })
+  contentType: string;
+
+  @Column({ name: 'size_bytes', type: 'int' })
+  sizeBytes: number;
+
+  @Column({ type: 'char', length: 64 })
+  sha256: string;
+
+  @Column({ type: 'varchar', length: 20, default: 'PENDING' })
+  status: FileStatus;
+
+  @Column({ name: 'uploaded_by', type: 'uuid' })
+  uploadedBy: string;
+
+  /** File HR tải lên: READY ngay, nhân viên không đề xuất xóa được (A8, E14). */
+  @Column({ name: 'uploaded_by_hr', type: 'boolean', default: false })
+  uploadedByHr: boolean;
+
+  @Column({ name: 'change_request_id', type: 'uuid', nullable: true })
+  changeRequestId: string | null;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt: Date | null;
+}

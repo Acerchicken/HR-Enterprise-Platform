@@ -12,6 +12,11 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap';
 import { loadConfig } from '../src/config/config';
+import { ProfileStorage } from '../src/modules/employee/profile-file.service';
+import { FakeBucket, sha256 } from './fake-storage';
+
+/** Bucket hồ sơ giả trong bộ nhớ (máy chạy e2e không cần MinIO). */
+const bucket = new FakeBucket();
 
 const as = (email: string) => ({ Authorization: `Bearer dev:${email}` });
 /** Version hiện tại của hồ sơ (PATCH bắt buộc gửi version, E9). */
@@ -29,7 +34,7 @@ describe('HRHelper API (e2e)', () => {
   let strangerId: string;
 
   beforeAll(async () => {
-    const mod = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const mod = await Test.createTestingModule({ imports: [AppModule] }).overrideProvider(ProfileStorage).useValue(bucket).compile();
     app = mod.createNestApplication();
     configureApp(app, loadConfig());
     await app.init();
@@ -882,6 +887,147 @@ describe('HRHelper API (e2e)', () => {
       expect(JSON.stringify(h)).not.toContain('Lê Văn Khẩn');
       await http.get(`/api/v1/employees/${employeeId}/history?section=relatives`).set(HR).expect(200);
       await http.get(`/api/v1/employees/${employeeId}/history`).set(MANAGER).expect(403);
+    });
+  });
+
+  describe('UC1 file hồ sơ (AC-1.10.x, AC-1.14.2, AC-1.14.3)', () => {
+    let seq = 0;
+    const key = () => ({ 'Idempotency-Key': `e2e-file-${Date.now()}-${++seq}` });
+    const pdf = (tag: string) => Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.from(`e2e ${tag} ${Date.now()} ${Math.random()}`)]);
+    const PDF = 'application/pdf';
+
+    /** Xin URL, "PUT" vào bucket giả, xác nhận. */
+    const upload = async (who: Record<string, string>, section: string, name: string, type: string, body: Buffer, opts: { declaredSize?: number; itemId?: string | null } = {}) => {
+      const r = await http
+        .post(`/api/v1/employees/${employeeId}/files`)
+        .set(who)
+        .send({ section, itemId: opts.itemId, fileName: name, contentType: type, size: opts.declaredSize ?? body.length, sha256: sha256(body) });
+      if (r.status !== 201 || r.body.existing) return { req: r, confirm: null as any };
+      bucket.upload(r.body.upload.url, body);
+      const confirm = await http.post(`/api/v1/employees/${employeeId}/files/${r.body.file.id}/confirm`).set(who);
+      return { req: r, confirm };
+    };
+
+    beforeAll(async () => {
+      const { DataSource } = await import('typeorm');
+      const ds = app.get(DataSource);
+      await ds.query(`UPDATE employee.employee SET avatar_file_id = NULL WHERE id = $1`, [employeeId]);
+      await ds.query(`UPDATE employee.profile_change_request SET status = 'CANCELLED' WHERE employee_id = $1 AND status = 'PENDING'`, [employeeId]);
+      await ds.query(`UPDATE employee.profile_file SET status = 'DELETED' WHERE employee_id = $1 AND status <> 'DELETED'`, [employeeId]);
+    });
+
+    it('chưa cấu hình bucket hồ sơ: thao tác file 503, xem hồ sơ vẫn chạy (AC-1.10.9)', async () => {
+      bucket.enabled = false;
+      try {
+        await http
+          .post(`/api/v1/employees/${employeeId}/files`)
+          .set(EMPLOYEE)
+          .send({ section: 'cv', fileName: 'cv.pdf', contentType: PDF, size: 10, sha256: sha256(Buffer.from('x')) })
+          .expect(503);
+        await http.get(`/api/v1/employees/${employeeId}/summary`).set(EMPLOYEE).expect(200);
+      } finally {
+        bucket.enabled = true;
+      }
+    });
+
+    it('tải CV: PENDING_REVIEW, audit không có tên file; HR duyệt yêu cầu thì READY (AC-1.10.1, AC-1.9.4)', async () => {
+      const { req, confirm } = await upload(EMPLOYEE, 'cv', 'CV Trần Thị Nhân.pdf', PDF, pdf('cv'));
+      expect(req.status).toBe(201);
+      expect(req.body.upload.expiresInSeconds).toBe(600);
+      expect(confirm.status).toBe(200);
+      expect(confirm.body.status).toBe('PENDING_REVIEW');
+      const logs = (await http.get(`/api/v1/audit-logs?entity=employee&entityId=${employeeId}`).set(HR)).body.items;
+      const up = logs.find((l: any) => l.action === 'PROFILE_FILE_UPLOAD' && l.changedFields.fileId === confirm.body.id);
+      expect(up.changedFields).toMatchObject({ section: 'cv', contentType: PDF, sha256: expect.any(String) });
+      expect(JSON.stringify(up)).not.toContain('Trần Thị Nhân');
+
+      const cr = (await http.post(`/api/v1/employees/${employeeId}/change-requests`).set(EMPLOYEE).set(key()).send({ section: 'cv', action: 'CREATE', fileIds: [confirm.body.id] }).expect(202)).body;
+      expect(cr.files[0]).toMatchObject({ id: confirm.body.id, status: 'PENDING_REVIEW' });
+      await http.post(`/api/v1/change-requests/${cr.id}/approve`).set(HR).expect(200);
+      const files = (await http.get(`/api/v1/employees/${employeeId}/files?section=cv`).set(EMPLOYEE).expect(200)).body;
+      expect(files.find((f: any) => f.id === confirm.body.id).status).toBe('READY');
+    });
+
+    it('tải lại cùng nội dung trả file cũ (AC-1.10.4)', async () => {
+      const body = pdf('dup');
+      const first = await upload(EMPLOYEE, 'cv', 'a.pdf', PDF, body);
+      const cr = (await http.post(`/api/v1/employees/${employeeId}/change-requests`).set(EMPLOYEE).set(key()).send({ section: 'cv', action: 'CREATE', fileIds: [first.confirm.body.id] }).expect(202)).body;
+      await http.post(`/api/v1/change-requests/${cr.id}/approve`).set(HR).expect(200);
+      const again = await upload(EMPLOYEE, 'cv', 'b.pdf', PDF, body);
+      expect(again.req.body).toMatchObject({ existing: true, file: { id: first.confirm.body.id } });
+    });
+
+    it('nội dung không khớp loại hoặc sai dung lượng: 400, file REJECTED, object bị xóa (AC-1.10.2, E12, E13)', async () => {
+      const zip = Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), Buffer.from('zip giả ' + Date.now())]);
+      const fake = await upload(EMPLOYEE, 'cv', 'giả.pdf', PDF, zip);
+      expect(fake.confirm.status).toBe(400);
+      await http.post(`/api/v1/employees/${employeeId}/files/${fake.req.body.file.id}/confirm`).set(EMPLOYEE).expect(200);
+      const files = (await http.get(`/api/v1/employees/${employeeId}/files?section=cv`).set(HR)).body;
+      expect(files.map((f: any) => f.id)).not.toContain(fake.req.body.file.id);
+      // Chưa PUT lên storage thì 400 và file vẫn chờ.
+      const body = pdf('missing');
+      const r = await http.post(`/api/v1/employees/${employeeId}/files`).set(EMPLOYEE).send({ section: 'cv', fileName: 'x.pdf', contentType: PDF, size: body.length, sha256: sha256(body) }).expect(201);
+      await http.post(`/api/v1/employees/${employeeId}/files/${r.body.file.id}/confirm`).set(EMPLOYEE).expect(400);
+      // Khai báo sai: .exe, quá 10 MiB.
+      await http.post(`/api/v1/employees/${employeeId}/files`).set(EMPLOYEE).send({ section: 'cv', fileName: 'x.exe', contentType: 'application/octet-stream', size: 5, sha256: sha256(body) }).expect(400);
+      await http.post(`/api/v1/employees/${employeeId}/files`).set(EMPLOYEE).send({ section: 'cv', fileName: 'x.pdf', contentType: PDF, size: 11 * 1024 * 1024, sha256: sha256(body) }).expect(400);
+    });
+
+    it('tải xuống: attachment, nosniff, không có link storage; người khác 404; HR tải có audit (AC-1.10.5, 1.10.6)', async () => {
+      const ready = (await http.get(`/api/v1/employees/${employeeId}/files?section=cv`).set(EMPLOYEE)).body.find((f: any) => f.status === 'READY');
+      const res = await http.get(`/api/v1/employees/${employeeId}/files/${ready.id}/download`).set(EMPLOYEE).buffer(true).expect(200);
+      expect(res.headers['content-disposition']).toMatch(/^attachment;/);
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+      expect(JSON.stringify(res.headers)).not.toContain('memory://');
+      await http.get(`/api/v1/employees/${employeeId}/files/${ready.id}/download`).set(MANAGER).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/files?section=cv`).set(MANAGER).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/files/${ready.id}/download`).set(HR).expect(200);
+      const logs = (await http.get(`/api/v1/audit-logs?entity=employee&entityId=${employeeId}`).set(HR)).body.items;
+      expect(logs[0]).toMatchObject({ action: 'PROFILE_FILE_DOWNLOAD' });
+    });
+
+    it('file HR tải lên: READY ngay, nhân viên không đề xuất xóa được; HR xóa thì nhân viên không tải được (A8, E14, AC-1.10.7)', async () => {
+      const hrFile = await upload(HR, 'cv', 'quyết định.pdf', PDF, pdf('hr'));
+      expect(hrFile.confirm.body.status).toBe('READY');
+      await http.post(`/api/v1/employees/${employeeId}/change-requests`).set(EMPLOYEE).set(key()).send({ section: 'cv', action: 'DELETE', fileIds: [hrFile.confirm.body.id] }).expect(403);
+      await http.delete(`/api/v1/employees/${employeeId}/files/${hrFile.confirm.body.id}`).set(EMPLOYEE).expect(403);
+      await http.delete(`/api/v1/employees/${employeeId}/files/${hrFile.confirm.body.id}`).set(HR).expect(204);
+      await http.get(`/api/v1/employees/${employeeId}/files/${hrFile.confirm.body.id}/download`).set(EMPLOYEE).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/files/${hrFile.confirm.body.id}/download`).set(HR).expect(200);
+      expect([...bucket.tags.values()]).toContainEqual({ deleted: 'true' });
+    });
+
+    it('ảnh đại diện: cắt 512 × 512, bỏ EXIF; duyệt xong mọi người thấy (AC-1.10.3)', async () => {
+      const sharp = (await import('sharp')).default;
+      const png = await sharp({ create: { width: 900, height: 600, channels: 3, background: '#0e7490' } })
+        .png()
+        .withMetadata({ exif: { IFD0: { Copyright: 'GPS test' } } })
+        .toBuffer();
+      const { confirm } = await upload(EMPLOYEE, 'avatar', 'me.png', 'image/png', png);
+      expect(confirm.body).toMatchObject({ status: 'PENDING_REVIEW', contentType: 'image/jpeg' });
+      const cr = (await http.post(`/api/v1/employees/${employeeId}/change-requests`).set(EMPLOYEE).set(key()).send({ section: 'avatar', action: 'CREATE', fileIds: [confirm.body.id] }).expect(202)).body;
+      expect((await http.get(`/api/v1/employees/${employeeId}/summary`).set(ADMIN)).body.hasAvatar).toBe(false);
+      await http.post(`/api/v1/change-requests/${cr.id}/approve`).set(HR).expect(200);
+      expect((await http.get(`/api/v1/employees/${employeeId}/summary`).set(ADMIN)).body.hasAvatar).toBe(true);
+      const img = await http.get(`/api/v1/employees/${employeeId}/avatar`).set(ADMIN).buffer(true).parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => cb(null, Buffer.concat(chunks)));
+      }).expect(200);
+      const m = await sharp(img.body as Buffer).metadata();
+      expect([m.width, m.height, m.format]).toEqual([512, 512, 'jpeg']);
+      expect(m.exif).toBeUndefined();
+      // Ảnh đại diện quá 2 MiB bị từ chối từ khai báo.
+      await http.post(`/api/v1/employees/${employeeId}/files`).set(EMPLOYEE).send({ section: 'avatar', fileName: 'a.png', contentType: 'image/png', size: 3 * 1024 * 1024, sha256: sha256(png) }).expect(400);
+    });
+
+    it('người khác không tải file lên hồ sơ người khác (404 như không tồn tại)', async () => {
+      const body = pdf('other');
+      await http
+        .post(`/api/v1/employees/${employeeId}/files`)
+        .set(MANAGER)
+        .send({ section: 'cv', fileName: 'x.pdf', contentType: PDF, size: body.length, sha256: sha256(body) })
+        .expect(404);
     });
   });
 
