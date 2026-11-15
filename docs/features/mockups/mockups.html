@@ -705,27 +705,28 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
   </div>
   <div class="page">
     <div class="crumb">Trang chủ › Sơ đồ tổ chức</div>
-    <div class="hdr"><h1>Sơ đồ tổ chức</h1><div class="acts"><span class="btn o"><svg class="i"><use href="#briefcase"/></svg>Chức danh</span><span class="btn p"><svg class="i"><use href="#plus"/></svg>Thêm phòng ban</span></div></div>
+    <div class="hdr"><h1>Sơ đồ tổ chức</h1><div class="acts"><span class="btn o"><svg class="i"><use href="#briefcase"/></svg>Chức danh</span><span class="btn p"><svg class="i"><use href="#plus"/></svg>Thêm đơn vị</span></div></div>
     <div style="display:grid;grid-template-columns:330px 1fr;gap:18px;margin-top:16px">
       <div class="box">
-        <div style="padding:10px 10px 0"><div class="input" style="margin:0;height:38px;color:var(--muted)"><svg class="i" style="width:16px;margin-right:8px"><use href="#search"/></svg>Lọc phòng ban…</div></div>
+        <div style="padding:10px 10px 0"><div class="input" style="margin:0;height:38px;color:var(--muted)"><svg class="i" style="width:16px;margin-right:8px"><use href="#search"/></svg>Lọc đơn vị…</div></div>
         <div class="tree">
-          <div class="tn"><span class="tw">▾</span>HRHelper Demo<small>2.000</small></div>
-          <div class="tn" style="padding-left:26px"><span class="tw">▸</span>Khối Vận hành<small>140</small></div>
-          <div class="tn" style="padding-left:26px"><span class="tw">▾</span>Khối Công nghệ<small>420</small></div>
+          <div class="tn"><span class="tw">▾</span>Công ty HRHelper Demo<small>2.000</small></div>
+          <div class="tn" style="padding-left:26px"><span class="tw">▸</span>Trung tâm Vận hành<small>140</small></div>
+          <div class="tn" style="padding-left:26px"><span class="tw">▾</span>Trung tâm Công nghệ<small>420</small></div>
           <div class="tn on" style="padding-left:44px"><span class="tw">▾</span>Phòng Công nghệ<small>186</small></div>
           <div class="tn" style="padding-left:62px"><span class="tw"></span>Nhóm Backend<small>64</small></div>
           <div class="tn" style="padding-left:62px"><span class="tw"></span>Nhóm Frontend<small>48</small></div>
           <div class="tn" style="padding-left:62px"><span class="tw"></span>Nhóm Kiểm thử<small>30</small></div>
           <div class="tn" style="padding-left:44px"><span class="tw">▸</span>Phòng Hạ tầng<small>92</small></div>
           <div class="tn" style="padding-left:44px"><span class="tw">▸</span>Phòng Dữ liệu<small>142</small></div>
-          <div class="tn" style="padding-left:26px"><span class="tw">▸</span>Khối Kinh doanh<small>1.120</small></div>
-          <div class="tn" style="padding-left:26px"><span class="tw">▸</span>Khối Tài chính<small>320</small></div>
+          <div class="tn" style="padding-left:26px"><span class="tw">▸</span>Trung tâm Kinh doanh<small>1.120</small></div>
+          <div class="tn" style="padding-left:26px"><span class="tw">▸</span>Trung tâm Tài chính<small>320</small></div>
+          <div class="tn" style="padding-left:26px"><span class="tw"></span>Phòng Pháp chế<small>12</small></div>
         </div>
       </div>
       <div class="box" style="padding:16px 20px">
-        <div class="hdr" style="align-items:center"><div><div class="mut" style="font-size:13px">HRHelper Demo › Khối Công nghệ</div><h3 style="margin:2px 0 0;font-size:19px">Phòng Công nghệ <span class="mut" style="font-weight:400;font-size:14px">· CNTT · 186 người</span></h3></div>
-          <div class="acts"><span class="btn o sm"><svg class="i" style="width:16px"><use href="#edit"/></svg>Sửa phòng ban</span></div></div>
+        <div class="hdr" style="align-items:center"><div><div class="mut" style="font-size:13px">HRHelper Demo › Trung tâm Công nghệ</div><h3 style="margin:2px 0 0;font-size:19px">Phòng Công nghệ <span class="mut" style="font-weight:400;font-size:14px">· CNTT · 186 người</span></h3></div>
+          <div class="acts"><span class="btn o sm"><svg class="i" style="width:16px"><use href="#edit"/></svg>Sửa đơn vị</span></div></div>
         <div class="h4">Lãnh đạo phòng</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px" class="lead">
           <div class="pcard"><span class="av md alt2">QB</span><div><b>Trần Quốc Bình</b><small>Giám đốc công nghệ</small><span class="rtag">Trưởng phòng</span></div></div>
@@ -744,7 +745,7 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
     </div>
   </div>
   <div class="note" style="top:640px;left:40px;max-width:330px">Cây tải một lần bằng <code>GET /departments/tree</code>, có một gốc (AC-2.2.1). Chọn phòng ban thì URL thành <code>/org/{id}</code> và mới gọi chi tiết, thành viên (phân trang).</div>
-  <div class="note" style="top:640px;left:400px;max-width:300px">Nút "Thêm phòng ban", "Sửa phòng ban", "Chức danh" chỉ HR, ADMIN thấy. Nhân viên thường xem cùng trang, không có nút.</div>
+  <div class="note" style="top:640px;left:400px;max-width:300px">Nút "Thêm đơn vị", "Sửa đơn vị", "Chức danh" chỉ HR, ADMIN thấy. Nhân viên thường xem cùng trang, không có nút.</div>
   <div class="note" style="top:640px;left:730px;max-width:420px">Trưởng phòng, phó phòng hiện trước thành viên (AC-2.9.4). Bấm tên một người mở thẻ xem nhanh; "8 người ›" mở danh sách cấp dưới trực tiếp.</div>
 </div>
 
@@ -757,24 +758,27 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
   <div class="page" style="opacity:.5"><div class="crumb">Trang chủ › Sơ đồ tổ chức</div><h1>Sơ đồ tổ chức</h1></div>
   <div class="dim"></div>
   <div class="modal" style="top:70px;left:370px;width:560px">
-    <div class="mh">Sửa phòng ban<span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    <div class="mh">Sửa đơn vị<span class="x"><svg class="i"><use href="#x"/></svg></span></div>
     <div class="mb">
       <div class="fg">
-        <div><label class="l">Tên phòng ban *</label><div class="input f">Phòng Công nghệ</div></div>
+        <div><label class="l">Tên đơn vị *</label><div class="input f">Phòng Công nghệ</div></div>
         <div><label class="l">Mã (không sửa sau khi tạo)</label><div class="input ro">CNTT<svg class="i" style="margin-left:auto;width:16px"><use href="#lock"/></svg></div></div>
       </div>
-      <label class="l">Phòng ban cha *</label>
-      <div class="input err">Nhóm Backend<span class="dn">▾</span></div>
-      <div class="errm">Không chọn được chính phòng ban này hoặc phòng ban con của nó (sẽ tạo vòng).</div>
+      <div class="fg">
+        <div><label class="l">Loại đơn vị *</label><div class="input">Phòng<span class="dn">▾</span></div></div>
+        <div><label class="l">Đơn vị cha *</label><div class="input err">Nhóm Backend<span class="dn">▾</span></div></div>
+      </div>
+      <div class="errm">Phòng chỉ đặt dưới Công ty hoặc Trung tâm, không chọn được chính nó hay đơn vị con của nó (ADR-14).</div>
       <label class="l">Trưởng phòng</label>
       <div class="input"><span class="av xs alt2" style="margin-right:8px">QB</span>Trần Quốc Bình · 100012<span class="dn">▾</span></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin:2px 0 14px"><span style="width:16px;height:16px;border:1.5px solid var(--line);border-radius:4px;display:inline-block"></span>Quyền Trưởng phòng (chưa bổ nhiệm chính thức)</label>
       <label class="l">Phó phòng (tối đa 3)</label>
       <div class="tagin"><span class="tg">Phạm Thị Lan ✕</span><span class="tg">Đỗ Hoàng Nam ✕</span><span class="mut" style="padding-left:4px">Thêm phó phòng…</span></div>
-      <div class="alert i"><svg class="i"><use href="#info"/></svg><span>Chỉ chọn nhân viên đang làm việc trong phòng này. Đổi trưởng phòng, phó phòng không tự đổi quản lý trực tiếp của ai; phó phòng không tự có quyền duyệt (UC2 FR-2.9).</span></div>
+      <div class="alert i"><svg class="i"><use href="#info"/></svg><span>Chỉ chọn nhân viên đang làm việc trong phòng này hoặc trung tâm cha (kiêm nhiệm). Đổi trưởng phòng, phó phòng không tự đổi quản lý trực tiếp của ai; phó phòng không tự có quyền duyệt (UC2 FR-2.9).</span></div>
     </div>
     <div class="mf"><span class="btn g">Hủy</span><span class="btn p">Lưu</span></div>
   </div>
-  <div class="note" style="top:200px;left:950px;max-width:280px">Form tạo phòng ban giống form này, mã nhập được, phòng ban cha bắt buộc (AC-2.4.6). Lỗi 400 hiện dưới đúng ô; mã trùng (409) báo ở ô Mã. Lưu xong cây cập nhật, có audit.</div>
+  <div class="note" style="top:200px;left:950px;max-width:280px">Form tạo đơn vị giống form này, mã nhập được, đơn vị cha bắt buộc (AC-2.4.6). Nhãn "Trưởng phòng", "Phó phòng" đổi theo loại: Giám đốc, Phó Giám đốc trung tâm; Trưởng nhóm (không có phó) (AC-2.4.8, AC-2.9.x). Lỗi 400 hiện dưới đúng ô; mã trùng (409) báo ở ô Mã. Lưu xong cây cập nhật, có audit.</div>
 </div>
 
 <div class="frame desk" id="uc2-transfer" style="height:820px">
@@ -839,7 +843,7 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
 
 <div class="frame mob" id="uc2-org-mobile">
   <div class="spbar"><svg class="i"><use href="#back"/></svg>Phòng Công nghệ<span style="margin-left:auto;color:var(--muted)"><svg class="i"><use href="#org"/></svg></span></div>
-  <div style="padding:8px 16px 0;font-size:12.5px" class="mut">HRHelper Demo › Khối Công nghệ › <b style="color:var(--text)">Phòng Công nghệ</b></div>
+  <div style="padding:8px 16px 0;font-size:12.5px" class="mut">HRHelper Demo › Trung tâm Công nghệ › <b style="color:var(--text)">Phòng Công nghệ</b></div>
   <div class="mpage" style="padding-top:4px">
     <div class="mcard" style="display:flex;justify-content:space-between"><span><small>Mã</small><br><b>CNTT</b></span><span><small>Nhân sự</small><br><b>186</b></span><span><small>Phòng ban con</small><br><b>3</b></span></div>
     <div class="h4">Lãnh đạo phòng</div>
@@ -1146,7 +1150,7 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
         <div class="chips" style="margin:12px 0"><span class="chip on">Tất cả</span><span class="chip">Chính sách</span><span class="chip">Quy trình</span><span class="chip">Hướng dẫn</span><span class="chip">Biểu mẫu</span><span class="chip">Thông báo</span></div>
         <div class="box">
           <div class="doc"><span class="fi pdf">PDF</span><div><h3>Quy chế nghỉ phép 2026</h3><small>Chính sách · v3 · cập nhật 10/11/2026 · Toàn công ty</small></div><div class="r"><span class="badge p">Mới</span><span class="ib"><svg class="i" style="width:16px"><use href="#down"/></svg></span></div></div>
-          <div class="doc"><span class="fi pdf">PDF</span><div><h3>Quy trình làm việc từ xa</h3><small>Quy trình · v2 · cập nhật 02/11/2026 · Khối Công nghệ</small></div><div class="r"><span class="ib"><svg class="i" style="width:16px"><use href="#down"/></svg></span></div></div>
+          <div class="doc"><span class="fi pdf">PDF</span><div><h3>Quy trình làm việc từ xa</h3><small>Quy trình · v2 · cập nhật 02/11/2026 · Trung tâm Công nghệ</small></div><div class="r"><span class="ib"><svg class="i" style="width:16px"><use href="#down"/></svg></span></div></div>
           <div class="doc"><span class="fi docx">DOCX</span><div><h3>Mẫu đề nghị thanh toán công tác phí</h3><small>Biểu mẫu · v1 · cập nhật 28/10/2026 · Toàn công ty</small></div><div class="r"><span class="ib"><svg class="i" style="width:16px"><use href="#down"/></svg></span></div></div>
           <div class="doc"><span class="fi pdf">PDF</span><div><h3>Hướng dẫn đánh giá hiệu suất cho quản lý</h3><small>Hướng dẫn · v1 · cập nhật 20/10/2026 · Vai trò Quản lý</small></div><div class="r"><span class="ib"><svg class="i" style="width:16px"><use href="#down"/></svg></span></div></div>
           <div class="doc"><span class="fi pdf">PDF</span><div><h3>Nội quy lao động</h3><small>Chính sách · v5 · cập nhật 01/09/2026 · Toàn công ty</small></div><div class="r"><span class="ib"><svg class="i" style="width:16px"><use href="#down"/></svg></span></div></div>
@@ -1264,7 +1268,7 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
       <table class="tbl">
         <tr><th>Tiêu đề</th><th>Loại</th><th>Phạm vi xem</th><th>Phiên bản</th><th>Cập nhật</th><th>Trạng thái</th><th></th></tr>
         <tr><td><b>Quy chế nghỉ phép 2026</b></td><td>Chính sách</td><td>Toàn công ty</td><td>v3</td><td>10/11 · Lê Thu Hà</td><td><span class="badge ok">Đang hiện</span></td><td><span class="ib"><svg class="i" style="width:16px"><use href="#more"/></svg></span></td></tr>
-        <tr><td><b>Quy trình làm việc từ xa</b></td><td>Quy trình</td><td><span class="tg" style="font-size:12px">Khối Công nghệ</span></td><td>v2</td><td>02/11 · Lê Thu Hà</td><td><span class="badge ok">Đang hiện</span></td><td><span class="ib"><svg class="i" style="width:16px"><use href="#more"/></svg></span></td></tr>
+        <tr><td><b>Quy trình làm việc từ xa</b></td><td>Quy trình</td><td><span class="tg" style="font-size:12px">Trung tâm Công nghệ</span></td><td>v2</td><td>02/11 · Lê Thu Hà</td><td><span class="badge ok">Đang hiện</span></td><td><span class="ib"><svg class="i" style="width:16px"><use href="#more"/></svg></span></td></tr>
         <tr><td><b>Hướng dẫn đánh giá hiệu suất</b></td><td>Hướng dẫn</td><td><span class="tg" style="font-size:12px">Vai trò Quản lý</span> <span class="tg" style="font-size:12px">Phòng Nhân sự</span></td><td>v1</td><td>20/10 · Trần Mỹ Linh</td><td><span class="badge ok">Đang hiện</span></td><td><span class="ib"><svg class="i" style="width:16px"><use href="#more"/></svg></span></td></tr>
         <tr><td><b>Chính sách thưởng Tết 2027</b></td><td>Chính sách</td><td>Toàn công ty</td><td>v1</td><td>15/11 · Lê Thu Hà</td><td><span class="badge w">Đang tải lên</span></td><td><span class="ib"><svg class="i" style="width:16px"><use href="#more"/></svg></span></td></tr>
       </table>
@@ -1290,7 +1294,7 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
       <label class="l">Tiêu đề *</label><div class="input">Chính sách thưởng Tết 2027</div>
       <div class="fg"><div><label class="l">Loại *</label><div class="input">Chính sách<span class="dn">▾</span></div></div><div><label class="l">Mô tả</label><div class="input" style="color:var(--muted)">Không bắt buộc</div></div></div>
       <label class="l">Phạm vi xem * (người khớp một trong các phạm vi thì xem được)</label>
-      <div class="tagin"><span class="tg">Phòng ban: Khối Kinh doanh (gồm phòng con) ✕</span><span class="tg">Vai trò: Quản lý ✕</span><span class="mut">+ Thêm phạm vi</span></div>
+      <div class="tagin"><span class="tg">Phòng ban: Trung tâm Kinh doanh (gồm đơn vị con) ✕</span><span class="tg">Vai trò: Quản lý ✕</span><span class="mut">+ Thêm phạm vi</span></div>
       <div class="chips" style="margin-top:6px"><span class="chip">Toàn công ty</span><span class="chip">Phòng ban…</span><span class="chip">Vai trò…</span></div>
       <label class="l">File * (PDF hoặc DOCX, tối đa 20 MiB)</label>
       <div class="filec" style="display:block"><div style="display:flex;align-items:center;gap:10px"><span class="fi pdf" style="width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-size:9px;font-weight:700">PDF</span>chinh-sach-thuong-tet-2027.pdf · 3,4 MB<span class="mut" style="margin-left:auto">68%</span></div><div class="prog"><i style="width:68%"></i></div></div>
