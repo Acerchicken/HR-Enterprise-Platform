@@ -20,7 +20,8 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
   const departments = useApi(() => api<Department[]>('/departments'), []);
   const positions = useApi(() => api<Position[]>('/positions'), []);
   const current = useApi(
-    () => (mode === 'edit' ? api<EmployeeProfile>(`/employees/${id}?include=sensitive`) : Promise.resolve(null)),
+    // AC-1.3.4: mở form không tải giá trị nhạy cảm; chỉ tải khi HR bấm "Hiện giá trị hiện tại" (có audit).
+    () => (mode === 'edit' ? api<EmployeeProfile>(`/employees/${id}`) : Promise.resolve(null)),
     [mode, id],
   );
 
@@ -38,9 +39,8 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
     const e = current.data;
     if (!e) return;
     const v: Values = {
-      fullName: e.fullName, phone: e.phone ?? '', dateOfBirth: e.dateOfBirth ?? '', address: e.address ?? '',
+      fullName: e.fullName, workEmail: e.workEmail, hireDate: e.hireDate ?? '', phone: e.phone ?? '', dateOfBirth: e.dateOfBirth ?? '', address: e.address ?? '',
       departmentId: e.departmentId, positionId: e.positionId ?? '', managerId: e.managerId ?? '', status: e.status ?? '',
-      nationalId: e.sensitive?.nationalId ?? '', bankAccount: e.sensitive?.bankAccount ?? '', salary: e.sensitive?.salary ?? '',
     };
     setValues(v);
     setInitial(v);
@@ -55,6 +55,24 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
   }, [deptId, departments.data]);
 
   const set = (k: FieldKey) => (v: string) => setValues((s) => ({ ...s, [k]: v }));
+  const [revealing, setRevealing] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+
+  /** Bấm mới tải giá trị nhạy cảm hiện tại vào form; mỗi lần tải có audit VIEW_SENSITIVE. */
+  async function reveal() {
+    setRevealing(true);
+    try {
+      const e = await api<EmployeeProfile>(`/employees/${id}?include=sensitive`);
+      const v = { nationalId: e.sensitive?.nationalId ?? '', bankAccount: e.sensitive?.bankAccount ?? '', salary: e.sensitive?.salary ?? '' };
+      setValues((s) => ({ ...s, ...v }));
+      setInitial((s) => ({ ...s, ...v }));
+      setRevealed(true);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setRevealing(false);
+    }
+  }
 
   async function submit(ev: FormEvent) {
     ev.preventDefault();
@@ -97,11 +115,20 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
   return (
     <section className="card">
       <h2>{mode === 'create' ? 'Tạo nhân viên' : `Sửa hồ sơ: ${current.data?.fullName}`}</h2>
-      {mode === 'edit' && <p className="muted small">Mở trang này có xem trường nhạy cảm nên đã ghi audit.</p>}
       <form onSubmit={submit}>
         {groups.map((g) => (
           <fieldset key={g}>
             <legend>{GROUP_LABEL[g]}</legend>
+            {g === 'sensitive' && mode === 'edit' && (
+              <p className="small muted">
+                {revealed ? 'Đang hiện giá trị hiện tại (đã ghi audit).' : 'Để trống là giữ nguyên giá trị đang lưu.'}{' '}
+                {!revealed && (
+                  <button type="button" className="link" onClick={reveal} disabled={revealing}>
+                    {revealing ? 'Đang tải…' : 'Hiện giá trị hiện tại (ghi audit)'}
+                  </button>
+                )}
+              </p>
+            )}
             {fields.filter((f) => f.group === g).map((f) => (
               <FieldInput
                 key={f.key}

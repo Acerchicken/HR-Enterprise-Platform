@@ -42,10 +42,9 @@ const PHONE = /^\+?[0-9 .-]{8,20}$/;
 export const SELF_EDITABLE = ['phone', 'address'] as const;
 
 export class UpdateEmployeeDto {
-  @ApiPropertyOptional({ description: 'Version hiện tại (optimistic locking). Lệch → 409.' })
-  @IsOptional()
-  @IsInt()
-  version?: number;
+  @ApiProperty({ description: 'Version hiện tại (optimistic locking). Bắt buộc (E9); lệch → 409.' })
+  @IsInt({ message: 'Thiếu version của hồ sơ' })
+  version: number;
 
   @ApiPropertyOptional({ example: '0912 345 678' })
   @IsOptional()
@@ -69,6 +68,16 @@ export class UpdateEmployeeDto {
   @IsOptional()
   @IsDateString()
   dateOfBirth?: string;
+
+  @ApiPropertyOptional({ description: 'Email công ty (AC-1.4.4). Đổi cùng lúc với tài khoản ở identity provider' })
+  @IsOptional()
+  @IsEmail()
+  workEmail?: string;
+
+  @ApiPropertyOptional({ description: 'Ngày vào làm (sửa sai sót, AC-1.4.4)' })
+  @IsOptional()
+  @IsDateString()
+  hireDate?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

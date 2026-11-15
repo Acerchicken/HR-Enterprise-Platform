@@ -995,7 +995,7 @@ components:
       properties:
         version:
           type: number
-          description: Version hiện tại (optimistic locking). Lệch → 409.
+          description: Version hiện tại (optimistic locking). Bắt buộc (E9); lệch → 409.
         phone:
           type: string
           example: 0912 345 678
@@ -1005,6 +1005,13 @@ components:
           type: string
         dateOfBirth:
           type: string
+        workEmail:
+          type: string
+          description: Email công ty (AC-1.4.4). Đổi cùng lúc với tài khoản ở identity
+            provider
+        hireDate:
+          type: string
+          description: Ngày vào làm (sửa sai sót, AC-1.4.4)
         departmentId:
           type: string
         positionId:
@@ -1026,6 +1033,8 @@ components:
         salary:
           type: string
           description: Lương tháng (VND)
+      required:
+        - version
     CreateLeaveRequestDto:
       type: object
       properties:
