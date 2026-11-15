@@ -10,7 +10,7 @@ như [tuần 10](../tuan-10/TV4_Duy.md#nguyên-tắc-ghi-kết-quả-kiểm-th�
 | **T2 (16/11), 21:00** | Review `test.md` UC1 trên #76 |
 | **T3 (17/11), 21:00** | Mở PR `docs/test-cases-uc1` |
 | **T4 (18/11), 21:00** | Mở PR `docs/security-test-cases-week11` |
-| Trong 24 giờ kể từ khi PR mở | Review `feat/profile-layout`, `fix/employee-org-integrity`, `feat/profile-self-service`, `feat/profile-files`: kết quả có khớp ca kiểm thử không |
+| Trong 24 giờ kể từ khi PR mở | Review `feat/profile-layout`, `fix/employee-org-integrity`, `feat/profile-change-requests`, `feat/profile-files`: kết quả có khớp ca kiểm thử không |
 | **T6 (20/11)** | Review `test.md` UC3, UC4 trên #76; mở PR `test/load-k6` |
 | **T7 (21/11), 21:00** | Mở PR `docs/test-cases-uc3-uc4` |
 | **CN (22/11), 12:00** | Mở PR `docs/test-report-uc1` |

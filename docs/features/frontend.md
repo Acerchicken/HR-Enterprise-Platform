@@ -1,6 +1,6 @@
 # Giao diện chung (frontend)
 
-> Phiên bản 1.2 – 14/11/2026 (1.1: bản vẽ giao diện mục 10; 1.2: gộp mọi loại duyệt vào trang "Việc cần duyệt", mục 2.4). Áp dụng cho mọi tính năng UC1 → UC7. Bộ tài liệu: [`docs/README.md`](../README.md).
+> Phiên bản 1.3 – 14/11/2026 (1.1: bản vẽ giao diện mục 10; 1.2: gộp mọi loại duyệt vào trang "Việc cần duyệt", mục 2.4; 1.3: ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp, tìm tài liệu và trợ lý AI chuyển vào trang "Tra cứu tài liệu"; chốt `lucide-react`). Áp dụng cho mọi tính năng UC1 → UC7. Bộ tài liệu: [`docs/README.md`](../README.md).
 > Mỗi UC chỉ mô tả màn hình riêng của mình ở mục 9 trong `spec.md` và dẫn về file này cho phần dùng chung.
 > Mục còn ghi **Chưa có** là phần code chưa làm; tiêu chí `AC-0.x.y` dùng cho các PR giao diện như `AC` của từng UC.
 
@@ -23,7 +23,7 @@ thì người làm một tính năng phải đọc cả file dài. Hai tầng gi
 | Vị trí | Thành phần | Hành vi | Trạng thái |
 |---|---|---|---|
 | Trái | Logo HRHelper | Bấm về trang chủ `/` | Có chữ, chưa có logo |
-| Giữa | Ô tìm kiếm chung | Gõ từ 2 ký tự thì hiện gợi ý chia nhóm "Đồng nghiệp" (UC2, UC6 FR-6.1) và "Tài liệu" (UC6 FR-6.2); chờ 300 ms sau phím cuối mới gọi API. Phím tắt `/` hoặc `Ctrl+K` để vào ô. Chọn một đồng nghiệp thì mở thẻ xem nhanh (mục 4.1). Enter thì sang trang kết quả `/search?q=` | **Chưa có** |
+| Giữa | Ô tìm đồng nghiệp | **Chỉ tìm đồng nghiệp** theo tên, email, mã (UC2, UC6 FR-6.1); không tìm tài liệu. Gõ từ 2 ký tự, chờ 300 ms sau phím cuối mới gọi `GET /employees?q=&size=5`. Phím tắt `/` hoặc `Ctrl+K` để vào ô. Chọn một đồng nghiệp thì mở thẻ xem nhanh (mục 4.1). Enter thì sang Danh bạ `/directory?q=`. Tìm tài liệu và hỏi trợ lý AI nằm ở trang riêng "Tra cứu tài liệu" (mục 2.2) | **Chưa có** |
 | Phải | Chuông thông báo | Số việc đang chờ mình: đơn chờ duyệt (quản lý), yêu cầu cập nhật hồ sơ chờ duyệt (HR), yêu cầu của mình bị từ chối. Bấm mở danh sách ngắn, mỗi dòng dẫn tới trang xử lý | **Chưa có** |
 | Phải | Ảnh đại diện | Bấm mở menu: tên, vai trò; "Hồ sơ của tôi" (mở popup hồ sơ của mình); "Đăng xuất". Chưa có ảnh thì hiện chữ cái đầu | **Chưa có** (hiện là tên, nhãn vai trò, nút Đăng xuất) |
 
@@ -49,8 +49,7 @@ Từ trên xuống:
 | Việc cần duyệt | `/approvals` (mục 2.4) | Quản lý, người duyệt thay, HR | UC1, UC4 |
 | Danh bạ | `/directory` | Mọi người | UC2 |
 | Sơ đồ tổ chức | `/org` | Mọi người | UC2 |
-| Tài liệu | `/documents` | Mọi người | UC5, UC6 |
-| Hỏi trợ lý chính sách | `/assistant` | Mọi người | UC6 |
+| Tra cứu tài liệu | `/documents`: một trang gồm ô tìm tài liệu (UC6 FR-6.2), khung hỏi trợ lý AI (UC6 FR-6.3) và danh sách tài liệu (UC5) | Mọi người | UC5, UC6 |
 | Quản lý nhân viên | `/employees/new`, danh bạ ở chế độ HR | HR | UC1 |
 | Đăng tài liệu | `/documents/manage` | HR | UC5 |
 | Lịch sử thao tác | `/audit` | HR, ADMIN | UC7 |
@@ -180,8 +179,8 @@ chữ "Chưa có"; trạng thái đơn vừa có màu vừa có chữ.
 | `ErrorBox`, `EmptyState`, `Skeleton` | Mọi trang | `ErrorBox` có; hai cái còn lại **chưa có** |
 | `FileUpload` (chọn file, kiểm loại và dung lượng ở trình duyệt, thanh tiến độ) | UC1, UC5 | **Chưa có** |
 
-Không thêm thư viện giao diện lớn; dùng React, CSS thuần với biến ở trên. Biểu tượng dùng một bộ SVG duy nhất (đề xuất
-Lucide), không trộn nhiều bộ.
+Không thêm thư viện giao diện lớn; dùng React, CSS thuần với biến ở trên. Biểu tượng dùng một bộ duy nhất là `lucide-react`
+(đã chốt 14/11, chỉ đóng gói biểu tượng được dùng), không trộn nhiều bộ.
 
 ## 6. Dữ liệu, trạng thái tải và lỗi
 
@@ -214,8 +213,8 @@ Lucide), không trộn nhiều bộ.
 ## 8. Tiêu chí chấp nhận
 
 - **AC-0.1.1** *(chưa có)* Mọi trang có nav bar gồm logo, ô tìm kiếm, chuông thông báo, ảnh đại diện; bấm logo về trang chủ.
-- **AC-0.1.2** *(chưa có)* Gõ "ngu" vào ô tìm kiếm. Thì sau 300 ms có gợi ý chia nhóm Đồng nghiệp và Tài liệu; tài liệu ngoài
-  phạm vi không xuất hiện (DR-08). Chọn một đồng nghiệp thì mở popup hồ sơ người đó.
+- **AC-0.1.2** *(chưa có)* Gõ "ngu" vào ô tìm kiếm. Thì sau 300 ms có tối đa 5 gợi ý đồng nghiệp, chỉ một request
+  `GET /employees?q=`, không có tài liệu. Chọn một đồng nghiệp thì mở thẻ xem nhanh người đó; Enter mở `/directory?q=ngu`.
 - **AC-0.2.1** *(chưa có)* Trang chủ của nhân viên thường không có ô "Việc cần duyệt", "Lịch sử thao tác"; của quản lý và HR
   thì có ô "Việc cần duyệt". Ô chức năng chưa làm có tên màu `--todo` kèm nhãn "Chưa có".
 - **AC-0.2.2** *(chưa có)* Quản lý có 3 đơn chờ duyệt. Thì ô "Việc cần duyệt", tab "Đơn nghỉ" và chuông đều hiện số 3; dải
@@ -248,7 +247,8 @@ Lucide), không trộn nhiều bộ.
 | Trang chủ | `/` đang là trang "Hồ sơ của tôi" | Trang chủ mới (mục 2.2); hồ sơ chuyển vào popup |
 | Popup hồ sơ | Chưa có; hồ sơ người khác là trang `/employees/:id` | `ProfilePanel` theo mục 4 |
 | Màu | `--primary: #2457c5` (xanh dương) | Đổi sang bảng màu mục 5.1 |
-| Tìm kiếm chung | Chỉ có ô tìm trong trang Danh bạ | `SearchBox` trên nav bar, cần API tìm tài liệu của UC6 |
+| Tìm đồng nghiệp | Chỉ có ô tìm trong trang Danh bạ | `SearchBox` trên nav bar, dùng API danh bạ đang có |
+| Tra cứu tài liệu | Chưa có | Trang `/documents` gồm tìm tài liệu, trợ lý AI, danh sách tài liệu (UC5, UC6) |
 | Trang duyệt | Ba trang riêng `/leave/approvals`, `/leave/hr`; chưa có trang duyệt hồ sơ | Gộp vào `/approvals` có tab (mục 2.4) |
 | Đếm việc cần làm | Chưa có API | `GET /me/todo-counts` (đơn chờ duyệt, yêu cầu hồ sơ chờ, yêu cầu bị từ chối) |
 
@@ -256,7 +256,8 @@ Lucide), không trộn nhiều bộ.
 |---|---|---|---|---|
 | Trang "Việc cần duyệt" `/approvals` có tab (gom trang duyệt đơn, HR hoàn tất hiện có), không thêm API gộp | AC-0.6.x | TV1 | `feat/approvals-inbox` | 12 |
 | Nav bar, trang chủ, màu, popup hồ sơ có URL | AC-0.1.1, AC-0.2.1, AC-0.3.x, AC-0.4.1, UC1 AC-1.8.x | TV1 | `feat/profile-layout` | 11 |
-| Ô tìm kiếm chung trên nav bar | AC-0.1.2 | TV1 | `feat/document-search` | 12 |
+| Ô tìm đồng nghiệp trên nav bar | AC-0.1.2 | TV1 | `feat/profile-layout` | 11 |
+| Trang "Tra cứu tài liệu" (tìm tài liệu, trợ lý AI) | UC6 AC-6.2.x, AC-6.3.x | TV1 | `feat/document-search`, `feat/policy-assistant` | 12–13 |
 | Chuông, việc cần làm, `GET /me/todo-counts` | AC-0.2.2 | TV1 | `feat/app-shell-todo` | 12 |
 | Hiển thị lỗi 429, 503 theo mục 6 | AC-0.5.x | TV1 | `feat/security-headers-ratelimit` | 11 |
 | Ca kiểm thử giao diện chung (bàn phím, 375 px, URL popup) | AC-0.x | TV4 | `docs/test-cases-week11` | 11 |
@@ -272,8 +273,8 @@ chữ thì chữ đúng.
 
 ### 10.1 Trang chủ (quản lý)
 
-Nav bar, dải "Việc cần làm", lưới ô chức năng 4 cột, dòng số dư phép. Ô "Tài liệu", "Hỏi trợ lý chính sách" chưa làm nên tên
-đỏ và nhãn "Chưa có".
+Nav bar, dải "Việc cần làm", lưới ô chức năng 4 cột, dòng số dư phép. Ô "Tra cứu tài liệu" chưa làm nên tên đỏ và nhãn
+"Chưa có".
 
 ![Trang chủ của quản lý](mockups/home.png)
 
@@ -283,9 +284,11 @@ HR có thêm nhóm "Chức năng HR"; mọi loại duyệt gom vào một ô "Vi
 
 ![Trang chủ của HR](mockups/home-hr.png)
 
-### 10.3 Tìm kiếm trên nav bar
+### 10.3 Tìm đồng nghiệp trên nav bar
 
-![Gợi ý tìm kiếm chia nhóm Đồng nghiệp, Tài liệu](mockups/search.png)
+Chỉ có nhóm Đồng nghiệp; tài liệu tra ở trang "Tra cứu tài liệu".
+
+![Gợi ý tìm đồng nghiệp](mockups/search.png)
 
 ### 10.4 Thẻ xem nhanh (mục 4.1)
 

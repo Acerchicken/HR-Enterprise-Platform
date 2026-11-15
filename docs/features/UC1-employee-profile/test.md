@@ -85,7 +85,7 @@ npm run test:e2e               # cần docker compose (db, keycloak) đã chạy
 - AC-1.5.3: tạo trùng mã hoặc email trả 409.
 - AC-1.4.2: biên bản kiểm tay giao diện HR (ngày, môi trường, commit).
 - AC-1.8.x, AC-1.3.5: viết khi `feat/profile-layout` xong.
-- AC-1.9.x, AC-1.6.4, AC-1.11.x: viết khi `feat/profile-self-service` xong.
+- AC-1.9.x, AC-1.6.4, AC-1.11.x: viết khi `feat/profile-change-requests` xong.
 - AC-1.10.x: ca bảo mật file trong `docs/security-test-cases-week11` (TV4), chạy khi `feat/profile-files` xong.
 - AC-1.14.x: ca rate limit trong `docs/security-test-cases-week11`.
 - AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2: viết khi `fix/employee-org-integrity` xong.

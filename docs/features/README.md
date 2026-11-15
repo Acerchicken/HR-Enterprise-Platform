@@ -22,8 +22,8 @@ Mỗi `UCn` là một **nhóm tính năng** (epic) gắn với một miền nghi
 nghĩa hẹp của UML. Bên trong, mỗi luồng ở mục 4 của `spec.md` là một use case theo mục tiêu của một người dùng (ví dụ UC1 có
 xem hồ sơ, gửi yêu cầu sửa, tải file, HR duyệt yêu cầu, HR tạo và sửa hồ sơ). Vì vậy các UC không đều nhau về số FR; chia theo
 miền nghiệp vụ, không cố cho đều. Quyết định 14/11/2026: giữ 7 nhóm và giữ mã; mở rộng UC2 (chức danh, điều chuyển, quá trình
-công tác, trưởng/phó phòng); UC6 là "Tra cứu chung và trợ lý" (một ô tìm kiếm cho mọi thứ), danh bạ vẫn thuộc UC2, kho tài
-liệu vẫn thuộc UC5.
+công tác, trưởng/phó phòng); UC6 là "Tra cứu chung và trợ lý", danh bạ vẫn thuộc UC2, kho tài liệu vẫn thuộc UC5. Sửa cùng ngày:
+ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp; tìm tài liệu và trợ lý AI ở trang riêng "Tra cứu tài liệu".
 
 ## Danh sách
 

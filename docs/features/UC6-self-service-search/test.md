@@ -21,7 +21,7 @@ Chưa có: tính năng chưa làm. PR `feat/document-search` và `feat/policy-as
 
 | Tiêu chí | Test tự động | Ca tay | Trạng thái |
 |---|---|---|---|
-| AC-6.1.1 → AC-6.1.4 | e2e giao diện khi có ô tìm kiếm chung (`feat/document-search`) | `docs/test-cases-uc5-uc6-uc7` | Chưa |
+| AC-6.1.1 → AC-6.1.4 | e2e giao diện khi có ô tìm đồng nghiệp (`feat/profile-layout`) | `docs/test-cases-uc5-uc6-uc7` | Chưa |
 | AC-6.2.1 → AC-6.2.6 | e2e trong `feat/document-search` | `docs/test-cases-uc5-uc6-uc7` | Chưa |
 | AC-6.2.7 | e2e trong `feat/security-headers-ratelimit` | `docs/security-test-cases-week11` | Chưa |
 | AC-6.3.1 → AC-6.3.3, AC-6.3.5 | Script chạy bộ đánh giá | `docs/assistant-eval-set` | Chưa |
