@@ -65,30 +65,14 @@ services:
       # Local không có TLS: cho phép SMTP auth không mã hóa, nếu không Mailpit thoát ngay khi khởi động.
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
-  # MinIO: lưu trữ kho tài liệu chính sách HR và hồ sơ ở local (tương thích AWS S3)
-  minio:
-    image: minio/minio:RELEASE.2024-11-07T00-52-28Z
-    command: server /data --console-address ":9001"
+  # S3Mock (Adobe): giả lập AWS S3 ở local cho kho tài liệu chính sách HR và hồ sơ (UC5).
+  # Cả nhóm pull được không cần đăng nhập; tự tạo sẵn bucket hr-documents mà không cần container init phụ.
+  s3mock:
+    image: adobe/s3mock:3.3.0
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: hr-documents
     ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio-data:/data
-
-  # Tạo sẵn bucket hr-documents khi MinIO khởi động
-  minio-init:
-    image: minio/mc:RELEASE.2024-11-05T11-41-28Z
-    depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      until /usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin; do echo 'Waiting for MinIO...' && sleep 1; done;
-      /usr/bin/mc mb --ignore-existing local/hr-documents;
-      exit 0;
-      "
+      - "9090:9090"
 
   api:
     build: ./backend
@@ -112,10 +96,10 @@ services:
       SMTP_PORT: 1025
       SMTP_FROM: no-reply@hr.local
       STORAGE_BUCKET: hr-documents
-      STORAGE_ENDPOINT: http://minio:9000
-      STORAGE_PUBLIC_ENDPOINT: http://localhost:9000
-      STORAGE_ACCESS_KEY_ID: minioadmin
-      STORAGE_SECRET_ACCESS_KEY: minioadmin
+      STORAGE_ENDPOINT: http://s3mock:9090
+      STORAGE_PUBLIC_ENDPOINT: http://localhost:9090
+      STORAGE_ACCESS_KEY_ID: test
+      STORAGE_SECRET_ACCESS_KEY: test
     ports:
       - "3000:3000"
     depends_on:
@@ -125,7 +109,7 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_healthy
-      minio:
+      s3mock:
         condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1/health || exit 1"]
@@ -151,10 +135,10 @@ services:
       SMTP_PORT: 1025
       SMTP_FROM: no-reply@hr.local
       STORAGE_BUCKET: hr-documents
-      STORAGE_ENDPOINT: http://minio:9000
-      STORAGE_PUBLIC_ENDPOINT: http://localhost:9000
-      STORAGE_ACCESS_KEY_ID: minioadmin
-      STORAGE_SECRET_ACCESS_KEY: minioadmin
+      STORAGE_ENDPOINT: http://s3mock:9090
+      STORAGE_PUBLIC_ENDPOINT: http://localhost:9090
+      STORAGE_ACCESS_KEY_ID: test
+      STORAGE_SECRET_ACCESS_KEY: test
     depends_on:
       api:
         condition: service_healthy
@@ -162,7 +146,7 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_started
-      minio:
+      s3mock:
         condition: service_started
     restart: unless-stopped
 
@@ -198,4 +182,3 @@ services:
 volumes:
   db-data:
   rabbitmq-data:
-  minio-data:
