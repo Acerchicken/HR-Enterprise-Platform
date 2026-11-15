@@ -1,8 +1,18 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api, DepartmentNode, DirectoryEntry, Page } from '../api/client';
 import { useApi } from '../api/useApi';
 import { ErrorBox } from '../components/ErrorBox';
+import { useShell } from '../components/shell';
+
+function findNode(nodes: DepartmentNode[], id: string): DepartmentNode | null {
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    const hit = findNode(n.children, id);
+    if (hit) return hit;
+  }
+  return null;
+}
 
 function TreeNode({ node, selected, onSelect }: { node: DepartmentNode; selected?: string; onSelect: (n: DepartmentNode) => void }) {
   const [open, setOpen] = useState(true);
@@ -31,6 +41,13 @@ function TreeNode({ node, selected, onSelect }: { node: DepartmentNode; selected
 export function OrgPage() {
   const tree = useApi(() => api<DepartmentNode[]>('/departments/tree'), []);
   const [dept, setDept] = useState<DepartmentNode | null>(null);
+  const { openQuickView } = useShell();
+  // Thẻ "Xem sơ đồ tổ chức" ở popup hồ sơ mở /org?dept={id} tại phòng ban đó.
+  const [params] = useSearchParams();
+  const wanted = params.get('dept');
+  useEffect(() => {
+    if (wanted && tree.data) setDept(findNode(tree.data, wanted));
+  }, [wanted, tree.data]);
   const members = useApi(
     () => (dept ? api<Page<DirectoryEntry>>(`/departments/${dept.id}/members?size=100`) : Promise.resolve(null)),
     [dept?.id],
@@ -55,7 +72,7 @@ export function OrgPage() {
             <ul className="plain">
               {(members.data?.items ?? []).map((m) => (
                 <li key={m.id}>
-                  <Link to={`/employees/${m.id}`}>{m.fullName}</Link>
+                  <button type="button" className="link" onClick={() => openQuickView(m.id)}>{m.fullName}</button>
                   <span className="muted"> · {m.positionTitle}</span>
                   {m.id === dept.headEmployeeId && <span className="badge">Trưởng đơn vị</span>}
                 </li>

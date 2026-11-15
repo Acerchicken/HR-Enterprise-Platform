@@ -47,11 +47,11 @@ tiếp. Rủi ro thứ ba là **lạm dụng**: tải file độc hại, spam y�
 | AC-1.6.2 | – | – | Chưa đạt (code chưa bắt buộc `version`) |
 | AC-1.6.3 | – | – | Chưa đạt (sửa chỉ lương không tăng `version`) |
 | AC-1.7.1, AC-1.7.2 | – | – | Chưa đạt |
-| AC-1.3.5 | – | Cần thêm e2e: chủ hồ sơ tự xem lương, có audit; xem CCCD của mình 403 | Chưa có |
+| AC-1.3.5 | e2e `chủ hồ sơ bấm mắt xem lương của mình`, `mục cá nhân: … chỉ HR có CCCD đã che` | Chủ hồ sơ bấm mắt ở Lương mục tiêu, tài khoản ngân hàng | Đã có (`feat/profile-layout`) |
 | AC-1.6.4 | – | Cần thêm e2e: sửa dòng với `version` cũ → 409 | Chưa có |
-| AC-1.8.1 → AC-1.8.5 | – (giao diện) | Kiểm tay bằng 4 tài khoản mẫu, trên màn hình 375 px và 1280 px | Chưa có |
-| AC-1.8.6 | – | Cần thêm e2e: quản lý gọi mục `relatives` của cấp dưới → 404 | Chưa có |
-| AC-1.8.7, AC-1.8.8 | – | e2e kiểm `summary` không có `dateOfBirth`, `address`; kiểm tay bằng tab Network: mở trang chỉ có `summary`, bấm mục nào mới có request mục đó | Chưa đạt |
+| AC-1.8.1 → AC-1.8.5 | e2e `summary` theo quan hệ (AC-1.8.4); giao diện kiểm tay | Kiểm tay bằng 4 tài khoản mẫu, trên màn hình 375 px và 1280 px | Đã có (`feat/profile-layout`), chờ TV4 chạy ca tay |
+| AC-1.8.6 | e2e `mục không được xem, chưa làm hoặc không tồn tại đều trả 404` | – | Đã có |
+| AC-1.8.7, AC-1.8.8 | e2e `/me chỉ có tài khoản…`, `summary mức danh bạ…` | Kiểm tay bằng tab Network: mở trang chỉ có `summary`, bấm mục nào mới có request mục đó, bấm mắt mới có `reveal=true` | Đã có |
 | AC-1.2.1 | e2e hiện có "nhân viên tự sửa số điện thoại…" kiểm lưu thẳng, phải đổi sang kiểm 202 và hồ sơ chưa đổi | – | Chưa đạt |
 | AC-1.9.1 → AC-1.9.13 | – | e2e: gửi, hủy, duyệt, từ chối, duyệt khi `baseVersion` cũ (409), nhân viên gọi API ghi thẳng (403), yêu cầu thứ 21 (409); mục đại diện `emergency-contacts`, mục có trường nhạy cảm `bank-account`, `relatives` | Chưa có |
 | AC-1.10.1 → AC-1.10.9 | – (cần MinIO local) | Ca bảo mật file: ZIP đổi đuôi `.pdf`, `.exe` đổi đuôi `.jpg`, file 10 MiB + 1 byte, ảnh có EXIF GPS, tải file người khác, xóa file HR | Chưa có |
