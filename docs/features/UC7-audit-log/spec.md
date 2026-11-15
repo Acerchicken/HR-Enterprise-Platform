@@ -101,8 +101,18 @@ Mỗi bản ghi có:
 
 | Luồng | Màn hình | API |
 |---|---|---|
-| Tra cứu | Chưa có (nhánh `feat/audit-ui`, tuần 10) | `GET /audit-logs` |
+| Tra cứu | `/audit` (chưa có, nhánh `feat/audit-ui`) | `GET /audit-logs` |
 | Ghi | Không có màn hình | `AuditService.record` gọi trong cùng giao dịch của từng module |
+
+### 9.1 Bản vẽ giao diện
+
+Bản vẽ để duyệt bố cục trước khi code (15/11/2026), cùng phong cách với bản vẽ UC1 ở
+[giao diện chung mục 10](../frontend.md#10-bản-vẽ-giao-diện). Nguồn ở [`mockups.html`](../mockups/mockups.html), dữ liệu là người
+mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác chữ trong spec thì chữ đúng.
+
+**Lịch sử thao tác `/audit`: bộ lọc theo API, bảng mới nhất trước, mở dòng xem trường đã đổi**
+
+![Trang lịch sử thao tác](../mockups/uc7-audit.png)
 
 ## 10. Yêu cầu phi chức năng liên quan
 
