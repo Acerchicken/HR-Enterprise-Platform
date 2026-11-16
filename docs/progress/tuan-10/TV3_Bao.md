@@ -113,4 +113,13 @@ _Góp ý ghi trực tiếp trên PR._
 
 ## Việc đã làm
 
-_Điền T2 (16/11), 9:00._
+> Điền ngày 16/11 từ lịch sử PR trên GitHub (9/11 – 15/11, cùng #80 → #93 merge ngày 15–16/11 vì làm ngay sau đó). Thành viên bổ sung nếu có việc không nằm trên GitHub, kèm link.
+
+| Việc | PR | Ghi chú |
+|---|---|---|
+| MinIO local cho kho tài liệu | #68 | Mở 12/11; Request changes 14/11 (image không pull được); đang conflict |
+| Kế hoạch lên AWS tuần 12–13 | #69 | Merge 16/11 sau khi sửa |
+| Terraform bucket tài liệu, SES, alarm | #70 | Mở 12/11; sửa 15/11 theo quyết định SES API; chờ TV1 review lại |
+| `terraform plan` thật | – | Chưa có dòng `Plan: N to add` gửi TV1 |
+| `infra/idp-hardening` | – | Chưa mở PR (hạn CN 15/11, 12:00) |
+| Review cấu hình trên `feat/documents-api` (#64) | – | Không có review trên GitHub |

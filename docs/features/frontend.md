@@ -257,7 +257,7 @@ Không thêm thư viện giao diện lớn; dùng React, CSS thuần với biế
 | Trang "Việc cần duyệt" `/approvals` có tab (gom trang duyệt đơn, HR hoàn tất hiện có), không thêm API gộp | AC-0.6.x | TV1 | `feat/approvals-inbox` | 12 |
 | Nav bar, trang chủ, màu, popup hồ sơ có URL | AC-0.1.1, AC-0.2.1, AC-0.3.x, AC-0.4.1, UC1 AC-1.8.x | TV1 | `feat/profile-layout` | 11 |
 | Ô tìm đồng nghiệp trên nav bar | AC-0.1.2 | TV1 | `feat/profile-layout` | 11 |
-| Trang "Tra cứu tài liệu" (tìm tài liệu, trợ lý AI) | UC6 AC-6.2.x, AC-6.3.x | TV1 | `feat/document-search`, `feat/policy-assistant` | 12–13 |
+| Trang "Tra cứu tài liệu" (tìm tài liệu, trợ lý AI) | UC6 AC-6.2.x, AC-6.3.x | TV1 | `feat/search-service`, `feat/policy-assistant` | 12–13 |
 | Chuông, việc cần làm, `GET /me/todo-counts` | AC-0.2.2 | TV1 | `feat/app-shell-todo` | 12 |
 | Hiển thị lỗi 429, 503 theo mục 6 | AC-0.5.x | TV1 | `feat/security-headers-ratelimit` | 11 |
 | Ca kiểm thử giao diện chung (bàn phím, 375 px, URL popup) | AC-0.x | TV4 | `docs/test-cases-week11` | 11 |

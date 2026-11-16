@@ -62,7 +62,7 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
 | MinIO trong docker-compose | AC-5.1.2 chạy được ở local | TV3 | `chore/minio-local` | 10 |
-| Giao diện kho tài liệu (HR và nhân viên) | AC-5.1.8, AC-5.2.7 | TV1 | `feat/document-ui` | 12 |
+| Giao diện kho tài liệu (HR và nhân viên) | AC-5.1.8, AC-5.2.7 | TV1 | `feat/document-ui` | 11 |
 | Bucket tài liệu, `STORAGE_*` cho staging | AC-5.1.7 trên staging | TV3 | `infra/documents-email` | 10 (code), 12 (apply) |
-| Chạy ca kiểm thử UC5 trên staging | Mọi AC-5.x | TV4 | `docs/test-report-uc5-uc6-uc7` | 13 |
+| Chạy ca kiểm thử UC5 trên staging | Mọi AC-5.x | TV4 | `docs/test-report-uc2-uc5-uc7` | 12 |
 | Dọn phiên bản `PENDING` bỏ dở | – | – | – | Không làm, đánh đổi ghi ở ADR-13 |
