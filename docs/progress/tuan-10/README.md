@@ -80,18 +80,38 @@ Thứ tự phụ thuộc:
 
 ## 1. Các công việc đã hoàn thành
 
-_Điền cuối tuần._
+> Điền ngày 16/11 từ lịch sử PR trên GitHub (9/11 – 15/11, cùng #80 → #93 merge ngày 15–16/11 vì làm ngay sau đó). Thành viên bổ sung nếu có việc không nằm trên GitHub, kèm link.
 
 | Thành viên | Công việc đã hoàn thành | Output | Chi tiết |
 |---|---|---|---|
-| TV1 (Duong, nhóm trưởng) | | | [TV1_Duong.md](TV1_Duong.md) |
-| TV2 (Thanh) | | | [TV2_Thanh.md](TV2_Thanh.md) |
-| TV3 (Bảo) | | | [TV3_Bao.md](TV3_Bao.md) |
-| TV4 (Duy) | | | [TV4_Duy.md](TV4_Duy.md) |
+| TV1 (Duong, nhóm trưởng) | Quy tắc một quản lý, HR duyệt đơn CEO; HR tạo/sửa hồ sơ trên giao diện; API kho tài liệu và ADR-13. Tài liệu: tách SRS khỏi BRD, NFR bảo mật, database schema, hợp đồng event, biến môi trường, tách ADR thành file, tài liệu theo tính năng UC1 → UC7, bản vẽ giao diện. Ngày 15–16/11 code xong UC1 | #60, #63, #64, #65, #66, #71 → #77, #79 → #90 | [TV1_Duong.md](TV1_Duong.md) |
+| TV2 (Thanh) | Quy tắc kho tài liệu (DR-xx); thời gian lưu và riêng tư đơn nghỉ | #61, #62 (merge 12/11) | [TV2_Thanh.md](TV2_Thanh.md) |
+| TV3 (Bảo) | MinIO local, kế hoạch lên AWS tuần 12–13, Terraform tài liệu, email, alarm | #68 (đang sửa), #69 (merge 16/11), #70 (chờ review lại) | [TV3_Bao.md](TV3_Bao.md) |
+| TV4 (Duy) | Biên bản kiểm thử tuần 10 (bản đầu); comment đề nghị duyệt #80 | #91 (Request changes) | [TV4_Duy.md](TV4_Duy.md) |
+
+### Đối chiếu với kế hoạch tuần 10
+
+| Việc | Người | Kết quả |
+|---|---|---|
+| `terraform plan` thật (T5 12/11) | TV3 | **Chưa có bằng chứng** trên GitHub (không có dòng `Plan: N to add`) |
+| `docs/document-rules`, `docs/retention-leave-reason` | TV2 | Đạt, merge 12/11 |
+| `feat/employee-manager-rule`, `feat/hr-employee-form`, `feat/documents-api` | TV1 | Đạt, merge 12/11 |
+| `chore/minio-local`, `infra/documents-email`, `docs/aws-rollout-plan` | TV3 | Mở PR đúng hạn 12/11; TV1 Request changes 14/11; #69 merge 16/11, #68 và #70 chưa xong |
+| `docs/test-cases-week10` (T5 12/11) | TV4 | **Không làm** |
+| `docs/test-report-week10` | TV4 | Mở #91 ngày 15/11 nhưng không có ca nào chạy thật; Request changes |
+| `feat/document-search`, `feat/audit-ui`, `fix/auth-email-verified`, `feat/leave-delegation` | TV1 | Không làm trong tuần 10; từ 14/11 chuyển sang làm xong từng chức năng (UC1 trước) |
+| `infra/idp-hardening` (thêm 13/11, CN 15/11) | TV3 | **Chưa mở PR** |
+| `docs/matrix-week10` | TV2 | **Chưa mở PR** |
+| Review trên PR của TV1 (TV2 mỗi PR, TV3 cấu hình, TV4 giao diện) | TV2, TV3, TV4 | **Không có review nào** của TV2, TV3 trên PR của TV1 (#58 → #93). TV4 có một comment trên #80, không kèm kết quả chạy |
+
+**Đánh giá:** mục tiêu "đủ 7 use case" không đạt; đến 14/11 chưa UC nào xong. Từ 14/11 nhóm chuyển sang làm xong từng chức
+năng, và UC1 đã code xong ngày 16/11. Kiểm thử chức năng tuần 10 coi như chưa làm (chưa có ca, chưa có biên bản chạy thật).
+Việc review của TV2, TV3, TV4 trên PR của TV1 vẫn chưa có, tuần 11 phải có.
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 11: 16/11 – 23/11)
 
-_Điền cuối tuần._ Kế hoạch chi tiết tuần 11 cho từng thành viên: [`tuan-11/`](../tuan-11/README.md) (lập 14/11). Kế hoạch tuần 11–13 đã chia theo từng tính năng (cập nhật 13/11):
+Tuần 11 làm **5 UC code xong**: UC1 (đã xong 16/11), UC3, UC4, UC7, UC5, cùng phần mức M của UC2; song song là bảo mật đăng
+nhập, load test, hạ tầng ADR-15 để tuần 12 dựng staging. Kế hoạch chi tiết tuần 11 cho từng thành viên: [`tuan-11/`](../tuan-11/README.md) (lập 14/11). Kế hoạch tuần 11–13 đã chia theo từng tính năng (cập nhật 13/11):
 [kế hoạch tổng mục 7](../ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13). Bảng bảo mật dưới đây đã nằm trong mục 7.3 (việc chung).
 
 **Việc bảo mật đã xếp sẵn cho tuần 11 (thêm 13/11).** Các việc này lấy từ những dòng "Chưa có" trong
