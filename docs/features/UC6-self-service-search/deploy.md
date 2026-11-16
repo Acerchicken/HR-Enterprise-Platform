@@ -8,7 +8,7 @@
 | Thành phần | Tìm tài liệu (FR-6.2, tuần 10–11) | Trợ lý chính sách (FR-6.3, tuần 12) |
 |---|---|---|
 | API | Endpoint tìm kiếm trong `modules/document`, cùng điều kiện phạm vi với UC5 | Endpoint hỏi đáp, gọi LLM có timeout |
-| Worker | Trích văn bản từ PDF, DOCX sau khi phiên bản `READY` | Chia đoạn, đánh chỉ mục đoạn văn bản (theo ADR-14) |
+| Worker | Trích văn bản từ PDF, DOCX sau khi phiên bản `READY` | Chia đoạn, đánh chỉ mục đoạn văn bản (theo ADR-16) |
 | Web | Ô tìm kiếm trên trang "Tra cứu tài liệu" (`/documents`) | Khung hỏi đáp trên cùng trang |
 | Database | Migration mới: cột văn bản, cột `tsvector`, chỉ mục GIN (full-text PostgreSQL, không thêm dịch vụ tìm kiếm, ADR-13) | Bảng đoạn văn bản; có thể cần `pgvector` (chốt ở ADR-14) |
 | Dịch vụ ngoài | Object storage (đọc file để trích) | LLM API |
@@ -48,4 +48,4 @@ Tên biến chính xác thêm vào bảng này và [configuration.md](../../deve
 
 ## 7. Còn thiếu
 
-- Toàn bộ phần FR-6.2 và FR-6.3 chưa có trên `dev`. Cập nhật file này trong PR `feat/document-search` và `feat/policy-assistant`.
+- Toàn bộ phần FR-6.2 và FR-6.3 chưa có trên `dev`. Cập nhật file này trong PR `feat/search-service` và `feat/policy-assistant`.
