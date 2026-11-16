@@ -203,6 +203,18 @@ export class EmployeeService {
     const e = await this.getOrThrow(id);
     const relation = relationTo(viewer, e);
     const [entry] = await this.toDirectory([e]);
+    // Nhãn "Chờ HR xác nhận" chỉ cho chủ hồ sơ và HR (AC-1.9.2).
+    const pending =
+      relation === 'OWNER' || relation === 'HR'
+        ? new Map<string, number>(
+            (
+              (await this.repo.query(
+                `SELECT section, count(*)::int AS n FROM employee.profile_change_request WHERE employee_id = $1 AND status = 'PENDING' GROUP BY section`,
+                [id],
+              )) as { section: string; n: number }[]
+            ).map((r) => [r.section, r.n]),
+          )
+        : new Map<string, number>();
     const summary: ProfileSummary = {
       id: e.id,
       employeeCode: e.employeeCode,
@@ -221,7 +233,7 @@ export class EmployeeService {
         group: s.group,
         title: s.title,
         available: s.available,
-        pendingRequests: 0,
+        pendingRequests: pending.get(s.code) ?? 0,
       })),
     };
     // Hàng "Diện đối tượng" ở đầu trang có mức QL; hợp đồng chưa có dữ liệu (FR-1.12) nên luôn null.
@@ -241,7 +253,7 @@ export class EmployeeService {
       throw new NotFoundException('Không tìm thấy mục hồ sơ');
     }
 
-    const field = code === 'salary' ? 'salary' : code === 'bank-account' ? 'bankAccount' : 'nationalId';
+    const field = code === 'salary' ? 'salary' : 'nationalId';
     const hasSensitive = code !== 'personal' || relation === 'HR';
     if (reveal && (!hasSensitive || !canReveal(relation, field))) {
       throw new ForbiddenException('Bạn không được xem giá trị này');
@@ -250,7 +262,7 @@ export class EmployeeService {
     let masked: MaskedField | undefined;
     if (hasSensitive) {
       const s = await this.sensitiveRepo.findOneBy({ employeeId: id });
-      const enc = field === 'salary' ? s?.salaryEnc : field === 'bankAccount' ? s?.bankAccountEnc : s?.nationalIdEnc;
+      const enc = field === 'salary' ? s?.salaryEnc : s?.nationalIdEnc;
       masked = { hasValue: !!enc, value: null };
       if (reveal) {
         masked.value = this.crypto.decrypt(enc);
@@ -267,9 +279,9 @@ export class EmployeeService {
     }
 
     if (code === 'salary') return { section: 'salary', salary: masked! };
-    if (code === 'bank-account') return { section: 'bank-account', bankAccount: masked! };
     const personal: PersonalSection = {
       section: 'personal',
+      relation,
       version: e.version,
       phone: e.phone,
       workEmail: e.workEmail,

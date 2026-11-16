@@ -260,6 +260,7 @@ export class MaskedField {
 
 export class PersonalSection {
   @ApiProperty({ example: 'personal' }) section: 'personal';
+  @ApiProperty({ enum: ['HR', 'OWNER', 'MANAGER', 'OTHER'] }) relation: 'HR' | 'OWNER' | 'MANAGER' | 'OTHER';
   @ApiProperty() version: number;
   @ApiProperty({ nullable: true }) phone: string | null;
   @ApiProperty() workEmail: string;

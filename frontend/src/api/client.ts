@@ -112,9 +112,81 @@ export interface PersonalSection {
   hireDate: string;
   status: string;
   nationalId?: MaskedField;
+  relation: Relation;
+  fields: FieldSpec[];
+  canPropose: boolean;
+  requests: ChangeRequest[];
 }
 export interface SalarySection { section: 'salary'; salary: MaskedField }
-export interface BankAccountSection { section: 'bank-account'; bankAccount: MaskedField }
+
+// ----- Yêu cầu cập nhật hồ sơ (UC1 FR-1.9) -----
+export type FieldType = 'text' | 'phone' | 'date' | 'month' | 'year' | 'select' | 'boolean' | 'digits' | 'upper';
+export interface FieldSpec {
+  key: string;
+  label: string;
+  type: FieldType;
+  required?: boolean;
+  requiredIf?: { key: string; equals: unknown };
+  showIf?: { key: string; equals: unknown };
+  options?: { value: string; label: string }[];
+  sensitive?: boolean;
+  min?: number;
+  max?: number;
+  hint?: string;
+}
+export type ChangeAction = 'CREATE' | 'UPDATE' | 'DELETE';
+export interface ChangeRequest {
+  id: string;
+  employeeId: string;
+  section: string;
+  action: ChangeAction;
+  itemId: string | null;
+  baseVersion: number | null;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  proposed: Record<string, unknown>;
+  proposedSensitive: Record<string, MaskedField>;
+  submittedAt: string;
+  reviewedAt: string | null;
+  rejectReason?: string | null;
+}
+export interface ProfileRow {
+  id: string | null;
+  version: number;
+  data: Record<string, unknown>;
+  sensitive: Record<string, MaskedField>;
+}
+export interface RowSection {
+  section: string;
+  kind: 'single' | 'rows';
+  maxRows: number;
+  notice: string | null;
+  fields: FieldSpec[];
+  canPropose: boolean;
+  canEdit: boolean;
+  rows: ProfileRow[];
+  requests: ChangeRequest[];
+}
+export interface ChangeListItem extends ChangeRequest {
+  employeeName: string;
+  employeeCode: string;
+  departmentName: string | null;
+  overdue: boolean;
+}
+export interface ChangeDetail extends ChangeRequest {
+  employee: { id: string; fullName: string; employeeCode: string; departmentName: string | null };
+  fields: FieldSpec[];
+  current: Record<string, unknown>;
+  currentSensitive: Record<string, MaskedField>;
+  overdue: boolean;
+}
+export interface HistoryEntry {
+  at: string;
+  actorId: string | null;
+  actorName: string | null;
+  action: string;
+  section: string | null;
+  fields: string[];
+}
 
 export interface Page<T> {
   items: T[];

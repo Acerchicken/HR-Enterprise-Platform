@@ -45,7 +45,7 @@ const COMMON: Tile[] = [
 
 /** Nhóm "Chức năng HR" (bản vẽ 10.2). Trang "Việc cần duyệt" có tab (frontend.md 2.4) làm ở tuần 12; tạm dẫn tới trang cũ. */
 const HR_TILES: Tile[] = [
-  { title: 'Việc cần duyệt', desc: 'Đơn nghỉ của CEO, đơn chờ HR', icon: Inbox, to: '/leave/approvals', who: ['HR'] },
+  { title: 'Việc cần duyệt', desc: 'Yêu cầu cập nhật hồ sơ, đơn nghỉ', icon: Inbox, to: '/approvals?type=profile', who: ['HR'] },
   { title: 'Hoàn tất đơn nghỉ', desc: 'Đơn đã duyệt chờ HR hoàn tất', icon: CalendarDays, to: '/leave/hr', who: ['HR'] },
   { title: 'Quản lý nhân viên', desc: 'Thêm, sửa hồ sơ, nghỉ việc', icon: UserPlus, to: '/employees/new', who: ['HR'] },
   { title: 'Đăng tài liệu', desc: 'Quy chế, biểu mẫu, phạm vi xem', icon: Upload, to: '/coming-soon', who: ['HR'], ready: false },
