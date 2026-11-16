@@ -15,7 +15,7 @@ import {
 import { ApiBearerAuth, ApiHeader, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Length, Matches } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Length, Matches } from 'class-validator';
 import { Request } from 'express';
 import { PageQuery } from '../../common/pagination';
 import { RateLimit } from '../../common/rate-limit/rate-limit.interceptor';
@@ -51,6 +51,13 @@ export class SubmitChangeDto {
   @IsOptional()
   @IsObject()
   proposed?: Record<string, unknown>;
+
+  @ApiPropertyOptional({ type: [String], description: 'File đã tải lên gắn vào yêu cầu (luồng 4.3)' })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsUUID('all', { each: true })
+  fileIds?: string[];
 }
 
 export class RejectDto {

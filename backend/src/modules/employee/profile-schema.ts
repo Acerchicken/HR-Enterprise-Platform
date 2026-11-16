@@ -22,8 +22,8 @@ export interface FieldSpec {
   hint?: string;
 }
 
-/** main: trường chính của hồ sơ; single: mục có đúng một dòng; rows: nhiều dòng. */
-export type SectionKind = 'main' | 'single' | 'rows';
+/** main: trường chính của hồ sơ; single: mục có đúng một dòng; rows: nhiều dòng; files: mục chỉ gồm file (CV, ảnh đại diện). */
+export type SectionKind = 'main' | 'single' | 'rows' | 'files';
 
 export interface SectionSchema {
   kind: SectionKind;
@@ -40,6 +40,8 @@ const BANKS = ['Vietcombank', 'VietinBank', 'BIDV', 'Agribank', 'Techcombank', '
 );
 
 export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
+  cv: { kind: 'files', maxRows: 5, fields: [], notice: 'CV hoặc sơ yếu lý lịch: PDF, DOCX, JPG, PNG, tối đa 10 MiB mỗi file. Bản mới nhất hiện đầu.' },
+  avatar: { kind: 'files', maxRows: 1, fields: [], notice: 'Ảnh JPG, PNG tối đa 2 MiB; ảnh được cắt về 512 × 512 và bỏ thông tin vị trí.' },
   personal: {
     kind: 'main',
     maxRows: 1,

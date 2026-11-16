@@ -24,14 +24,16 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api, ProfileSummary, SalarySection, SectionGroup, SectionSummary } from '../api/client';
-import { getSummary } from '../api/cache';
+import { getSummary, invalidateSummary } from '../api/cache';
 import { useApi } from '../api/useApi';
 import { useShell } from '../components/shell';
 import { Avatar, errorText, formatMoney, MaskedValue, Skeleton, TodoBadge } from '../components/ui';
 import { useDialog } from '../components/useDialog';
+import { FileUpload, useAvatarUrl } from '../components/files';
+import { newKey } from './fields';
 import { ProfileState, useOpenProfile } from './navigation';
 import { SectionPage } from './SectionPage';
 
@@ -126,6 +128,7 @@ export function ProfilePanel({ self = false }: { self?: boolean }) {
 
 function ProfileHome({ s }: { s: ProfileSummary }) {
   const openProfile = useOpenProfile();
+  const avatarUrl = useAvatarUrl(s.id, s.hasAvatar);
   const has = (code: string) => s.sections.find((x) => x.code === code);
   const salary = has('salary');
   const insurance = has('insurance-salary');
@@ -136,7 +139,8 @@ function ProfileHome({ s }: { s: ProfileSummary }) {
   return (
     <>
       <div className="profile-head">
-        <Avatar name={s.fullName} size="lg" />
+        <Avatar name={s.fullName} size="lg" src={avatarUrl} />
+        {s.relation === 'OWNER' && <AvatarChange s={s} />}
         <span className="code-badge">{s.employeeCode}</span>
         <div className="profile-name">{s.fullName}</div>
         <div className="profile-role">{s.positionTitle ?? '—'}</div>
@@ -232,5 +236,43 @@ function SectionRow({ s, def, label }: { s: ProfileSummary; def: SectionSummary;
         <ChevronRight size={18} className="ch" aria-hidden="true" />
       </span>
     </button>
+  );
+}
+
+/**
+ * Chủ hồ sơ đổi ảnh đại diện: tải ảnh (cắt 512 × 512, bỏ EXIF ở server) rồi gửi yêu cầu; HR duyệt xong mọi người mới thấy
+ * (AC-1.10.3).
+ */
+function AvatarChange({ s }: { s: ProfileSummary }) {
+  const [state, setState] = useState<'idle' | 'sent' | 'error'>(s.sections.length && (s.sections.find((x) => x.code === 'avatar')?.pendingRequests ?? 0) > 0 ? 'sent' : 'idle');
+  const [msg, setMsg] = useState('');
+  return (
+    <div className="avatar-change">
+      {state === 'sent' ? (
+        <span className="pend">Ảnh mới đang chờ HR duyệt</span>
+      ) : (
+        <FileUpload
+          employeeId={s.id}
+          section="avatar"
+          images
+          label="Đổi ảnh"
+          onUploaded={async (f) => {
+            try {
+              await api(`/employees/${s.id}/change-requests`, {
+                method: 'POST',
+                headers: { 'Idempotency-Key': newKey() },
+                body: JSON.stringify({ section: 'avatar', action: 'CREATE', fileIds: [f.id] }),
+              });
+              invalidateSummary(s.id);
+              setState('sent');
+            } catch (e) {
+              setState('error');
+              setMsg((e as Error).message);
+            }
+          }}
+        />
+      )}
+      {state === 'error' && <span className="error small">{msg}</span>}
+    </div>
   );
 }

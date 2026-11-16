@@ -1,6 +1,7 @@
 import { getToken } from '../auth/auth';
 
-const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
+export const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
+const BASE = BASE_URL;
 
 export class ApiError extends Error {
   constructor(
@@ -92,6 +93,7 @@ export interface ProfileSummary {
   workEmail: string;
   relation: Relation;
   canEdit: boolean;
+  hasAvatar: boolean;
   /** Không có ở mức danh bạ; null là chưa có dữ liệu hợp đồng. */
   contractType?: string | null;
   sections: SectionSummary[];
@@ -148,22 +150,26 @@ export interface ChangeRequest {
   submittedAt: string;
   reviewedAt: string | null;
   rejectReason?: string | null;
+  fileIds: string[];
+  files?: import('../components/files').FileView[];
 }
 export interface ProfileRow {
   id: string | null;
   version: number;
   data: Record<string, unknown>;
   sensitive: Record<string, MaskedField>;
+  files?: import('../components/files').FileView[];
 }
 export interface RowSection {
   section: string;
-  kind: 'single' | 'rows';
+  kind: 'single' | 'rows' | 'files';
   maxRows: number;
   notice: string | null;
   fields: FieldSpec[];
   canPropose: boolean;
   canEdit: boolean;
   rows: ProfileRow[];
+  files?: import('../components/files').FileView[];
   requests: ChangeRequest[];
 }
 export interface ChangeListItem extends ChangeRequest {

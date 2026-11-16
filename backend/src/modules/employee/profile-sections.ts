@@ -41,7 +41,7 @@ export const PROFILE_SECTIONS: readonly SectionDef[] = [
   { code: 'allowances', group: 'benefits', title: 'Phụ cấp', level: 'NC', input: 'HR', available: false },
   { code: 'rewards-discipline', group: 'other', title: 'Khen thưởng kỷ luật', level: 'CN', input: 'HR', available: false },
   { code: 'qualifications', group: 'other', title: 'Chuyên môn', level: 'QL', input: 'NV', available: true },
-  { code: 'cv', group: 'other', title: 'Sơ yếu lý lịch', level: 'CN', input: 'NV', available: false },
+  { code: 'cv', group: 'other', title: 'Sơ yếu lý lịch', level: 'CN', input: 'NV', available: true },
   { code: 'history', group: 'other', title: 'Lịch sử thay đổi', level: 'CN', input: 'AUTO', available: true },
 ];
 

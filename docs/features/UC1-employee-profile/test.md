@@ -34,30 +34,30 @@ tiếp. Rủi ro thứ ba là **lạm dụng**: tải file độc hại, spam y�
 | AC-1.3.1 | "HR xem trường nhạy cảm (đã giải mã) và lượt xem được audit" | SEC | Có |
 | AC-1.3.2 | "xem hồ sơ: … nhân viên không xem trường nhạy cảm" | SEC | Có |
 | AC-1.3.3 | – | Cần thêm | Chưa |
-| AC-1.3.4 | – | – | Chưa đạt (form sửa tự tải trường nhạy cảm) |
+| AC-1.3.4 | – (giao diện) | Mở form sửa của HR: tab Network không có `include=sensitive` tới khi bấm "Hiện giá trị hiện tại" | Đã có (#84), chờ ca tay |
 | AC-1.4.1 | "HR cập nhật lương: audit chỉ ghi tên trường, không ghi giá trị" | – | Có |
-| AC-1.4.3 | – | – | Chưa đạt (audit ghi giá trị địa chỉ, ngày sinh; không ghi giá trị cũ) |
-| AC-1.4.4 | – | – | Chưa đạt (API không nhận `hireDate`, `workEmail`) |
+| AC-1.4.3 | e2e "audit theo nhóm trường…" | – | Đã có (#84) |
+| AC-1.4.4 | e2e "HR sửa email công ty…", "audit theo nhóm trường…" | – | Đã có (#84) |
 | AC-1.4.2 | – (giao diện) | Kiểm tay trên `/employees/:id/edit` | Chưa ghi biên bản |
 | AC-1.5.1 | "HR tạo nhân viên kèm quản lý và trường nhạy cảm: 201, audit chỉ ghi tên trường nhạy cảm (FR-1.5)" | – | Có |
 | AC-1.5.2 | "HR không gán được quản lý tạo vòng lặp", "tạo nhân viên không phải CEO mà thiếu quản lý → 400…" | – | Có |
 | AC-1.5.3 | – | Cần thêm | Chưa |
 | AC-1.5.4 | "tạo nhân viên: chỉ HR…" | SEC | Có |
 | AC-1.6.1 | "version cũ → 409 (optimistic locking)" | – | Có |
-| AC-1.6.2 | – | – | Chưa đạt (code chưa bắt buộc `version`) |
-| AC-1.6.3 | – | – | Chưa đạt (sửa chỉ lương không tăng `version`) |
-| AC-1.7.1, AC-1.7.2 | – | – | Chưa đạt |
+| AC-1.6.2 | e2e "sửa hồ sơ không kèm version → 400" | – | Đã có (#84) |
+| AC-1.6.3 | e2e "chỉ đổi lương cũng tăng version…" | – | Đã có (#84) |
+| AC-1.7.1, AC-1.7.2 | e2e "không cho nghỉ việc khi còn cấp dưới", "người đã nghỉ việc gọi API… 403" | – | Đã có (#84) |
 | AC-1.3.5 | e2e `chủ hồ sơ bấm mắt xem lương của mình`, `mục cá nhân: … chỉ HR có CCCD đã che` | Chủ hồ sơ bấm mắt ở Lương mục tiêu, tài khoản ngân hàng | Đã có (`feat/profile-layout`) |
-| AC-1.6.4 | – | Cần thêm e2e: sửa dòng với `version` cũ → 409 | Chưa có |
+| AC-1.6.4 | e2e "duyệt khi dòng đã đổi sau khi gửi → 409…" | – | Đã có (#86) |
 | AC-1.8.1 → AC-1.8.5 | e2e `summary` theo quan hệ (AC-1.8.4); giao diện kiểm tay | Kiểm tay bằng 4 tài khoản mẫu, trên màn hình 375 px và 1280 px | Đã có (`feat/profile-layout`), chờ TV4 chạy ca tay |
 | AC-1.8.6 | e2e `mục không được xem, chưa làm hoặc không tồn tại đều trả 404` | – | Đã có |
 | AC-1.8.7, AC-1.8.8 | e2e `/me chỉ có tài khoản…`, `summary mức danh bạ…` | Kiểm tay bằng tab Network: mở trang chỉ có `summary`, bấm mục nào mới có request mục đó, bấm mắt mới có `reveal=true` | Đã có |
-| AC-1.2.1 | e2e hiện có "nhân viên tự sửa số điện thoại…" kiểm lưu thẳng, phải đổi sang kiểm 202 và hồ sơ chưa đổi | – | Chưa đạt |
-| AC-1.9.1 → AC-1.9.13 | – | e2e: gửi, hủy, duyệt, từ chối, duyệt khi `baseVersion` cũ (409), nhân viên gọi API ghi thẳng (403), yêu cầu thứ 21 (409); mục đại diện `emergency-contacts`, mục có trường nhạy cảm `bank-account`, `relatives` | Chưa có |
-| AC-1.10.1 → AC-1.10.9 | – (cần MinIO local) | Ca bảo mật file: ZIP đổi đuôi `.pdf`, `.exe` đổi đuôi `.jpg`, file 10 MiB + 1 byte, ảnh có EXIF GPS, tải file người khác, xóa file HR | Chưa có |
-| AC-1.11.1 → AC-1.11.4 | – | e2e: mỗi thao tác đúng một audit; quét audit và log tìm giá trị mẫu, tên file mẫu | Chưa có |
+| AC-1.2.1 | e2e "sửa điện thoại qua yêu cầu: 202…", "nhân viên không ghi thẳng hồ sơ… 403" | – | Đã có (#86) |
+| AC-1.9.1 → AC-1.9.13 | e2e nhóm "UC1 yêu cầu cập nhật hồ sơ và nhật ký" (gửi, hủy, duyệt, từ chối, 409 khi `baseVersion` cũ, 403, quá số dòng, Idempotency-Key, người phụ thuộc mã hóa) | Email (Mailpit): báo HR gộp 1 giờ, kết quả xử lý, đổi tài khoản ngân hàng; nhãn "Quá hạn" sau 2 ngày làm việc | Đã có (#86); AC-1.9.11 phần mục thuế TNCN chưa có |
+| AC-1.10.1 → AC-1.10.9 | e2e nhóm "UC1 file hồ sơ" với bucket giả trong bộ nhớ (`test/fake-storage.ts`) | Chạy lại với MinIO hoặc S3 thật: PUT bằng URL ký, lifecycle 30 ngày (TV3) | Đã có (#87); AC-1.10.7 phần lifecycle chờ `infra/profile-files` |
+| AC-1.11.1 → AC-1.11.4 | e2e "lịch sử thay đổi…", kiểm audit không chứa giá trị, lý do từ chối, tên file | Quét log API, worker tìm giá trị mẫu | Đã có (#86, #87) |
 | AC-1.12.x, AC-1.13.x | – | – | Sau MVP |
-| AC-1.14.1 → AC-1.14.7 | – | Script gửi 31 lệnh ghi trong 1 phút, 11 lệnh xin URL trong 1 giờ, 101 lượt xem nhạy cảm; kiểm 429, `Retry-After`, dữ liệu không đổi, có cảnh báo | Chưa có |
+| AC-1.14.1 → AC-1.14.7 | Unit test `rate-limit.spec.ts`; e2e "lệnh ghi hồ sơ thứ 31… 429", "body quá 64 KiB → 413" | 11 lệnh xin URL trong 1 giờ, 101 lượt xem nhạy cảm; cảnh báo dashboard (AC-1.14.5, TV3) | Đã có (#85), trừ AC-1.14.5 |
 
 ## 4. Dữ liệu và tài khoản
 

@@ -49,7 +49,7 @@ describe('profile sections (UC1 spec 9.1)', () => {
 
   it('mục đã làm (FR-1.8, FR-1.9, FR-1.11); mã mục không trùng', () => {
     expect(PROFILE_SECTIONS.filter((s) => s.available).map((s) => s.code)).toEqual([
-      'personal', 'emergency-contacts', 'relatives', 'salary', 'bank-account', 'qualifications', 'history',
+      'personal', 'emergency-contacts', 'relatives', 'salary', 'bank-account', 'qualifications', 'cv', 'history',
     ]);
     expect(new Set(PROFILE_SECTIONS.map((s) => s.code)).size).toBe(PROFILE_SECTIONS.length);
     expect(findSection('salary')?.level).toBe('NC');

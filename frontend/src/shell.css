@@ -185,3 +185,17 @@ table.cmp td.new { background: #ecfdf3; color: var(--ok); font-weight: 600; }
 }
 .back-mobile { display: none; }
 @media (max-width: 899px) { .back-mobile { display: inline-block; margin-bottom: 8px; } }
+
+/* File hồ sơ (UC1 FR-1.10) */
+img.avatar { object-fit: cover; }
+.avatar-change { margin: 8px 0 4px; display: flex; justify-content: center; }
+.file-upload { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.file-upload button { display: inline-flex; align-items: center; gap: 6px; }
+.file-upload progress { width: 120px; }
+.files { margin: 6px 0; }
+.file-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.file-row:last-child { border-bottom: none; }
+.file-row svg { color: var(--primary); flex: none; }
+.file-row .ellipsis { flex: 1; }
+.attach { display: grid; gap: 6px; margin: 10px 0; }
+button.link.danger { color: var(--danger); }

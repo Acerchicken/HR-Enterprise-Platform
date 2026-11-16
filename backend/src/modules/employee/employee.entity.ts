@@ -47,6 +47,10 @@ export class Employee {
   @Column({ type: 'varchar', length: 20, default: 'ACTIVE' })
   status: EmployeeStatus;
 
+  /** Ảnh đại diện đã được HR duyệt (FR-1.10, AC-1.10.3). */
+  @Column({ name: 'avatar_file_id', type: 'uuid', nullable: true })
+  avatarFileId: string | null;
+
   /** Optimistic locking: client gửi kèm version khi PATCH, lệch thì trả 409. */
   @VersionColumn()
   version: number;

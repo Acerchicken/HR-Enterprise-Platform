@@ -16,7 +16,8 @@ export function givenName(name: string | null | undefined): string {
   return parts[parts.length - 1] ?? '';
 }
 
-export function Avatar({ name, size = 'sm' }: { name: string | null | undefined; size?: 'sm' | 'md' | 'lg' }) {
+export function Avatar({ name, size = 'sm', src }: { name: string | null | undefined; size?: 'sm' | 'md' | 'lg'; src?: string | null }) {
+  if (src) return <img className={`avatar avatar-${size}`} src={src} alt={`Ảnh đại diện ${name ?? ''}`} />;
   return (
     <span className={`avatar avatar-${size}`} aria-hidden="true">
       {initials(name)}

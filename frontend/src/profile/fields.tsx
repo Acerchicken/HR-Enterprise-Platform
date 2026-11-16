@@ -110,6 +110,13 @@ export function RequestBox({
           ))}
         </ul>
       )}
+      {req.files && req.files.length > 0 && (
+        <ul className="plain small">
+          {req.files.map((f) => (
+            <li key={f.id}><span className="muted">{req.action === 'DELETE' ? 'Xóa file' : 'File'}:</span> {f.name}</li>
+          ))}
+        </ul>
+      )}
       {rejected && req.rejectReason && <p className="small">Lý do: {req.rejectReason}</p>}
       <div className="actions">
         {!rejected && onCancel && <button type="button" onClick={onCancel}>Hủy yêu cầu</button>}

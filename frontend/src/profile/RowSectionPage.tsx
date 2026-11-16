@@ -3,10 +3,14 @@ import { FormEvent, useState } from 'react';
 import { api, ApiError, ProfileRow, ProfileSummary, RowSection } from '../api/client';
 import { invalidateSummary } from '../api/cache';
 import { useApi } from '../api/useApi';
+import { FileList, FileUpload, FileView } from '../components/files';
 import { errorText, Skeleton, useCooldown } from '../components/ui';
 import { FieldEditor, formatValue, newKey, RequestBox, visible } from './fields';
 
-type Editing = { mode: 'CREATE' | 'UPDATE'; row: ProfileRow | null; values: Record<string, unknown>; key: string };
+type Editing = { mode: 'CREATE' | 'UPDATE'; row: ProfileRow | null; values: Record<string, unknown>; key: string; files: FileView[] };
+
+/** Mục có file kèm theo dòng (bằng cấp, giấy tờ người phụ thuộc). */
+const ROW_FILES = new Set(['qualifications', 'relatives']);
 
 /**
  * Mục nhiều dòng hoặc một dòng (liên hệ khẩn cấp, thân nhân, chuyên môn, tài khoản ngân hàng). Chủ hồ sơ thêm, sửa, xóa đều
@@ -74,6 +78,7 @@ export function RowSectionPage({ s, code }: { s: ProfileSummary; code: string })
             itemId: editing.row?.id ?? undefined,
             baseVersion: editing.row?.version,
             proposed: values,
+            fileIds: editing.files.map((f) => f.id),
           }),
         }),
       );
@@ -106,7 +111,7 @@ export function RowSectionPage({ s, code }: { s: ProfileSummary; code: string })
   const cancel = (id: string) => run(() => api(`/employees/${s.id}/change-requests/${id}`, { method: 'DELETE' }));
   const dismiss = (id: string) => run(() => api(`/employees/${s.id}/change-requests/${id}/acknowledge`, { method: 'POST' }));
   const startEdit = (row: ProfileRow | null) =>
-    setEditing({ mode: row?.id ? 'UPDATE' : 'CREATE', row, values: { ...(row?.data ?? {}) }, key: newKey() });
+    setEditing({ mode: row?.id ? 'UPDATE' : 'CREATE', row, values: { ...(row?.data ?? {}) }, key: newKey(), files: [] });
 
   const rows = single && d.rows.length === 0 ? [] : d.rows;
   return (
@@ -140,6 +145,7 @@ export function RowSectionPage({ s, code }: { s: ProfileSummary; code: string })
               </div>
             ),
           )}
+          {row.files && row.files.length > 0 && <FileList employeeId={s.id} files={row.files} />}
           {pendingOf(row.id).map((r) => (
             <RequestBox key={r.id} req={r} fields={d.fields} onCancel={() => cancel(r.id)} onDismiss={() => dismiss(r.id)} />
           ))}
@@ -185,6 +191,19 @@ export function RowSectionPage({ s, code }: { s: ProfileSummary; code: string })
               sensitiveHint={f.sensitive && !!editing.row?.sensitive[f.key]?.hasValue}
             />
           ))}
+          {ROW_FILES.has(code) && (d.canPropose || editing.row?.id) && (
+            <div className="attach">
+              <span className="small muted">Giấy tờ chứng minh (PDF, DOCX, JPG, PNG, tối đa 10 MiB)</span>
+              <FileList employeeId={s.id} files={editing.files} />
+              <FileUpload
+                employeeId={s.id}
+                section={code}
+                itemId={editing.row?.id ?? null}
+                label="Đính kèm file"
+                onUploaded={(f) => setEditing((e) => (e ? { ...e, files: [...e.files, f] } : e))}
+              />
+            </div>
+          )}
           {code === 'bank-account' && !!editing.values.holder && !sameName(String(editing.values.holder), s.fullName) && (
             <p className="warn-box small">Chủ tài khoản khác tên nhân viên. Vẫn gửi được nếu đúng.</p>
           )}

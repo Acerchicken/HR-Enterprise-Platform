@@ -121,7 +121,7 @@ chỉ tạo một **yêu cầu cập nhật**; HR kiểm, đúng thì duyệt v�
 - **AC-1.9.3** Khi HR mở "Yêu cầu cập nhật hồ sơ". Thì thấy các yêu cầu `PENDING`, cũ nhất trước, lọc theo mục,
   phòng ban; mở một yêu cầu thấy giá trị hiện tại và giá trị đề xuất cạnh nhau, file đính kèm tải được. Giá trị nhạy cảm hiện
   `********` cho tới khi HR bấm mắt (audit `VIEW_SENSITIVE`).
-- **AC-1.9.4** *(một phần: file kèm chuyển `READY` làm ở `feat/profile-files`)* Khi HR duyệt. Thì trong một giao dịch: thay đổi được ghi vào hồ sơ, `version` của hồ sơ hoặc dòng tăng
+- **AC-1.9.4** Khi HR duyệt. Thì trong một giao dịch: thay đổi được ghi vào hồ sơ, `version` của hồ sơ hoặc dòng tăng
   1, yêu cầu `APPROVED` kèm người duyệt và thời điểm, audit `PROFILE_CHANGE_APPROVE` ghi mục, mã yêu cầu, tên trường; file đính
   kèm chuyển `READY`. Nhân viên nhận email báo chung "Yêu cầu cập nhật hồ sơ của bạn đã được xử lý".
 - **AC-1.9.5** Khi HR từ chối kèm lý do (bắt buộc, tối đa 500 ký tự). Thì yêu cầu `REJECTED`, hồ sơ không đổi, nhân
@@ -145,24 +145,24 @@ chỉ tạo một **yêu cầu cập nhật**; HR kiểm, đúng thì duyệt v�
 
 ### FR-1.10 Tệp đính kèm hồ sơ (S, chưa có)
 
-- **AC-1.10.1** *(chưa có)* Khi nhân viên tải lên CV hoặc file bằng cấp: PDF, DOCX, JPG hoặc PNG, từ 1 byte đến 10 MiB. Thì
+- **AC-1.10.1** Khi nhân viên tải lên CV hoặc file bằng cấp: PDF, DOCX, JPG hoặc PNG, từ 1 byte đến 10 MiB. Thì
   API trả URL tải lên hết hạn sau 10 phút; trình duyệt PUT file thẳng lên storage rồi gọi xác nhận; file `PENDING_REVIEW` và gắn
   vào một yêu cầu cập nhật (FR-1.9), chỉ chủ hồ sơ và HR thấy; HR duyệt yêu cầu thì file `READY`. Có audit
   `PROFILE_FILE_UPLOAD` ghi mã file, mục, loại, dung lượng, SHA-256, không ghi tên file gốc.
-- **AC-1.10.2** *(chưa có)* Khi nội dung file không khớp loại khai báo (ZIP đổi đuôi `.pdf`, `.exe` đổi đuôi `.jpg`) hoặc sai
+- **AC-1.10.2** Khi nội dung file không khớp loại khai báo (ZIP đổi đuôi `.pdf`, `.exe` đổi đuôi `.jpg`) hoặc sai
   dung lượng khai báo. Thì file `REJECTED`, object bị xóa, trả 400.
-- **AC-1.10.3** *(chưa có)* Khi tải lên ảnh đại diện. Thì chỉ nhận JPG, PNG ≤ 2 MiB; ảnh được cắt về 512 × 512 và xóa EXIF
+- **AC-1.10.3** Khi tải lên ảnh đại diện. Thì chỉ nhận JPG, PNG ≤ 2 MiB; ảnh được cắt về 512 × 512 và xóa EXIF
   (bỏ vị trí GPS); ảnh cũng qua HR duyệt như FR-1.9, duyệt xong mọi người mới thấy.
-- **AC-1.10.4** *(chưa có)* Khi tải lên file trùng nội dung (cùng SHA-256) với file `READY` đã có trong cùng mục của cùng người.
+- **AC-1.10.4** Khi tải lên file trùng nội dung (cùng SHA-256) với file `READY` đã có trong cùng mục của cùng người.
   Thì trả lại file cũ, không lưu thêm.
-- **AC-1.10.5** *(chưa có)* Khi tải xuống. Thì API kiểm quyền rồi stream file với `Content-Disposition: attachment` và
+- **AC-1.10.5** Khi tải xuống. Thì API kiểm quyền rồi stream file với `Content-Disposition: attachment` và
   `X-Content-Type-Options: nosniff`; response không chứa link storage. HR tải file của người khác thì có audit
   `PROFILE_FILE_DOWNLOAD`.
-- **AC-1.10.6** *(chưa có)* Khi người không có quyền xem mục gọi tải file theo ID. Thì trả 404 giống ID không tồn tại.
-- **AC-1.10.7** *(chưa có)* Khi HR duyệt yêu cầu xóa file của nhân viên. Thì file `DELETED`, nhân viên không thấy, HR vẫn thấy trong 30
+- **AC-1.10.6** Khi người không có quyền xem mục gọi tải file theo ID. Thì trả 404 giống ID không tồn tại.
+- **AC-1.10.7** *(một phần: API gắn tag `deleted=true`; lifecycle 30 ngày của bucket do TV3 làm ở `infra/profile-files`)* Khi HR duyệt yêu cầu xóa file của nhân viên. Thì file `DELETED`, nhân viên không thấy, HR vẫn thấy trong 30
   ngày; sau 30 ngày object bị xóa khỏi storage, audit vẫn còn. Nhân viên không xóa được file HR tải lên (hợp đồng, quyết định).
-- **AC-1.10.8** *(chưa có)* Khi một người đã có 50 file `READY` hoặc tổng 200 MiB. Thì tải thêm trả 409, câu báo nêu giới hạn.
-- **AC-1.10.9** *(chưa có)* Khi chưa cấu hình `PROFILE_STORAGE_BUCKET`. Thì các thao tác file trả 503; xem, sửa thông tin hồ
+- **AC-1.10.8** Khi một người đã có 50 file `READY` hoặc tổng 200 MiB. Thì tải thêm trả 409, câu báo nêu giới hạn.
+- **AC-1.10.9** Khi chưa cấu hình `PROFILE_STORAGE_BUCKET`. Thì các thao tác file trả 503; xem, sửa thông tin hồ
   sơ vẫn chạy.
 
 ### FR-1.11 Nhật ký thay đổi hồ sơ (S, chưa có)
@@ -172,7 +172,7 @@ chỉ tạo một **yêu cầu cập nhật**; HR kiểm, đúng thì duyệt v�
   phân trang.
 - **AC-1.11.2** HR xem được lịch sử của mọi hồ sơ, lọc theo mục, người làm, khoảng ngày. Quản lý trực tiếp và người
   khác không xem được (403).
-- **AC-1.11.3** *(một phần: thao tác file làm ở `feat/profile-files`)* Mọi thao tác gửi, hủy, duyệt, từ chối yêu cầu (FR-1.9), tải file (FR-1.10) và mọi lần HR sửa trực tiếp
+- **AC-1.11.3** Mọi thao tác gửi, hủy, duyệt, từ chối yêu cầu (FR-1.9), tải file (FR-1.10) và mọi lần HR sửa trực tiếp
   (FR-1.4, FR-1.12) có đúng một bản ghi audit, ghi cùng giao dịch với thay
   đổi; thao tác thất bại không có audit.
 - **AC-1.11.4** Trong audit, log API và log worker không có giá trị của trường cá nhân, trường nhạy cảm, tên file gốc
@@ -207,9 +207,9 @@ vụ, có log và metric để cảnh báo.
 
 - **AC-1.14.1** Khi một người gửi quá 30 lệnh ghi hồ sơ (gửi yêu cầu cập nhật, HR sửa hồ sơ, duyệt, từ chối) trong 1 phút. Thì lệnh thứ
   31 trả 429. Quá 300 lệnh ghi trong 1 ngày cũng trả 429.
-- **AC-1.14.2** *(chưa có: nhóm giới hạn đã có, áp khi làm `feat/profile-files`)* Khi một người xin quá 10 URL tải lên trong 1 giờ, hoặc quá 30 trong 1 ngày. Thì trả 429. Đổi ảnh
+- **AC-1.14.2** Khi một người xin quá 10 URL tải lên trong 1 giờ, hoặc quá 30 trong 1 ngày. Thì trả 429. Đổi ảnh
   đại diện tối đa 5 lần mỗi ngày.
-- **AC-1.14.3** *(chưa có: nhóm giới hạn đã có, áp khi làm `feat/profile-files`)* Khi một người tải xuống quá 60 file trong 1 giờ. Thì trả 429.
+- **AC-1.14.3** Khi một người tải xuống quá 60 file trong 1 giờ. Thì trả 429.
 - **AC-1.14.4** Khi một người gọi xem trường nhạy cảm (`include=sensitive`, kể cả HR) quá 100 lần trong 1 giờ. Thì
   trả 429 và gửi cảnh báo tới kênh vận hành (nghi cào dữ liệu).
 - **AC-1.14.5** *(chưa có)* Khi một người nhận 429 quá 20 lần trong 10 phút. Thì có cảnh báo trên dashboard vận hành.
