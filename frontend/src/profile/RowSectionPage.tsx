@@ -4,13 +4,13 @@ import { api, ApiError, ProfileRow, ProfileSummary, RowSection } from '../api/cl
 import { invalidateSummary } from '../api/cache';
 import { useApi } from '../api/useApi';
 import { FileList, FileUpload, FileView } from '../components/files';
-import { errorText, Skeleton, useCooldown } from '../components/ui';
+import { errorText, formatDate, formatMoney, Skeleton, useCooldown } from '../components/ui';
 import { FieldEditor, formatValue, newKey, RequestBox, visible } from './fields';
 
 type Editing = { mode: 'CREATE' | 'UPDATE'; row: ProfileRow | null; values: Record<string, unknown>; key: string; files: FileView[] };
 
 /** Mục có file kèm theo dòng (bằng cấp, giấy tờ người phụ thuộc). */
-const ROW_FILES = new Set(['qualifications', 'relatives']);
+const ROW_FILES = new Set(['qualifications', 'relatives', 'contracts', 'rewards-discipline']);
 
 /**
  * Mục nhiều dòng hoặc một dòng (liên hệ khẩn cấp, thân nhân, chuyên môn, tài khoản ngân hàng). Chủ hồ sơ thêm, sửa, xóa đều
@@ -59,6 +59,7 @@ export function RowSectionPage({ s, code }: { s: ProfileSummary; code: string })
     Object.fromEntries(
       Object.entries(ed.values).filter(([k, v]) => {
         const f = d.fields.find((x) => x.key === k);
+        if (d!.canPropose && f?.hrOnly) return false;
         return !(f?.sensitive && (v === '' || v === undefined));
       }),
     );
@@ -117,6 +118,22 @@ export function RowSectionPage({ s, code }: { s: ProfileSummary; code: string })
   return (
     <>
       {d.notice && <p className="pad small muted">{d.notice}</p>}
+      {d.current && (
+        <div className="fld">
+          <div className="kv">
+            <span className="k">Mức đang hiệu lực</span>
+            <span className={d.current.value ? '' : 'mask'}>
+              {d.current.value ? formatMoney(d.current.value) : d.current.hasValue ? '********' : 'Chưa có'}
+              {d.currentEffectiveDate && <span className="muted small"> · từ {formatDate(d.currentEffectiveDate)}</span>}
+            </span>
+          </div>
+        </div>
+      )}
+      {d.dependents !== undefined && (
+        <div className="fld">
+          <div className="kv"><span className="k">Số người phụ thuộc</span><span>{d.dependents}</span></div>
+        </div>
+      )}
       {hasSensitive && !reveal && (
         <div className="pad">
           <button type="button" className="link" onClick={() => setReveal(true)}>
@@ -134,7 +151,7 @@ export function RowSectionPage({ s, code }: { s: ProfileSummary; code: string })
                 <div className="kv" key={f.key}>
                   <span className="k">{f.label}</span>
                   <span className={row.sensitive[f.key]?.value ? '' : 'mask'}>
-                    {row.sensitive[f.key]?.value ?? (row.sensitive[f.key]?.hasValue ? '********' : '—')}
+                    {row.sensitive[f.key]?.value ? formatValue(f, row.sensitive[f.key]!.value) : row.sensitive[f.key]?.hasValue ? '********' : '—'}
                   </span>
                 </div>
               )
@@ -181,7 +198,7 @@ export function RowSectionPage({ s, code }: { s: ProfileSummary; code: string })
       {editing && (
         <form className="fld form" onSubmit={submit}>
           <h3>{editing.mode === 'CREATE' ? 'Thêm' : 'Sửa'}</h3>
-          {d.fields.filter((f) => visible(f, editing.values)).map((f) => (
+          {d.fields.filter((f) => visible(f, editing.values) && !(d.canPropose && f.hrOnly)).map((f) => (
             <FieldEditor
               key={f.key}
               field={f}

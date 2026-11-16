@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, IsNull, Not, Repository } from 'typeorm';
+import { EntityManager, In, IsNull, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import { FieldCrypto } from '../../common/field-crypto';
 import { Page } from '../../common/pagination';
 import { AuditService } from '../audit/audit.service';
@@ -19,7 +19,7 @@ import { FIELD_CRYPTO, RequestMeta } from './employee.service';
 import { ChangeAction, ProfileChangeRequest, ProfileFile, ProfileItem } from './profile-change.entity';
 import { FileView, fileView, ProfileFileService } from './profile-file.service';
 import { ProfileEventType } from './profile-events';
-import { FieldSpec, SECTION_SCHEMAS, SectionSchema, validateSection } from './profile-schema';
+import { CONTRACT_LABEL, FieldSpec, SECTION_SCHEMAS, SectionSchema, validateSection } from './profile-schema';
 import { canSeeLevel, findSection, relationTo } from './profile-sections';
 
 /** Mỗi nhân viên tối đa 20 yêu cầu đang chờ (AC-1.9.7, E21). */
@@ -66,6 +66,19 @@ export interface RequestView {
   rejectReason?: string | null;
   fileIds: string[];
   files?: FileView[];
+}
+
+/** Mức đang hiệu lực: dòng có ngày hiệu lực muộn nhất nhưng không sau hôm nay. */
+export function currentRow<T extends { data: Record<string, unknown> }>(rows: T[], on = new Date().toISOString().slice(0, 10)): T | undefined {
+  return rows
+    .filter((r) => String(r.data.effectiveDate) <= on)
+    .sort((a, b) => String(b.data.effectiveDate).localeCompare(String(a.data.effectiveDate)))[0];
+}
+
+/** Hai hợp đồng trùng khoảng ngày (ngày kết thúc trống là không thời hạn). */
+export function overlaps(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+  const end = (x: Record<string, unknown>) => (x.endDate ? String(x.endDate) : '9999-12-31');
+  return String(a.startDate) <= end(b) && String(b.startDate) <= end(a);
 }
 
 /** Số ngày làm việc (thứ Hai → thứ Sáu) giữa hai thời điểm, không tính ngày lễ. */
@@ -167,7 +180,9 @@ export class ProfileChangeService {
       const files = ids.length ? await this.fileRepo.find({ where: { employeeId, itemId: In(ids), status: 'READY' }, order: { createdAt: 'DESC' } }) : [];
       for (const r of rows) r.files = files.filter((f) => f.itemId === r.id).map(fileView);
     }
-    if (reveal && rows.some((r) => Object.values(r.sensitive).some((v) => v.hasValue))) {
+    const extra = await this.extras(employeeId, code, rows, reveal);
+    const currentShown = (extra as { current?: MaskedValue }).current?.hasValue;
+    if (reveal && (currentShown || rows.some((r) => Object.values(r.sensitive).some((v) => v.hasValue)))) {
       await this.audit.record({
         actorId: viewer.employeeId,
         action: 'VIEW_SENSITIVE',
@@ -184,10 +199,11 @@ export class ProfileChangeService {
       maxRows: schema.maxRows,
       notice: schema.notice ?? null,
       fields: schema.fields,
-      canPropose: relation === 'OWNER',
+      canPropose: relation === 'OWNER' && schema.proposeBy === 'NV',
       canEdit: relation === 'HR',
       rows,
       requests: own ? await this.openRequests(employeeId, code) : [],
+      ...extra,
     };
   }
 
@@ -225,7 +241,14 @@ export class ProfileChangeService {
     // E1, AC-1.9.8: chỉ chủ hồ sơ gửi yêu cầu, chỉ cho mục có cột "Nhập" là NV. HR sửa trực tiếp, không qua yêu cầu.
     if (relationTo(viewer, e) !== 'OWNER' || !viewer.employeeId) throw new ForbiddenException('Chỉ chủ hồ sơ gửi được yêu cầu cập nhật');
     const schema = SECTION_SCHEMAS[input.section];
-    if (!schema) throw new ForbiddenException('Mục này do HR quản lý, nhân viên không gửi yêu cầu được');
+    if (!schema || schema.proposeBy === 'HR') throw new ForbiddenException('Mục này do HR quản lý, nhân viên không gửi yêu cầu được');
+    // Trường chỉ HR nhập trong mục có cả trường NV (số thẻ BHYT).
+    const hrKeys = schema.fields.filter((f) => f.hrOnly).map((f) => f.key);
+    if (Object.keys(input.proposed ?? {}).some((k) => hrKeys.includes(k))) throw new ForbiddenException('Trường này do HR nhập');
+    // Bảo hiểm y tế: nơi khám chữa bệnh ban đầu đổi tối đa một lần mỗi quý.
+    if (input.section === 'health-insurance' && (await this.changedThisQuarter(employeeId, 'health-insurance'))) {
+      throw new ConflictException('Nơi khám chữa bệnh ban đầu chỉ đổi được một lần mỗi quý');
+    }
 
     // A7, AC-1.9.12: gửi lại cùng Idempotency-Key thì trả yêu cầu đã tạo.
     const again = await this.requests.findOneBy({ submittedBy: viewer.employeeId, idempotencyKey });
@@ -546,6 +569,13 @@ export class ProfileChangeService {
         const rows = await m.getRepository(ProfileItem).countBy({ employeeId, section, deletedAt: IsNull() });
         if (rows + 1 > schema.maxRows) throw new ConflictException(`Mục này tối đa ${schema.maxRows} dòng`);
       }
+      // E18, AC-1.12.2: hợp đồng mới không trùng khoảng ngày với hợp đồng khác của cùng người (khóa theo nhân viên).
+      if (section === 'contracts' && action !== 'DELETE') {
+        await m.query('SELECT id FROM employee.employee WHERE id = $1 FOR UPDATE', [employeeId]);
+        const others = await m.getRepository(ProfileItem).findBy({ employeeId, section, deletedAt: IsNull() });
+        const clash = others.find((o) => o.id !== itemId && overlaps(o.data, data));
+        if (clash) throw new ConflictException('Hợp đồng trùng khoảng ngày với hợp đồng khác của nhân viên này');
+      }
       const id = await this.applyChange(m, {
         employeeId,
         section,
@@ -557,6 +587,8 @@ export class ProfileChangeService {
         actorId: hr.employeeId,
         changeRequestId: null,
       });
+      // AC-1.12.3: "Lương mục tiêu" là mức đang hiệu lực; giữ employee_sensitive.salary_enc khớp để form HR và báo cáo cũ dùng.
+      if (section === 'salary') await this.syncSalary(m, employeeId);
       const auditAction = { CREATE: 'PROFILE_ITEM_CREATE', UPDATE: 'PROFILE_ITEM_UPDATE', DELETE: 'PROFILE_ITEM_DELETE' }[action];
       await this.audit.record(
         {
@@ -714,6 +746,85 @@ export class ProfileChangeService {
   private fieldNames(r: ProfileChangeRequest, sensitive?: Record<string, string>): string[] {
     const s = sensitive ?? (r.proposedSensitive ? JSON.parse(this.crypto.decrypt(r.proposedSensitive) ?? '{}') : {});
     return [...Object.keys(r.proposed), ...Object.keys(s)];
+  }
+
+  /** Thông tin tính thêm của mục: mức đang hiệu lực (lương, lương đóng BHXH), số người phụ thuộc (thuế TNCN). */
+  private async extras(employeeId: string, code: string, rows: RowView[], reveal: boolean) {
+    if (code === 'salary' || code === 'insurance-salary') {
+      const cur = currentRow(rows);
+      let current: MaskedValue = cur ? cur.sensitive.amount ?? { hasValue: false, value: null } : { hasValue: false, value: null };
+      if (!cur && code === 'salary') {
+        // Dữ liệu có từ trước khi có lịch sử lương: một mức trong employee_sensitive.
+        const enc = (await this.items.manager.getRepository(EmployeeSensitive).findOneBy({ employeeId }))?.salaryEnc ?? null;
+        current = { hasValue: !!enc, value: reveal ? this.crypto.decrypt(enc) : null };
+      }
+      // `salary` giữ tên trường cũ cho hàng "Lương mục tiêu" ở đầu trang.
+      return { current, salary: current, currentEffectiveDate: (cur?.data.effectiveDate as string | undefined) ?? null };
+    }
+    if (code === 'tax') return { dependents: await this.dependentCount(employeeId) };
+    return {};
+  }
+
+  /** AC-1.9.11: số người phụ thuộc đang trong thời gian giảm trừ (tháng hiện tại nằm trong [từ tháng, đến tháng]). */
+  async dependentCount(employeeId: string): Promise<number> {
+    const month = today().slice(0, 7);
+    const list = await this.items.findBy({ employeeId, section: 'relatives', deletedAt: IsNull() });
+    return list.filter(
+      (r) => r.data.isDependent === true && String(r.data.dependentFrom ?? '9999') <= month && (!r.data.dependentTo || String(r.data.dependentTo) >= month),
+    ).length;
+  }
+
+  /** Loại hợp đồng đang hiệu lực hôm nay (hàng "Diện đối tượng", AC-1.12.1); null nếu chưa có. */
+  async activeContractType(employeeId: string): Promise<string | null> {
+    const d = today();
+    const list = await this.items.findBy({ employeeId, section: 'contracts', deletedAt: IsNull() });
+    const active = list
+      .filter((c) => String(c.data.startDate) <= d && (!c.data.endDate || String(c.data.endDate) >= d))
+      .sort((a, b) => String(b.data.startDate).localeCompare(String(a.data.startDate)))[0];
+    return active ? (CONTRACT_LABEL[String(active.data.type)] ?? String(active.data.type)) : null;
+  }
+
+  /** AC-1.12.5: hợp đồng còn tối đa `days` ngày nữa hết hạn (HR). */
+  async expiringContracts(days: number) {
+    const rows: { item_id: string; employee_id: string; full_name: string; employee_code: string; type: string; number: string; end_date: string }[] =
+      await this.items.query(
+        `SELECT i.id AS item_id, e.id AS employee_id, e.full_name, e.employee_code,
+                i.data ->> 'type' AS type, i.data ->> 'number' AS number, i.data ->> 'endDate' AS end_date
+           FROM employee.profile_item i JOIN employee.employee e ON e.id = i.employee_id
+          WHERE i.section = 'contracts' AND i.deleted_at IS NULL AND e.status <> 'TERMINATED'
+            AND (i.data ->> 'endDate') BETWEEN to_char(current_date, 'YYYY-MM-DD') AND to_char(current_date + $1::int, 'YYYY-MM-DD')
+          ORDER BY i.data ->> 'endDate'`,
+        [days],
+      );
+    return rows.map((r) => ({
+      itemId: r.item_id,
+      employeeId: r.employee_id,
+      fullName: r.full_name,
+      employeeCode: r.employee_code,
+      type: CONTRACT_LABEL[r.type] ?? r.type,
+      number: r.number,
+      endDate: r.end_date,
+    }));
+  }
+
+  private async changedThisQuarter(employeeId: string, section: string): Promise<boolean> {
+    const now = new Date();
+    const qStart = new Date(Date.UTC(now.getUTCFullYear(), Math.floor(now.getUTCMonth() / 3) * 3, 1));
+    return this.requests.exists({ where: { employeeId, section, status: 'APPROVED', reviewedAt: MoreThanOrEqual(qStart) } });
+  }
+
+  private async syncSalary(m: EntityManager, employeeId: string) {
+    const list = await m.getRepository(ProfileItem).findBy({ employeeId, section: 'salary', deletedAt: IsNull() });
+    const cur = list
+      .filter((r) => String(r.data.effectiveDate) <= today())
+      .sort((a, b) => String(b.data.effectiveDate).localeCompare(String(a.data.effectiveDate)))[0];
+    if (!cur?.sensitiveData) return;
+    const amount = (JSON.parse(this.crypto.decrypt(cur.sensitiveData) ?? '{}') as Record<string, string>).amount;
+    if (!amount) return;
+    const repo = m.getRepository(EmployeeSensitive);
+    const s = (await repo.findOneBy({ employeeId })) ?? repo.create({ employeeId });
+    s.salaryEnc = this.crypto.encrypt(amount);
+    await repo.save(s);
   }
 
   /** Duyệt: file kèm chuyển READY (gắn vào dòng nếu có); yêu cầu xóa file thì file DELETED; ảnh đại diện mới thay ảnh cũ. */

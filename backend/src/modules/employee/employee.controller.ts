@@ -76,8 +76,11 @@ export class EmployeeController {
   /** Trang hồ sơ mặc định và thẻ xem nhanh: chỉ gọi API này (AC-1.8.7, AC-0.3.0). */
   @Get('employees/:id/summary')
   @ApiOkResponse({ type: ProfileSummary })
-  summary(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    return this.employees.summary(id, user);
+  async summary(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+    const s = await this.employees.summary(id, user);
+    // Hàng "Diện đối tượng" (mức QL): loại hợp đồng đang hiệu lực (AC-1.12.1).
+    if (s.contractType !== undefined) s.contractType = await this.changes.activeContractType(id);
+    return s;
   }
 
   /** Dữ liệu một mục, chỉ khi người dùng bấm vào mục (AC-1.8.8). Không được xem hoặc chưa có thì 404 (AC-1.8.6). */

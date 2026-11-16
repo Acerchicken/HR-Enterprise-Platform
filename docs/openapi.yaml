@@ -527,6 +527,23 @@ paths:
           description: ""
       tags: *a5
       security: *a6
+  /api/v1/contracts/expiring:
+    get:
+      operationId: ProfileChangeController_expiring
+      parameters:
+        - name: days
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 365
+            default: 30
+            type: number
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+      security: *a6
   /api/v1/employees/{id}/history:
     get:
       operationId: ProfileChangeController_history

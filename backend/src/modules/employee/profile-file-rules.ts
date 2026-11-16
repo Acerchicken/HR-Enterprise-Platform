@@ -28,6 +28,8 @@ export const FILE_SECTIONS: Record<string, { by: 'NV' | 'HR'; item: boolean; max
   avatar: { by: 'NV', item: false, maxFiles: 1, images: true },
   qualifications: { by: 'NV', item: true, maxFiles: 50 },
   relatives: { by: 'NV', item: true, maxFiles: 50 },
+  contracts: { by: 'HR', item: true, maxFiles: 200 },
+  'rewards-discipline': { by: 'HR', item: true, maxFiles: 200 },
 };
 
 const extOf = (name: string) => name.toLowerCase().split('.').pop() ?? '';

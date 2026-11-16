@@ -4,7 +4,7 @@
  */
 process.env.AUTH_MODE = 'dev';
 // Cả bộ e2e gọi API rất nhanh bằng vài tài khoản: nới giới hạn chung, giữ nguyên giới hạn hồ sơ để kiểm AC-1.14.x.
-process.env.RATE_LIMIT_OVERRIDES = JSON.stringify({ global: { minute: 100000 }, search: { minute: 100000 } });
+process.env.RATE_LIMIT_OVERRIDES = JSON.stringify({ global: { minute: 100000 }, 'profile-write': { minute: 100000 } });
 
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -128,7 +128,7 @@ describe('HRHelper API (e2e)', () => {
       const asOwner = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(EMPLOYEE).expect(200)).body;
       expect(asOwner.relation).toBe('OWNER');
       expect(asOwner.sections.find((x: any) => x.code === 'salary')).toMatchObject({ available: true, group: 'finance' });
-      expect(asOwner.sections.find((x: any) => x.code === 'social-insurance')).toMatchObject({ available: false });
+      expect(asOwner.sections.find((x: any) => x.code === 'milestones')).toMatchObject({ available: false });
       for (const k of personalKeys) expect(asOwner).not.toHaveProperty(k);
       const asHr = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(HR).expect(200)).body;
       expect(asHr).toMatchObject({ relation: 'HR', canEdit: true });
@@ -138,7 +138,7 @@ describe('HRHelper API (e2e)', () => {
     it('mục không được xem, chưa làm hoặc không tồn tại đều trả 404 (AC-1.8.6)', async () => {
       await http.get(`/api/v1/employees/${strangerId}/profile/personal`).set(EMPLOYEE).expect(404);
       await http.get(`/api/v1/employees/${employeeId}/profile/salary`).set(MANAGER).expect(404);
-      await http.get(`/api/v1/employees/${employeeId}/profile/social-insurance`).set(EMPLOYEE).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/profile/milestones`).set(EMPLOYEE).expect(404);
       await http.get(`/api/v1/employees/${employeeId}/profile/nope`).set(HR).expect(404);
       await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(ADMIN).expect(404);
     });
@@ -184,23 +184,16 @@ describe('HRHelper API (e2e)', () => {
       expect(res.body.code).toBe('PAYLOAD_TOO_LARGE');
     });
 
-    it('lệnh ghi hồ sơ thứ 31 trong một phút → 429 kèm Retry-After, câu báo nêu giới hạn', async () => {
-      // Tài khoản riêng (một đồng nghiệp bất kỳ) để không ảnh hưởng test khác.
+    it('lượt tìm kiếm thứ 21 trong một phút → 429 kèm Retry-After, câu báo nêu giới hạn (NFR-5.21, AC-1.14.7)', async () => {
+      // Tài khoản riêng (một đồng nghiệp bất kỳ) để không ảnh hưởng test khác. Giới hạn ghi hồ sơ có unit test riêng
+      // (rate-limit.spec.ts); e2e nới giới hạn đó vì HR ghi rất nhiều lần trong bộ test.
       const other = (await http.get(`/api/v1/employees/${strangerId}`).set(HR)).body;
       const who = as(other.workEmail);
-      for (let i = 0; i < 30; i++) {
-        // Nhân viên không ghi thẳng hồ sơ (403) nhưng lệnh vẫn được đếm.
-        const r = await http.patch(`/api/v1/employees/${strangerId}`).set(who).send({ phone: '0912000999', version: -1 });
-        expect(r.status).toBe(403);
-      }
-      const res = await http
-        .patch(`/api/v1/employees/${strangerId}`)
-        .set(who)
-        .send({ phone: '0912000999', version: -1 })
-        .expect(429);
+      for (let i = 0; i < 20; i++) await http.get('/api/v1/employees?q=ngu&size=1').set(who).expect(200);
+      const res = await http.get('/api/v1/employees?q=ngu&size=1').set(who).expect(429);
       expect(Number(res.headers['retry-after'])).toBeGreaterThan(0);
       expect(res.body).toMatchObject({ code: 'TOO_MANY_REQUESTS' });
-      expect(res.body.message).toMatch(/30 lệnh ghi hồ sơ mỗi phút/);
+      expect(res.body.message).toMatch(/20 lượt tìm kiếm mỗi phút/);
     });
   });
 
@@ -1028,6 +1021,89 @@ describe('HRHelper API (e2e)', () => {
         .set(MANAGER)
         .send({ section: 'cv', fileName: 'x.pdf', contentType: PDF, size: body.length, sha256: sha256(body) })
         .expect(404);
+    });
+  });
+
+  describe('UC1 mục HR quản lý và thuế TNCN (FR-1.12, AC-1.9.11)', () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const plusDays = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+    const post = (section: string, data: object) => http.post(`/api/v1/employees/${employeeId}/profile/${section}`).set(HR).send({ data });
+
+    beforeAll(async () => {
+      const { DataSource } = await import('typeorm');
+      await app.get(DataSource).query(
+        `UPDATE employee.profile_item SET deleted_at = now() WHERE employee_id = $1 AND section IN ('contracts', 'salary', 'tax', 'health-insurance') AND deleted_at IS NULL`,
+        [employeeId],
+      );
+      await app.get(DataSource).query(
+        `UPDATE employee.profile_change_request SET status = 'CANCELLED' WHERE employee_id = $1 AND section = 'health-insurance' AND status IN ('PENDING', 'APPROVED')`,
+        [employeeId],
+      );
+    });
+
+    it('hợp đồng: HR thêm, trùng khoảng ngày 409; đầu trang hiện loại đang hiệu lực; sắp hết hạn có trong danh sách (AC-1.12.1, 1.12.2, 1.12.5)', async () => {
+      await post('contracts', { type: 'FIXED_TERM', number: 'HĐ-E2E-1', startDate: '2025-01-01', endDate: plusDays(20) }).expect(204);
+      await post('contracts', { type: 'FIXED_TERM', number: 'HĐ-E2E-2', startDate: today, endDate: plusDays(400) }).expect(409);
+      const s = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(MANAGER).expect(200)).body;
+      expect(s.contractType).toBe('Xác định thời hạn');
+      const expiring = (await http.get('/api/v1/contracts/expiring?days=30').set(HR).expect(200)).body;
+      expect(expiring.map((c: any) => c.employeeId)).toContain(employeeId);
+      await http.get('/api/v1/contracts/expiring').set(EMPLOYEE).expect(403);
+    });
+
+    it('nhân viên xem được mục HR quản lý của mình, không gửi yêu cầu được; quản lý không thấy mục CN (AC-1.12.4, AC-1.9.8)', async () => {
+      const own = (await http.get(`/api/v1/employees/${employeeId}/profile/contracts`).set(EMPLOYEE).expect(200)).body;
+      expect(own).toMatchObject({ canPropose: false, canEdit: false });
+      expect(own.rows[0].data.number).toBe('HĐ-E2E-1');
+      await http
+        .post(`/api/v1/employees/${employeeId}/change-requests`)
+        .set(EMPLOYEE)
+        .set({ 'Idempotency-Key': `e2e-hr-${Date.now()}` })
+        .send({ section: 'contracts', action: 'CREATE', proposed: { type: 'INDEFINITE', number: 'X', startDate: today } })
+        .expect(403);
+      await http.post(`/api/v1/employees/${employeeId}/profile/contracts`).set(EMPLOYEE).send({ data: {} }).expect(403);
+      await http.get(`/api/v1/employees/${employeeId}/profile/contracts`).set(MANAGER).expect(404);
+    });
+
+    it('lương theo ngày hiệu lực: mức cũ giữ lại, "Lương mục tiêu" là mức đang hiệu lực, mã hóa khi lưu (AC-1.12.3)', async () => {
+      await post('salary', { amount: '20000000', effectiveDate: '2025-01-01' }).expect(204);
+      await post('salary', { amount: '23000000', effectiveDate: '2026-01-01' }).expect(204);
+      await post('salary', { amount: '99000000', effectiveDate: '2099-01-01' }).expect(204);
+      const masked = (await http.get(`/api/v1/employees/${employeeId}/profile/salary`).set(EMPLOYEE).expect(200)).body;
+      expect(masked.rows).toHaveLength(3);
+      expect(masked.current).toEqual({ hasValue: true, value: null });
+      const shown = (await http.get(`/api/v1/employees/${employeeId}/profile/salary?reveal=true`).set(EMPLOYEE).expect(200)).body;
+      expect(shown.current.value).toBe('23000000');
+      expect(shown.currentEffectiveDate).toBe('2026-01-01');
+      const { DataSource } = await import('typeorm');
+      const raw = await app.get(DataSource).query(`SELECT sensitive_data FROM employee.profile_item WHERE employee_id = $1 AND section = 'salary'`, [employeeId]);
+      expect(JSON.stringify(raw)).not.toContain('23000000');
+      const hr = (await http.get(`/api/v1/employees/${employeeId}?include=sensitive`).set(HR)).body;
+      expect(hr.sensitive.salary).toBe('23000000');
+      await http.get(`/api/v1/employees/${employeeId}/profile/salary`).set(MANAGER).expect(404);
+    });
+
+    it('thuế TNCN: mã số thuế mã hóa, số người phụ thuộc tự đếm (AC-1.9.11)', async () => {
+      await http.patch(`/api/v1/employees/${employeeId}/profile/tax/main`).set(HR).send({ version: 0, data: { taxCode: '0123456789' } }).expect(204);
+      const tax = (await http.get(`/api/v1/employees/${employeeId}/profile/tax?reveal=true`).set(EMPLOYEE).expect(200)).body;
+      expect(tax.rows[0].sensitive.taxCode.value).toBe('0123456789');
+      expect(tax.dependents).toBeGreaterThanOrEqual(1);
+    });
+
+    it('BHYT: nhân viên đổi nơi khám qua yêu cầu, không sửa số thẻ; đổi lần hai trong quý 409', async () => {
+      await http.patch(`/api/v1/employees/${employeeId}/profile/health-insurance/main`).set(HR).send({ version: 0, data: { cardNumber: 'DN4010123456789' } }).expect(204);
+      const send = (proposed: object) =>
+        http
+          .post(`/api/v1/employees/${employeeId}/change-requests`)
+          .set(EMPLOYEE)
+          .set({ 'Idempotency-Key': `e2e-bhyt-${Date.now()}-${Math.random()}` })
+          .send({ section: 'health-insurance', action: 'UPDATE', proposed });
+      await send({ cardNumber: '1' }).expect(403);
+      const req = (await send({ hospital: 'Bệnh viện Bạch Mai' }).expect(202)).body;
+      await http.post(`/api/v1/change-requests/${req.id}/approve`).set(HR).expect(200);
+      const row = (await http.get(`/api/v1/employees/${employeeId}/profile/health-insurance`).set(EMPLOYEE)).body.rows[0];
+      expect(row.data).toMatchObject({ cardNumber: 'DN4010123456789', hospital: 'Bệnh viện Bạch Mai' });
+      await send({ hospital: 'Bệnh viện E' }).expect(409);
     });
   });
 

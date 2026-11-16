@@ -3,6 +3,7 @@ import { useAuth } from './auth/auth';
 import { Layout } from './components/Layout';
 import { ShellProvider } from './components/shell';
 import { ApprovalsPage } from './pages/ApprovalsPage';
+import { ExpiringContractsPage } from './pages/ExpiringContractsPage';
 import { CallbackPage } from './pages/CallbackPage';
 import { DirectoryPage } from './pages/DirectoryPage';
 import { EmployeeFormPage } from './pages/employee/EmployeeFormPage';
@@ -61,6 +62,7 @@ function AppRoutes() {
           <Route path="leave/:id" element={<LeaveDetailPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
           <Route path="approvals/profile/:id" element={<ApprovalsPage />} />
+          <Route path="contracts/expiring" element={<ExpiringContractsPage />} />
           <Route path="coming-soon" element={<ComingSoonPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

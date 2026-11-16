@@ -1,4 +1,5 @@
 import {
+  CalendarClock,
   CalendarDays,
   CalendarPlus,
   ClipboardCheck,
@@ -48,6 +49,7 @@ const HR_TILES: Tile[] = [
   { title: 'Việc cần duyệt', desc: 'Yêu cầu cập nhật hồ sơ, đơn nghỉ', icon: Inbox, to: '/approvals?type=profile', who: ['HR'] },
   { title: 'Hoàn tất đơn nghỉ', desc: 'Đơn đã duyệt chờ HR hoàn tất', icon: CalendarDays, to: '/leave/hr', who: ['HR'] },
   { title: 'Quản lý nhân viên', desc: 'Thêm, sửa hồ sơ, nghỉ việc', icon: UserPlus, to: '/employees/new', who: ['HR'] },
+  { title: 'Hợp đồng sắp hết hạn', desc: 'Hết hạn trong 30 ngày tới', icon: CalendarClock, to: '/contracts/expiring', who: ['HR'] },
   { title: 'Đăng tài liệu', desc: 'Quy chế, biểu mẫu, phạm vi xem', icon: Upload, to: '/coming-soon', who: ['HR'], ready: false },
   { title: 'Lịch sử thao tác', desc: 'Ai làm gì, lúc nào', icon: History, to: '/coming-soon', who: ['HR', 'ADMIN'], ready: false },
 ];
