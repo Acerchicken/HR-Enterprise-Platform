@@ -1312,6 +1312,8 @@ export interface operations {
             query?: {
                 /** @description true: giải mã giá trị nhạy cảm của mục (bấm mắt); mỗi lần gọi ghi audit VIEW_SENSITIVE */
                 reveal?: string;
+                /** @description Quá trình công tác: true trả các dòng HR nhập tay thay cho dòng thời gian tự tính */
+                raw?: string;
             };
             header?: never;
             path: {

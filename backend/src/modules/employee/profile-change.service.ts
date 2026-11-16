@@ -19,6 +19,7 @@ import { FIELD_CRYPTO, RequestMeta } from './employee.service';
 import { ChangeAction, ProfileChangeRequest, ProfileFile, ProfileItem } from './profile-change.entity';
 import { FileView, fileView, ProfileFileService } from './profile-file.service';
 import { ProfileEventType } from './profile-events';
+import { careerTimeline, OrgChange, onLeavePeriods, seniority } from './profile-computed';
 import { CONTRACT_LABEL, FieldSpec, SECTION_SCHEMAS, SectionSchema, validateSection } from './profile-schema';
 import { canSeeLevel, findSection, relationTo } from './profile-sections';
 
@@ -746,6 +747,78 @@ export class ProfileChangeService {
   private fieldNames(r: ProfileChangeRequest, sensitive?: Record<string, string>): string[] {
     const s = sensitive ?? (r.proposedSensitive ? JSON.parse(this.crypto.decrypt(r.proposedSensitive) ?? '{}') : {});
     return [...Object.keys(r.proposed), ...Object.keys(s)];
+  }
+
+  /**
+   * Mục tự tính (FR-1.13), mức QL: quá trình công tác (audit nhóm trường tổ chức + dòng HR nhập trước khi có hệ thống), các mốc
+   * trong công ty (thâm niên), ngày nghỉ dài (đơn nghỉ ≥ 14 ngày làm việc đã duyệt hoặc hoàn tất, khoảng ON_LEAVE).
+   */
+  async computed(employeeId: string, code: string, viewer: AuthUser) {
+    const e = await this.employees.findOneBy({ id: employeeId });
+    if (!e) throw new NotFoundException('Không tìm thấy nhân viên');
+    const relation = relationTo(viewer, e);
+    const def = findSection(code);
+    if (!def || !def.available || !canSeeLevel(relation, def.level)) throw new NotFoundException('Không tìm thấy mục hồ sơ');
+    const base = { section: code, kind: 'computed' as const, canEdit: relation === 'HR' };
+
+    if (code === 'milestones') return { ...base, ...seniority(e.hireDate, today()) };
+
+    const audits = (await this.audit.history({ entityType: 'employee', entityId: employeeId, actions: ['UPDATE'], page: 1, size: 1000 })).items;
+    const changesOf = (keys: string[]) =>
+      audits
+        .map((a) => ({ at: a.at.toISOString(), cf: (a.changedFields ?? {}) as Record<string, { from: unknown; to: unknown }> }))
+        .filter((a) => keys.some((k) => a.cf[k] && typeof a.cf[k] === 'object'));
+
+    if (code === 'long-leaves') {
+      // Đọc thẳng bảng đơn nghỉ: module nghỉ phép phụ thuộc module hồ sơ, nên không gọi ngược service của nó.
+      const leaves: { start_date: string; end_date: string; days: string; name: string }[] = await this.items.query(
+        `SELECT to_char(r.start_date, 'YYYY-MM-DD') AS start_date, to_char(r.end_date, 'YYYY-MM-DD') AS end_date, r.days, t.name
+           FROM leave.leave_request r JOIN leave.leave_type t ON t.id = r.leave_type_id
+          WHERE r.employee_id = $1 AND r.status IN ('APPROVED', 'COMPLETED') AND r.days >= 14
+          ORDER BY r.start_date DESC`,
+        [employeeId],
+      );
+      const statusChanges = changesOf(['status']).map((a) => ({ at: a.at, from: a.cf.status!.from, to: a.cf.status!.to }));
+      const rows = [
+        ...leaves.map((l) => ({ type: l.name, from: l.start_date, to: l.end_date, days: Number(l.days), source: 'LEAVE' as const })),
+        ...onLeavePeriods(statusChanges).map((p) => ({ type: 'Tạm nghỉ (ON_LEAVE)', from: p.from, to: p.to, days: null, source: 'STATUS' as const })),
+      ].sort((a, b) => b.from.localeCompare(a.from));
+      return { ...base, rows };
+    }
+
+    // career-history
+    const lookups = await this.org.lookups();
+    const auto = careerTimeline(
+      e.hireDate,
+      { departmentId: e.departmentId, positionId: e.positionId, managerId: e.managerId },
+      changesOf(['departmentId', 'positionId', 'managerId']).map((a) => ({ at: a.at, changes: a.cf as OrgChange['changes'] })),
+    );
+    const managerIds = [...new Set(auto.map((p) => p.managerId).filter((x): x is string => !!x))];
+    const names = managerIds.length
+      ? new Map((await this.employees.find({ where: { id: In(managerIds) }, select: { id: true, fullName: true } })).map((m) => [m.id, m.fullName]))
+      : new Map<string, string>();
+    const manual = await this.items.find({ where: { employeeId, section: 'career-history', deletedAt: IsNull() } });
+    const periods = [
+      ...auto.map((p) => ({
+        from: p.from,
+        to: p.to,
+        department: p.departmentId ? (lookups.department.get(p.departmentId)?.name ?? null) : null,
+        position: p.positionId ? (lookups.position.get(p.positionId)?.title ?? null) : null,
+        manager: p.managerId ? (names.get(p.managerId) ?? null) : null,
+        reason: p.reason,
+        source: 'AUTO' as const,
+      })),
+      ...manual.map((m) => ({
+        from: String(m.data.from),
+        to: (m.data.to as string | undefined) ?? null,
+        department: (m.data.department as string) ?? null,
+        position: (m.data.position as string) ?? null,
+        manager: (m.data.manager as string | undefined) ?? null,
+        reason: String(m.data.reason ?? ''),
+        source: 'HR' as const,
+      })),
+    ].sort((a, b) => b.from.localeCompare(a.from));
+    return { ...base, periods };
   }
 
   /** Thông tin tính thêm của mục: mức đang hiệu lực (lương, lương đóng BHXH), số người phụ thuộc (thuế TNCN). */

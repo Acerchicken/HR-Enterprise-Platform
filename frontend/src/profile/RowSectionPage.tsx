@@ -16,9 +16,10 @@ const ROW_FILES = new Set(['qualifications', 'relatives', 'contracts', 'rewards-
  * Mục nhiều dòng hoặc một dòng (liên hệ khẩn cấp, thân nhân, chuyên môn, tài khoản ngân hàng). Chủ hồ sơ thêm, sửa, xóa đều
  * kết thúc bằng "Gửi yêu cầu" (FR-1.9); HR ghi thẳng (A9). Giá trị nhạy cảm chỉ tải khi bấm mắt.
  */
-export function RowSectionPage({ s, code }: { s: ProfileSummary; code: string }) {
+export function RowSectionPage({ s, code, raw = false }: { s: ProfileSummary; code: string; raw?: boolean }) {
   const [reveal, setReveal] = useState(false);
-  const data = useApi<RowSection>(() => api(`/employees/${s.id}/profile/${code}${reveal ? '?reveal=true' : ''}`), [s.id, code, reveal]);
+  const qs = [reveal && 'reveal=true', raw && 'raw=true'].filter(Boolean).join('&');
+  const data = useApi<RowSection>(() => api(`/employees/${s.id}/profile/${code}${qs ? `?${qs}` : ''}`), [s.id, code, qs]);
   const [editing, setEditing] = useState<Editing | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<Error | null>(null);

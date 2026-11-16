@@ -219,6 +219,11 @@ export class ProfileSectionQuery {
   @IsOptional()
   @IsIn(['true', 'false'])
   reveal?: 'true' | 'false';
+
+  @ApiPropertyOptional({ description: 'Quá trình công tác: true trả các dòng HR nhập tay thay cho dòng thời gian tự tính' })
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  raw?: 'true' | 'false';
 }
 
 export class SectionSummary {

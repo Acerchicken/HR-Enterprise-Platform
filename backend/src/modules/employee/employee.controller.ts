@@ -23,6 +23,7 @@ import { EmployeeService, RequestMeta } from './employee.service';
 import { ProfileChangeService } from './profile-change.service';
 import { SECTION_SCHEMAS } from './profile-schema';
 
+const COMPUTED = new Set(['career-history', 'milestones', 'long-leaves']);
 const meta = (req: Request & { traceId?: string }): RequestMeta => ({ ip: req.ip ?? null, traceId: req.traceId ?? null });
 
 @ApiTags('employee')
@@ -97,6 +98,8 @@ export class EmployeeController {
     @Req() req: Request,
   ) {
     if (q.reveal === 'true') await this.limiter.consume(user.userId, 'sensitive-view');
+    // Mục tự tính (FR-1.13). `raw=true`: HR quản lý các dòng nhập tay của quá trình công tác.
+    if (COMPUTED.has(section) && q.raw !== 'true') return this.changes.computed(id, section, user);
     const schema = SECTION_SCHEMAS[section];
     if (schema && schema.kind !== 'main') return this.changes.readSection(id, section, user, q.reveal === 'true', meta(req));
     const data = await this.employees.section(id, section, user, q.reveal === 'true', meta(req));

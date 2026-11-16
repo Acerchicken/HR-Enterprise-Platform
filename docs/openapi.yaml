@@ -255,6 +255,13 @@ paths:
             audit VIEW_SENSITIVE"
           schema:
             type: string
+        - name: raw
+          required: false
+          in: query
+          description: "Quá trình công tác: true trả các dòng HR nhập tay thay cho dòng
+            thời gian tự tính"
+          schema:
+            type: string
       responses:
         "200":
           description: ""
