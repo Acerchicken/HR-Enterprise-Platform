@@ -66,7 +66,7 @@ phạm vi (tính lương, chấm công, tuyển dụng, ứng dụng di động,
 - Thuật ngữ nghiệp vụ: [BRD mục 16](../business/BRD.md#16-thuật-ngữ).
 - Business rule nghỉ phép: [`leave-rules.md`](../business/leave-rules.md); loại phép, ngày lễ:
   [`leave-types-holidays.md`](../business/leave-types-holidays.md); kho tài liệu: [`document-rules.md`](../business/document-rules.md).
-- Phân quyền từng API: [ma trận phân quyền](../security/access-control-matrix.md); mối đe dọa: [threat model](../security/threat-model.md).
+- Mô hình phân quyền: [authorization.md](../security/authorization.md) (ADR-18). Phân quyền từng API: [ma trận phân quyền](../security/access-control-matrix.md); mối đe dọa: [threat model](../security/threat-model.md).
 - Quy ước API: [`CONVENTIONS.md` mục 4](../CONVENTIONS.md#4-api).
 
 ## 2. Mô tả tổng quan
