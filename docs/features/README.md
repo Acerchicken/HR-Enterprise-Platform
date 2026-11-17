@@ -1,4 +1,4 @@
-# Tài liệu theo tính năng (UC1 → UC7)
+# Tài liệu theo tính năng (UC1 → UC8)
 
 > Bộ tài liệu: [`docs/README.md`](../README.md). Yêu cầu gốc: [SRS](../requirements/SRS.md) mục 4 (FR) và mục 6 (NFR).
 
@@ -23,7 +23,8 @@ nghĩa hẹp của UML. Bên trong, mỗi luồng ở mục 4 của `spec.md` l�
 xem hồ sơ, gửi yêu cầu sửa, tải file, HR duyệt yêu cầu, HR tạo và sửa hồ sơ). Vì vậy các UC không đều nhau về số FR; chia theo
 miền nghiệp vụ, không cố cho đều. Quyết định 14/11/2026: giữ 7 nhóm và giữ mã; mở rộng UC2 (chức danh, điều chuyển, quá trình
 công tác, trưởng/phó phòng); UC6 là "Tra cứu chung và trợ lý", danh bạ vẫn thuộc UC2, kho tài liệu vẫn thuộc UC5. Sửa cùng ngày:
-ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp; tìm tài liệu và trợ lý AI ở trang riêng "Tra cứu tài liệu".
+ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp; tìm tài liệu và trợ lý AI ở trang riêng "Tra cứu tài liệu". Thêm 17/11/2026:
+UC8 "Đăng nhập và tài khoản" ([ADR-17](../architecture/adr/ADR-17-authentication.md)); yêu cầu bảo mật dùng chung vẫn là NFR-5.
 
 ## Danh sách
 
@@ -36,6 +37,7 @@ công tác, trưởng/phó phòng); UC6 là "Tra cứu chung và trợ lý", dan
 | UC5 – Kho tài liệu | [requirements](UC5-document-repository/requirements.md) | [spec](UC5-document-repository/spec.md) | [deploy](UC5-document-repository/deploy.md) | [test](UC5-document-repository/test.md) | FR-5.1 → 5.3 | Đã có API; chưa có giao diện; staging chưa có bucket |
 | UC6 – Tra cứu chung và trợ lý | [requirements](UC6-self-service-search/requirements.md) | [spec](UC6-self-service-search/spec.md) | [deploy](UC6-self-service-search/deploy.md) | [test](UC6-self-service-search/test.md) | FR-6.1 → 6.3 | Tìm đồng nghiệp đã có; tìm tài liệu, trợ lý chưa có |
 | UC7 – Lịch sử thao tác | [requirements](UC7-audit-log/requirements.md) | [spec](UC7-audit-log/spec.md) | [deploy](UC7-audit-log/deploy.md) | [test](UC7-audit-log/test.md) | FR-7.1 → 7.3 | Ghi audit, API có; màn hình tra cứu chưa có |
+| UC8 – Đăng nhập và tài khoản (thêm 17/11) | [requirements](UC8-authentication/requirements.md) | [spec](UC8-authentication/spec.md) | [deploy](UC8-authentication/deploy.md) | [test](UC8-authentication/test.md) | FR-8.1 → 8.6 | Đăng nhập local đã có; staging, quên mật khẩu, MFA, tạo và khóa tài khoản chưa có |
 
 Lịch làm phần còn lại: [kế hoạch hoàn thành từng chức năng](../progress/ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13).
 
