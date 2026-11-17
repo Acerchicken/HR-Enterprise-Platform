@@ -20,9 +20,10 @@
 - **AC-3.1.1** Khi nhân viên xem số dư. Thì mỗi loại phép có được hưởng, đã dùng, đang chờ, còn lại; còn lại = được hưởng −
   đã dùng − đang chờ.
 - **AC-3.1.2** Giả sử nhân viên vừa tạo đơn 2 ngày. Khi xem lại số dư. Thì đang chờ tăng 2, còn lại giảm 2.
-- **AC-3.1.3** *(chưa đạt)* Giả sử nhân viên vào làm 1/7/2026. Khi xem số dư phép năm 2026. Thì được hưởng 6 ngày (12 × 6/12,
-  Điều 113 BLLĐ). Người có 10 năm thâm niên được hưởng 14 ngày.
-- **AC-3.1.4** *(chưa đạt)* Nghỉ cưới, nghỉ tang tính theo từng lần (3 ngày/lần), không trừ vào số dư năm.
+- **AC-3.1.3** *(chưa đạt)* Theo BR-01 và danh mục loại phép: với nhân viên làm điều kiện bình thường, mức phép năm là 12 ngày; nhân viên làm chưa đủ 12 tháng trong năm được tính `(mức phép năm theo điều kiện lao động + ngày cộng thâm niên) / 12 × số tháng làm việc thực tế trong năm`. Tháng làm chưa đủ tháng được tính nếu ngày làm việc và ngày nghỉ hưởng lương đạt ít nhất 50% ngày làm việc bình thường của tháng. Giả sử vào làm 1/7/2026, không có ngày cộng thâm niên: số dư được hưởng năm 2026 là 6 ngày. Giả sử cùng mức chuẩn và đủ 10 năm làm việc cho cùng người sử dụng lao động: được cộng 2 ngày, tổng mức năm là 14 ngày. Số dư lưu 2 chữ số thập phân, không làm tròn giảm.
+- **AC-3.1.4** *(chưa đạt)* Nghỉ cưới, con cưới, tang, thai sản và nghỉ khi vợ sinh được cấp theo từng sự kiện hợp lệ và giới hạn trong danh mục loại phép; không trừ hoặc cộng vào số dư phép năm. Nghỉ cưới bản thân tối đa 3 ngày/sự kiện, con cưới 1 ngày/sự kiện, tang thân nhân thuộc danh mục 3 ngày/sự kiện. Mỗi sự kiện chỉ yêu cầu một lần; HR kiểm giấy tờ khi hoàn tất. Không đặt tổng hạn mức số lần/năm cho các sự kiện hợp lệ. Đơn vượt mức của loại sự kiện trả 400; không tự tách đơn, đổi phần vượt sang nghỉ không lương hoặc trừ phép năm.
+- **AC-3.1.5** *(mới)* Giả sử nhân viên đang thử việc rồi tiếp tục làm tại doanh nghiệp. Thì thời gian thử việc được tính vào thời gian làm việc để tính phép năm từ `hireDate`; nhân viên được dùng số dư đã phát sinh trong thử việc theo cùng quy tắc số dư và phê duyệt. Nếu không tiếp tục làm sau thử việc thì không cấp thêm số dư phép năm cho thời gian sau ngày kết thúc thử việc.
+- **AC-3.1.6** *(mới)* Với nghỉ ốm, số ngày tối đa không được suy từ `hireDate`. Khi chưa có dữ liệu BHXH và nhóm điều kiện lao động đã xác minh. Thì HR nhập/cập nhật hạn mức từ hồ sơ hợp lệ; HR kiểm giấy tờ khi hoàn tất (BR-18).
 
 ### FR-3.2 Tạo đơn (M, đã có)
 
@@ -31,8 +32,7 @@
 - **AC-3.2.2** Khi không đủ số dư (BR-01). Thì trả 400, câu báo nêu số ngày cần và số ngày còn.
 - **AC-3.2.3** Khi ngày kết thúc trước ngày bắt đầu, nửa ngày nhưng hai ngày khác nhau, loại phép không tồn tại, lý do quá 500
   ký tự. Thì trả 400 kèm `fields`.
-- **AC-3.2.4** *(chưa đạt)* Khi tạo đơn 29/12/2026 – 4/1/2027. Thì một đơn được tạo; số ngày năm 2026 trừ vào số dư 2026,
-  số ngày năm 2027 trừ vào số dư 2027; năm nào thiếu số dư thì trả 400.
+- **AC-3.2.4** *(chưa đạt)* Khi tạo đơn 29/12/2026 – 4/1/2027. Thì một đơn được tạo; ngày phép năm được tách theo năm lịch và giữ chỗ riêng trong số dư 2026, 2027. Nếu một trong hai năm không đủ số dư thì từ chối toàn bộ đơn (400), không lưu đơn và không giữ chỗ một phần. Khi hủy/từ chối, giải phóng đúng số ngày đang giữ ở mỗi năm; khi hoàn tất, chuyển số ngày của từng năm từ `pending` sang `used` trong đúng năm đó.
 - **AC-3.2.5** *(chưa đạt)* Khi tài khoản đăng nhập chưa gắn hồ sơ. Thì trả 403 (code đang trả 404).
 
 ### FR-3.3 Không trùng lịch (M, đã có)
@@ -45,6 +45,7 @@
 
 - **AC-3.4.1** Khi tạo đơn 29/4–4/5/2026. Thì số ngày là 2 (bỏ cuối tuần, lễ 30/4, 1/5, BR-03).
 - **AC-3.4.2** Khi đơn chỉ gồm ngày nghỉ bù 27/4/2026 hoặc chỉ gồm cuối tuần. Thì trả 400.
+- **AC-3.4.3** *(mới)* Khi lịch lễ/nghỉ bù được cập nhật sau khi gửi đơn. Thì hệ thống không âm thầm đổi số ngày của đơn đang `SUBMITTED`, `PENDING_HR` hoặc `APPROVED`; HR rà soát, ghi điều chỉnh số ngày và `pending` có audit/lịch sử, gửi thông báo chung (BR-19). Đơn gửi sau cập nhật dùng lịch mới.
 
 ### FR-3.5 Gửi lại không tạo đơn thứ hai (M, đã có)
 
@@ -54,10 +55,13 @@
 
 ### FR-3.6 Hủy đơn (M, đã có)
 
-- **AC-3.6.1** Khi chủ đơn hủy đơn `SUBMITTED`. Thì đơn `CANCELLED`, số ngày trả khỏi `pending`, audit `LEAVE_CANCEL`, quản
-  lý nhận email (BR-07).
-- **AC-3.6.2** Khi hủy đơn đã `APPROVED` (BR-08). Thì trả 409.
-- **AC-3.6.3** Khi người khác hủy đơn. Thì trả 403. Khi hủy với `version` cũ. Thì trả 409.
+- **AC-3.6.1** Khi chủ đơn hủy đơn `SUBMITTED` hoặc `PENDING_HR` trước `startDate`. Thì đơn `CANCELLED`, số ngày trả khỏi
+  `pending` theo từng năm, audit `LEAVE_CANCEL`, người duyệt hiện có quyền nhận email chung (BR-07, BR-15). Từ `startDate`
+  trở đi, chủ đơn tự hủy nhận 409 theo AC-3.6.5.
+- **AC-3.6.2** Khi nhân viên tự hủy đơn đã `APPROVED` (BR-08). Thì trả 409; nhân viên phải đề nghị quản lý trực tiếp hoặc HR xác nhận hủy trước ngày bắt đầu nghỉ.
+- **AC-3.6.3** Khi người không có quyền hủy đơn (không phải chủ đơn hủy đơn chờ, quản lý trực tiếp hiện tại hoặc HR xác nhận theo AC-3.6.4). Thì trả 403. Khi hủy với `version` cũ. Thì trả 409.
+- **AC-3.6.4** *(mới, TV1 triển khai)* Khi quản lý trực tiếp hiện tại hoặc HR xác nhận đề nghị hủy đơn `APPROVED` trước ngày bắt đầu nghỉ, kèm lý do. Thì đơn chuyển `CANCELLED`, số ngày được giải phóng khỏi `pending` theo từng năm, `used` không đổi; ghi người đề nghị, người xác nhận và thời điểm; ghi lý do ở lịch sử nhưng không ở audit; gửi email chung (BR-08, BR-15). Từ ngày bắt đầu nghỉ trở đi thì luồng hủy này trả 409.
+- **AC-3.6.5** *(mới, TV1 triển khai)* Khi đơn `SUBMITTED`/`PENDING_HR` đã tới hoặc qua `startDate`. Thì chủ đơn tự hủy nhận 409; HR phải xác minh thực tế nghỉ rồi ghi hủy/điều chỉnh có lý do, cập nhật đúng số dư từng năm và audit/lịch sử. Không tự trả lại toàn bộ `pending` chỉ theo yêu cầu hủy muộn (BR-07).
 
 ### FR-3.7 Tạo đơn hộ (S, chưa có)
 
@@ -87,6 +91,6 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 |---|---|---|---|---|
 | Tạo đơn hộ (làm chung nhánh với người duyệt thay) | AC-3.7.1 → AC-3.7.4 | TV1 | `feat/leave-delegation` | 11 |
 | Email chung, ẩn lý do nghỉ ốm | UC4 AC-4.6.3, AC-4.7.3 | TV1 | `feat/leave-privacy` | 11 |
-| Xác nhận cách tính phép năm (tỉ lệ, thâm niên), nghỉ theo sự kiện, đơn qua hai năm | AC-3.1.3, AC-3.1.4, AC-3.2.4 | TV2 | `docs/leave-rules-week11` | 11 |
+| Chốt quy tắc phép năm/thử việc, nghỉ sự kiện/ốm, đơn qua năm/lịch lễ, hủy muộn/đã duyệt, hoàn tất và nhắc đơn chờ | AC-3.1.3 → AC-3.1.6, AC-3.2.4, AC-3.4.3, AC-3.6.2 → AC-3.6.5 | TV2 | `docs/leave-rules-week11` | 11 |
 | Cấp số dư theo luật, đơn qua hai năm, 403 khi chưa gắn hồ sơ | AC-3.1.3, AC-3.1.4, AC-3.2.4, AC-3.2.5 | TV1 | `fix/leave-balance-rules` | 11 |
 | Lưu trữ 5 năm, legal hold (BR-13) | – | – | – | Ngoài MVP, ghi ở SRS mục 8 |
