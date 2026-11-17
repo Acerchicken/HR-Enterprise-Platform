@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { ProfileSummary } from '../api/client';
 import { getSummary } from '../api/cache';
 import { useApi } from '../api/useApi';
+import { useAvatarUrl } from './files';
 import { Avatar, errorText, Skeleton } from './ui';
 import { useDialog } from './useDialog';
 
@@ -15,6 +16,7 @@ export function QuickViewCard({ id, onClose, onFull }: { id: string; onClose: ()
   useDialog(box, title, onClose);
   const s = useApi<ProfileSummary>(() => getSummary(id), [id]);
   const e = s.data;
+  const avatarUrl = useAvatarUrl(e?.id, e?.hasAvatar);
 
   return (
     <div className="overlay" onMouseDown={(ev) => ev.target === ev.currentTarget && onClose()}>
@@ -23,7 +25,7 @@ export function QuickViewCard({ id, onClose, onFull }: { id: string; onClose: ()
           <button type="button" className="icon-btn qv-x" aria-label="Đóng" onClick={onClose}>
             <X size={18} />
           </button>
-          <Avatar name={e?.fullName} size="md" />
+          <Avatar name={e?.fullName} size="md" src={avatarUrl} />
           {e && <span className="code-badge">{e.employeeCode}</span>}
           <h2 id="qv-title" tabIndex={-1} ref={title}>{e?.fullName ?? 'Đang tải…'}</h2>
           {e && <div className="muted">{e.positionTitle ?? '—'}</div>}

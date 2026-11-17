@@ -448,7 +448,15 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 ## 12. Hiện trạng và việc còn lại
 
-Rà soát chi tiết database, backend, frontend ngày 14/11/2026 và kế hoạch `feat/profile-layout`: [ra-soat.md](ra-soat.md).
+Quyết định 14/11/2026 (rà soát trước khi làm UC1):
+
+- Không viết lại code; `feat/profile-layout` không có migration. Bảng `profile_item`, `profile_change_request`, `profile_file`
+  thêm bằng migration mới ở nhánh của chúng, không sửa migration cũ.
+- Nhánh yêu cầu cập nhật hồ sơ tên là `feat/profile-change-requests` (trước là `feat/profile-self-service`, dễ nhầm với UC6).
+- Ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp; tìm tài liệu và trợ lý AI ở trang "Tra cứu tài liệu" (UC6).
+- Biểu tượng dùng `lucide-react`.
+- Mục "Các mốc trong công ty" để tiêu đề đỏ tới khi tính thâm niên (FR-1.13); ngày vào làm xem ở "Thông tin cá nhân".
+- Danh sách cấp dưới trực tiếp không nằm trong popup hồ sơ; xem ở sơ đồ tổ chức.
 
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|

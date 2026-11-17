@@ -33,14 +33,14 @@ describe('employee access rules', () => {
     expect(viewLevel(user('h1', 'HR'), target)).toBe('HR');
   });
 
-  it('nhân viên chỉ tự sửa phone, address', () => {
-    expect(forbiddenFields(user('e1'), 'e1', { phone: '0912345678', version: 3 })).toEqual([]);
-    expect(forbiddenFields(user('e1'), 'e1', { phone: '0912345678', salary: '1' })).toEqual(['salary']);
+  it('nhân viên không ghi thẳng hồ sơ của mình, kể cả điện thoại: phải gửi yêu cầu cập nhật (AC-1.2.1)', () => {
+    expect(forbiddenFields(user('e1'), 'e1', { phone: '0912345678', version: 3 })).toEqual(['phone']);
+    expect(forbiddenFields(user('e1'), 'e1', { version: 1, phone: '0912345678', salary: '1' })).toEqual(['phone', 'salary']);
   });
 
   it('không sửa được hồ sơ người khác, trừ HR', () => {
-    expect(forbiddenFields(user('e2'), 'e1', { phone: '0912345678' })).toEqual(['phone']);
-    expect(forbiddenFields(user('m1', 'MANAGER'), 'e1', { address: 'x' })).toEqual(['address']);
-    expect(forbiddenFields(user('h1', 'HR'), 'e1', { salary: '1', departmentId: 'd' })).toEqual([]);
+    expect(forbiddenFields(user('e2'), 'e1', { version: 1, phone: '0912345678' })).toEqual(['phone']);
+    expect(forbiddenFields(user('m1', 'MANAGER'), 'e1', { version: 1, address: 'x' })).toEqual(['address']);
+    expect(forbiddenFields(user('h1', 'HR'), 'e1', { version: 1, salary: '1', departmentId: 'd' })).toEqual([]);
   });
 });
