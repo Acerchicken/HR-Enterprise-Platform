@@ -53,6 +53,31 @@ export interface AppConfig {
     port: number;
     from: string;
   };
+  /**
+   * Object storage cho kho tài liệu (S3 trên AWS, MinIO khi chạy local). `bucket` rỗng thì API tài liệu trả 503.
+   * `publicEndpoint`: địa chỉ trình duyệt dùng để upload bằng presigned URL (khác `endpoint` khi API chạy trong Docker).
+   */
+  storage: {
+    bucket: string | null;
+    region: string;
+    endpoint: string | null;
+    publicEndpoint: string | null;
+    accessKeyId: string | null;
+    secretAccessKey: string | null;
+  };
+  /**
+   * Bucket riêng cho file hồ sơ (UC1 FR-1.10): chặn public, SSE-KMS, lifecycle xóa object gắn tag `deleted=true` sau 30
+   * ngày. Dùng chung endpoint và khóa của `storage`. Để trống thì thao tác file hồ sơ trả 503 (AC-1.10.9).
+   */
+  profileStorage: { bucket: string | null };
+  /**
+   * Giới hạn tần suất (NFR-5.21, UC1 FR-1.14). `overrides`: đổi ngưỡng của từng nhóm, ví dụ
+   * RATE_LIMIT_OVERRIDES='{"global":{"minute":1000}}' khi chạy e2e hoặc load test. `enabled=false` tắt hẳn (chỉ dùng local).
+   */
+  rateLimit: {
+    enabled: boolean;
+    overrides: Record<string, Partial<Record<'minute' | 'hour' | 'day', number>>>;
+  };
 }
 
 export interface LoadOptions {
@@ -97,6 +122,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
       port: Number(env.SMTP_PORT ?? 1025),
       from: env.SMTP_FROM ?? 'no-reply@hr.local',
     },
+    storage: {
+      bucket: env.STORAGE_BUCKET || null,
+      region: env.STORAGE_REGION || env.AWS_REGION || 'ap-southeast-1',
+      endpoint: env.STORAGE_ENDPOINT || null,
+      publicEndpoint: env.STORAGE_PUBLIC_ENDPOINT || env.STORAGE_ENDPOINT || null,
+      accessKeyId: env.STORAGE_ACCESS_KEY_ID || null,
+      secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY || null,
+    },
+    profileStorage: { bucket: env.PROFILE_STORAGE_BUCKET || null },
+    rateLimit: {
+      enabled: env.RATE_LIMIT_ENABLED !== 'false',
+      overrides: parseOverrides(env.RATE_LIMIT_OVERRIDES),
+    },
   };
   assertValid(cfg, env, opts.needsAuth ?? true);
   return cfg;
@@ -140,3 +178,14 @@ function loadQueue(env: NodeJS.ProcessEnv): AppConfig['queue'] {
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
+
+function parseOverrides(raw: string | undefined): AppConfig['rateLimit']['overrides'] {
+  if (!raw) return {};
+  try {
+    const v = JSON.parse(raw);
+    if (v && typeof v === 'object') return v;
+  } catch {
+    // Rơi xuống lỗi bên dưới.
+  }
+  throw new Error('RATE_LIMIT_OVERRIDES phải là JSON, ví dụ {"global":{"minute":1000}}');
+}

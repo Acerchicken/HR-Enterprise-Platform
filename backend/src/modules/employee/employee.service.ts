@@ -14,9 +14,21 @@ import { AuditService } from '../audit/audit.service';
 import { AuthUser } from '../identity/roles';
 import { OrganizationService } from '../organization/organization.service';
 import { forbiddenFields, viewLevel } from './employee-access';
+import { auditFields } from './employee-audit';
 import { EmployeeSensitive } from './employee-sensitive.entity';
 import { Employee } from './employee.entity';
-import { CreateEmployeeDto, DirectoryEntry, EmployeeProfile, UpdateEmployeeDto } from './employee.dto';
+import {
+  CreateEmployeeDto,
+  DirectoryEntry,
+  EmployeeProfile,
+  MaskedField,
+  MeEmployee,
+  PersonalSection,
+  ProfileSectionData,
+  ProfileSummary,
+  UpdateEmployeeDto,
+} from './employee.dto';
+import { canReveal, canSeeLevel, findSection, relationTo, visibleSections } from './profile-sections';
 
 export const FIELD_CRYPTO = Symbol('FIELD_CRYPTO');
 
@@ -26,7 +38,14 @@ export interface RequestMeta {
 }
 
 const SENSITIVE_KEYS = ['nationalId', 'bankAccount', 'salary'] as const;
+/** Trường chính HR sửa được; `employeeCode` không sửa (AC-1.4.4). */
+const EDITABLE_KEYS = [
+  'phone', 'address', 'fullName', 'dateOfBirth', 'workEmail', 'departmentId', 'positionId', 'managerId', 'status', 'hireDate',
+] as const;
 
+
+/** Mã chức danh của Tổng Giám đốc trong danh mục chức danh. */
+export const CEO_POSITION = 'CEO';
 @Injectable()
 export class EmployeeService {
   constructor(
@@ -50,6 +69,27 @@ export class EmployeeService {
   // ---------- Interface cho module Leave ----------
 
   /** Quản lý trực tiếp hiện tại của nhân viên (null nếu không có hoặc không tồn tại). */
+  /** CEO là người giữ chức danh mã `CEO` (issue #22: người duy nhất không có quản lý trực tiếp). */
+  async isCeo(employeeId: string): Promise<boolean> {
+    const e = await this.repo.findOne({ where: { id: employeeId }, select: { id: true, positionId: true } });
+    if (!e) return false;
+    return (await this.org.lookups()).position.get(e.positionId)?.code === CEO_POSITION;
+  }
+
+  /** Nhân viên đang giữ chức danh CEO (chưa nghỉ việc); HR duyệt đơn nghỉ của những người này. */
+  async ceoIds(): Promise<string[]> {
+    const ceo = [...(await this.org.lookups()).position.values()].find((p) => p.code === CEO_POSITION);
+    if (!ceo) return [];
+    const rows = await this.repo.find({ where: { positionId: ceo.id, status: In(['ACTIVE', 'ON_LEAVE']) }, select: { id: true } });
+    return rows.map((r) => r.id);
+  }
+
+  /** Phòng ban và trạng thái hiện tại (module tài liệu dùng để tính phạm vi xem, DR-02, DR-06). */
+  async placementOf(employeeId: string): Promise<{ departmentId: string; status: string } | null> {
+    const e = await this.repo.findOne({ where: { id: employeeId }, select: { id: true, departmentId: true, status: true } });
+    return e ? { departmentId: e.departmentId, status: e.status } : null;
+  }
+
   async managerIdOf(employeeId: string): Promise<string | null> {
     const e = await this.repo.findOne({ where: { id: employeeId }, select: { id: true, managerId: true } });
     return e?.managerId ?? null;
@@ -147,6 +187,114 @@ export class EmployeeService {
     return profile;
   }
 
+  // ---------- Trang hồ sơ theo mục (UC1 spec 9.1) ----------
+
+  /** Tài khoản đang đăng nhập: chỉ mã, tên của hồ sơ gắn với tài khoản (AC-1.8.7). */
+  async meEmployee(employeeId: string): Promise<MeEmployee | null> {
+    const e = await this.repo.findOne({
+      where: { id: employeeId },
+      select: { id: true, employeeCode: true, fullName: true },
+    });
+    return e ? { id: e.id, employeeCode: e.employeeCode, fullName: e.fullName } : null;
+  }
+
+  /** Phần trang hồ sơ mặc định hiện, cộng danh sách mục người xem được thấy (AC-1.8.1, 1.8.4, 1.8.7). */
+  async summary(id: string, viewer: AuthUser): Promise<ProfileSummary> {
+    const e = await this.getOrThrow(id);
+    const relation = relationTo(viewer, e);
+    const [entry] = await this.toDirectory([e]);
+    // Nhãn "Chờ HR xác nhận" chỉ cho chủ hồ sơ và HR (AC-1.9.2).
+    const pending =
+      relation === 'OWNER' || relation === 'HR'
+        ? new Map<string, number>(
+            (
+              (await this.repo.query(
+                `SELECT section, count(*)::int AS n FROM employee.profile_change_request WHERE employee_id = $1 AND status = 'PENDING' GROUP BY section`,
+                [id],
+              )) as { section: string; n: number }[]
+            ).map((r) => [r.section, r.n]),
+          )
+        : new Map<string, number>();
+    const summary: ProfileSummary = {
+      id: e.id,
+      employeeCode: e.employeeCode,
+      fullName: e.fullName,
+      positionTitle: entry.positionTitle,
+      departmentId: e.departmentId,
+      departmentName: entry.departmentName,
+      managerId: e.managerId,
+      managerName: entry.managerName ?? null,
+      phone: e.phone,
+      workEmail: e.workEmail,
+      relation,
+      canEdit: relation === 'HR',
+      hasAvatar: !!e.avatarFileId,
+      sections: visibleSections(relation).map((s) => ({
+        code: s.code,
+        group: s.group,
+        title: s.title,
+        available: s.available,
+        pendingRequests: pending.get(s.code) ?? 0,
+      })),
+    };
+    // Hàng "Diện đối tượng" ở đầu trang có mức QL; hợp đồng chưa có dữ liệu (FR-1.12) nên luôn null.
+    if (canSeeLevel(relation, 'QL')) summary.contractType = null;
+    return summary;
+  }
+
+  /**
+   * Dữ liệu của một mục, chỉ khi người dùng bấm vào mục đó (AC-1.8.8). Mục không tồn tại, chưa làm hoặc người xem không được
+   * thấy đều trả 404 giống nhau (AC-1.8.6, E7). Giá trị nhạy cảm chỉ giải mã khi `reveal` và mỗi lần đều ghi audit.
+   */
+  async section(id: string, code: string, viewer: AuthUser, reveal: boolean, meta: RequestMeta = {}): Promise<ProfileSectionData> {
+    const e = await this.getOrThrow(id);
+    const relation = relationTo(viewer, e);
+    const def = findSection(code);
+    if (!def || !def.available || !canSeeLevel(relation, def.level)) {
+      throw new NotFoundException('Không tìm thấy mục hồ sơ');
+    }
+
+    const field = code === 'salary' ? 'salary' : 'nationalId';
+    const hasSensitive = code !== 'personal' || relation === 'HR';
+    if (reveal && (!hasSensitive || !canReveal(relation, field))) {
+      throw new ForbiddenException('Bạn không được xem giá trị này');
+    }
+
+    let masked: MaskedField | undefined;
+    if (hasSensitive) {
+      const s = await this.sensitiveRepo.findOneBy({ employeeId: id });
+      const enc = field === 'salary' ? s?.salaryEnc : s?.nationalIdEnc;
+      masked = { hasValue: !!enc, value: null };
+      if (reveal) {
+        masked.value = this.crypto.decrypt(enc);
+        // NFR-6.1: mọi lượt đọc giá trị nhạy cảm đều có audit; chỉ ghi tên trường, không ghi giá trị.
+        await this.audit.record({
+          actorId: viewer.employeeId,
+          action: 'VIEW_SENSITIVE',
+          entityType: 'employee',
+          entityId: id,
+          changedFields: { fields: [field], section: code },
+          ...meta,
+        });
+      }
+    }
+
+    if (code === 'salary') return { section: 'salary', salary: masked! };
+    const personal: PersonalSection = {
+      section: 'personal',
+      relation,
+      version: e.version,
+      phone: e.phone,
+      workEmail: e.workEmail,
+      address: e.address,
+      dateOfBirth: e.dateOfBirth,
+      hireDate: e.hireDate,
+      status: e.status,
+    };
+    if (masked) personal.nationalId = masked;
+    return personal;
+  }
+
   async update(id: string, dto: UpdateEmployeeDto, actor: AuthUser, meta: RequestMeta = {}): Promise<EmployeeProfile> {
     const denied = forbiddenFields(actor, id, dto);
     if (denied.length) throw new ForbiddenException(`Không được sửa: ${denied.join(', ')}`);
@@ -155,7 +303,8 @@ export class EmployeeService {
       const repo = m.getRepository(Employee);
       const e = await repo.findOne({ where: { id }, lock: { mode: 'pessimistic_write' } });
       if (!e) throw new NotFoundException('Không tìm thấy nhân viên');
-      if (dto.version !== undefined && dto.version !== e.version) {
+      // AC-1.6.1, E3: version bắt buộc (DTO kiểm), lệch thì 409.
+      if (dto.version !== e.version) {
         throw new ConflictException('Hồ sơ đã được người khác cập nhật, hãy tải lại');
       }
 
@@ -163,16 +312,36 @@ export class EmployeeService {
       if (dto.departmentId && !lookups.department.has(dto.departmentId)) throw new BadRequestException('Phòng ban không tồn tại');
       if (dto.positionId && !lookups.position.has(dto.positionId)) throw new BadRequestException('Chức danh không tồn tại');
       if (dto.managerId) await this.assertNoManagerCycle(m, id, dto.managerId);
+      if (dto.positionId !== undefined || dto.managerId !== undefined) {
+        await this.assertManagerRule(m, lookups, {
+          employeeId: id,
+          positionId: dto.positionId ?? e.positionId,
+          managerId: dto.managerId !== undefined ? dto.managerId : e.managerId,
+        });
+      }
+      // A4, E10 (AC-1.7.1): không cho nghỉ việc khi còn cấp dưới đang làm việc, để cây tổ chức không mất gốc nhánh.
+      if (dto.status === 'TERMINATED' && e.status !== 'TERMINATED') {
+        const reports = await repo.count({ where: { managerId: id, status: In(['ACTIVE', 'ON_LEAVE']) } });
+        if (reports > 0) {
+          throw new BadRequestException(
+            `Nhân viên còn ${reports} cấp dưới đang làm việc. Hãy chuyển họ sang quản lý khác trước khi cho nghỉ việc`,
+          );
+        }
+      }
+      // AC-1.4.4: HR sửa được email công ty; email lưu chữ thường và không trùng.
+      const workEmail = dto.workEmail?.toLowerCase();
+      if (workEmail && workEmail !== e.workEmail && (await repo.exists({ where: { workEmail } }))) {
+        throw new ConflictException('Email công ty đã được dùng cho nhân viên khác');
+      }
 
       const changes: Partial<Employee> = {};
-      for (const key of ['phone', 'address', 'fullName', 'dateOfBirth', 'departmentId', 'positionId', 'managerId', 'status'] as const) {
-        if (dto[key] !== undefined && dto[key] !== e[key]) (changes as any)[key] = dto[key];
+      const incoming = { ...dto, workEmail };
+      for (const key of EDITABLE_KEYS) {
+        if (incoming[key] !== undefined && incoming[key] !== e[key]) (changes as any)[key] = incoming[key];
       }
       const sensitiveChanged = SENSITIVE_KEYS.filter((k) => dto[k] !== undefined);
+      if (!Object.keys(changes).length && !sensitiveChanged.length) return;
 
-      if (Object.keys(changes).length) {
-        await repo.save({ ...e, ...changes });
-      }
       if (sensitiveChanged.length) {
         const sRepo = m.getRepository(EmployeeSensitive);
         const current = (await sRepo.findOneBy({ employeeId: id })) ?? sRepo.create({ employeeId: id });
@@ -181,14 +350,21 @@ export class EmployeeService {
         if (dto.salary !== undefined) current.salaryEnc = this.crypto.encrypt(dto.salary);
         await sRepo.save(current);
       }
-      if (Object.keys(changes).length || sensitiveChanged.length) {
-        // Giá trị trường nhạy cảm không bao giờ ghi vào log, chỉ ghi tên trường.
-        const masked = Object.fromEntries(sensitiveChanged.map((k) => [k, '***']));
-        await this.audit.record(
-          { actorId: actor.employeeId, action: 'UPDATE', entityType: 'employee', entityId: id, changedFields: { ...changes, ...masked }, ...meta },
-          m,
-        );
+      if (Object.keys(changes).length) {
+        await repo.save({ ...e, ...changes });
+      } else {
+        // AC-1.6.3: chỉ đổi trường nhạy cảm vẫn tăng version, để người đang mở form cũ nhận 409.
+        await repo.increment({ id }, 'version', 1);
       }
+      // AC-1.4.3: trường tổ chức ghi giá trị cũ và mới; trường cá nhân, nhạy cảm chỉ ghi tên.
+      const changedFields = auditFields(
+        { ...changes, ...Object.fromEntries(sensitiveChanged.map((k) => [k, true])) },
+        e as unknown as Record<string, unknown>,
+      );
+      await this.audit.record(
+        { actorId: actor.employeeId, action: 'UPDATE', entityType: 'employee', entityId: id, changedFields, ...meta },
+        m,
+      );
     });
     return this.profile(id, actor, false);
   }
@@ -199,12 +375,28 @@ export class EmployeeService {
     if (!lookups.position.has(dto.positionId)) throw new BadRequestException('Chức danh không tồn tại');
     if (dto.managerId) await this.getOrThrow(dto.managerId);
 
+    const { nationalId, bankAccount, salary, ...plain } = dto;
+    const sensitiveGiven = SENSITIVE_KEYS.filter((k) => dto[k] !== undefined);
     const id = await this.repo.manager.transaction(async (m) => {
+      await this.assertManagerRule(m, lookups, { positionId: dto.positionId, managerId: dto.managerId ?? null });
       const saved = await m.getRepository(Employee).save(
-        m.getRepository(Employee).create({ ...dto, workEmail: dto.workEmail.toLowerCase(), managerId: dto.managerId ?? null }),
+        m.getRepository(Employee).create({ ...plain, workEmail: dto.workEmail.toLowerCase(), managerId: dto.managerId ?? null }),
       );
+      if (sensitiveGiven.length) {
+        const sRepo = m.getRepository(EmployeeSensitive);
+        await sRepo.save(
+          sRepo.create({
+            employeeId: saved.id,
+            nationalIdEnc: nationalId !== undefined ? this.crypto.encrypt(nationalId) : null,
+            bankAccountEnc: bankAccount !== undefined ? this.crypto.encrypt(bankAccount) : null,
+            salaryEnc: salary !== undefined ? this.crypto.encrypt(salary) : null,
+          }),
+        );
+      }
+      // AC-1.4.3: trường tổ chức ghi giá trị; trường cá nhân, nhạy cảm chỉ ghi tên.
+      const changedFields = auditFields({ ...plain, ...Object.fromEntries(sensitiveGiven.map((k) => [k, true])) }, null);
       await this.audit.record(
-        { actorId: actor.employeeId, action: 'CREATE', entityType: 'employee', entityId: saved.id, changedFields: { ...dto }, ...meta },
+        { actorId: actor.employeeId, action: 'CREATE', entityType: 'employee', entityId: saved.id, changedFields, ...meta },
         m,
       );
       return saved.id;
@@ -218,6 +410,31 @@ export class EmployeeService {
     const e = await this.repo.findOneBy({ id });
     if (!e) throw new NotFoundException('Không tìm thấy nhân viên');
     return e;
+  }
+
+  /**
+   * Issue #22 (FR-2.5): chỉ có một CEO và CEO không có quản lý; mọi nhân viên khác phải có đúng một quản lý trực tiếp
+   * đang làm việc.
+   */
+  private async assertManagerRule(
+    m: EntityManager,
+    lookups: Awaited<ReturnType<OrganizationService['lookups']>>,
+    target: { employeeId?: string; positionId: string; managerId: string | null },
+  ) {
+    const ceoPosition = lookups.position.get(target.positionId)?.code === CEO_POSITION;
+    if (ceoPosition) {
+      if (target.managerId) throw new BadRequestException('CEO không có quản lý trực tiếp');
+      const other: { id: string }[] = await m.query(
+        `SELECT id FROM employee.employee WHERE position_id = $1 AND status <> 'TERMINATED' AND id <> $2 LIMIT 1`,
+        [target.positionId, target.employeeId ?? '00000000-0000-0000-0000-000000000000'],
+      );
+      if (other.length) throw new BadRequestException('Đã có một CEO, không thể có CEO thứ hai');
+      return;
+    }
+    if (!target.managerId) throw new BadRequestException('Nhân viên phải có quản lý trực tiếp (chỉ CEO được để trống)');
+    const manager = await m.getRepository(Employee).findOne({ where: { id: target.managerId }, select: { id: true, status: true } });
+    if (!manager) throw new BadRequestException('Quản lý không tồn tại');
+    if (manager.status === 'TERMINATED') throw new BadRequestException('Quản lý trực tiếp đã nghỉ việc');
   }
 
   /** Mỗi nhân viên có đúng 1 quản lý trực tiếp, và chuỗi quản lý không được tạo vòng. */
@@ -253,6 +470,7 @@ export class EmployeeService {
       phone: e.phone,
       departmentId: e.departmentId,
       departmentName: lookups.department.get(e.departmentId)?.name ?? null,
+      positionId: e.positionId,
       positionTitle: lookups.position.get(e.positionId)?.title ?? null,
       managerId: e.managerId,
       managerName: e.managerId ? (managerName.get(e.managerId) ?? null) : null,

@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { api, Department, DirectoryEntry, Page } from '../api/client';
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
+import { api, Department, DirectoryEntry, Me, Page } from '../api/client';
 import { useApi } from '../api/useApi';
 import { ErrorBox } from '../components/ErrorBox';
+import { useShell } from '../components/shell';
 
 const SIZE = 20;
 
 export function DirectoryPage() {
+  const me = useOutletContext<Me | null>();
+  const { openQuickView } = useShell();
   const [params, setParams] = useSearchParams();
   const q = params.get('q') ?? '';
   const dept = params.get('dept') ?? '';
   const page = Number(params.get('page') ?? 1);
   const [input, setInput] = useState(q);
+  useEffect(() => setInput(q), [q]);
 
   // Gõ xong 300 ms mới gọi API, tránh gửi request theo từng phím.
   useEffect(() => {
@@ -40,6 +44,7 @@ export function DirectoryPage() {
   return (
     <section className="card">
       <h2>Danh bạ nhân viên</h2>
+      {me?.roles.includes('HR') && <p><Link className="button primary" to="/employees/new">+ Tạo nhân viên</Link></p>}
       <div className="toolbar">
         <input placeholder="Tìm theo tên, email, mã nhân viên…" value={input} onChange={(e) => setInput(e.target.value)} />
         <select value={dept} onChange={(e) => update({ dept: e.target.value, page: '1' })}>
@@ -58,7 +63,7 @@ export function DirectoryPage() {
           {(list.data?.items ?? []).map((e) => (
             <tr key={e.id}>
               <td>{e.employeeCode}</td>
-              <td><Link to={`/employees/${e.id}`}>{e.fullName}</Link></td>
+              <td><button type="button" className="link" onClick={() => openQuickView(e.id)}>{e.fullName}</button></td>
               <td>{e.departmentName}</td>
               <td>{e.positionTitle}</td>
               <td>{e.workEmail}</td>

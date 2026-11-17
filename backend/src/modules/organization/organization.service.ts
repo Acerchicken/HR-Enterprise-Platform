@@ -41,6 +41,14 @@ export class OrganizationService {
   }
 
   /** Dùng cho module Employee: tra tên phòng ban/chức danh mà không JOIN chéo schema. */
+  /** Phòng ban và mọi phòng ban cha của nó (tài liệu cấp cho phòng cha thì phòng con cũng xem được, DR-02). */
+  async ancestorIds(departmentId: string): Promise<string[]> {
+    const byId = new Map((await this.listDepartments()).map((d) => [d.id, d]));
+    const out: string[] = [];
+    for (let d = byId.get(departmentId); d && !out.includes(d.id); d = d.parentId ? byId.get(d.parentId) : undefined) out.push(d.id);
+    return out;
+  }
+
   async lookups() {
     const [depts, positions] = await Promise.all([this.listDepartments(), this.listPositions()]);
     return {
@@ -51,6 +59,11 @@ export class OrganizationService {
 
   async create(dto: CreateDepartmentDto, actor: AuthUser): Promise<Department> {
     if (dto.parentId) await this.getDepartment(dto.parentId);
+    // AC-2.4.6: cây chỉ có một gốc (Ban Giám đốc). Gốc chỉ được tạo khi cây còn rỗng.
+    else if ((await this.listDepartments()).length > 0) {
+      throw new BadRequestException('Phòng ban mới phải có phòng ban cha (cây tổ chức chỉ có một gốc)');
+    }
+    if (dto.headEmployeeId) await this.assertActiveEmployee(dto.headEmployeeId);
     const saved = await this.departments.manager.transaction(async (m) => {
       const dept = await m.getRepository(Department).save(
         m.getRepository(Department).create({ ...dto, parentId: dto.parentId ?? null, headEmployeeId: dto.headEmployeeId ?? null }),
@@ -67,6 +80,10 @@ export class OrganizationService {
 
   async update(id: string, dto: UpdateDepartmentDto, actor: AuthUser): Promise<Department> {
     const dept = await this.getDepartment(id);
+    if (dto.parentId === null && dept.parentId !== null) {
+      throw new BadRequestException('Không thể bỏ phòng ban cha (cây tổ chức chỉ có một gốc)');
+    }
+    if (dto.headEmployeeId) await this.assertActiveEmployee(dto.headEmployeeId);
     if (dto.parentId !== undefined && dto.parentId !== null) {
       await this.getDepartment(dto.parentId);
       if (createsCycle(await this.listDepartments(), id, dto.parentId)) {
@@ -88,6 +105,17 @@ export class OrganizationService {
     });
     this.deptCache.clear();
     return this.getDepartment(id);
+  }
+
+  /** AC-2.4.7: trưởng đơn vị phải là nhân viên đang làm việc. Đọc thẳng bảng nhân viên để tránh phụ thuộc vòng với module Employee. */
+  private async assertActiveEmployee(employeeId: string) {
+    const rows: { status: string }[] = await this.departments.manager.query(
+      `SELECT status FROM employee.employee WHERE id = $1`,
+      [employeeId],
+    );
+    if (!rows.length || rows[0]!.status === 'TERMINATED') {
+      throw new BadRequestException('Trưởng đơn vị phải là nhân viên đang làm việc');
+    }
   }
 }
 

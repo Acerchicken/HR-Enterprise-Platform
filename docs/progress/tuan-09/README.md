@@ -89,70 +89,17 @@ Số liệu chốt ngày 9/11/2026, tình trạng PR theo GitHub.
 
 ## 2. Tóm tắt kế hoạch tuần tiếp theo (tuần 10: 9/11 – 16/11)
 
-_Điền cuối tuần. Dự kiến theo kế hoạch tổng: hoàn thiện chức năng (kho tài liệu HR, self-service search, chặn truy cập trái
-phép, deploy/rollback, logging/metrics cơ bản)._
+Hoàn thiện chức năng. Kế hoạch chi tiết, nhánh và hạn ở [`tuan-10/README.md`](../tuan-10/README.md).
 
-Đã chốt thêm trong tuần 9 (đưa vào kế hoạch tuần 10):
-- TV1: màn hình HR tạo và sửa hồ sơ nhân viên (`feat/hr-employee-form`, chi tiết trong [TV1_Duong.md](TV1_Duong.md#chuẩn-bị-cho-tuần-10-đã-chốt-511-đưa-vào-kế-hoạch-tuần-10));
-  code BR-06 (người duyệt thay), BR-12 (HR, quản lý tạo đơn hộ) và quyết định issue #22.
+| Thành viên | Công việc | Output |
+|---|---|---|
+| TV1 (Duong) | Quy tắc một quản lý, HR duyệt đơn CEO; giao diện HR tạo/sửa hồ sơ; kho tài liệu, tìm kiếm; giao diện audit; BR-06, BR-12 nếu còn thời gian | PR code + e2e, ADR-13 |
+| TV2 (Thanh) | Quy tắc kho tài liệu; thời gian lưu dữ liệu, quyền xem lý do nghỉ; cập nhật ma trận, BRD, threat model | `document-rules.md`, `leave-rules.md`, ma trận |
+| TV3 (Bảo) | MinIO local; `terraform plan` thật (không `apply`); code Terraform tài liệu, email, alarm; kế hoạch lên AWS tuần 12–13 | `infra/` |
+| TV4 (Duy) | Ca kiểm thử chức năng mới; chạy và ghi kết quả thật trên local | `test-cases-tuan-10.md`, `test-report-tuan-10.md` |
 
 ## 3. Quyết định quan trọng
 
 ### ADR-12 – Chọn cloud provider
 
-**Bối cảnh:**
-Nhóm cần chọn cloud provider để triển khai hệ thống Enterprise HR Platform (~2,000 nhân viên, workload peak ≈ 10 RPS, thiết kế cho 50 RPS theo NFR tuần 5). Hệ thống tuân theo các quyết định kiến trúc đã chốt: modular monolith (ADR-01), PostgreSQL (ADR-02), managed services cho database, storage và identity (ADR-00), không dùng Kubernetes (ADR-06). Ngân sách hạ tầng theo NFR là < 100 USD/tháng (với mục tiêu tối ưu nội bộ ban đầu là ~50 USD/tháng). Cần chốt provider ở tuần 8/9 để viết IaC (Terraform) và deploy staging lần đầu.
-
-**Các giải pháp:**
-
-| # | Giải pháp | Mô tả |
-|---|---|---|
-| A | Amazon Web Services (AWS) | Hệ sinh thái cloud enterprise toàn diện nhất; App Runner (API), ECS Fargate (Worker), RDS PostgreSQL, S3, Cognito, SQS, CloudWatch, Secrets Manager |
-| B | Microsoft Azure | Tích hợp tốt với OIDC enterprise; hỗ trợ gói Azure for Students ($100 credit không cần thẻ tín dụng); Azure Container Apps, PostgreSQL Flexible Server, Blob Storage, Service Bus |
-| C | Google Cloud Platform (GCP) | Cloud Run serverless container nhẹ, tự có HTTPS; Cloud SQL for PostgreSQL; Cloud Storage; Cloud Pub/Sub; gói credit dùng thử $300 |
-
-**Tiêu chí lựa chọn:**
-
-| Tiêu chí | A (AWS) | B (Azure) | C (GCP) |
-|---|---|---|---|
-| Hỗ trợ đầy đủ 7 capability managed (DB, Storage, Auth, Queue, Container, Monitor, KMS) | 5 | 4 | 4 |
-| Phù hợp chuẩn môn học và mô hình tham chiếu Cloud (Well-Architected Framework) | 5 | 4 | 4 |
-| Mức độ phổ biến của hệ sinh thái, tài liệu và công cụ IaC (Terraform) | 5 | 4 | 4 |
-| Khả năng tiếp cận credit sinh viên và độ ổn định tài khoản | 3 | 5 | 4 |
-| Chi phí hàng tháng trong ngân sách (< 100 USD/tháng) | 4 | 4 | 5 |
-| Hỗ trợ mở rộng cho AI/RAG (pgvector, LLM API) ở tuần 12 | 5 | 4 | 5 |
-| **Tổng điểm** | **27** | **25** | **26** |
-
-_Nguyên tắc phân định khi điểm số tiệm cận:_ Khi các phương án đều đáp ứng yêu cầu kỹ thuật và chi phí, ưu tiên nền tảng là chuẩn tham chiếu chính thức của môn học Cloud Application Development (AWS) để hỗ trợ tốt nhất cho tài liệu kiến trúc và phần phản biện (Architecture Defense).
-
-**Giải pháp được chọn:** **A (Amazon Web Services)**.
-
-Lý do:
-1. **Chuẩn môn học & Kiến trúc:** AWS là nền tảng tham chiếu chuẩn của môn học và đồ án, mô hình Well-Architected Framework hỗ trợ đắc lực cho việc chấm điểm kiến trúc và bảo vệ đồ án.
-2. **Compute tối ưu theo vai trò:**
-   - Backend API chạy trên **AWS App Runner** (tự scale theo HTTP traffic, có sẵn HTTPS và Load Balancer).
-   - Notification Worker chạy trên **Amazon ECS Fargate** (task độc lập, liên tục polling queue SQS mà không bị throttle CPU như App Runner).
-3. **Database & AI:** Amazon RDS for PostgreSQL 16 hỗ trợ sẵn extension `pgvector` phục vụ tính năng RAG ở tuần 12, cùng cơ chế backup tự động và khôi phục point-in-time đáp ứng RPO ≤ 1 giờ, RTO ≤ 4 giờ (ADR-00).
-4. **Identity & Storage managed:** Sử dụng **Amazon Cognito User Pool** (chuẩn OIDC, miễn phí vĩnh viễn cho 50,000 MAU) và **Amazon S3** (presigned URL cho tải tài liệu trực tiếp). *Lưu ý kỹ thuật:* Token của Cognito dùng `client_id` thay vì `azp`, vai trò nằm trong `cognito:groups`. TV1 cập nhật module identity ở nhánh `feat/auth-cognito` tuần 9 để hỗ trợ cả Keycloak (local) và Cognito (staging).
-5. **Message Queue:** Sử dụng **Amazon SQS** (serverless, miễn phí 1 triệu requests/tháng). Module outbox/worker của backend sử dụng interface trừu tượng `EventBus` (publish) và `EventConsumer` (consume) trong `src/messaging/` (chọn driver qua biến `QUEUE_DRIVER=rabbitmq|sqs`), giúp đổi môi trường mà không ảnh hưởng tới business logic.
-6. **Mạng ra (Egress) của App Runner & Worker:** Khi gắn VPC Connector vào Private Subnet, toàn bộ outbound traffic của API đi qua VPC. Do Cognito JWKS là public endpoint không hỗ trợ Interface VPC Endpoint (PrivateLink), nhóm triển khai **NAT Instance `t4g.nano`** (~$8.30/tháng, đã gồm public IPv4 của NAT instance) tại Public Subnet, tắt ngoài giờ demo, để API và Worker gọi được Cognito JWKS, Secrets Manager, SQS và SMTP mà vẫn giữ chi phí thấp.
-7. **Chi phí:** Dự toán khi chạy 24/7 là **~$56.80 USD/tháng** (dao động 54–59 USD), dưới hạn mức thẻ 1.500.000 VNĐ (~60 USD) của TV3 Bảo và trần môn học (< 100 USD/tháng). Biên an toàn chỉ ~3 USD nên tắt NAT, worker, API và RDS ngoài giờ demo (`infra/README.md` mục 5.3). Worker chạy trong Private Subnet qua NAT, không gán public IP cho task.
-
-**Trade-off & Kế hoạch quản trị rủi ro:**
-1. **Tài khoản và thẻ thanh toán:** AWS yêu cầu thẻ thanh toán quốc tế. Nhóm sử dụng tài khoản AWS cá nhân của TV3 (Bảo) liên kết thẻ Debit đã cài hạn mức chi tiêu tối đa 1.500.000 VNĐ (~60 USD), kết hợp đăng ký gói credit sinh viên qua AWS Educate / GitHub Student Developer Pack.
-2. **Kiểm soát chi phí:** Thiết lập AWS Budgets gửi email cảnh báo tự động về nhóm ở 3 mốc (ngân sách 50 USD/tháng):
-   - **25 USD (50% ngân sách)**: Cảnh báo sớm để rà soát log và lưu lượng.
-   - **40 USD (80% ngân sách)**: Cảnh báo khẩn cấp để kiểm tra các tài nguyên nhàn rỗi hoặc lưu lượng NAT.
-   - **50 USD (100% ngân sách)**: Kích hoạt quy trình hạ cấu hình hoặc tạm tắt container ngoài giờ demo.
-3. **Phương án dự phòng (Fallback Plan):**
-   - Đã trao đổi và được **TV2 (Thanh) xác nhận đồng ý** cung cấp tài khoản **Azure for Students ($100 credit miễn phí không cần thẻ tín dụng)** làm phương án dự phòng chính thức.
-   - Nếu tài khoản AWS gặp sự cố hạn mức hoặc thẻ thanh toán trong tuần 9, nhóm chuyển ngay sang **Microsoft Azure** (Azure Container Apps + Azure Database for PostgreSQL Flexible Server) theo phương án B mà không phải sửa code ứng dụng nhờ tính tương thích của container OCI và PostgreSQL.
-
-**Tiêu chí nghiệm thu:**
-- Tài khoản AWS được kích hoạt và cài đặt AWS Budget cảnh báo ở 25 USD, 40 USD, 50 USD.
-- Bảng mapping 7 capability sang dịch vụ AWS cụ thể được phê duyệt trong `docs/cloud/mapping.md`.
-- Dự toán chi phí chi tiết đồng bộ ở mức ~56,80 USD/tháng khi chạy 24/7 (dưới hạn mức thẻ 60 USD; tắt ngoài giờ demo để giữ dưới ngân sách 50 USD/tháng), khớp với Terraform (`network.tf`, `budgets.tf`, `sqs_worker.tf`).
-- Viết được mã Terraform (IaC) dựng lại toàn bộ hạ tầng staging trên AWS trong tuần 9.
-
-**Khi nào xem lại:**
-Nếu tài khoản AWS bị giới hạn quota hoặc chi phí thực tế tuần 9 vượt quá 50 USD/tháng (ngân sách AWS Budgets) hoặc chạm ngưỡng 60 USD (hạn mức thẻ thanh toán 1.500.000 VNĐ của TV3 Bảo), nhóm sẽ chuyển đổi hạ tầng sang Microsoft Azure theo phương án dự phòng B.
+> Đã chuyển sang file riêng: [ADR-12 – Chọn cloud provider](../../architecture/adr/ADR-12-cloud-provider.md). Danh sách toàn bộ ADR: [`architecture/adr/`](../../architecture/adr/README.md).

@@ -220,17 +220,22 @@ export class LeaveService {
     const isOwner = actor.employeeId === r.employeeId;
     const isManager = !!actor.employeeId && actor.employeeId === (await this.employees.managerIdOf(r.employeeId));
     if (!isOwner && !isManager && !hasRole(actor, 'HR')) throw new ForbiddenException('Không có quyền xem đơn này');
-    return this.detail(r);
+    const view = await this.detail(r);
+    view.canDecide = r.status === 'SUBMITTED' && (await this.relation('approve', r, actor)) !== 'OTHER';
+    return view;
   }
 
   mine(actor: AuthUser, q: LeaveRequestQuery): Promise<Page<LeaveRequestView>> {
     return this.page([this.requireEmployee(actor)], q);
   }
 
-  /** Đơn chờ quản lý trực tiếp duyệt (BR-05). */
+  /** Đơn chờ người gọi duyệt: quản lý thấy đơn của cấp dưới trực tiếp (BR-05), HR thấy đơn của CEO (issue #22). */
   async pendingApproval(actor: AuthUser, q: LeaveRequestQuery): Promise<Page<LeaveRequestView>> {
-    const reports = await this.employees.directReportIds(this.requireEmployee(actor));
-    return this.page(reports, { ...q, status: 'SUBMITTED' } as LeaveRequestQuery);
+    const me = this.requireEmployee(actor);
+    const ids = new Set<string>();
+    if (hasRole(actor, 'MANAGER')) (await this.employees.directReportIds(me)).forEach((id) => ids.add(id));
+    if (hasRole(actor, 'HR')) (await this.employees.ceoIds()).filter((id) => id !== me).forEach((id) => ids.add(id));
+    return this.page([...ids], { ...q, status: 'SUBMITTED' } as LeaveRequestQuery);
   }
 
   /** HR xem toàn bộ đơn, mặc định là đơn đã duyệt chờ hoàn tất (BR-10). */
@@ -277,8 +282,10 @@ export class LeaveService {
     if (!actor.employeeId) return 'OTHER';
     if (action === 'cancel') return actor.employeeId === r.employeeId ? 'OWNER' : 'OTHER';
     if (action === 'complete') return hasRole(actor, 'HR') ? 'HR' : 'OTHER';
-    // Duyệt/từ chối: phải là quản lý trực tiếp tại thời điểm xử lý (BR-05).
-    return actor.employeeId === (await this.employees.managerIdOf(r.employeeId)) ? 'DIRECT_MANAGER' : 'OTHER';
+    // Duyệt/từ chối: phải là quản lý trực tiếp tại thời điểm xử lý (BR-05); riêng đơn của CEO do HR duyệt (issue #22).
+    if (actor.employeeId === (await this.employees.managerIdOf(r.employeeId))) return 'DIRECT_MANAGER';
+    if (hasRole(actor, 'HR') && actor.employeeId !== r.employeeId && (await this.employees.isCeo(r.employeeId))) return 'HR_FOR_CEO';
+    return 'OTHER';
   }
 
   /** Ghi event vào outbox trong cùng transaction; publisher đẩy lên RabbitMQ sau khi commit. */

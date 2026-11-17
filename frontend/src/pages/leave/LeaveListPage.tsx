@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api, LeaveAction, LeaveRequest, LeaveStatus, Page } from '../../api/client';
 import { useApi } from '../../api/useApi';
 import { ErrorBox } from '../../components/ErrorBox';
+import { useShell } from '../../components/shell';
 import { ActionButtons, period, STATUS_LABEL, StatusBadge } from './leave-ui';
 
 type Mode = 'mine' | 'approvals' | 'hr';
@@ -21,6 +22,7 @@ const CONFIG: Record<Mode, { title: string; path: string; actions: LeaveAction[]
  */
 export function LeaveListPage({ mode }: { mode: Mode }) {
   const cfg = CONFIG[mode];
+  const { openQuickView } = useShell();
   const [status, setStatus] = useState<LeaveStatus | ''>(mode === 'hr' ? 'APPROVED' : '');
   const [page, setPage] = useState(1);
   const list = useApi(
@@ -63,7 +65,7 @@ export function LeaveListPage({ mode }: { mode: Mode }) {
           <tbody>
             {list.data.items.map((r) => (
               <tr key={r.id}>
-                {cfg.showEmployee && <td><Link to={`/employees/${r.employeeId}`}>{r.employeeName}</Link></td>}
+                {cfg.showEmployee && <td><button type="button" className="link" onClick={() => openQuickView(r.employeeId)}>{r.employeeName}</button></td>}
                 <td>{r.leaveType}</td>
                 <td><Link to={`/leave/${r.id}`}>{period(r)}</Link></td>
                 <td>{r.days}</td>
