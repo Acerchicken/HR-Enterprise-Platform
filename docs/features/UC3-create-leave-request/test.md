@@ -55,12 +55,17 @@ Email: mở Mailpit http://localhost:8025 sau khi tạo đơn.
 ## 6. Kiểm thử phi chức năng
 
 - NFR-1.2: tạo, hủy đơn p95 < 500 ms trong load test tuần 11.
+- NFR-3.4: tắt queue/email worker nhưng API `POST /leave-requests` vẫn tạo đơn 201 và không mất dữ liệu.
 - Đồng thời: hai request tạo đơn song song dùng hết số dư, chỉ một đơn được tạo.
 
 ## 7. Ca còn thiếu (TV4)
 
 - Hai request tạo đơn song song với cùng số dư.
 - e2e cho AC-3.5.1 (gửi lại cùng key trả đúng đơn cũ, số dư không đổi) và AC-3.5.3 (cùng key, đơn khác → 409).
-- AC-3.1.3, AC-3.1.4, AC-3.2.4, AC-3.2.5 khi `fix/leave-balance-rules` xong. Ca mẫu: nhân viên vào làm 1/7 được 6 ngày;
-  10 năm thâm niên được 14 ngày; đơn 29/12 – 4/1 trừ đúng hai năm.
-- AC-3.7.x khi `feat/leave-delegation` xong.
+- e2e cho AC-3.6.1: bổ sung ca chủ đơn tự hủy đơn ở trạng thái `PENDING_HR` (đã qua quản lý duyệt, chờ HR theo BR-16).
+- AC-3.1.3, AC-3.1.4, AC-3.2.4, AC-3.2.5 khi `fix/leave-balance-rules` xong. Ca mẫu: nhân viên vào làm 1/7 được 6 ngày; 10 năm thâm niên được 14 ngày; đơn 29/12 – 4/1 trừ đúng hai năm.
+- AC-3.7.x khi `feat/leave-delegation` xong, kèm ca bảo mật chặn quản lý gọi `GET /leave-balances?employeeId=` của nhân viên không phải cấp dưới trực tiếp (`403`).
+- Các ca biên nghiệp vụ cần bổ sung sau khi TV1/TV2 chốt quy tắc Tuần 11:
+  - Giới hạn số ngày/lần và số lần/năm đối với nghỉ theo sự kiện (`MARRIAGE`, `BEREAVEMENT` – `AC-3.1.4`).
+  - Chặn hoặc cho phép chủ đơn tự hủy đơn `SUBMITTED` / `PENDING_HR` khi `startDate` đã ở quá khứ (`AC-3.6.1`).
+  - Điều kiện dùng phép năm (`ANNUAL`) trong thời gian thử việc (`AC-3.1.3`).
