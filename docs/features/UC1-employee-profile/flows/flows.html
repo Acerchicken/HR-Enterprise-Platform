@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UC1 – Sơ đồ luồng hồ sơ nhân viên</title>
+<!--
+  Sơ đồ luồng động cho UC1 (nguồn: ../spec.md v2.1, mục 4 → 7).
+  Mở trực tiếp bằng trình duyệt, không cần server. Dữ liệu sơ đồ nằm trong biến FLOWS bên dưới;
+  sửa luồng trong spec thì sửa FLOWS rồi chạy lại render.js để xuất PNG.
+  Tham số URL: #f2 chọn luồng; ?static=1 ẩn nút điều khiển (dùng khi xuất ảnh).
+-->
+<style>
+  :root {
+    --primary: #0E7490; --primary-soft: #E0F2F7; --ink: #0F172A; --muted: #64748B; --line: #CBD5E1;
+    --bg: #F8FAFC; --card: #FFFFFF; --err: #DC2626; --async: #7C3AED; --ok: #15803D; --warn: #B45309;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); background: var(--bg); }
+  header { background: var(--primary); color: #fff; padding: 14px 20px; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header p { margin: 2px 0 0; opacity: .85; font-size: 13px; }
+  .wrap { display: grid; grid-template-columns: 250px 1fr; gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
+  nav { display: flex; flex-direction: column; gap: 4px; }
+  nav .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 10px 4px 2px; }
+  nav button { text-align: left; border: 1px solid transparent; background: none; padding: 7px 10px; border-radius: 8px;
+    font: inherit; color: var(--ink); cursor: pointer; }
+  nav button:hover { background: var(--primary-soft); }
+  nav button.on { background: var(--card); border-color: var(--primary); color: var(--primary); font-weight: 600; }
+  nav button small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
+  main { min-width: 0; }
+  .card { background: var(--card); border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; }
+  .title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; margin-bottom: 4px; }
+  .title h2 { margin: 0; font-size: 17px; }
+  .title .refs { color: var(--muted); font-size: 13px; }
+  .intro { margin: 0 0 12px; color: #334155; }
+  .ctrl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .ctrl button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; font: inherit; cursor: pointer; }
+  .ctrl button.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .ctrl button:disabled { opacity: .4; cursor: default; }
+  .ctrl .pos { color: var(--muted); margin-left: 4px; }
+  .ctrl label { color: var(--muted); display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .stage { overflow-x: auto; border: 1px solid #E2E8F0; border-radius: 10px; background: #fff; }
+  #diagram { display: block; }
+  .detail { margin-top: 12px; padding: 12px 14px; border-left: 4px solid var(--primary); background: var(--primary-soft);
+    border-radius: 0 8px 8px 0; min-height: 52px; }
+  .detail b { color: var(--primary); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; color: var(--muted); font-size: 12.5px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { display: inline-block; width: 28px; border-top: 2px solid var(--ink); }
+  .legend i.ret { border-top-style: dashed; border-color: var(--muted); }
+  .legend i.as { border-top-style: dashed; border-color: var(--async); }
+  .legend i.er { border-color: var(--err); }
+
+  /* SVG */
+  svg text { font-family: "Segoe UI", Roboto, Arial, sans-serif; }
+  .pbox { fill: var(--primary); }
+  .pbox.ext { fill: #334155; }
+  .ptext { fill: #fff; font-size: 13px; font-weight: 600; }
+  .life { stroke: var(--line); stroke-dasharray: 4 4; }
+  .msg line, .msg path { stroke: var(--ink); stroke-width: 1.6; fill: none; }
+  .msg text { font-size: 12.5px; fill: var(--ink); }
+  .msg.ret line, .msg.ret path { stroke: var(--muted); stroke-dasharray: 5 4; }
+  .msg.ret text { fill: #475569; }
+  .msg.async line, .msg.async path { stroke: var(--async); stroke-dasharray: 5 4; }
+  .msg.async text { fill: var(--async); }
+  .msg.err line, .msg.err path { stroke: var(--err); }
+  .msg.err text { fill: var(--err); }
+  .msg .num { fill: #fff; stroke: var(--primary); stroke-width: 1.4; }
+  .msg .numt { fill: var(--primary); font-size: 10.5px; font-weight: 700; }
+  .msg .hit { fill: transparent; stroke: none; cursor: pointer; }
+  .msg.cur .hl { fill: #FEF3C7; }
+  .msg .hl { fill: transparent; }
+  .frag rect.box { fill: none; stroke: #94A3B8; stroke-width: 1.2; }
+  .frag .tab { fill: #F1F5F9; stroke: #94A3B8; stroke-width: 1.2; }
+  .frag text { font-size: 12px; fill: #334155; }
+  .frag text.kw { font-weight: 700; }
+  .frag line.else { stroke: #94A3B8; stroke-dasharray: 6 4; }
+  .ref rect { fill: #F1F5F9; stroke: #94A3B8; }
+  .ref text { font-size: 12.5px; fill: #334155; }
+  .ref text.kw { font-weight: 700; }
+  .node rect, .node polygon, .node ellipse { fill: #fff; stroke: var(--primary); stroke-width: 1.8; }
+  .node.start ellipse, .node.end ellipse.in { fill: var(--ink); stroke: var(--ink); }
+  .node.end ellipse.out { fill: #fff; stroke: var(--ink); }
+  .node.decision polygon { fill: #FFF7ED; stroke: var(--warn); }
+  .node.result rect { fill: var(--primary-soft); }
+  .node.bad rect { stroke: var(--err); fill: #FEF2F2; }
+  .node.good rect { stroke: var(--ok); fill: #F0FDF4; }
+  .node text { font-size: 12.5px; fill: var(--ink); }
+  .node text.big { font-weight: 700; font-size: 13px; }
+  .edge path { stroke: var(--ink); stroke-width: 1.6; fill: none; }
+  .edge.err path { stroke: var(--err); }
+  .edge text { font-size: 12px; fill: #334155; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+  .edge.err text { fill: var(--err); }
+  .edge .hit, .edge.err .hit { stroke: transparent; stroke-width: 14; fill: none; cursor: pointer; }
+
+  /* trạng thái chạy từng bước */
+  svg.play .msg.future, svg.play .edge.future, svg.play .frag.future, svg.play .ref.future { opacity: .14; }
+  svg.play .msg.cur line, svg.play .msg.cur path, svg.play .edge.cur path { stroke-width: 2.6; }
+  svg.play .edge.cur text { font-weight: 700; }
+  .msg.cur line, .msg.cur path { animation: draw .55s ease-out; }
+  @keyframes draw { from { stroke-dashoffset: 400; } }
+
+  body.static header, body.static nav, body.static .ctrl, body.static .detail, body.static .intro { display: none; }
+  body.static .wrap { display: block; padding: 0; }
+  body.static .card { border: 0; padding: 0; display: inline-block; }
+  body.static .stage { border: 0; border-radius: 0; }
+  body.static .title { padding: 12px 16px 0; }
+
+  @media (max-width: 860px) {
+    .wrap { grid-template-columns: 1fr; padding: 10px; }
+    nav { flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 4px; }
+    nav .grp { display: none; }
+    nav button { white-space: nowrap; border-color: var(--line); background: #fff; }
+    nav button small { display: none; }
+    .ctrl label { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>UC1 – Hồ sơ nhân viên: sơ đồ luồng</h1>
+  <p>Theo spec.md v2.1 (mục 4 luồng chính, 5 luồng thay thế, 6 ngoại lệ, 7 quy tắc). Chọn luồng bên trái, bấm "Chạy" để xem từng bước.</p>
+</header>
+<div class="wrap">
+  <nav id="nav"></nav>
+  <main>
+    <div class="card">
+      <div class="title"><h2 id="ftitle"></h2><span class="refs" id="frefs"></span></div>
+      <p class="intro" id="fintro"></p>
+      <div class="ctrl">
+        <button id="bPlay" class="primary">▶ Chạy</button>
+        <button id="bPrev">◀ Lùi</button>
+        <button id="bNext">Tiếp ▶</button>
+        <button id="bAll">Hiện tất cả</button>
+        <span class="pos" id="pos"></span>
+        <label>Tốc độ <input id="speed" type="range" min="600" max="3000" step="200" value="1600"></label>
+      </div>
+      <div class="stage"><svg id="diagram" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      <div class="detail" id="detail">Bấm "Chạy" hoặc bấm vào một mũi tên để xem giải thích bước đó.</div>
+      <div class="legend" id="legend">
+        <span><i></i>Gọi</span><span><i class="ret"></i>Trả về</span><span><i class="as"></i>Bất đồng bộ (outbox, email)</span>
+        <span><i class="er"></i>Lỗi, ngoại lệ (mã E ở spec mục 6)</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ------------------------------------------------------------------ */
+/* Dữ liệu sơ đồ                                                        */
+/* Tin nhắn: {f, t, l, k?: 'ret'|'async'|'err', s?: tham chiếu spec, d?: giải thích thêm}
+   Khối: {frag: 'alt'|'opt'|'loop', c: điều kiện, m: [...], else?: [{c, m}]}
+   Tham chiếu: {ref: 'văn bản', s?}                                       */
+/* ------------------------------------------------------------------ */
+const P = {
+  U: { n: 'Nhân viên' }, H: { n: 'HR' }, W: { n: 'Web (React)' }, A: { n: 'API (NestJS)' },
+  D: { n: 'PostgreSQL', ext: 1 }, S: { n: 'S3 (file hồ sơ)', ext: 1 }, O: { n: 'Outbox → Email', ext: 1 },
+  X: { n: 'Người xem' },
+};
+
+const FLOWS = [
+{
+  id: 'f1', grp: 'Nhân viên', name: 'Xem hồ sơ', sub: 'Luồng 4.1, A1',
+  refs: 'FR-1.1, FR-1.2, FR-1.8 · AC-1.1.x, AC-1.8.x',
+  intro: 'Trang mặc định chỉ gọi summary. Dữ liệu từng mục chỉ tải khi bấm vào mục; giá trị nhạy cảm chỉ tải khi bấm biểu tượng mắt.',
+  type: 'seq', p: ['X', 'W', 'A', 'D'],
+  m: [
+    { f: 'X', t: 'W', l: 'Mở "Hồ sơ của tôi", hoặc mở hồ sơ người khác từ danh bạ, sơ đồ tổ chức', s: '4.1 bước 1' },
+    { f: 'W', t: 'A', l: 'GET /employees/{id}/summary', s: '4.1 bước 1' },
+    { f: 'A', t: 'A', l: 'Xác định quan hệ: HR, chủ hồ sơ, quản lý trực tiếp hay danh bạ (xem sơ đồ "Ai thấy gì")', s: 'A1, mục 2' },
+    { f: 'A', t: 'D', l: 'Đọc trường của trang mặc định, đếm yêu cầu PENDING mỗi mục' },
+    { f: 'D', t: 'A', l: 'Hàng hồ sơ + số yêu cầu chờ', k: 'ret' },
+    { f: 'A', t: 'W', l: '200: đầu trang, thẻ quản lý, SĐT, email, sections[] (available, pendingRequests). Không có ngày sinh, địa chỉ, giá trị nhạy cảm', k: 'ret', s: '4.1 bước 1' },
+    { f: 'W', t: 'X', l: 'Trang theo bố cục 9.1; mục chưa có tiêu đề đỏ; nhãn "Chờ HR xác nhận"', k: 'ret', s: '4.1 bước 2' },
+    { f: 'X', t: 'W', l: 'Bấm một mục, ví dụ "Thông tin cá nhân"', s: '4.1 bước 2a' },
+    { f: 'W', t: 'A', l: 'GET /employees/{id}/profile/personal', s: '4.1 bước 2a' },
+    { frag: 'alt', c: 'người xem không được thấy mục này', m: [
+      { f: 'A', t: 'W', l: '404 NOT_FOUND (giống hệt khi hồ sơ không tồn tại)', k: 'err', s: 'E7' },
+    ], else: [{ c: 'được xem', m: [
+      { f: 'A', t: 'D', l: 'Đọc dữ liệu riêng của mục' },
+      { f: 'A', t: 'W', l: '200: dữ liệu mục (HR thấy thêm CCCD đã che)', k: 'ret' },
+    ] }] },
+    { f: 'W', t: 'X', l: 'Hiện trang con. Quay lại trang chính không gọi lại summary nếu chưa quá 60 giây', k: 'ret', s: '4.1 bước 2a' },
+    { frag: 'opt', c: 'chủ hồ sơ hoặc HR bấm mắt ở lương, số tài khoản', m: [
+      { f: 'W', t: 'A', l: 'GET /employees/{id}?include=sensitive', s: '4.5 bước 1' },
+      { f: 'A', t: 'A', l: 'Giới hạn 100 lần/giờ (E15); giải mã AES-256-GCM; ghi audit VIEW_SENSITIVE', s: 'ADR-08, mục 7' },
+      { f: 'A', t: 'W', l: '200: giá trị thật, chỉ hiện tới khi rời trang', k: 'ret' },
+    ] },
+    { ref: 'Sửa SĐT, địa chỉ rồi bấm "Gửi yêu cầu" → luồng 4.2 (tab "Gửi yêu cầu cập nhật")', s: '4.1 bước 3, 4' },
+  ],
+},
+{
+  id: 'f2', grp: 'Nhân viên', name: 'Gửi yêu cầu cập nhật', sub: 'Luồng 4.2, A6, A7',
+  refs: 'FR-1.9, FR-1.14 · AC-1.9.x, AC-1.2.1',
+  intro: 'Nhân viên không ghi thẳng vào hồ sơ. "Gửi yêu cầu" chỉ tạo yêu cầu PENDING; hồ sơ chỉ đổi khi HR duyệt (luồng 4.7). Ví dụ: thêm người liên hệ khẩn cấp.',
+  type: 'seq', p: ['U', 'W', 'A', 'D', 'O'],
+  m: [
+    { f: 'U', t: 'W', l: 'Mở mục "Thông tin liên hệ khẩn cấp"', s: '4.2 bước 1' },
+    { f: 'W', t: 'A', l: 'GET /employees/{id}/profile/emergency-contacts' },
+    { f: 'A', t: 'W', l: '200: các dòng (mỗi dòng có version) + yêu cầu đang chờ của mục', k: 'ret' },
+    { f: 'U', t: 'W', l: 'Bấm "Thêm", nhập họ tên, quan hệ, SĐT, bấm "Gửi yêu cầu"', s: '4.2 bước 2' },
+    { f: 'W', t: 'A', l: 'POST /employees/{id}/change-requests + Idempotency-Key {section, op, itemId?, baseVersion?, values, fileIds}', s: '4.2 bước 2' },
+    { frag: 'alt', c: 'Idempotency-Key đã dùng', m: [
+      { f: 'A', t: 'W', l: '202: trả lại yêu cầu đã tạo, không tạo mới, không ghi audit lần hai', k: 'ret', s: 'A7' },
+    ], else: [{ c: 'yêu cầu mới', m: [
+      { f: 'A', t: 'A', l: 'Giới hạn profile-write 30/phút, 300/ngày → 429 + Retry-After', k: 'err', s: '4.2 bước 3, E15' },
+      { f: 'A', t: 'A', l: 'Người gọi là chủ hồ sơ, mục có cột "Nhập" = NV → nếu không: 403', k: 'err', s: '4.2 bước 3, E1' },
+      { f: 'A', t: 'A', l: 'Kiểm dữ liệu (mục 8), số dòng tối đa, tối đa 20 yêu cầu PENDING → 400 / 409', k: 'err', s: '4.2 bước 4, E4, E11, E21, A6' },
+      { f: 'A', t: 'D', l: 'BEGIN; yêu cầu PENDING cũ cùng trường, cùng dòng → CANCELLED', s: '4.2 bước 5' },
+      { f: 'A', t: 'D', l: 'Mã hóa phần nhạy cảm; INSERT yêu cầu PENDING; audit PROFILE_CHANGE_SUBMIT; event outbox; COMMIT', s: '4.2 bước 6, ADR-09' },
+      { f: 'A', t: 'W', l: '202 + yêu cầu', k: 'ret', s: '4.2 bước 7' },
+    ] }] },
+    { f: 'W', t: 'U', l: 'Khung "Đang chờ HR xác nhận" với giá trị mới; hồ sơ chưa đổi', k: 'ret', s: '4.1 bước 4' },
+    { f: 'D', t: 'O', l: 'Worker đọc outbox, gộp tối đa 1 email/giờ báo HR có yêu cầu mới', k: 'async', s: '4.2 bước 6, ADR-15' },
+    { frag: 'opt', c: 'nhân viên bấm "Hủy yêu cầu"', m: [
+      { f: 'U', t: 'W', l: 'Hủy yêu cầu' },
+      { f: 'W', t: 'A', l: 'DELETE /employees/{id}/change-requests/{requestId}' },
+      { f: 'A', t: 'D', l: 'Yêu cầu → CANCELLED; audit PROFILE_CHANGE_CANCEL', s: '4.2 bước 7' },
+      { f: 'A', t: 'W', l: '204', k: 'ret' },
+    ] },
+    { ref: 'HR xử lý yêu cầu → luồng 4.7 (tab "HR duyệt yêu cầu")' },
+  ],
+},
+{
+  id: 'f3', grp: 'Nhân viên', name: 'Tải file lên hồ sơ', sub: 'Luồng 4.3, A8',
+  refs: 'FR-1.10, FR-1.14 · AC-1.10.x · ADR-13',
+  intro: 'File đi thẳng từ trình duyệt lên S3 qua presigned URL, không đi qua API. API kiểm lại nội dung khi xác nhận. Ví dụ: tải CV.',
+  type: 'seq', p: ['U', 'W', 'A', 'D', 'S'],
+  m: [
+    { f: 'U', t: 'W', l: 'Mở "Sơ yếu lý lịch", bấm "Tải lên", chọn file', s: '4.3 bước 1' },
+    { f: 'W', t: 'W', l: 'Tính SHA-256, đọc dung lượng, loại file', s: '4.3 bước 1' },
+    { f: 'W', t: 'A', l: 'POST /employees/{id}/files {section, itemId?, name, type, size, sha256}', s: '4.3 bước 2' },
+    { f: 'A', t: 'A', l: 'Giới hạn 10/giờ, 30/ngày (E15); hạn mức 50 file, 200 MiB (E11); quyền với mục; loại, dung lượng khai báo (E12)', k: 'err', s: '4.3 bước 3' },
+    { frag: 'alt', c: 'đã có file READY cùng SHA-256 trong mục', m: [
+      { f: 'A', t: 'W', l: '200: trả file đã có, dừng', k: 'ret', s: '4.3 bước 4, AC-1.10.4' },
+    ], else: [{ c: 'file mới', m: [
+      { f: 'A', t: 'D', l: 'INSERT file PENDING, khóa object ngẫu nhiên profiles/{employeeId}/{fileId}', s: '4.3 bước 5' },
+      { f: 'A', t: 'W', l: '201: fileId + URL PUT hết hạn sau 10 phút', k: 'ret', s: '4.3 bước 5' },
+      { f: 'W', t: 'S', l: 'PUT file (hiện tiến độ)', s: '4.3 bước 6' },
+      { f: 'S', t: 'W', l: '200', k: 'ret' },
+      { f: 'W', t: 'A', l: 'POST /employees/{id}/files/{fileId}/confirm', s: '4.3 bước 7' },
+      { f: 'A', t: 'S', l: 'Đọc object: dung lượng, vài byte đầu (loại theo nội dung), tính lại SHA-256', s: '4.3 bước 8' },
+      { frag: 'alt', c: 'chưa PUT lên storage', m: [
+        { f: 'A', t: 'W', l: '400; file vẫn PENDING', k: 'err', s: 'E13' },
+      ], else: [{ c: 'sai dung lượng, loại hoặc SHA-256', m: [
+        { f: 'A', t: 'S', l: 'Xóa object', k: 'err' },
+        { f: 'A', t: 'D', l: 'File → REJECTED', k: 'err' },
+        { f: 'A', t: 'W', l: '400 BAD_REQUEST', k: 'err', s: 'E12' },
+      ] }, { c: 'hợp lệ', m: [
+        { f: 'A', t: 'A', l: 'Ảnh đại diện: cắt 512 × 512, xóa EXIF', s: '4.3 bước 9' },
+        { f: 'A', t: 'D', l: 'File → PENDING_REVIEW (HR tải: READY ngay, A8); audit PROFILE_FILE_UPLOAD, không có tên file gốc', s: '4.3 bước 10' },
+        { f: 'A', t: 'W', l: '200: file', k: 'ret' },
+      ] }] },
+    ] }] },
+    { f: 'W', t: 'U', l: 'File hiện trong khung yêu cầu; bấm "Gửi yêu cầu" kèm fileIds', k: 'ret', s: '4.3 bước 11' },
+    { ref: 'Gửi yêu cầu → luồng 4.2. File chỉ READY khi HR duyệt (4.7); không gắn yêu cầu nào trong 24 giờ thì bị xóa' },
+  ],
+},
+{
+  id: 'f4', grp: 'HR', name: 'HR duyệt yêu cầu', sub: 'Luồng 4.7, A5, A10',
+  refs: 'FR-1.9 · AC-1.9.x · AC-0.6.x (trang Việc cần duyệt)',
+  intro: 'HR so giá trị cũ và mới, đối chiếu giấy tờ. Duyệt thì ghi vào hồ sơ trong một giao dịch; từ chối phải có lý do. Nhân viên được báo qua email.',
+  type: 'seq', p: ['H', 'W', 'A', 'D', 'O', 'U'],
+  m: [
+    { f: 'H', t: 'W', l: 'Mở "Việc cần duyệt", tab Sửa hồ sơ (hoặc File hồ sơ, Ảnh đại diện)', s: '4.7 bước 1' },
+    { f: 'W', t: 'A', l: 'GET /change-requests?status=PENDING&section=&departmentId=&page=' },
+    { f: 'A', t: 'W', l: 'Cũ nhất trước; chờ quá 2 ngày làm việc có nhãn "Quá hạn", đứng đầu', k: 'ret', s: 'A10' },
+    { f: 'H', t: 'W', l: 'Mở một yêu cầu', s: '4.7 bước 2' },
+    { f: 'W', t: 'A', l: 'GET /change-requests/{requestId}' },
+    { f: 'A', t: 'W', l: 'Giá trị hiện tại và đề xuất cạnh nhau; nhạy cảm là ********; file kèm tải được', k: 'ret' },
+    { frag: 'opt', c: 'HR bấm mắt ở giá trị nhạy cảm', m: [
+      { f: 'W', t: 'A', l: 'GET /change-requests/{requestId}?reveal=true' },
+      { f: 'A', t: 'D', l: 'Audit VIEW_SENSITIVE', s: 'mục 7' },
+    ] },
+    { frag: 'alt', c: 'HR bấm "Duyệt"', m: [
+      { f: 'W', t: 'A', l: 'POST /change-requests/{requestId}/approve', s: '4.7 bước 3' },
+      { f: 'A', t: 'A', l: 'Vai trò HR (E1); còn PENDING (E20); baseVersion = version hiện tại, lệch → 409 (E19)', k: 'err', s: '4.7 bước 4' },
+      { f: 'A', t: 'D', l: 'Một giao dịch: ghi hồ sơ hoặc dòng, version + 1; file kèm → READY; yêu cầu → APPROVED; audit PROFILE_CHANGE_APPROVE; outbox', s: '4.7 bước 5' },
+      { f: 'A', t: 'W', l: '200', k: 'ret' },
+      { f: 'O', t: 'U', l: 'Email "yêu cầu đã duyệt"; đổi tài khoản ngân hàng thì thêm email cảnh báo (không có số TK)', k: 'async', s: 'A5, BR-15' },
+    ], else: [{ c: 'HR bấm "Từ chối", nhập lý do', m: [
+      { f: 'W', t: 'A', l: 'POST /change-requests/{requestId}/reject {reason}', s: '4.7 bước 6' },
+      { f: 'A', t: 'A', l: 'Lý do bắt buộc, tối đa 500 ký tự → 400 (E22)', k: 'err', s: 'E22' },
+      { f: 'A', t: 'D', l: 'Yêu cầu → REJECTED; file kèm → REJECTED (xóa sau 30 ngày); audit PROFILE_CHANGE_REJECT không chứa lý do; outbox', s: '4.7 bước 6' },
+      { f: 'A', t: 'W', l: '200', k: 'ret' },
+      { f: 'O', t: 'U', l: 'Email báo chung, không chứa lý do', k: 'async' },
+    ] }] },
+    { f: 'U', t: 'U', l: 'Mở ứng dụng: thấy kết quả; bị từ chối thì thấy lý do', s: '4.7 bước 7' },
+  ],
+},
+{
+  id: 'f5', grp: 'HR', name: 'HR xem nhạy cảm, sửa hồ sơ', sub: 'Luồng 4.5, A2, A4, A9',
+  refs: 'FR-1.3, FR-1.4, FR-1.12 · AC-1.3.x, AC-1.4.x · ADR-08',
+  intro: 'Giá trị nhạy cảm chỉ tải khi bấm mắt, mỗi lần đều ghi audit. HR sửa thì ghi thẳng, kiểm version để không ghi đè thay đổi của người khác.',
+  type: 'seq', p: ['H', 'W', 'A', 'D'],
+  m: [
+    { f: 'H', t: 'W', l: 'Mở hồ sơ, bấm mắt ở một giá trị nhạy cảm', s: '4.5 bước 1' },
+    { f: 'W', t: 'A', l: 'GET /employees/{id}?include=sensitive', s: '4.5 bước 1' },
+    { f: 'A', t: 'A', l: 'Giới hạn 100 lần/giờ → 429 + cảnh báo vận hành (E15); không phải HR, chủ hồ sơ → 403 (E2)', k: 'err', s: '4.5 bước 2' },
+    { f: 'A', t: 'D', l: 'Đọc bản mã hóa; ghi audit VIEW_SENSITIVE', s: '4.5 bước 2' },
+    { f: 'A', t: 'W', l: '200: giá trị đã giải mã', k: 'ret' },
+    { f: 'H', t: 'W', l: 'Bấm "Sửa hồ sơ", đổi trường, bấm Lưu (trường nhạy cảm để trống = giữ nguyên)', s: '4.5 bước 3' },
+    { f: 'W', t: 'A', l: 'PATCH /employees/{id} {version, chỉ các trường đã đổi}', s: '4.5 bước 3' },
+    { frag: 'alt', c: 'không gửi version', m: [
+      { f: 'A', t: 'W', l: '400 BAD_REQUEST, không ghi đè', k: 'err', s: 'A2, E9' },
+    ], else: [{ c: 'version lệch bản ghi hiện tại', m: [
+      { f: 'A', t: 'W', l: '409 CONFLICT → client tải lại rồi cho làm lại', k: 'err', s: 'E3' },
+    ] }, { c: 'chuyển TERMINATED khi còn cấp dưới đang làm việc', m: [
+      { f: 'A', t: 'W', l: '400, nêu số cấp dưới cần chuyển quản lý', k: 'err', s: 'A4, E10' },
+    ] }, { c: 'hợp lệ', m: [
+      { f: 'A', t: 'A', l: 'Đổi managerId: đúng một quản lý, không vòng (E5); mã hóa trường nhạy cảm', s: '4.5 bước 4' },
+      { f: 'A', t: 'D', l: 'UPDATE, version + 1; audit UPDATE theo nhóm trường (tổ chức: cũ và mới; cá nhân, nhạy cảm: chỉ tên)', s: '4.5 bước 5, mục 7' },
+      { f: 'A', t: 'W', l: '200: hồ sơ mới', k: 'ret' },
+    ] }] },
+    { ref: 'Mục HR quản lý (hợp đồng, lương, BHXH…): POST, PATCH, DELETE /employees/{id}/profile/{section}, ghi thẳng, source = HR', s: '4.5 bước 6, A9' },
+  ],
+},
+{
+  id: 'f6', grp: 'HR', name: 'HR tạo hồ sơ', sub: 'Luồng 4.4, A3',
+  refs: 'FR-1.5, FR-2.5 · AC-1.5.x',
+  intro: 'Chỉ HR tạo hồ sơ. Mỗi nhân viên có đúng một quản lý trực tiếp đang làm việc, trừ CEO.',
+  type: 'seq', p: ['H', 'W', 'A', 'D'],
+  m: [
+    { f: 'H', t: 'W', l: 'Bấm "Thêm nhân viên"', s: '4.4 bước 1' },
+    { f: 'W', t: 'A', l: 'GET /departments, /positions, /employees' },
+    { f: 'A', t: 'W', l: 'Danh sách để chọn phòng ban, chức danh, quản lý', k: 'ret' },
+    { f: 'H', t: 'W', l: 'Nhập thông tin (mục 8.1), bấm Lưu', s: '4.4 bước 2' },
+    { f: 'W', t: 'A', l: 'POST /employees', s: '4.4 bước 2' },
+    { f: 'A', t: 'A', l: 'Không phải HR → 403 (E8); mã E + 5 số, email, phòng ban, chức danh → 400 (E4)', k: 'err', s: '4.4 bước 3' },
+    { f: 'A', t: 'A', l: 'Đúng một quản lý đang làm việc, không vòng; CEO được không có quản lý, chỉ một CEO → 400 (E5)', k: 'err', s: '4.4 bước 4, A3' },
+    { f: 'A', t: 'D', l: 'Mã hóa CCCD, số tài khoản, lương; INSERT hồ sơ + audit CREATE trong một giao dịch', s: '4.4 bước 5, 6' },
+    { frag: 'alt', c: 'trùng mã nhân viên hoặc email', m: [
+      { f: 'A', t: 'W', l: '409 CONFLICT', k: 'err', s: 'E6' },
+    ], else: [{ c: 'thành công', m: [
+      { f: 'A', t: 'W', l: '201: hồ sơ', k: 'ret', s: '4.4 bước 7' },
+      { f: 'W', t: 'H', l: 'Chuyển tới trang hồ sơ vừa tạo', k: 'ret' },
+    ] }] },
+  ],
+},
+{
+  id: 'f7', grp: 'Chung', name: 'Xem lịch sử thay đổi', sub: 'Luồng 4.6',
+  refs: 'FR-1.11 · AC-1.11.x · ADR-09',
+  intro: 'Chủ hồ sơ và HR xem ai làm gì, lúc nào. Nhật ký không bao giờ chứa giá trị trường, tên file gốc hay lý do từ chối.',
+  type: 'seq', p: ['X', 'W', 'A', 'D'],
+  m: [
+    { f: 'X', t: 'W', l: 'Chủ hồ sơ hoặc HR mở "Lịch sử thay đổi"', s: '4.6 bước 1' },
+    { f: 'W', t: 'A', l: 'GET /employees/{id}/history?page=&section=&actorId=&from=&to=' },
+    { frag: 'alt', c: 'không phải chủ hồ sơ, không phải HR', m: [
+      { f: 'A', t: 'W', l: '404 NOT_FOUND', k: 'err', s: 'E7' },
+    ], else: [{ c: 'được xem', m: [
+      { f: 'A', t: 'D', l: 'Đọc audit có entity là hồ sơ này, gồm dòng, file, yêu cầu cập nhật của hồ sơ', s: '4.6 bước 2' },
+      { f: 'A', t: 'W', l: 'Mới nhất trước: thời điểm, người làm, thao tác, mục, tên trường', k: 'ret', s: '4.6 bước 3' },
+    ] }] },
+    { f: 'W', t: 'X', l: 'Danh sách có lọc theo mục, người làm, khoảng ngày', k: 'ret' },
+  ],
+},
+{
+  id: 'g1', grp: 'Quy tắc', name: 'Ai thấy gì', sub: 'Mục 2, A1, ADR-10',
+  refs: 'FR-1.1, FR-1.3, FR-1.8 · ma trận phân quyền',
+  intro: 'API quyết định mức xem cho mỗi request bằng một hàm canAccess dùng chung (mục 13.2). Mục ngoài mức trả 404, không phải 403, để không lộ sự tồn tại.',
+  type: 'graph', w: 1000, h: 560,
+  n: [
+    { id: 's', k: 'start', x: 40, y: 60 },
+    { id: 'q0', k: 'decision', x: 250, y: 60, l: 'Tài khoản gắn hồ sơ\nTERMINATED?', w: 190, h: 74 },
+    { id: 'r0', k: 'bad', x: 250, y: 200, l: 'Từ chối mọi request\n(kể cả token còn hạn)', w: 190 },
+    { id: 'q1', k: 'decision', x: 500, y: 60, l: 'Người xem là HR?', w: 170, h: 64 },
+    { id: 'r1', k: 'result', x: 820, y: 60, l: 'Toàn bộ hồ sơ\nNhạy cảm (NC, HR): chỉ khi bấm mắt\nmỗi lượt ghi VIEW_SENSITIVE', w: 270, h: 70 },
+    { id: 'q2', k: 'decision', x: 500, y: 200, l: 'Là chủ hồ sơ?', w: 170, h: 64 },
+    { id: 'r2', k: 'result', x: 820, y: 200, l: 'Mức DB + QL + CN\nLương, số TK (NC): khi bấm mắt\nKhông xem CCCD của mình (E2)', w: 270, h: 70 },
+    { id: 'q3', k: 'decision', x: 500, y: 340, l: 'Là quản lý\ntrực tiếp? (ADR-10)', w: 190, h: 74 },
+    { id: 'r3', k: 'result', x: 820, y: 340, l: 'Mức DB + QL\nCá nhân, công việc, chuyên môn\nKhông tài chính, phúc lợi, file, nhật ký', w: 270, h: 70 },
+    { id: 'r4', k: 'result', x: 500, y: 485, l: 'Mức DB (danh bạ)\nMã, tên, ảnh, chức danh, phòng ban,\nquản lý, SĐT, email công ty', w: 280, h: 70 },
+    { id: 'r5', k: 'bad', x: 870, y: 485, l: 'Mục ngoài mức → 404 (E7)\nsections[] chỉ liệt kê\nmục được xem', w: 240, h: 70 },
+  ],
+  e: [
+    { f: 's', t: 'q0', l: 'GET summary\nhoặc profile/{section}', lp: [100, 100] },
+    { f: 'q0', t: 'r0', l: 'có', k: 'err' },
+    { f: 'q0', t: 'q1', l: 'không' },
+    { f: 'q1', t: 'r1', l: 'có' },
+    { f: 'q1', t: 'q2', l: 'không' },
+    { f: 'q2', t: 'r2', l: 'có' },
+    { f: 'q2', t: 'q3', l: 'không' },
+    { f: 'q3', t: 'r3', l: 'có' },
+    { f: 'q3', t: 'r4', l: 'không' },
+    { f: 'r4', t: 'r5', l: 'mục cao hơn', k: 'err' },
+  ],
+},
+{
+  id: 'g2', grp: 'Quy tắc', name: 'Trạng thái yêu cầu cập nhật', sub: 'profile_change_request',
+  refs: 'FR-1.9 · E19, E20, E21',
+  intro: 'Một yêu cầu chỉ đổi trạng thái một lần khỏi PENDING. Duyệt khi hồ sơ đã đổi (baseVersion cũ) bị 409 và yêu cầu vẫn PENDING.',
+  type: 'graph', w: 1060, h: 470,
+  n: [
+    { id: 's', k: 'start', x: 40, y: 220 },
+    { id: 'P', k: 'state', x: 330, y: 220, l: 'PENDING', sub: 'hồ sơ chưa đổi', w: 170, h: 60 },
+    { id: 'A', k: 'good', x: 820, y: 80, l: 'APPROVED', sub: 'đã ghi vào hồ sơ, version + 1', w: 230, h: 60 },
+    { id: 'R', k: 'bad', x: 820, y: 220, l: 'REJECTED', sub: 'có lý do, hồ sơ không đổi', w: 230, h: 60 },
+    { id: 'C', k: 'state', x: 820, y: 360, l: 'CANCELLED', sub: 'nhân viên hủy hoặc bị thay', w: 230, h: 60 },
+    { id: 'e', k: 'end', x: 1010, y: 220 },
+  ],
+  e: [
+    { f: 's', t: 'P', l: 'NV gửi (4.2)\nIdempotency-Key, tối đa 20 PENDING', lp: [150, 268] },
+    { f: 'P', t: 'P', l: 'HR duyệt nhưng baseVersion cũ → 409 (E19)', k: 'err', loop: 1, lp: [225, 140] },
+    { f: 'P', t: 'A', l: 'HR duyệt (4.7 bước 3–5)', via: [[520, 80]] },
+    { f: 'P', t: 'R', l: 'HR từ chối + lý do (4.7 bước 6)' },
+    { f: 'P', t: 'C', l: 'NV hủy, hoặc NV gửi yêu cầu mới\ncùng trường, cùng dòng (4.2 bước 5)', via: [[520, 360]], lp: [575, 395] },
+    { f: 'A', t: 'e', l: '', via: [[1010, 80]] },
+    { f: 'R', t: 'e', l: '' },
+    { f: 'C', t: 'e', l: '', via: [[1010, 360]] },
+  ],
+},
+{
+  id: 'g3', grp: 'Quy tắc', name: 'Trạng thái file hồ sơ', sub: 'profile_file',
+  refs: 'FR-1.10 · E12, E13 · ADR-13',
+  intro: 'File nhân viên tải lên chỉ READY khi HR duyệt yêu cầu có kèm file. File HR tải lên READY ngay (A8). Object bị xóa thật bởi lifecycle của bucket sau 30 ngày.',
+  type: 'graph', w: 1040, h: 500,
+  n: [
+    { id: 's', k: 'start', x: 60, y: 230 },
+    { id: 'P', k: 'state', x: 230, y: 230, l: 'PENDING', sub: 'đã có URL PUT', w: 160, h: 60 },
+    { id: 'V', k: 'state', x: 520, y: 100, l: 'PENDING_REVIEW', sub: 'chỉ chủ hồ sơ, HR thấy', w: 210, h: 60 },
+    { id: 'Y', k: 'good', x: 820, y: 230, l: 'READY', sub: 'tính vào hạn mức 50 file', w: 190, h: 60 },
+    { id: 'R', k: 'bad', x: 520, y: 400, l: 'REJECTED', sub: 'object bị xóa', w: 200, h: 60 },
+    { id: 'D', k: 'state', x: 820, y: 400, l: 'DELETED', sub: 'HR vẫn tải được 30 ngày', w: 210, h: 60 },
+    { id: 'e', k: 'end', x: 990, y: 400 },
+  ],
+  e: [
+    { f: 's', t: 'P', l: 'POST /files' },
+    { f: 'P', t: 'V', l: 'confirm hợp lệ\n(nhân viên tải)', via: [[230, 100]] },
+    { f: 'P', t: 'Y', l: 'confirm hợp lệ (HR tải, A8)', lp: [400, 220] },
+    { f: 'P', t: 'R', l: 'confirm sai nội dung (E12)\nhoặc quá 24 giờ chưa PUT', k: 'err', via: [[230, 400]] },
+    { f: 'V', t: 'Y', l: 'HR duyệt yêu cầu\nkèm file', via: [[820, 100]] },
+    { f: 'V', t: 'R', l: 'HR từ chối, hoặc 24 giờ\nkhông gắn yêu cầu', k: 'err', lp: [600, 320] },
+    { f: 'Y', t: 'D', l: 'HR xóa, hoặc duyệt\nyêu cầu xóa của NV' },
+    { f: 'D', t: 'e', l: 'lifecycle\n30 ngày' },
+  ],
+},
+];
+
+/* ------------------------------------------------------------------ */
+/* Vẽ                                                                   */
+/* ------------------------------------------------------------------ */
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('diagram');
+const FONT = '12.5px "Segoe UI", Roboto, Arial, sans-serif';
+const ctx = document.createElement('canvas').getContext('2d');
+ctx.font = FONT;
+
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function wrap(text, width) {
+  const out = [];
+  for (const para of String(text).split('\n')) {
+    let line = '';
+    for (const w of para.split(' ')) {
+      const t = line ? line + ' ' + w : w;
+      if (ctx.measureText(t).width > width && line) { out.push(line); line = w; } else line = t;
+    }
+    out.push(line);
+  }
+  return out;
+}
+function textLines(parent, lines, x, y, anchor, cls) {
+  const t = el('text', { x, y, 'text-anchor': anchor || 'start' }, parent);
+  if (cls) t.setAttribute('class', cls);
+  lines.forEach((ln, i) => { const s = el('tspan', { x, dy: i ? 15 : 0 }, t); s.textContent = ln; });
+  return t;
+}
+function defs() {
+  const d = el('defs', {}, svg);
+  const mk = (id, color, open) => {
+    const m = el('marker', { id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 8, markerHeight: 8, orient: 'auto-start-reverse' }, d);
+    el('path', open ? { d: 'M1,1 L9,5 L1,9', fill: 'none', stroke: color, 'stroke-width': 1.5 } : { d: 'M0,0 L10,5 L0,10 z', fill: color }, m);
+  };
+  mk('a', '#0F172A'); mk('ar', '#64748B', 1); mk('aa', '#7C3AED', 1); mk('ae', '#DC2626');
+}
+const markerOf = (k) => ({ ret: 'ar', async: 'aa', err: 'ae' }[k] || 'a');
+
+let steps = [];   // phần tử theo thứ tự chạy: {g, info}
+
+function drawSeq(f) {
+  const ids = f.p, gap = ids.length > 5 ? 175 : 205, left = 90;
+  const X = {}; ids.forEach((id, i) => X[id] = left + i * gap);
+  const W = left * 2 + (ids.length - 1) * gap;
+  const top = 18, ph = 40;
+  let y = top + ph + 26;
+  const layer = el('g', {}, svg), fragLayer = el('g', {}, layer), msgLayer = el('g', {}, layer);
+  let n = 0;
+
+  function msg(m) {
+    n++;
+    const self = m.f === m.t;
+    const x1 = X[m.f], x2 = X[m.t];
+    const width = self ? Math.round(gap * 1.25) : Math.abs(x2 - x1) - 24;
+    const lines = wrap(m.l, Math.max(width, 120));
+    const g = el('g', { class: 'msg ' + (m.k || '') }, msgLayer);
+    const lh = lines.length * 15;
+    const hl = el('rect', { class: 'hl', x: Math.min(x1, x2) - 20, y: y - 12, width: Math.abs(x2 - x1) + (self ? width + 60 : 40), height: lh + (self ? 34 : 18), rx: 6 }, g);
+    if (self) {
+      textLines(g, lines, x1 + 40, y + 2, 'start');
+      const ay = y + lh - 6;
+      el('path', { d: `M${x1},${ay} h30 v18 h-28`, 'marker-end': `url(#${markerOf(m.k)})` }, g);
+      y += lh + 32;
+    } else {
+      textLines(g, lines, (x1 + x2) / 2, y + 2, 'middle');
+      const ay = y + lh - 4;
+      el('line', { x1, y1: ay, x2: x2 + (x2 > x1 ? -2 : 2), y2: ay, 'marker-end': `url(#${markerOf(m.k)})` }, g);
+      y += lh + 20;
+    }
+    const nx = self ? x1 - 14 : x1 + (x2 > x1 ? -14 : 14), ny = self ? y - 22 - 6 : y - 24;
+    el('circle', { class: 'num', cx: nx, cy: ny, r: 9 }, g);
+    const nt = el('text', { class: 'numt', x: nx, y: ny + 3.5, 'text-anchor': 'middle' }, g); nt.textContent = n;
+    el('rect', { class: 'hit', x: hl.getAttribute('x'), y: hl.getAttribute('y'), width: hl.getAttribute('width'), height: hl.getAttribute('height') }, g);
+    steps.push({ g, info: m, n });
+  }
+  function ref(r) {
+    const g = el('g', { class: 'ref' }, msgLayer);
+    const lines = wrap(r.ref, W - 200);
+    const h = lines.length * 15 + 16;
+    el('rect', { x: 40, y, width: W - 80, height: h, rx: 4 }, g);
+    const kw = el('text', { class: 'kw', x: 52, y: y + 18 }, g); kw.textContent = 'ref';
+    textLines(g, lines, W / 2, y + 18, 'middle');
+    y += h + 16;
+    steps.push({ g, info: { l: r.ref, s: r.s, ref: 1 } });
+  }
+  function frag(fr, depth) {
+    const g = el('g', { class: 'frag' }, fragLayer);
+    const x0 = 34 + depth * 10, x1 = W - 34 - depth * 10, y0 = y;
+    const label = (c) => '[' + c + ']';
+    el('path', { class: 'tab', d: `M${x0},${y0} h${ctx.measureText(fr.frag).width + 18} v14 l-8,8 h${-(ctx.measureText(fr.frag).width + 10)} z` }, g);
+    const kw = el('text', { class: 'kw', x: x0 + 6, y: y0 + 15 }, g); kw.textContent = fr.frag;
+    const ct = el('text', { x: x0 + ctx.measureText(fr.frag).width + 26, y: y0 + 15 }, g); ct.textContent = label(fr.c);
+    y += 36;
+    const start = steps.length;
+    walk(fr.m, depth + 1);
+    for (const e of fr.else || []) {
+      y += 2;
+      el('line', { class: 'else', x1: x0, x2: x1, y1: y, y2: y }, g);
+      const t = el('text', { x: x0 + 8, y: y + 15 }, g); t.textContent = label(e.c);
+      y += 30;
+      walk(e.m, depth + 1);
+    }
+    y += 6;
+    el('rect', { class: 'box', x: x0, y: y0, width: x1 - x0, height: y - y0, rx: 3 }, g);
+    y += 14;
+    steps[start] && (steps[start].frag = (steps[start].frag || []).concat(g));
+  }
+  function walk(list, depth) {
+    for (const it of list) it.frag ? frag(it, depth) : it.ref ? ref(it) : msg(it);
+  }
+  walk(f.m, 0);
+
+  const bottom = y + 6;
+  const heads = el('g', {}, svg);
+  svg.insertBefore(heads, layer);
+  for (const id of ids) {
+    el('line', { class: 'life', x1: X[id], x2: X[id], y1: top + ph, y2: bottom }, heads);
+    for (const yy of [top, bottom]) {
+      const w = Math.max(ctx.measureText(P[id].n).width + 28, 110);
+      el('rect', { class: 'pbox' + (P[id].ext ? ' ext' : ''), x: X[id] - w / 2, y: yy, width: w, height: ph, rx: 8 }, heads);
+      const t = el('text', { class: 'ptext', x: X[id], y: yy + 25, 'text-anchor': 'middle' }, heads); t.textContent = P[id].n;
+    }
+  }
+  return [W, bottom + ph + 18];
+}
+
+function drawGraph(f) {
+  const N = {}; f.n.forEach((n) => N[n.id] = n);
+  const edgeLayer = el('g', {}, svg), nodeLayer = el('g', {}, svg);
+  const half = (n) => n.k === 'start' ? [9, 9] : n.k === 'end' ? [12, 12] : [(n.w || 150) / 2, (n.h || 56) / 2];
+  function clip(n, px, py) {           // điểm trên biên nút theo hướng tới (px, py)
+    const [hw, hh] = half(n), dx = px - n.x, dy = py - n.y;
+    if (!dx && !dy) return [n.x, n.y];
+    if (n.k === 'start' || n.k === 'end') { const d = Math.hypot(dx, dy); return [n.x + dx / d * hw, n.y + dy / d * hh]; }
+    if (n.k === 'decision') { const s = 1 / (Math.abs(dx) / hw + Math.abs(dy) / hh); return [n.x + dx * s, n.y + dy * s]; }
+    const s = Math.min(hw / Math.abs(dx || 1e-9), hh / Math.abs(dy || 1e-9));
+    return [n.x + dx * s, n.y + dy * s];
+  }
+  for (const n of f.n) {
+    const g = el('g', { class: 'node ' + n.k }, nodeLayer);
+    const [hw, hh] = half(n);
+    if (n.k === 'start') el('ellipse', { cx: n.x, cy: n.y, rx: 9, ry: 9 }, g);
+    else if (n.k === 'end') { el('ellipse', { class: 'out', cx: n.x, cy: n.y, rx: 12, ry: 12 }, g); el('ellipse', { class: 'in', cx: n.x, cy: n.y, rx: 7, ry: 7 }, g); }
+    else if (n.k === 'decision') el('polygon', { points: `${n.x},${n.y - hh} ${n.x + hw},${n.y} ${n.x},${n.y + hh} ${n.x - hw},${n.y}` }, g);
+    else el('rect', { x: n.x - hw, y: n.y - hh, width: hw * 2, height: hh * 2, rx: n.k === 'state' || n.k === 'good' || n.k === 'bad' && n.sub ? 22 : 8 }, g);
+    if (n.l) {
+      const lines = n.l.split('\n');
+      if (n.sub) {
+        const t = el('text', { class: 'big', x: n.x, y: n.y - 3, 'text-anchor': 'middle' }, g); t.textContent = n.l;
+        const s = el('text', { x: n.x, y: n.y + 15, 'text-anchor': 'middle' }, g); s.textContent = n.sub;
+      } else textLines(g, lines, n.x, n.y + 4 - (lines.length - 1) * 7.5, 'middle');
+    }
+  }
+  let i = 0;
+  for (const e of f.e) {
+    i++;
+    const a = N[e.f], b = N[e.t];
+    const g = el('g', { class: 'edge ' + (e.k || '') }, edgeLayer);
+    let d, lx, ly;
+    if (e.loop) {
+      const [, hh] = half(a), x = a.x, y = a.y - hh;
+      d = `M${x - 30},${y} C${x - 40},${y - 70} ${x + 40},${y - 70} ${x + 30},${y}`;
+      lx = x; ly = y - 66;
+    } else {
+      const pts = [[a.x, a.y], ...(e.via || []), [b.x, b.y]];
+      const p0 = clip(a, pts[1][0], pts[1][1]);
+      const pn = clip(b, pts[pts.length - 2][0], pts[pts.length - 2][1]);
+      const all = [p0, ...(e.via || []), pn];
+      d = 'M' + all.map((p) => p.join(',')).join(' L');
+      const mid = Math.floor((all.length - 1) / 2);
+      const [q0, q1] = [all[mid], all[mid + 1]];
+      lx = (q0[0] + q1[0]) / 2; ly = (q0[1] + q1[1]) / 2;
+      if (q0[1] === q1[1]) ly -= 8; else lx += 8;
+    }
+    if (e.lp) [lx, ly] = e.lp;
+    el('path', { d, 'marker-end': `url(#${e.k === 'err' ? 'ae' : 'a'})` }, g);
+    el('path', { class: 'hit', d }, g);
+    if (e.l) {
+      const lines = e.l.split('\n');
+      const vertical = !e.lp && !e.loop && !(e.via || []).length && Math.abs(a.x - b.x) < 5;
+      const anchor = vertical ? 'start' : 'middle';
+      const t = textLines(g, lines, lx, ly - (lines.length - 1) * 15 + (vertical ? 4 : 0), anchor);
+      t.setAttribute('class', '');
+    }
+    steps.push({ g, info: { l: e.l.replace(/\n/g, ' ') || `${a.l || a.id} → kết thúc`, from: a.l || '', to: b.l || '' }, n: i });
+  }
+  return [f.w, f.h];
+}
+
+/* ------------------------------------------------------------------ */
+/* Điều khiển                                                           */
+/* ------------------------------------------------------------------ */
+const $ = (id) => document.getElementById(id);
+let cur = -1, timer = null, flow = null;
+
+function render(f) {
+  flow = f; stop(); steps = []; cur = -1;
+  svg.innerHTML = ''; svg.classList.remove('play');
+  defs();
+  let [w, h] = f.type === 'seq' ? drawSeq(f) : drawGraph(f);
+  const bb = svg.getBBox(); w = Math.max(w, Math.ceil(bb.x + bb.width + 16));
+  svg.setAttribute('width', w); svg.setAttribute('height', h); svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  el('rect', { x: 0, y: 0, width: w, height: h, fill: '#fff' }, svg).parentNode.insertBefore(svg.lastChild, svg.firstChild.nextSibling);
+  $('ftitle').textContent = f.name; $('frefs').textContent = f.sub + ' · ' + f.refs; $('fintro').textContent = f.intro;
+  document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b.dataset.id === f.id));
+  steps.forEach((s, i) => s.g.addEventListener('click', () => { stop(); go(i); }));
+  $('legend').style.display = f.type === 'seq' ? '' : 'none';
+  $('detail').textContent = 'Bấm "Chạy" hoặc bấm vào một mũi tên để xem giải thích bước đó.';
+  updatePos();
+}
+function go(i) {
+  cur = Math.max(-1, Math.min(i, steps.length - 1));
+  svg.classList.toggle('play', cur >= 0);
+  steps.forEach((s, j) => {
+    const cls = j < cur ? 'done' : j === cur ? 'cur' : 'future';
+    for (const g of [s.g, ...(s.frag || [])]) {
+      g.classList.remove('done', 'cur', 'future');
+      if (cur >= 0) g.classList.add(j <= cur && g !== s.g ? 'done' : g === s.g ? cls : cls);
+    }
+  });
+  if (cur >= 0) {
+    const s = steps[cur], m = s.info;
+    const who = m.f ? `${P[m.f].n} → ${P[m.t].n}` : m.ref ? 'Tham chiếu' : 'Chuyển trạng thái';
+    $('detail').innerHTML = `<b>Bước ${cur + 1}/${steps.length} · ${who}</b><br>${esc(m.l)}` + (m.s ? `<br><small>Spec: ${esc(m.s)}</small>` : '');
+    const bb = s.g.getBBox(), st = svg.parentNode;
+    if (bb.x < st.scrollLeft || bb.x + bb.width > st.scrollLeft + st.clientWidth) st.scrollLeft = bb.x - 40;
+  }
+  updatePos();
+}
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+function updatePos() {
+  $('pos').textContent = cur >= 0 ? `${cur + 1} / ${steps.length}` : `${steps.length} bước`;
+  $('bPrev').disabled = cur <= 0; $('bNext').disabled = cur >= steps.length - 1;
+  $('bPlay').textContent = timer ? '❚❚ Dừng' : '▶ Chạy';
+}
+function stop() { clearInterval(timer); timer = null; updatePos(); }
+function play() {
+  if (timer) return stop();
+  if (cur >= steps.length - 1) go(-1);
+  go(cur + 1);
+  timer = setInterval(() => { if (cur >= steps.length - 1) stop(); else go(cur + 1); }, +$('speed').value);
+  updatePos();
+}
+$('bPlay').onclick = play;
+$('bNext').onclick = () => { stop(); go(cur + 1); };
+$('bPrev').onclick = () => { stop(); go(cur - 1); };
+$('bAll').onclick = () => { stop(); go(-1); };
+$('speed').oninput = () => { if (timer) { stop(); play(); } };
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') $('bNext').click();
+  else if (e.key === 'ArrowLeft') $('bPrev').click();
+  else if (e.key === ' ') { e.preventDefault(); play(); }
+});
+
+const nav = $('nav'); let lastGrp = '';
+for (const f of FLOWS) {
+  if (f.grp !== lastGrp) { const d = document.createElement('div'); d.className = 'grp'; d.textContent = f.grp; nav.appendChild(d); lastGrp = f.grp; }
+  const b = document.createElement('button'); b.dataset.id = f.id;
+  b.innerHTML = `${esc(f.name)}<small>${esc(f.sub)}</small>`;
+  b.onclick = () => { location.hash = f.id; };
+  nav.appendChild(b);
+}
+if (new URLSearchParams(location.search).get('static')) document.body.classList.add('static');
+const pick = () => render(FLOWS.find((f) => '#' + f.id === location.hash) || FLOWS[0]);
+window.addEventListener('hashchange', pick);
+pick();
+window.FLOWS = FLOWS;
+</script>
+</body>
+</html>
