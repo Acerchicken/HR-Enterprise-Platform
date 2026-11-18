@@ -107,7 +107,7 @@ khoản với hồ sơ theo email đã xác minh.
 | E9 | Gửi lại lời mời khi trạng thái là `PENDING`, `ACTIVE`, `DISABLED` | HTTP 409 `CONFLICT` "Tài khoản không ở trạng thái chờ kích hoạt" |
 | E10 | Nhân viên chưa có tài khoản (cấp vai trò), hoặc đã nghỉ việc (gửi lời mời) | HTTP 400 `BAD_REQUEST` |
 | E11 | ADMIN cấp hoặc thu hồi vai trò của chính mình | HTTP 403 `FORBIDDEN` "Không tự cấp, thu hồi vai trò của mình" |
-| E12 | Thu hồi `ADMIN` của ADMIN cuối cùng còn hoạt động | HTTP 409 `CONFLICT` "Phải còn ít nhất một ADMIN" |
+| E12 | Thu hồi `ADMIN` của ADMIN cuối cùng còn hoạt động | HTTP 409 `CONFLICT` "Phải còn ít nhất một ADMIN". Kiểm trước E11, vì ADMIN cuối cùng chỉ có thể là chính người gọi |
 | E13 | Cấp vai trò cho nhân viên đã nghỉ việc | HTTP 400 `BAD_REQUEST` |
 | E14 | Cấp vai trò người đó đã có | HTTP 409 `CONFLICT` |
 
@@ -231,7 +231,7 @@ Xem [`test.md`](test.md). Cách triển khai: [`deploy.md`](deploy.md).
 | Đăng nhập, đăng xuất OIDC Code + PKCE | Đã có: `frontend/src/auth/auth.tsx`, `CallbackPage`, `token-verifier.ts` (Keycloak, Cognito) | Lỗi ở `/callback` chưa có màn hình (E1); `callback_urls` của Cognito (TV3) |
 | Gắn tài khoản theo `sub`, email | Đã có, chặn `TERMINATED` | Kiểm `email_verified` (`fix/auth-email-verified`) |
 | Vai trò | Chỉ từ database (`feat/uc8-roles-from-db`): `HR`, `ADMIN` ở `iam.role_assignment`, `EMPLOYEE`, `MANAGER` suy ra; token không còn claim vai trò; bỏ `manager` ở realm Keycloak và Cognito | – |
-| Cấp, thu hồi vai trò | Chưa có (chỉ trên console IdP) | `feat/uc8-role-admin` |
+| Cấp, thu hồi vai trò | Đã có (`feat/uc8-role-admin`): API, trang `/admin/roles` (ô "Phân quyền" ở trang chủ của ADMIN), audit, event; lệnh `npm run grant-admin -- <email>` cho ADMIN đầu tiên | Đồng bộ nhóm sang IdP (`identity-sync`, `feat/uc8-account-lifecycle`) |
 | Tạo, khóa, mở tài khoản trên IdP; trạng thái; gửi lại lời mời | Chưa có | `feat/uc8-account-lifecycle` |
 | Tự đăng xuất khi không thao tác | Chưa có (Keycloak chỉ hết phiên SSO sau 30 phút) | `feat/uc8-account-lifecycle` |
 | Quên mật khẩu, MFA, cấu hình IdP staging | Chưa có | TV3 `infra/idp-hardening`, `infra/idp-mfa` |

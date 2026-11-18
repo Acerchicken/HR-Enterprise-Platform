@@ -35,6 +35,14 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 |---|---|---|---:|---:|---:|---:|---|---|
 | Audit log | Tìm kiếm/xem | `GET /api/v1/audit-logs` | — | — | ✓ | ✓ | Có thể lọc theo loại đối tượng, ID đối tượng, người thao tác, thời gian; phân trang. Log chỉ được thêm, không có API sửa/xóa. | UC7, ADR-09 |
 
+### Vai trò (UC8 FR-8.7, ADR-18)
+
+| Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |
+|---|---|---|---:|---:|---:|---:|---|---|
+| Vai trò được cấp | Xem danh sách | `GET /api/v1/admin/role-assignments` | — | — | — | ✓ | Chỉ dòng `HR`, `ADMIN`; tên, đơn vị ở mức danh bạ; lọc, phân trang trong SQL | UC8 AC-8.7.5, AC-8.7.8; `RoleAdminController` |
+| Vai trò được cấp | Cấp | `POST /api/v1/admin/role-assignments` | — | — | — | ✓ | Không cho chính mình (403); người chưa có tài khoản, đã nghỉ (400); đã có (409); audit `ROLE_GRANT`, event `RoleGranted` cùng giao dịch | AC-8.7.1, 8.7.3, 8.7.6, 8.7.7 |
+| Vai trò được cấp | Thu hồi | `DELETE /api/v1/admin/role-assignments/{userId}/{role}` | — | — | — | ✓ | ADMIN cuối cùng còn hoạt động (409, kiểm trước); của chính mình (403); không có dòng (404); audit `ROLE_REVOKE` có lý do | AC-8.7.2, 8.7.4 |
+
 ### Tổ chức
 
 | Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |

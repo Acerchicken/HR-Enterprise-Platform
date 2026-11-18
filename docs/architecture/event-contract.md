@@ -76,6 +76,21 @@ ADR-15). Email chỉ là thông báo chung, không chứa giá trị hồ sơ, l
 Payload (`ProfileEventPayload` trong `employee/profile-events.ts`): `requestId`, `employeeId`, `section`, `status`,
 `occurredAt`. Worker nhận dạng bằng `isProfileEvent(type)`.
 
+**Event tài khoản, vai trò (UC8, ADR-17, ADR-18)**
+
+Thuộc aggregate **tài khoản** (`iam.user_account`, `aggregate_id` là id tài khoản). Ghi chung `leave.outbox` như event hồ sơ
+(cùng nợ kỹ thuật). Consumer là `identity-sync` (đồng bộ sang IdP), không gửi email. Danh sách đầy đủ ở
+[UC8 spec mục 9.2](../features/UC8-authentication/spec.md#92-hợp-đồng-api); hằng số `IDENTITY_EVENTS` trong
+`identity/identity-events.ts`, worker nhận dạng bằng `isIdentityEvent(type)`.
+
+| Event (`type`) | Phát khi | API gây ra | Payload |
+|---|---|---|---|
+| `RoleGranted` | ADMIN cấp HR, ADMIN; lệnh `grant-admin` | `POST /admin/role-assignments` | `accountId`, `email`, `role`, `occurredAt` |
+| `RoleRevoked` | ADMIN thu hồi | `DELETE /admin/role-assignments/{userId}/{role}` | như trên |
+
+Tới khi có `identity-sync` (nhánh `feat/uc8-account-lifecycle`), worker ghi log rồi bỏ qua các event này, không đánh dấu
+`processed_event`.
+
 Ánh xạ hành động → event: `EVENT_OF_ACTION` trong `leave-events.ts`; người nhận: `recipientOf()`. Nhân viên không có quản lý
 trực tiếp (CEO) thì event loại "gửi quản lý" được đánh dấu đã xử lý mà không gửi email.
 

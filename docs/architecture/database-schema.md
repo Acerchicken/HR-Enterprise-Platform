@@ -131,11 +131,16 @@ erDiagram
 | `user_id` | uuid | PK (1/2), FK → `iam.user_account.id` `ON DELETE CASCADE` | Xóa tài khoản thì xóa luôn vai trò |
 | `role` | varchar(20) | PK (2/2), CHECK `EMPLOYEE`, `MANAGER`, `HR`, `ADMIN` | Một tài khoản có nhiều vai trò, mỗi vai trò một dòng |
 | `scope_department_id` | uuid | ref → `org.department.id` | Dự phòng cho vai trò giới hạn theo phòng ban; **hiện code chưa dùng** |
+| `granted_by` | uuid | FK → `iam.user_account.id` `ON DELETE SET NULL` | ADMIN đã cấp (UC8 FR-8.7). NULL với dòng seed, lệnh `grant-admin`, dòng có trước UC8 |
+| `granted_at` | timestamptz | NN, mặc định `now()` | Lúc cấp |
+| `reason` | varchar(200) | | Lý do cấp (5 – 200 ký tự khi cấp qua API) |
 
-**Kế hoạch tuần 11** ([UC8 spec mục 13](../features/UC8-authentication/spec.md#13-thiết-kế-đề-xuất-cho-phần-chưa-có), ADR-18):
-migration `RoleAssignmentAudit` thêm `granted_by` (ref `iam.user_account.id`), `granted_at` (NN, mặc định `now()`), `reason`
-varchar(200); chỉ `HR`, `ADMIN` được ghi tay. `user_account` thêm `idp_status`, `invited_at`, `idp_synced_at`, `idp_error`
-(migration `AccountLifecycle`). Bảng này cập nhật khi PR code merge.
+Index `ix_role_assignment_role (role)` cho trang Phân quyền. API chỉ ghi `HR`, `ADMIN`; `IdentityService` bỏ qua dòng `EMPLOYEE`,
+`MANAGER` nếu có (hai vai trò này luôn suy ra, ADR-18). Thu hồi xóa dòng; lịch sử ở audit `ROLE_GRANT`, `ROLE_REVOKE`. Migration
+`RoleAssignmentAudit`.
+
+**Kế hoạch tuần 11** ([UC8 spec mục 13](../features/UC8-authentication/spec.md#13-thiết-kế-đề-xuất-cho-phần-chưa-có)):
+`user_account` thêm `idp_status`, `invited_at`, `idp_synced_at`, `idp_error` (migration `AccountLifecycle`).
 
 ### `iam.rate_limit_counter`
 
@@ -771,6 +776,8 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `ProfileChangeService.computed` (`long-leaves`) | Đọc | `leave.leave_request`, `leave.leave_type` | Ngày nghỉ dài (AC-1.13.3); Leave phụ thuộc Employee nên không gọi ngược |
 | `ProfileChangeService` (outbox) | Ghi | `leave.outbox` | Event email của yêu cầu cập nhật hồ sơ dùng chung outbox và publisher hiện có. **Nợ kỹ thuật:** quy tắc 3 của [hợp đồng event](event-contract.md#6-quy-tắc-khi-đổi-hợp-đồng) yêu cầu `employee.outbox` riêng |
 | Worker `handleProfile` | Đọc | `iam.user_account`, `iam.role_assignment` | Lấy email HR để báo có yêu cầu mới |
+| `RoleAdminService` (`list`, `grant`, `revoke`) | Đọc | `employee.employee` (`full_name`, `status`, `department_id`), `org.department.name` | Trang Phân quyền hiện tên, đơn vị (mức danh bạ); chặn cấp cho người đã nghỉ (UC8 E13), đếm ADMIN còn hoạt động (E12). Identity đã phụ thuộc Employee nhưng cần lọc, phân trang trong một câu SQL |
+| `RoleAdminService`, `grant-admin.ts` | Ghi | `leave.outbox` | Event `RoleGranted`, `RoleRevoked` (cùng nợ kỹ thuật như dòng outbox ở trên) |
 
 ## 10. Ràng buộc nghiệp vụ ở database
 

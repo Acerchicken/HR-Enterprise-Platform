@@ -47,6 +47,9 @@
   `ACTIVE`. Sau khi bỏ đọc vai trò từ token, ai đang có quyền HR, ADMIN chỉ nhờ nhóm trên IdP sẽ mất quyền: trước khi deploy
   `feat/uc8-roles-from-db`, đối chiếu nhóm `hr`, `admin` trên IdP với `iam.role_assignment` và thêm dòng còn thiếu (seed đã có 4
   tài khoản demo).
+- **ADMIN đầu tiên** (môi trường mới, ADR-18): `npm run grant-admin -- <email công ty>` (local) hoặc
+  `node dist/database/grant-admin.js <email>` trong container API (staging). Người đó phải có hồ sơ chưa nghỉ việc. Seed local đã
+  có `admin@hr.local`.
 - **Local:** `docker compose up -d --build` import lại realm. Realm đã có thì xóa volume Keycloak hoặc import bằng tay, vì Keycloak
   không ghi đè realm đã tồn tại. Đăng nhập `hr@hr.local` lần đầu sẽ phải quét mã QR TOTP; mở Mailpit (8025) để xem thư mời và thư
   đặt lại mật khẩu.

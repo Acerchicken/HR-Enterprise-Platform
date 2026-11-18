@@ -14,6 +14,7 @@ import {
   ProfileEventPayload,
   ProfileEventType,
 } from '../modules/employee/profile-events';
+import { isIdentityEvent } from '../modules/identity/identity-events';
 
 /**
  * Worker nhận event nghỉ phép từ queue (RabbitMQ khi local, SQS trên AWS) và gửi email (local: Mailpit).
@@ -45,6 +46,13 @@ export class NotificationWorker implements OnApplicationShutdown {
     const seen = await this.ds.query('SELECT 1 FROM notification.processed_event WHERE event_id = $1', [eventId]);
     if (seen.length) {
       this.logger.log(`Bỏ qua event trùng ${eventId}`);
+      return false;
+    }
+
+    if (isIdentityEvent(type)) {
+      // Đồng bộ sang IdP (identity-sync) làm ở nhánh feat/uc8-account-lifecycle (UC8 spec mục 13). Tới lúc đó chỉ ghi log,
+      // không đánh dấu đã xử lý và không coi là event nghỉ phép.
+      this.logger.log(`${type} ${eventId}: chưa có identity-sync, bỏ qua`);
       return false;
     }
 
