@@ -81,6 +81,11 @@
 
 ### FR-2.8 Quá trình công tác (S, chưa có)
 
+> **Liên quan UC1 (rà 18/11):** mục "Quá trình công tác" của UC1 đã có (#90) nhưng **dựng tạm từ audit** nhóm trường tổ
+> chức (`UPDATE` có `{ from, to }`) cộng các dòng HR nhập tay, nên chưa có ngày hiệu lực khác ngày sửa, chưa có "Sắp hiệu lực",
+> lý do chỉ suy ra (điều chuyển, đổi chức danh, đổi quản lý). Khi làm FR-2.7, FR-2.8 thì lịch sử bổ nhiệm của UC2 là nguồn
+> chính và `ProfileChangeService.computed('career-history')` đọc từ đó; audit chỉ còn để tra cứu.
+
 - **AC-2.8.1** *(chưa có)* Khi mở mục "Quá trình công tác" (UC1). Thì thấy các dòng: phòng ban, chức danh, quản lý trực tiếp,
   từ ngày, đến ngày, lý do (tuyển mới, điều chuyển, thăng chức, đổi quản lý), mới nhất trước.
 - **AC-2.8.2** *(chưa có)* Chủ hồ sơ, quản lý trực tiếp hiện tại và HR xem được; người khác không thấy mục này (UC1 mức QL).

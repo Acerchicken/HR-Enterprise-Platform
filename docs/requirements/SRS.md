@@ -158,19 +158,19 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
 | FR-1.1 | Xem hồ sơ theo 3 mức: danh bạ (mọi người), cá nhân (chính mình, quản lý trực tiếp), đầy đủ (HR) | M | Người ngoài (không phải HR, không phải quản lý trực tiếp) thấy điện thoại, email công ty, không thấy ngày sinh, địa chỉ; quản lý thấy thông tin cá nhân cấp dưới; ADMIN chỉ thấy mức danh bạ | Đã có |
-| FR-1.2 | Nhân viên sửa số điện thoại, địa chỉ của mình qua yêu cầu cập nhật; HR duyệt mới ghi | M | Gửi yêu cầu trả 202, hồ sơ chưa đổi; sửa trường khác hoặc hồ sơ người khác bị 403 | Chưa đạt: code đang lưu thẳng |
+| FR-1.2 | Nhân viên sửa số điện thoại, địa chỉ của mình qua yêu cầu cập nhật; HR duyệt mới ghi | M | Gửi yêu cầu trả 202, hồ sơ chưa đổi; sửa trường khác hoặc hồ sơ người khác bị 403 | Đã có (#86) |
 | FR-1.3 | HR xem CCCD, số tài khoản, lương; mỗi lượt xem ghi audit | M | Vai trò khác bị 403; audit có `VIEW_SENSITIVE` | Đã có |
-| FR-1.4 | HR sửa mọi trường hồ sơ, kể cả trường nhạy cảm | M | Audit chỉ ghi tên trường nhạy cảm, không ghi giá trị | Một phần: API có, giao diện tuần 10 |
-| FR-1.5 | HR tạo nhân viên mới (phòng ban, chức danh, quản lý trực tiếp, trường nhạy cảm) | M | Thiếu dữ liệu bắt buộc trả 400; quản lý tạo vòng lặp bị chặn | Một phần: API có, giao diện tuần 10 |
-| FR-1.6 | Hai người cùng sửa một hồ sơ không ghi đè nhau | S | Gửi `version` cũ trả 409 | Đã có |
-| FR-1.7 | Nghỉ việc: không cho nghỉ khi còn cấp dưới; người đã nghỉ không truy cập được | M | 400 khi còn cấp dưới; token còn hạn của người đã nghỉ bị 403 | Chưa đạt |
-| FR-1.8 | Trang hồ sơ chia nhóm (cá nhân, công việc, tài chính, phúc lợi, khác), màu chủ đạo cyan, mục chưa có tiêu đề đỏ; trang mặc định chỉ tải dữ liệu đang hiện, mỗi mục chỉ tải khi bấm vào | S | Đúng bố cục spec 9.1; mỗi người xem chỉ thấy mục được phép | Chưa có |
-| FR-1.9 | Nhân viên đề xuất thêm, sửa, xóa liên hệ khẩn cấp, thân nhân, chuyên môn, tài khoản ngân hàng, nơi khám bệnh, ảnh, CV; HR so cũ và mới rồi duyệt hoặc từ chối, duyệt mới ghi vào hồ sơ | S | Yêu cầu `PENDING` không đổi hồ sơ; duyệt ghi trong một giao dịch, có audit; từ chối bắt buộc lý do; tối đa 20 yêu cầu chờ mỗi người | Chưa có |
-| FR-1.10 | Tải file lên hồ sơ (CV, bằng cấp, giấy tờ, ảnh đại diện) | S | Chỉ PDF, DOCX, JPG, PNG ≤ 10 MiB, kiểm theo nội dung; tối đa 50 file, 200 MiB mỗi người; tải xuống qua API | Chưa có |
-| FR-1.11 | Nhật ký thay đổi hồ sơ cho chủ hồ sơ và HR | S | Mỗi thao tác đúng một bản ghi, không có giá trị hay tên file gốc | Chưa có |
-| FR-1.12 | HR quản lý hợp đồng, lương theo thời gian, bảo hiểm, phụ cấp, khen thưởng kỷ luật | C | Hợp đồng không trùng khoảng ngày; nhân viên chỉ xem | Chưa có, sau MVP |
-| FR-1.13 | Thông tin tự tính: quá trình công tác, các mốc thâm niên, ngày nghỉ dài | C | Lấy từ audit, `hireDate`, đơn nghỉ | Chưa có, sau MVP |
-| FR-1.14 | Giới hạn tần suất và hạn mức cho thao tác hồ sơ | M | 30 lệnh ghi/phút, 10 URL tải lên/giờ, 100 lượt xem nhạy cảm/giờ; vượt trả 429 | Chưa có |
+| FR-1.4 | HR sửa mọi trường hồ sơ, kể cả trường nhạy cảm | M | Audit chỉ ghi tên trường nhạy cảm, không ghi giá trị | Đã có (#63, #84) |
+| FR-1.5 | HR tạo nhân viên mới (phòng ban, chức danh, quản lý trực tiếp, trường nhạy cảm) | M | Thiếu dữ liệu bắt buộc trả 400; quản lý tạo vòng lặp bị chặn | Đã có (#63) |
+| FR-1.6 | Hai người cùng sửa một hồ sơ không ghi đè nhau | S | Gửi `version` cũ trả 409 | Đã có (#84, #86) |
+| FR-1.7 | Nghỉ việc: không cho nghỉ khi còn cấp dưới; người đã nghỉ không truy cập được | M | 400 khi còn cấp dưới; token còn hạn của người đã nghỉ bị 403 | Đã có (#84) |
+| FR-1.8 | Trang hồ sơ chia nhóm (cá nhân, công việc, tài chính, phúc lợi, khác), màu chủ đạo cyan, mục chưa có tiêu đề đỏ; trang mặc định chỉ tải dữ liệu đang hiện, mỗi mục chỉ tải khi bấm vào | S | Đúng bố cục spec 9.1; mỗi người xem chỉ thấy mục được phép | Đã có (#80) |
+| FR-1.9 | Nhân viên đề xuất thêm, sửa, xóa liên hệ khẩn cấp, thân nhân, chuyên môn, tài khoản ngân hàng, nơi khám bệnh, ảnh, CV; HR so cũ và mới rồi duyệt hoặc từ chối, duyệt mới ghi vào hồ sơ | S | Yêu cầu `PENDING` không đổi hồ sơ; duyệt ghi trong một giao dịch, có audit; từ chối bắt buộc lý do; tối đa 20 yêu cầu chờ mỗi người | Đã có (#86) |
+| FR-1.10 | Tải file lên hồ sơ (CV, bằng cấp, giấy tờ, ảnh đại diện) | S | Chỉ PDF, DOCX, JPG, PNG ≤ 10 MiB, kiểm theo nội dung; tối đa 50 file, 200 MiB mỗi người; tải xuống qua API | Đã có (#87); bucket staging chờ TV3 |
+| FR-1.11 | Nhật ký thay đổi hồ sơ cho chủ hồ sơ và HR | S | Mỗi thao tác đúng một bản ghi, không có giá trị hay tên file gốc | Đã có (#86, #87) |
+| FR-1.12 | HR quản lý hợp đồng, lương theo thời gian, bảo hiểm, phụ cấp, khen thưởng kỷ luật | C | Hợp đồng không trùng khoảng ngày; nhân viên chỉ xem | Đã có (#89) |
+| FR-1.13 | Thông tin tự tính: quá trình công tác, các mốc thâm niên, ngày nghỉ dài | C | Lấy từ audit, `hireDate`, đơn nghỉ | Đã có (#90) |
+| FR-1.14 | Giới hạn tần suất và hạn mức cho thao tác hồ sơ | M | 30 lệnh ghi/phút, 10 URL tải lên/giờ, 100 lượt xem nhạy cảm/giờ; vượt trả 429 | Đã có (#85), trừ cảnh báo dashboard (TV3) |
 
 ### 4.2 UC2 – Thông tin tổ chức (FR-2.x)
 
@@ -412,9 +412,9 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 | Mã | Yêu cầu | Ngưỡng | Kiểm chứng | Trạng thái |
 |---|---|---|---|---|
 | NFR-5.20 | Kiểm tra đầu vào ở server | Từ chối trường không khai báo; truy vấn database tham số hóa qua ORM, không ghép chuỗi SQL | e2e gửi trường lạ; review code | Đã có |
-| NFR-5.21 | Giới hạn tần suất gọi (chống lạm dụng, T-05, T-11) | 100 request/phút cho mỗi người dùng, 20 request/phút cho tìm kiếm; hồ sơ: 30 lệnh ghi/phút, 10 URL tải lên/giờ, 100 lượt xem nhạy cảm/giờ (UC1 FR-1.14); vượt thì 429 | Load test vượt ngưỡng | Kế hoạch tuần 11 (`feat/security-headers-ratelimit`) |
-| NFR-5.22 | Header bảo mật và CORS | CSP, HSTS, `X-Content-Type-Options: nosniff`, chặn nhúng iframe; CORS chỉ cho domain web | Quét header trên staging | Một phần: CORS đã có, header bảo mật làm tuần 11 (`feat/security-headers-ratelimit`) |
-| NFR-5.23 | Kiểm soát file tải lên | Tài liệu chính sách (UC5): PDF, DOCX, tối đa 20 MB. File hồ sơ (UC1): PDF, DOCX, JPG, PNG, tối đa 10 MiB, ảnh đại diện 2 MiB. Kiểm tra loại file theo nội dung, không chỉ theo đuôi | Thử tải file `.exe` đổi đuôi | Kế hoạch tuần 10 |
+| NFR-5.21 | Giới hạn tần suất gọi (chống lạm dụng, T-05, T-11) | 100 request/phút cho mỗi người dùng, 20 request/phút cho tìm kiếm; hồ sơ: 30 lệnh ghi/phút, 10 URL tải lên/giờ, 100 lượt xem nhạy cảm/giờ (UC1 FR-1.14); vượt thì 429 | Load test vượt ngưỡng | Đã có (#85) |
+| NFR-5.22 | Header bảo mật và CORS | CSP, HSTS, `X-Content-Type-Options: nosniff`, chặn nhúng iframe; CORS chỉ cho domain web | Quét header trên staging | Đã có (#85): header API và web |
+| NFR-5.23 | Kiểm soát file tải lên | Tài liệu chính sách (UC5): PDF, DOCX, tối đa 20 MB. File hồ sơ (UC1): PDF, DOCX, JPG, PNG, tối đa 10 MiB, ảnh đại diện 2 MiB. Kiểm tra loại file theo nội dung, không chỉ theo đuôi | Thử tải file `.exe` đổi đuôi | Đã có: tài liệu (UC5), file hồ sơ (#87) |
 | NFR-5.24 | Thông báo lỗi không lộ thông tin nội bộ | Chỉ trả `{ code, message, traceId }`, không trả stack trace hay câu SQL | e2e test lỗi 500 | Đã có |
 
 **e) Secret và chuỗi cung ứng phần mềm**
