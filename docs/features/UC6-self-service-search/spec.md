@@ -53,7 +53,7 @@ danh sách tài liệu của UC5. Không đặt trên nav bar (quyết định 1
 
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
-| 1 | Mở "Tra cứu tài liệu" từ trang chủ, nhập từ khóa, có thể chọn loại tài liệu | Gửi yêu cầu tìm kiếm (API sẽ có ở nhánh `feat/document-search`) |
+| 1 | Mở "Tra cứu tài liệu" từ trang chủ, nhập từ khóa, có thể chọn loại tài liệu | Gửi yêu cầu tìm kiếm (API sẽ có ở nhánh `feat/search-service`) |
 | 2 | | Áp **điều kiện phạm vi trước**, trong cùng truy vấn SQL: chưa ẩn, có phiên bản `READY`, khớp phạm vi (ADR-13) |
 | 3 | | Tìm full-text PostgreSQL trong tiêu đề và nội dung phiên bản mới nhất |
 | 4 | | Xếp hạng (DR-07): khớp nguyên tiêu đề, rồi khớp một phần tiêu đề, rồi khớp nội dung. Cùng mức thì bản cập nhật mới hơn trước, rồi theo tiêu đề |
@@ -104,7 +104,7 @@ danh sách tài liệu của UC5. Không đặt trên nav bar (quyết định 1
 | Luồng | Màn hình | API |
 |---|---|---|
 | 4.1 | Ô tìm kiếm trên nav bar; Enter sang `/directory?q=` | `GET /employees?q=` |
-| 4.2 | Trang "Tra cứu tài liệu" `/documents`, ô tìm tài liệu (chưa có) | Chưa có (nhánh `feat/document-search`) |
+| 4.2 | Trang "Tra cứu tài liệu" `/documents`, ô tìm tài liệu (chưa có) | Chưa có (nhánh `feat/search-service`) |
 | 4.3 | Cùng trang `/documents`, khung hỏi trợ lý (chưa có) | Chưa có (tuần 12) |
 
 ### 9.1 Bản vẽ giao diện
@@ -117,11 +117,11 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 
 **Kết quả tìm tài liệu, xếp theo mức khớp, có đoạn trích (4.2)**
 
-![Kết quả tìm tài liệu](../mockups/uc6-search.png)
+![Kết quả tìm tài liệu](mockups/uc6-search.png)
 
 **Trợ lý chính sách: câu trả lời có trích dẫn; câu hỏi ngoài phạm vi (4.3)**
 
-![Trợ lý chính sách](../mockups/uc6-assistant.png)
+![Trợ lý chính sách](mockups/uc6-assistant.png)
 
 ## 10. Yêu cầu phi chức năng liên quan
 
@@ -139,12 +139,12 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
 | Tìm đồng nghiệp | Có trong trang Danh bạ | Ô tìm kiếm trên nav bar: TV1, nhánh `feat/profile-layout` (tuần 11) |
-| Trích văn bản, full-text, API và trang "Tra cứu tài liệu" | Chưa có | TV1, nhánh `feat/document-search` (tuần 12) |
+| Trích văn bản, full-text, API và trang "Tra cứu tài liệu" | Chưa có | TV1, nhánh `feat/search-service` (tuần 12) |
 | Trợ lý chính sách | Chưa có | Tuần 12; có thể cắt nếu thiếu thời gian (mức C) |
 
 ## 13. Thiết kế đề xuất cho phần chưa có
 
-> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/document-search` (13.1) và ADR-14 (13.2).
+> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/search-service` (13.1) và ADR-16 (13.2).
 
 ### 13.1 Tìm tài liệu (FR-6.2)
 
@@ -164,7 +164,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 - **API:** `POST /assistant/questions` `{ question }` → `{ answer, citations: [{ documentId, versionNo, title }], fallback }`.
   `fallback = true` khi trả danh sách tài liệu thay cho câu trả lời (A2, A3).
 - **Truy hồi:** lấy các đoạn văn bản từ tài liệu qua `visibleQuery` của người hỏi, rồi mới gửi LLM. Cách chia đoạn và
-  full-text hay `pgvector`: chốt ở ADR-14.
+  full-text hay `pgvector`: chốt ở ADR-16.
 - **Câu trả lời ghi rõ chỉ để tham khảo**, căn cứ là văn bản gốc được trích dẫn; câu hỏi về trường hợp riêng (lương, kỷ luật của
   một người) thì trợ lý chỉ tới HR.
 - **Không lưu câu hỏi** vào audit hay log ở dạng đầy đủ (có thể chứa thông tin sức khỏe); chỉ ghi số đoạn, độ trễ, số token.

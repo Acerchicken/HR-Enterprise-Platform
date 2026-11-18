@@ -2,8 +2,8 @@
 
 | Mục | Nội dung |
 |---|---|
-| Trạng thái | Đề xuất |
-| Ngày quyết định | 15/11/2026 (Duong chọn phương án; đổi thành ngày merge PR) |
+| Trạng thái | **Đã chấp nhận** |
+| Ngày quyết định | 15/11/2026 (PR #83) |
 | Thời điểm | Tuần 10 (9/11 – 16/11/2026) |
 | Người viết | TV1 (Dương) |
 | Góc nhìn | Nghiệp vụ |
@@ -12,7 +12,8 @@
 
 ## Lịch sử thay đổi
 
-- Không có.
+- 18/11/2026: đổi trạng thái thành "Đã chấp nhận" (PR #83 merge 15/11, TV2 xác nhận trong `docs/business/org-integrity-rules.md`).
+  Bổ sung xử lý ca biên do TV4 nêu ở PR #95 (UC2 AC-2.6.3, AC-2.7.6, AC-2.9.8, AC-2.10.1); không đổi lựa chọn.
 
 ## Nội dung quyết định
 

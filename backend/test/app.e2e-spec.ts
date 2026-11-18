@@ -3,6 +3,8 @@
  *   npm run migration:run && npm run seed && npm run test:e2e
  */
 process.env.AUTH_MODE = 'dev';
+// Cả bộ e2e gọi API rất nhanh bằng vài tài khoản: nới giới hạn chung, giữ nguyên giới hạn hồ sơ để kiểm AC-1.14.x.
+process.env.RATE_LIMIT_OVERRIDES = JSON.stringify({ global: { minute: 100000 }, 'profile-write': { minute: 100000 } });
 
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -10,8 +12,15 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap';
 import { loadConfig } from '../src/config/config';
+import { ProfileStorage } from '../src/modules/employee/profile-file.service';
+import { FakeBucket, sha256 } from './fake-storage';
+
+/** Bucket hồ sơ giả trong bộ nhớ (máy chạy e2e không cần MinIO). */
+const bucket = new FakeBucket();
 
 const as = (email: string) => ({ Authorization: `Bearer dev:${email}` });
+/** Version hiện tại của hồ sơ (PATCH bắt buộc gửi version, E9). */
+let versionOf: (id: string) => Promise<number>;
 const EMPLOYEE = as('employee@hr.local');
 const MANAGER = as('manager@hr.local');
 const HR = as('hr@hr.local');
@@ -25,11 +34,14 @@ describe('HRHelper API (e2e)', () => {
   let strangerId: string;
 
   beforeAll(async () => {
-    const mod = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const mod = await Test.createTestingModule({ imports: [AppModule] }).overrideProvider(ProfileStorage).useValue(bucket).compile();
     app = mod.createNestApplication();
     configureApp(app, loadConfig());
     await app.init();
     http = request(app.getHttpServer());
+    versionOf = async (id: string) => (await http.get(`/api/v1/employees/${id}`).set(HR)).body.version;
+    // Bộ đếm theo ngày lưu trong DB: xóa để chạy lại e2e nhiều lần trong ngày không bị 429.
+    await app.get((await import('typeorm')).DataSource).query('DELETE FROM iam.rate_limit_counter');
 
     employeeId = (await http.get('/api/v1/me').set(EMPLOYEE)).body.employee.id;
     managerId = (await http.get('/api/v1/me').set(MANAGER)).body.employee.id;
@@ -116,7 +128,7 @@ describe('HRHelper API (e2e)', () => {
       const asOwner = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(EMPLOYEE).expect(200)).body;
       expect(asOwner.relation).toBe('OWNER');
       expect(asOwner.sections.find((x: any) => x.code === 'salary')).toMatchObject({ available: true, group: 'finance' });
-      expect(asOwner.sections.find((x: any) => x.code === 'social-insurance')).toMatchObject({ available: false });
+      expect(asOwner.sections.every((x: any) => x.available)).toBe(true);
       for (const k of personalKeys) expect(asOwner).not.toHaveProperty(k);
       const asHr = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(HR).expect(200)).body;
       expect(asHr).toMatchObject({ relation: 'HR', canEdit: true });
@@ -126,7 +138,7 @@ describe('HRHelper API (e2e)', () => {
     it('mục không được xem, chưa làm hoặc không tồn tại đều trả 404 (AC-1.8.6)', async () => {
       await http.get(`/api/v1/employees/${strangerId}/profile/personal`).set(EMPLOYEE).expect(404);
       await http.get(`/api/v1/employees/${employeeId}/profile/salary`).set(MANAGER).expect(404);
-      await http.get(`/api/v1/employees/${employeeId}/profile/social-insurance`).set(EMPLOYEE).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/profile/contracts`).set(MANAGER).expect(404);
       await http.get(`/api/v1/employees/${employeeId}/profile/nope`).set(HR).expect(404);
       await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(ADMIN).expect(404);
     });
@@ -150,7 +162,75 @@ describe('HRHelper API (e2e)', () => {
       expect(logs.body.items[0]).toMatchObject({ action: 'VIEW_SENSITIVE', actorId: employeeId });
       expect(JSON.stringify(logs.body.items[0])).not.toContain(shown.salary.value);
       const bank = (await http.get(`/api/v1/employees/${employeeId}/profile/bank-account?reveal=true`).set(EMPLOYEE).expect(200)).body;
-      expect(bank.bankAccount.value).toMatch(/^[0-9]{6,20}$/);
+      expect(bank.rows[0].sensitive.accountNumber.value).toMatch(/^[0-9]{6,20}$/);
+    });
+  });
+
+  describe('header bảo mật và giới hạn tần suất (NFR-5.21, NFR-5.22, AC-1.14.1, AC-1.14.6, AC-1.14.7)', () => {
+    it('mọi response có header bảo mật', async () => {
+      const res = await http.get('/api/v1/health').expect(200);
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+      expect(res.headers['x-frame-options']).toBe('DENY');
+      expect(res.headers['content-security-policy']).toContain("frame-ancestors 'none'");
+      expect(res.headers['x-powered-by']).toBeUndefined();
+    });
+
+    it('body quá 64 KiB → 413', async () => {
+      const res = await http
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set(EMPLOYEE)
+        .send({ address: 'x'.repeat(70 * 1024), version: 1 })
+        .expect(413);
+      expect(res.body.code).toBe('PAYLOAD_TOO_LARGE');
+    });
+
+    it('lượt tìm kiếm thứ 21 trong một phút → 429 kèm Retry-After, câu báo nêu giới hạn (NFR-5.21, AC-1.14.7)', async () => {
+      // Tài khoản riêng (một đồng nghiệp bất kỳ) để không ảnh hưởng test khác. Giới hạn ghi hồ sơ có unit test riêng
+      // (rate-limit.spec.ts); e2e nới giới hạn đó vì HR ghi rất nhiều lần trong bộ test.
+      const other = (await http.get(`/api/v1/employees/${strangerId}`).set(HR)).body;
+      const who = as(other.workEmail);
+      for (let i = 0; i < 20; i++) await http.get('/api/v1/employees?q=ngu&size=1').set(who).expect(200);
+      const res = await http.get('/api/v1/employees?q=ngu&size=1').set(who).expect(429);
+      expect(Number(res.headers['retry-after'])).toBeGreaterThan(0);
+      expect(res.body).toMatchObject({ code: 'TOO_MANY_REQUESTS' });
+      expect(res.body.message).toMatch(/20 lượt tìm kiếm mỗi phút/);
+    });
+  });
+
+  describe('header bảo mật và giới hạn tần suất (NFR-5.21, NFR-5.22, AC-1.14.1, AC-1.14.6, AC-1.14.7)', () => {
+    it('mọi response có header bảo mật', async () => {
+      const res = await http.get('/api/v1/health').expect(200);
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+      expect(res.headers['x-frame-options']).toBe('DENY');
+      expect(res.headers['content-security-policy']).toContain("frame-ancestors 'none'");
+      expect(res.headers['x-powered-by']).toBeUndefined();
+    });
+
+    it('body quá 64 KiB → 413', async () => {
+      const res = await http
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set(EMPLOYEE)
+        .send({ address: 'x'.repeat(70 * 1024), version: 1 })
+        .expect(413);
+      expect(res.body.code).toBe('PAYLOAD_TOO_LARGE');
+    });
+
+    it('lệnh ghi hồ sơ thứ 31 trong một phút → 429 kèm Retry-After, câu báo nêu giới hạn', async () => {
+      // Tài khoản riêng (một đồng nghiệp bất kỳ) để không ảnh hưởng test khác.
+      const other = (await http.get(`/api/v1/employees/${strangerId}`).set(HR)).body;
+      const who = as(other.workEmail);
+      for (let i = 0; i < 30; i++) {
+        const r = await http.patch(`/api/v1/employees/${strangerId}`).set(who).send({ phone: '0912000999', version: -1 });
+        expect(r.status).toBe(409);
+      }
+      const res = await http
+        .patch(`/api/v1/employees/${strangerId}`)
+        .set(who)
+        .send({ phone: '0912000999', version: -1 })
+        .expect(429);
+      expect(Number(res.headers['retry-after'])).toBeGreaterThan(0);
+      expect(res.body).toMatchObject({ code: 'TOO_MANY_REQUESTS' });
+      expect(res.body.message).toMatch(/30 lệnh ghi hồ sơ mỗi phút/);
     });
   });
 
@@ -158,23 +238,14 @@ describe('HRHelper API (e2e)', () => {
     await http.get('/api/v1/audit-logs').set(EMPLOYEE).expect(403);
   });
 
-  it('nhân viên tự sửa số điện thoại; không sửa được lương hay hồ sơ người khác', async () => {
-    const me = (await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(EMPLOYEE)).body;
-    const phone = `0912 ${String(Date.now()).slice(-6)}`;
-    const res = await http
-      .patch(`/api/v1/employees/${employeeId}`)
-      .set(EMPLOYEE)
-      .send({ phone, version: me.version })
-      .expect(200);
-    expect(res.body.phone).toBe(phone);
-    expect(res.body.version).toBe(me.version + 1);
-
-    await http.patch(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).send({ salary: '999999999' }).expect(403);
-    await http.patch(`/api/v1/employees/${strangerId}`).set(EMPLOYEE).send({ phone: '0912000222' }).expect(403);
+  it('nhân viên không ghi thẳng hồ sơ, kể cả điện thoại: 403 (AC-1.2.1, AC-1.2.2, E1)', async () => {
+    await http.patch(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).send({ phone: '0912000111', version: 1 }).expect(403);
+    await http.patch(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).send({ salary: '999999999', version: 1 }).expect(403);
+    await http.patch(`/api/v1/employees/${strangerId}`).set(EMPLOYEE).send({ phone: '0912000222', version: 1 }).expect(403);
   });
 
   it('version cũ → 409 (optimistic locking)', async () => {
-    const res = await http.patch(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).send({ phone: '0912000333', version: 1 });
+    const res = await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ phone: '0912000333', version: 1 });
     expect(res.status).toBe(409);
     expect(res.body.code).toBe('CONFLICT');
   });
@@ -185,11 +256,13 @@ describe('HRHelper API (e2e)', () => {
   });
 
   it('HR không gán được quản lý tạo vòng lặp', async () => {
-    await http.patch(`/api/v1/employees/${managerId}`).set(HR).send({ managerId: employeeId }).expect(400);
+    const v1 = await versionOf(managerId);
+    await http.patch(`/api/v1/employees/${managerId}`).set(HR).send({ managerId: employeeId, version: v1 }).expect(400);
   });
 
   it('HR cập nhật lương: audit chỉ ghi tên trường, không ghi giá trị', async () => {
-    await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ salary: '25000000' }).expect(200);
+    const v2 = await versionOf(employeeId);
+    await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ salary: '25000000', version: v2 }).expect(200);
     const logs = await http.get(`/api/v1/audit-logs?entity=employee&entityId=${employeeId}`).set(HR);
     const update = logs.body.items.find((l: any) => l.action === 'UPDATE' && 'salary' in (l.changedFields ?? {}));
     expect(update.changedFields.salary).toBe('***');
@@ -300,7 +373,7 @@ describe('HRHelper API (e2e)', () => {
     });
 
     it('lỗi validation trả thêm fields theo từng trường', async () => {
-      const res = await http.patch(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).send({ phone: 'abc' }).expect(400);
+      const res = await http.patch(`/api/v1/employees/${employeeId}`).set(EMPLOYEE).send({ phone: 'abc', version: 1 }).expect(400);
       expect(res.body.fields).toEqual({ phone: 'Số điện thoại không hợp lệ' });
       expect(res.body.message).toEqual(['Số điện thoại không hợp lệ']);
     });
@@ -315,10 +388,10 @@ describe('HRHelper API (e2e)', () => {
     });
 
     it('sửa hồ sơ: quản lý không sửa hồ sơ cấp dưới; ADMIN không sửa hồ sơ người khác hay trường nhạy cảm', async () => {
-      await http.patch(`/api/v1/employees/${employeeId}`).set(MANAGER).send({ phone: '0912000444' }).expect(403);
-      await http.patch(`/api/v1/employees/${employeeId}`).set(MANAGER).send({ nationalId: '001234567890' }).expect(403);
-      await http.patch(`/api/v1/employees/${employeeId}`).set(ADMIN).send({ phone: '0912000555' }).expect(403);
-      await http.patch(`/api/v1/employees/${employeeId}`).set(ADMIN).send({ salary: '1000' }).expect(403);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(MANAGER).send({ phone: '0912000444', version: 1 }).expect(403);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(MANAGER).send({ nationalId: '001234567890', version: 1 }).expect(403);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(ADMIN).send({ phone: '0912000555', version: 1 }).expect(403);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(ADMIN).send({ salary: '1000', version: 1 }).expect(403);
     });
 
     it('/me và số dư phép của tôi: mọi role, chưa đăng nhập thì 401', async () => {
@@ -380,9 +453,12 @@ describe('HRHelper API (e2e)', () => {
     });
 
     it('gán quản lý đã nghỉ việc → 400; gán quản lý cho CEO → 400; bỏ quản lý của nhân viên → 400', async () => {
-      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ managerId: terminatedId }).expect(400);
-      await http.patch(`/api/v1/employees/${ceo.id}`).set(HR).send({ managerId: managerId }).expect(400);
-      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ managerId: null }).expect(400);
+      const v3 = await versionOf(employeeId);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ managerId: terminatedId, version: v3 }).expect(400);
+      const v4 = await versionOf(ceo.id);
+      await http.patch(`/api/v1/employees/${ceo.id}`).set(HR).send({ managerId: managerId, version: v4 }).expect(400);
+      const v5 = await versionOf(employeeId);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ managerId: null, version: v5 }).expect(400);
     });
 
     it('HR duyệt đơn của CEO; quản lý khác không duyệt được; HR thấy đơn CEO trong danh sách chờ duyệt', async () => {
@@ -573,6 +649,536 @@ describe('HRHelper API (e2e)', () => {
       await http.patch(`/api/v1/documents/${e.id}`).set(HR).send({ title: 'E2E Đã đổi tên', version: cur.version + 3 }).expect(409);
       const ok = await http.patch(`/api/v1/documents/${e.id}`).set(HR).send({ title: 'E2E Đã đổi tên', version: cur.version }).expect(200);
       expect(ok.body.title).toBe('E2E Đã đổi tên');
+    });
+  });
+
+  describe('UC1 toàn vẹn hồ sơ (AC-1.4.3, 1.4.4, 1.6.2, 1.6.3, 1.7.1, 1.7.2; UC2 AC-2.4.6, 2.4.7)', () => {
+    const auditOf = async (id: string) =>
+      (await http.get(`/api/v1/audit-logs?entity=employee&entityId=${id}`).set(HR).expect(200)).body.items;
+
+    it('sửa hồ sơ không kèm version → 400 (AC-1.6.2)', async () => {
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ address: 'Không version' }).expect(400);
+    });
+
+    it('chỉ đổi lương cũng tăng version: người mở form cũ nhận 409 (AC-1.6.3)', async () => {
+      const v = await versionOf(employeeId);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ salary: '26000000', version: v }).expect(200);
+      expect(await versionOf(employeeId)).toBe(v + 1);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ address: 'HR2 ghi đè', version: v }).expect(409);
+    });
+
+    it('audit theo nhóm trường: ngày vào làm có giá trị cũ, mới; địa chỉ chỉ có tên (AC-1.4.3, AC-1.4.4)', async () => {
+      const before = (await http.get(`/api/v1/employees/${employeeId}`).set(HR)).body;
+      const newDate = before.hireDate === '2016-03-08' ? '2016-03-09' : '2016-03-08';
+      await http
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set(HR)
+        .send({ hireDate: newDate, address: `${Date.now() % 1000} Đường Kiểm Thử`, version: before.version })
+        .expect(200);
+      const log = (await auditOf(employeeId)).find((l: any) => l.action === 'UPDATE' && l.changedFields?.hireDate);
+      expect(log.changedFields.hireDate).toEqual({ from: before.hireDate, to: newDate });
+      expect(log.changedFields.address).toBe('***');
+      expect(JSON.stringify(log.changedFields)).not.toContain('Kiểm Thử');
+      const v6 = await versionOf(employeeId);
+      await http
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set(HR)
+        .send({ hireDate: before.hireDate, address: before.address, version: v6 })
+        .expect(200);
+    });
+
+    it('HR sửa email công ty: trùng thì 409; mã nhân viên không sửa được (AC-1.4.4)', async () => {
+      const other = (await http.get(`/api/v1/employees/${strangerId}`).set(HR)).body;
+      const v7 = await versionOf(employeeId);
+      await http
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set(HR)
+        .send({ workEmail: other.workEmail.toUpperCase(), version: v7 })
+        .expect(409);
+      const v8 = await versionOf(employeeId);
+      await http
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set(HR)
+        .send({ employeeCode: 'E99999', version: v8 })
+        .expect(400);
+    });
+
+    it('không cho nghỉ việc khi còn cấp dưới (AC-1.7.1)', async () => {
+      const v9 = await versionOf(managerId);
+      const res = await http
+        .patch(`/api/v1/employees/${managerId}`)
+        .set(HR)
+        .send({ status: 'TERMINATED', version: v9 })
+        .expect(400);
+      expect(res.body.message).toMatch(/cấp dưới/);
+    });
+
+    it('người đã nghỉ việc gọi API bằng token còn hạn → 403 (AC-1.7.2)', async () => {
+      const positions = (await http.get('/api/v1/positions').set(HR)).body;
+      const me = (await http.get(`/api/v1/employees/${employeeId}`).set(HR)).body;
+      const email = `leaver-${Date.now() % 100000}@hr.local`;
+      const created = (
+        await http
+          .post('/api/v1/employees')
+          .set(HR)
+          .send({
+            employeeCode: `E9${String(Date.now()).slice(-4)}`,
+            fullName: 'Người Sắp Nghỉ',
+            workEmail: email,
+            departmentId: me.departmentId,
+            positionId: positions.find((p: any) => p.code !== 'CEO').id,
+            managerId,
+            hireDate: '2026-11-01',
+          })
+          .expect(201)
+      ).body;
+      const { DataSource } = await import('typeorm');
+      const ds = app.get(DataSource);
+      try {
+        await http.get('/api/v1/me').set(as(email)).expect(200);
+        const v10 = await versionOf(created.id);
+        await http
+          .patch(`/api/v1/employees/${created.id}`)
+          .set(HR)
+          .send({ status: 'TERMINATED', version: v10 })
+          .expect(200);
+        await http.get('/api/v1/me').set(as(email)).expect(403);
+      } finally {
+        await ds.query('DELETE FROM iam.user_account WHERE employee_id = $1', [created.id]);
+        await ds.query('DELETE FROM employee.employee WHERE id = $1', [created.id]);
+      }
+    });
+
+    it('cây tổ chức chỉ một gốc; trưởng đơn vị phải đang làm việc (UC2 AC-2.4.6, AC-2.4.7)', async () => {
+      const depts = (await http.get('/api/v1/departments').set(HR)).body;
+      const bod = depts.find((d: any) => d.code === 'BOD');
+      const child = depts.find((d: any) => d.parentId === bod.id);
+      const code = () => `T-${Math.floor(Math.random() * 1e5)}`;
+      await http.post('/api/v1/departments').set(HR).send({ code: code(), name: 'Gốc thứ hai', office: 'Hà Nội' }).expect(400);
+      await http.patch(`/api/v1/departments/${child.id}`).set(HR).send({ parentId: null }).expect(400);
+      const { DataSource } = await import('typeorm');
+      const [{ id: leaver }] = await app.get(DataSource).query(`SELECT id FROM employee.employee WHERE status = 'TERMINATED' LIMIT 1`);
+      await http
+        .post('/api/v1/departments')
+        .set(HR)
+        .send({ code: code(), name: 'Trưởng đã nghỉ', office: 'Hà Nội', parentId: bod.id, headEmployeeId: leaver })
+        .expect(400);
+    });
+  });
+
+  describe('UC1 yêu cầu cập nhật hồ sơ và nhật ký (AC-1.2.x, AC-1.6.4, AC-1.9.x, AC-1.11.x)', () => {
+    let seq = 0;
+    const key = () => ({ 'Idempotency-Key': `e2e-${Date.now()}-${++seq}` });
+    const submit = (body: object, who = EMPLOYEE, k = key()) =>
+      http.post(`/api/v1/employees/${employeeId}/change-requests`).set(who).set(k).send(body);
+    const contact = { fullName: 'Lê Văn Khẩn', relation: 'Cha', phone: '0912 111 222' };
+
+    beforeAll(async () => {
+      const { DataSource } = await import('typeorm');
+      const ds = app.get(DataSource);
+      // Dọn dữ liệu của lần chạy trước để đếm số dòng, số yêu cầu đúng.
+      await ds.query(`UPDATE employee.profile_change_request SET status = 'CANCELLED' WHERE employee_id = $1 AND status = 'PENDING'`, [employeeId]);
+      await ds.query(`UPDATE employee.profile_item SET deleted_at = now() WHERE employee_id = $1 AND deleted_at IS NULL`, [employeeId]);
+    });
+
+    it('sửa điện thoại qua yêu cầu: 202, hồ sơ và version chưa đổi; số sai mẫu 400 (AC-1.2.1, 1.2.3)', async () => {
+      const before = (await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(EMPLOYEE)).body;
+      const bad = await submit({ section: 'personal', action: 'UPDATE', proposed: { phone: 'abc' } }).expect(400);
+      expect(bad.body.fields.phone).toBeDefined();
+      const res = await submit({ section: 'personal', action: 'UPDATE', proposed: { phone: '0912 555 666' } }).expect(202);
+      expect(res.body).toMatchObject({ status: 'PENDING', section: 'personal', baseVersion: before.version });
+      const after = (await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(EMPLOYEE)).body;
+      expect(after.version).toBe(before.version);
+      expect(after.phone).toBe(before.phone);
+      expect(after.requests.map((r: any) => r.id)).toContain(res.body.id);
+      // Quản lý trực tiếp chỉ thấy dữ liệu hiện tại (AC-1.9.2).
+      const asManager = (await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(MANAGER)).body;
+      expect(asManager.requests).toEqual([]);
+    });
+
+    it('HR duyệt: hồ sơ đổi, version tăng, audit không có giá trị; duyệt lại trả lại yêu cầu (AC-1.9.4, E20)', async () => {
+      const req = (await submit({ section: 'personal', action: 'UPDATE', proposed: { address: `${Date.now() % 1000} Đường Duyệt` } }).expect(202)).body;
+      const v = await versionOf(employeeId);
+      await http.post(`/api/v1/change-requests/${req.id}/approve`).set(EMPLOYEE).expect(403);
+      const ok = await http.post(`/api/v1/change-requests/${req.id}/approve`).set(HR).expect(200);
+      expect(ok.body.status).toBe('APPROVED');
+      expect(await versionOf(employeeId)).toBe(v + 1);
+      const p = (await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(EMPLOYEE)).body;
+      expect(p.address).toMatch(/Đường Duyệt$/);
+      await http.post(`/api/v1/change-requests/${req.id}/approve`).set(HR).expect(200);
+      const logs = (await http.get(`/api/v1/audit-logs?entity=employee&entityId=${employeeId}`).set(HR)).body.items;
+      const approve = logs.filter((l: any) => l.action === 'PROFILE_CHANGE_APPROVE' && l.changedFields.requestId === req.id);
+      expect(approve).toHaveLength(1);
+      expect(JSON.stringify(approve[0].changedFields)).not.toContain('Đường Duyệt');
+    });
+
+    it('thêm liên hệ khẩn cấp: chờ duyệt, từ chối cần lý do; nhân viên thấy lý do, đóng được (AC-1.9.1, 1.9.5)', async () => {
+      const req = (await submit({ section: 'emergency-contacts', action: 'CREATE', proposed: contact }).expect(202)).body;
+      let section = (await http.get(`/api/v1/employees/${employeeId}/profile/emergency-contacts`).set(EMPLOYEE)).body;
+      expect(section.rows).toHaveLength(0);
+      expect(section.requests[0]).toMatchObject({ id: req.id, action: 'CREATE', proposed: contact });
+      await http.post(`/api/v1/change-requests/${req.id}/reject`).set(HR).send({}).expect(400);
+      await http.post(`/api/v1/change-requests/${req.id}/reject`).set(HR).send({ reason: 'Thiếu giấy tờ' }).expect(200);
+      section = (await http.get(`/api/v1/employees/${employeeId}/profile/emergency-contacts`).set(EMPLOYEE)).body;
+      expect(section.requests[0]).toMatchObject({ status: 'REJECTED', rejectReason: 'Thiếu giấy tờ' });
+      const logs = (await http.get(`/api/v1/audit-logs?entity=employee&entityId=${employeeId}`).set(HR)).body.items;
+      expect(JSON.stringify(logs.find((l: any) => l.action === 'PROFILE_CHANGE_REJECT'))).not.toContain('Thiếu giấy tờ');
+      await http.post(`/api/v1/employees/${employeeId}/change-requests/${req.id}/acknowledge`).set(EMPLOYEE).expect(204);
+      section = (await http.get(`/api/v1/employees/${employeeId}/profile/emergency-contacts`).set(EMPLOYEE)).body;
+      expect(section.requests).toEqual([]);
+    });
+
+    it('Idempotency-Key: gửi lại trả yêu cầu cũ; thiếu key 400; nhân viên hủy được (AC-1.9.12, AC-1.9.2)', async () => {
+      const k = key();
+      const a = (await submit({ section: 'emergency-contacts', action: 'CREATE', proposed: contact }, EMPLOYEE, k).expect(202)).body;
+      const b = (await submit({ section: 'emergency-contacts', action: 'CREATE', proposed: contact }, EMPLOYEE, k).expect(202)).body;
+      expect(b.id).toBe(a.id);
+      await http
+        .post(`/api/v1/employees/${employeeId}/change-requests`)
+        .set(EMPLOYEE)
+        .send({ section: 'emergency-contacts', action: 'CREATE', proposed: contact })
+        .expect(400);
+      await http.delete(`/api/v1/employees/${employeeId}/change-requests/${a.id}`).set(EMPLOYEE).expect(204);
+      await http.delete(`/api/v1/employees/${employeeId}/change-requests/${a.id}`).set(EMPLOYEE).expect(409);
+    });
+
+    it('mục HR quản lý, hồ sơ người khác, sai dữ liệu, quá số dòng → 403, 403, 400, 409 (AC-1.9.8, AC-1.9.9)', async () => {
+      await submit({ section: 'salary', action: 'UPDATE', proposed: { salary: '1' } }).expect(403);
+      await http
+        .post(`/api/v1/employees/${strangerId}/change-requests`)
+        .set(EMPLOYEE)
+        .set(key())
+        .send({ section: 'emergency-contacts', action: 'CREATE', proposed: contact })
+        .expect(403);
+      await submit({ section: 'emergency-contacts', action: 'CREATE', proposed: { ...contact, relation: 'Bạn' } }).expect(400);
+      for (let i = 0; i < 3; i++) await submit({ section: 'emergency-contacts', action: 'CREATE', proposed: contact }).expect(202);
+      await submit({ section: 'emergency-contacts', action: 'CREATE', proposed: contact }).expect(409);
+    });
+
+    it('duyệt khi dòng đã đổi sau khi gửi → 409; mỗi dòng có version riêng (AC-1.6.4, AC-1.9.6)', async () => {
+      const pending = (await http.get(`/api/v1/change-requests?section=emergency-contacts&size=100`).set(HR).expect(200)).body.items.filter(
+        (r: any) => r.employeeId === employeeId,
+      );
+      await http.post(`/api/v1/change-requests/${pending[0].id}/approve`).set(HR).expect(200);
+      const row = (await http.get(`/api/v1/employees/${employeeId}/profile/emergency-contacts`).set(EMPLOYEE)).body.rows[0];
+      expect(row).toMatchObject({ version: 1, data: contact });
+      const upd = (
+        await submit({
+          section: 'emergency-contacts',
+          action: 'UPDATE',
+          itemId: row.id,
+          baseVersion: row.version,
+          proposed: { ...contact, phone: '0912 999 888' },
+        }).expect(202)
+      ).body;
+      // HR sửa thẳng dòng đó trước (A9).
+      await http
+        .patch(`/api/v1/employees/${employeeId}/profile/emergency-contacts/${row.id}`)
+        .set(HR)
+        .send({ version: row.version, data: { ...contact, fullName: 'Lê Văn Sửa' } })
+        .expect(204);
+      await http.post(`/api/v1/change-requests/${upd.id}/approve`).set(HR).expect(409);
+    });
+
+    it('người phụ thuộc: mã số thuế mã hóa, chỉ hiện khi bấm mắt; HR xem đề xuất nhạy cảm (AC-1.9.3, 1.9.11)', async () => {
+      const req = (
+        await submit({
+          section: 'relatives',
+          action: 'CREATE',
+          proposed: { fullName: 'Trần Bé', relation: 'Con', dateOfBirth: '2018-02-03', isDependent: true, taxId: '012345678901', dependentFrom: '2026-01' },
+        }).expect(202)
+      ).body;
+      expect(req.proposed).not.toHaveProperty('taxId');
+      expect(req.proposedSensitive.taxId).toEqual({ hasValue: true, value: null });
+      const masked = (await http.get(`/api/v1/change-requests/${req.id}`).set(HR).expect(200)).body;
+      expect(masked.proposedSensitive.taxId.value).toBeNull();
+      const shown = (await http.get(`/api/v1/change-requests/${req.id}?reveal=true`).set(HR).expect(200)).body;
+      expect(shown.proposedSensitive.taxId.value).toBe('012345678901');
+      await http.post(`/api/v1/change-requests/${req.id}/approve`).set(HR).expect(200);
+      const { DataSource } = await import('typeorm');
+      const [raw] = await app.get(DataSource).query(`SELECT sensitive_data FROM employee.profile_item WHERE change_request_id = $1`, [req.id]);
+      expect(raw.sensitive_data).not.toContain('012345678901');
+      const rows = (await http.get(`/api/v1/employees/${employeeId}/profile/relatives?reveal=true`).set(EMPLOYEE).expect(200)).body.rows;
+      expect(rows[0].sensitive.taxId.value).toBe('012345678901');
+    });
+
+    it('HR xem danh sách chờ, cũ nhất trước; quản lý không xem được (AC-1.9.3)', async () => {
+      await http.get('/api/v1/change-requests').set(MANAGER).expect(403);
+      const list = (await http.get('/api/v1/change-requests?size=100').set(HR).expect(200)).body.items;
+      const times = list.map((r: any) => r.submittedAt);
+      expect([...times].sort()).toEqual(times);
+      expect(list[0]).toHaveProperty('overdue');
+    });
+
+    it('lịch sử thay đổi: chủ hồ sơ và HR xem, không có giá trị; quản lý 403 (AC-1.11.1, 1.11.2)', async () => {
+      const h = (await http.get(`/api/v1/employees/${employeeId}/history?size=50`).set(EMPLOYEE).expect(200)).body;
+      const actions = h.items.map((x: any) => x.action);
+      expect(actions).toEqual(expect.arrayContaining(['PROFILE_CHANGE_SUBMIT', 'PROFILE_CHANGE_APPROVE', 'PROFILE_CHANGE_REJECT']));
+      expect(JSON.stringify(h)).not.toContain('Lê Văn Khẩn');
+      await http.get(`/api/v1/employees/${employeeId}/history?section=relatives`).set(HR).expect(200);
+      await http.get(`/api/v1/employees/${employeeId}/history`).set(MANAGER).expect(403);
+    });
+  });
+
+  describe('UC1 file hồ sơ (AC-1.10.x, AC-1.14.2, AC-1.14.3)', () => {
+    let seq = 0;
+    const key = () => ({ 'Idempotency-Key': `e2e-file-${Date.now()}-${++seq}` });
+    const pdf = (tag: string) => Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.from(`e2e ${tag} ${Date.now()} ${Math.random()}`)]);
+    const PDF = 'application/pdf';
+
+    /** Xin URL, "PUT" vào bucket giả, xác nhận. */
+    const upload = async (who: Record<string, string>, section: string, name: string, type: string, body: Buffer, opts: { declaredSize?: number; itemId?: string | null } = {}) => {
+      const r = await http
+        .post(`/api/v1/employees/${employeeId}/files`)
+        .set(who)
+        .send({ section, itemId: opts.itemId, fileName: name, contentType: type, size: opts.declaredSize ?? body.length, sha256: sha256(body) });
+      if (r.status !== 201 || r.body.existing) return { req: r, confirm: null as any };
+      bucket.upload(r.body.upload.url, body);
+      const confirm = await http.post(`/api/v1/employees/${employeeId}/files/${r.body.file.id}/confirm`).set(who);
+      return { req: r, confirm };
+    };
+
+    beforeAll(async () => {
+      const { DataSource } = await import('typeorm');
+      const ds = app.get(DataSource);
+      await ds.query(`UPDATE employee.employee SET avatar_file_id = NULL WHERE id = $1`, [employeeId]);
+      await ds.query(`UPDATE employee.profile_change_request SET status = 'CANCELLED' WHERE employee_id = $1 AND status = 'PENDING'`, [employeeId]);
+      await ds.query(`UPDATE employee.profile_file SET status = 'DELETED' WHERE employee_id = $1 AND status <> 'DELETED'`, [employeeId]);
+    });
+
+    it('chưa cấu hình bucket hồ sơ: thao tác file 503, xem hồ sơ vẫn chạy (AC-1.10.9)', async () => {
+      bucket.enabled = false;
+      try {
+        await http
+          .post(`/api/v1/employees/${employeeId}/files`)
+          .set(EMPLOYEE)
+          .send({ section: 'cv', fileName: 'cv.pdf', contentType: PDF, size: 10, sha256: sha256(Buffer.from('x')) })
+          .expect(503);
+        await http.get(`/api/v1/employees/${employeeId}/summary`).set(EMPLOYEE).expect(200);
+      } finally {
+        bucket.enabled = true;
+      }
+    });
+
+    it('tải CV: PENDING_REVIEW, audit không có tên file; HR duyệt yêu cầu thì READY (AC-1.10.1, AC-1.9.4)', async () => {
+      const { req, confirm } = await upload(EMPLOYEE, 'cv', 'CV Trần Thị Nhân.pdf', PDF, pdf('cv'));
+      expect(req.status).toBe(201);
+      expect(req.body.upload.expiresInSeconds).toBe(600);
+      expect(confirm.status).toBe(200);
+      expect(confirm.body.status).toBe('PENDING_REVIEW');
+      const logs = (await http.get(`/api/v1/audit-logs?entity=employee&entityId=${employeeId}`).set(HR)).body.items;
+      const up = logs.find((l: any) => l.action === 'PROFILE_FILE_UPLOAD' && l.changedFields.fileId === confirm.body.id);
+      expect(up.changedFields).toMatchObject({ section: 'cv', contentType: PDF, sha256: expect.any(String) });
+      expect(JSON.stringify(up)).not.toContain('Trần Thị Nhân');
+
+      const cr = (await http.post(`/api/v1/employees/${employeeId}/change-requests`).set(EMPLOYEE).set(key()).send({ section: 'cv', action: 'CREATE', fileIds: [confirm.body.id] }).expect(202)).body;
+      expect(cr.files[0]).toMatchObject({ id: confirm.body.id, status: 'PENDING_REVIEW' });
+      await http.post(`/api/v1/change-requests/${cr.id}/approve`).set(HR).expect(200);
+      const files = (await http.get(`/api/v1/employees/${employeeId}/files?section=cv`).set(EMPLOYEE).expect(200)).body;
+      expect(files.find((f: any) => f.id === confirm.body.id).status).toBe('READY');
+    });
+
+    it('tải lại cùng nội dung trả file cũ (AC-1.10.4)', async () => {
+      const body = pdf('dup');
+      const first = await upload(EMPLOYEE, 'cv', 'a.pdf', PDF, body);
+      const cr = (await http.post(`/api/v1/employees/${employeeId}/change-requests`).set(EMPLOYEE).set(key()).send({ section: 'cv', action: 'CREATE', fileIds: [first.confirm.body.id] }).expect(202)).body;
+      await http.post(`/api/v1/change-requests/${cr.id}/approve`).set(HR).expect(200);
+      const again = await upload(EMPLOYEE, 'cv', 'b.pdf', PDF, body);
+      expect(again.req.body).toMatchObject({ existing: true, file: { id: first.confirm.body.id } });
+    });
+
+    it('nội dung không khớp loại hoặc sai dung lượng: 400, file REJECTED, object bị xóa (AC-1.10.2, E12, E13)', async () => {
+      const zip = Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), Buffer.from('zip giả ' + Date.now())]);
+      const fake = await upload(EMPLOYEE, 'cv', 'giả.pdf', PDF, zip);
+      expect(fake.confirm.status).toBe(400);
+      await http.post(`/api/v1/employees/${employeeId}/files/${fake.req.body.file.id}/confirm`).set(EMPLOYEE).expect(200);
+      const files = (await http.get(`/api/v1/employees/${employeeId}/files?section=cv`).set(HR)).body;
+      expect(files.map((f: any) => f.id)).not.toContain(fake.req.body.file.id);
+      // Chưa PUT lên storage thì 400 và file vẫn chờ.
+      const body = pdf('missing');
+      const r = await http.post(`/api/v1/employees/${employeeId}/files`).set(EMPLOYEE).send({ section: 'cv', fileName: 'x.pdf', contentType: PDF, size: body.length, sha256: sha256(body) }).expect(201);
+      await http.post(`/api/v1/employees/${employeeId}/files/${r.body.file.id}/confirm`).set(EMPLOYEE).expect(400);
+      // Khai báo sai: .exe, quá 10 MiB.
+      await http.post(`/api/v1/employees/${employeeId}/files`).set(EMPLOYEE).send({ section: 'cv', fileName: 'x.exe', contentType: 'application/octet-stream', size: 5, sha256: sha256(body) }).expect(400);
+      await http.post(`/api/v1/employees/${employeeId}/files`).set(EMPLOYEE).send({ section: 'cv', fileName: 'x.pdf', contentType: PDF, size: 11 * 1024 * 1024, sha256: sha256(body) }).expect(400);
+    });
+
+    it('tải xuống: attachment, nosniff, không có link storage; người khác 404; HR tải có audit (AC-1.10.5, 1.10.6)', async () => {
+      const ready = (await http.get(`/api/v1/employees/${employeeId}/files?section=cv`).set(EMPLOYEE)).body.find((f: any) => f.status === 'READY');
+      const res = await http.get(`/api/v1/employees/${employeeId}/files/${ready.id}/download`).set(EMPLOYEE).buffer(true).expect(200);
+      expect(res.headers['content-disposition']).toMatch(/^attachment;/);
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+      expect(JSON.stringify(res.headers)).not.toContain('memory://');
+      await http.get(`/api/v1/employees/${employeeId}/files/${ready.id}/download`).set(MANAGER).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/files?section=cv`).set(MANAGER).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/files/${ready.id}/download`).set(HR).expect(200);
+      const logs = (await http.get(`/api/v1/audit-logs?entity=employee&entityId=${employeeId}`).set(HR)).body.items;
+      expect(logs[0]).toMatchObject({ action: 'PROFILE_FILE_DOWNLOAD' });
+    });
+
+    it('file HR tải lên: READY ngay, nhân viên không đề xuất xóa được; HR xóa thì nhân viên không tải được (A8, E14, AC-1.10.7)', async () => {
+      const hrFile = await upload(HR, 'cv', 'quyết định.pdf', PDF, pdf('hr'));
+      expect(hrFile.confirm.body.status).toBe('READY');
+      await http.post(`/api/v1/employees/${employeeId}/change-requests`).set(EMPLOYEE).set(key()).send({ section: 'cv', action: 'DELETE', fileIds: [hrFile.confirm.body.id] }).expect(403);
+      await http.delete(`/api/v1/employees/${employeeId}/files/${hrFile.confirm.body.id}`).set(EMPLOYEE).expect(403);
+      await http.delete(`/api/v1/employees/${employeeId}/files/${hrFile.confirm.body.id}`).set(HR).expect(204);
+      await http.get(`/api/v1/employees/${employeeId}/files/${hrFile.confirm.body.id}/download`).set(EMPLOYEE).expect(404);
+      await http.get(`/api/v1/employees/${employeeId}/files/${hrFile.confirm.body.id}/download`).set(HR).expect(200);
+      expect([...bucket.tags.values()]).toContainEqual({ deleted: 'true' });
+    });
+
+    it('ảnh đại diện: cắt 512 × 512, bỏ EXIF; duyệt xong mọi người thấy (AC-1.10.3)', async () => {
+      const sharp = (await import('sharp')).default;
+      const png = await sharp({ create: { width: 900, height: 600, channels: 3, background: '#0e7490' } })
+        .png()
+        .withMetadata({ exif: { IFD0: { Copyright: 'GPS test' } } })
+        .toBuffer();
+      const { confirm } = await upload(EMPLOYEE, 'avatar', 'me.png', 'image/png', png);
+      expect(confirm.body).toMatchObject({ status: 'PENDING_REVIEW', contentType: 'image/jpeg' });
+      const cr = (await http.post(`/api/v1/employees/${employeeId}/change-requests`).set(EMPLOYEE).set(key()).send({ section: 'avatar', action: 'CREATE', fileIds: [confirm.body.id] }).expect(202)).body;
+      expect((await http.get(`/api/v1/employees/${employeeId}/summary`).set(ADMIN)).body.hasAvatar).toBe(false);
+      await http.post(`/api/v1/change-requests/${cr.id}/approve`).set(HR).expect(200);
+      expect((await http.get(`/api/v1/employees/${employeeId}/summary`).set(ADMIN)).body.hasAvatar).toBe(true);
+      const img = await http.get(`/api/v1/employees/${employeeId}/avatar`).set(ADMIN).buffer(true).parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => cb(null, Buffer.concat(chunks)));
+      }).expect(200);
+      const m = await sharp(img.body as Buffer).metadata();
+      expect([m.width, m.height, m.format]).toEqual([512, 512, 'jpeg']);
+      expect(m.exif).toBeUndefined();
+      // Ảnh đại diện quá 2 MiB bị từ chối từ khai báo.
+      await http.post(`/api/v1/employees/${employeeId}/files`).set(EMPLOYEE).send({ section: 'avatar', fileName: 'a.png', contentType: 'image/png', size: 3 * 1024 * 1024, sha256: sha256(png) }).expect(400);
+    });
+
+    it('người khác không tải file lên hồ sơ người khác (404 như không tồn tại)', async () => {
+      const body = pdf('other');
+      await http
+        .post(`/api/v1/employees/${employeeId}/files`)
+        .set(MANAGER)
+        .send({ section: 'cv', fileName: 'x.pdf', contentType: PDF, size: body.length, sha256: sha256(body) })
+        .expect(404);
+    });
+  });
+
+  describe('UC1 mục HR quản lý và thuế TNCN (FR-1.12, AC-1.9.11)', () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const plusDays = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+    const post = (section: string, data: object) => http.post(`/api/v1/employees/${employeeId}/profile/${section}`).set(HR).send({ data });
+
+    beforeAll(async () => {
+      const { DataSource } = await import('typeorm');
+      await app.get(DataSource).query(
+        `UPDATE employee.profile_item SET deleted_at = now() WHERE employee_id = $1 AND section IN ('contracts', 'salary', 'tax', 'health-insurance') AND deleted_at IS NULL`,
+        [employeeId],
+      );
+      await app.get(DataSource).query(
+        `UPDATE employee.profile_change_request SET status = 'CANCELLED' WHERE employee_id = $1 AND section = 'health-insurance' AND status IN ('PENDING', 'APPROVED')`,
+        [employeeId],
+      );
+    });
+
+    it('hợp đồng: HR thêm, trùng khoảng ngày 409; đầu trang hiện loại đang hiệu lực; sắp hết hạn có trong danh sách (AC-1.12.1, 1.12.2, 1.12.5)', async () => {
+      await post('contracts', { type: 'FIXED_TERM', number: 'HĐ-E2E-1', startDate: '2025-01-01', endDate: plusDays(20) }).expect(204);
+      await post('contracts', { type: 'FIXED_TERM', number: 'HĐ-E2E-2', startDate: today, endDate: plusDays(400) }).expect(409);
+      const s = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(MANAGER).expect(200)).body;
+      expect(s.contractType).toBe('Xác định thời hạn');
+      const expiring = (await http.get('/api/v1/contracts/expiring?days=30').set(HR).expect(200)).body;
+      expect(expiring.map((c: any) => c.employeeId)).toContain(employeeId);
+      await http.get('/api/v1/contracts/expiring').set(EMPLOYEE).expect(403);
+    });
+
+    it('nhân viên xem được mục HR quản lý của mình, không gửi yêu cầu được; quản lý không thấy mục CN (AC-1.12.4, AC-1.9.8)', async () => {
+      const own = (await http.get(`/api/v1/employees/${employeeId}/profile/contracts`).set(EMPLOYEE).expect(200)).body;
+      expect(own).toMatchObject({ canPropose: false, canEdit: false });
+      expect(own.rows[0].data.number).toBe('HĐ-E2E-1');
+      await http
+        .post(`/api/v1/employees/${employeeId}/change-requests`)
+        .set(EMPLOYEE)
+        .set({ 'Idempotency-Key': `e2e-hr-${Date.now()}` })
+        .send({ section: 'contracts', action: 'CREATE', proposed: { type: 'INDEFINITE', number: 'X', startDate: today } })
+        .expect(403);
+      await http.post(`/api/v1/employees/${employeeId}/profile/contracts`).set(EMPLOYEE).send({ data: {} }).expect(403);
+      await http.get(`/api/v1/employees/${employeeId}/profile/contracts`).set(MANAGER).expect(404);
+    });
+
+    it('lương theo ngày hiệu lực: mức cũ giữ lại, "Lương mục tiêu" là mức đang hiệu lực, mã hóa khi lưu (AC-1.12.3)', async () => {
+      await post('salary', { amount: '20000000', effectiveDate: '2025-01-01' }).expect(204);
+      await post('salary', { amount: '23000000', effectiveDate: '2026-01-01' }).expect(204);
+      await post('salary', { amount: '99000000', effectiveDate: '2099-01-01' }).expect(204);
+      const masked = (await http.get(`/api/v1/employees/${employeeId}/profile/salary`).set(EMPLOYEE).expect(200)).body;
+      expect(masked.rows).toHaveLength(3);
+      expect(masked.current).toEqual({ hasValue: true, value: null });
+      const shown = (await http.get(`/api/v1/employees/${employeeId}/profile/salary?reveal=true`).set(EMPLOYEE).expect(200)).body;
+      expect(shown.current.value).toBe('23000000');
+      expect(shown.currentEffectiveDate).toBe('2026-01-01');
+      const { DataSource } = await import('typeorm');
+      const raw = await app.get(DataSource).query(`SELECT sensitive_data FROM employee.profile_item WHERE employee_id = $1 AND section = 'salary'`, [employeeId]);
+      expect(JSON.stringify(raw)).not.toContain('23000000');
+      const hr = (await http.get(`/api/v1/employees/${employeeId}?include=sensitive`).set(HR)).body;
+      expect(hr.sensitive.salary).toBe('23000000');
+      await http.get(`/api/v1/employees/${employeeId}/profile/salary`).set(MANAGER).expect(404);
+    });
+
+    it('thuế TNCN: mã số thuế mã hóa, số người phụ thuộc tự đếm (AC-1.9.11)', async () => {
+      await http.patch(`/api/v1/employees/${employeeId}/profile/tax/main`).set(HR).send({ version: 0, data: { taxCode: '0123456789' } }).expect(204);
+      const tax = (await http.get(`/api/v1/employees/${employeeId}/profile/tax?reveal=true`).set(EMPLOYEE).expect(200)).body;
+      expect(tax.rows[0].sensitive.taxCode.value).toBe('0123456789');
+      expect(tax.dependents).toBeGreaterThanOrEqual(1);
+    });
+
+    it('BHYT: nhân viên đổi nơi khám qua yêu cầu, không sửa số thẻ; đổi lần hai trong quý 409', async () => {
+      await http.patch(`/api/v1/employees/${employeeId}/profile/health-insurance/main`).set(HR).send({ version: 0, data: { cardNumber: 'DN4010123456789' } }).expect(204);
+      const send = (proposed: object) =>
+        http
+          .post(`/api/v1/employees/${employeeId}/change-requests`)
+          .set(EMPLOYEE)
+          .set({ 'Idempotency-Key': `e2e-bhyt-${Date.now()}-${Math.random()}` })
+          .send({ section: 'health-insurance', action: 'UPDATE', proposed });
+      await send({ cardNumber: '1' }).expect(403);
+      const req = (await send({ hospital: 'Bệnh viện Bạch Mai' }).expect(202)).body;
+      await http.post(`/api/v1/change-requests/${req.id}/approve`).set(HR).expect(200);
+      const row = (await http.get(`/api/v1/employees/${employeeId}/profile/health-insurance`).set(EMPLOYEE)).body.rows[0];
+      expect(row.data).toMatchObject({ cardNumber: 'DN4010123456789', hospital: 'Bệnh viện Bạch Mai' });
+      await send({ hospital: 'Bệnh viện E' }).expect(409);
+    });
+  });
+
+  describe('UC1 thông tin tự tính (FR-1.13)', () => {
+    it('các mốc trong công ty: thâm niên, mốc 5 năm, phép cộng thêm; quản lý xem được, người khác 404 (AC-1.13.2)', async () => {
+      const hire = (await http.get(`/api/v1/employees/${employeeId}`).set(HR)).body.hireDate;
+      const m = (await http.get(`/api/v1/employees/${employeeId}/profile/milestones`).set(MANAGER).expect(200)).body;
+      expect(m).toMatchObject({ kind: 'computed', hireDate: hire });
+      expect(m.annualLeaveBonus).toBe(Math.floor(m.years / 5));
+      expect(m.milestones).toHaveLength(Math.floor(m.years / 5));
+      await http.get(`/api/v1/employees/${employeeId}/profile/milestones`).set(ADMIN).expect(404);
+    });
+
+    it('quá trình công tác: lần đổi chức danh tự vào dòng thời gian; HR thêm giai đoạn trước hệ thống (AC-1.13.1)', async () => {
+      const me = (await http.get(`/api/v1/employees/${employeeId}`).set(HR)).body;
+      const positions = (await http.get('/api/v1/positions').set(HR)).body;
+      const other = positions.find((p: any) => p.id !== me.positionId && p.code !== 'CEO');
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ positionId: other.id, version: me.version }).expect(200);
+      const v = await versionOf(employeeId);
+      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ positionId: me.positionId, version: v }).expect(200);
+      await http
+        .post(`/api/v1/employees/${employeeId}/profile/career-history`)
+        .set(HR)
+        .send({ data: { from: '2010-01-01', to: '2015-12-31', department: 'Chi nhánh cũ', position: 'Nhân viên', reason: 'Trước khi có hệ thống' } })
+        .expect(204);
+      const c = (await http.get(`/api/v1/employees/${employeeId}/profile/career-history`).set(MANAGER).expect(200)).body;
+      // Đổi rồi đổi lại trong ngày được gộp: giai đoạn hiện tại vẫn là chức danh cũ.
+      expect(c.periods[0]).toMatchObject({ source: 'AUTO', to: null, position: positions.find((p: any) => p.id === me.positionId).title });
+      expect(c.periods.some((p: any) => p.source === 'HR' && p.department === 'Chi nhánh cũ')).toBe(true);
+      const raw = (await http.get(`/api/v1/employees/${employeeId}/profile/career-history?raw=true`).set(HR).expect(200)).body;
+      expect(raw.rows.length).toBeGreaterThanOrEqual(1);
+      await http.get(`/api/v1/employees/${employeeId}/profile/career-history`).set(ADMIN).expect(404);
+    });
+
+    it('ngày nghỉ dài: danh sách đơn ≥ 14 ngày làm việc và khoảng tạm nghỉ (AC-1.13.3)', async () => {
+      const l = (await http.get(`/api/v1/employees/${employeeId}/profile/long-leaves`).set(MANAGER).expect(200)).body;
+      expect(Array.isArray(l.rows)).toBe(true);
+      expect(l.rows.every((r: any) => r.source === 'STATUS' || r.days >= 14)).toBe(true);
     });
   });
 

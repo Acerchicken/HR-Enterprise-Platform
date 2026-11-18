@@ -70,7 +70,7 @@ services:
   s3mock:
     image: adobe/s3mock:3.3.0
     environment:
-      initialBuckets: hr-documents
+      initialBuckets: hr-documents,hr-profile-files-local
       root: /s3mockroot
       retainFilesOnExit: "true"
     ports:
@@ -100,6 +100,7 @@ services:
       SMTP_PORT: 1025
       SMTP_FROM: no-reply@hr.local
       STORAGE_BUCKET: hr-documents
+      PROFILE_STORAGE_BUCKET: hr-profile-files-local
       STORAGE_ENDPOINT: http://s3mock:9090
       STORAGE_PUBLIC_ENDPOINT: http://localhost:9090
       STORAGE_ACCESS_KEY_ID: test
@@ -139,6 +140,7 @@ services:
       SMTP_PORT: 1025
       SMTP_FROM: no-reply@hr.local
       STORAGE_BUCKET: hr-documents
+      PROFILE_STORAGE_BUCKET: hr-profile-files-local
       STORAGE_ENDPOINT: http://s3mock:9090
       STORAGE_PUBLIC_ENDPOINT: http://localhost:9090
       STORAGE_ACCESS_KEY_ID: test

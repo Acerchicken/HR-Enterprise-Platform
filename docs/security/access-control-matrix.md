@@ -10,7 +10,9 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 
 - **Deny by default:** mọi API cần token Bearer hợp lệ qua `AuthGuard` toàn cục, trừ `GET /api/v1/health`. Endpoint không
   có `@Roles(...)` vẫn yêu cầu đăng nhập; điều kiện theo bản ghi được kiểm tra thêm trong service.
-- **Hai lớp phân quyền:** RBAC chặn role ở controller; ABAC giới hạn bản ghi, trường và trạng thái ở service.
+- **Ba lớp phân quyền** ([ADR-18](../architecture/adr/ADR-18-authorization.md), [mô hình và quy ước](authorization.md)): RBAC chặn
+  role ở controller; kiểm theo dữ liệu (ABAC) giới hạn bản ghi, trường và trạng thái ở service; API danh sách lọc trong truy vấn.
+- **Nguồn vai trò:** `HR`, `ADMIN` chỉ lấy từ `iam.role_assignment`; `EMPLOYEE`, `MANAGER` suy ra. Claim vai trò trong token bị bỏ qua.
 - `✓` = role được gọi endpoint; `—` = role không được gọi endpoint theo code hiện tại. Điều kiện ở cột cuối áp dụng cho
   mọi role có `✓`.
 - Role là `EMPLOYEE`, `MANAGER`, `HR`, `ADMIN`. `MANAGER` chỉ xác định vai trò quản lý; không tự cấp quyền trên hồ sơ hay
@@ -48,20 +50,24 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 
 | Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |
 |---|---|---|---:|---:|---:|---:|---|---|
-| Hồ sơ của tôi | Xem tài khoản và hồ sơ liên kết | `GET /api/v1/me` | ✓ | ✓ | ✓ | ✓ | Nếu tài khoản chưa gắn `employeeId`, chỉ trả email/role và `employee: null`; nếu đã gắn, hồ sơ theo quy tắc `GET /employees/{id}` nhưng không kèm trường nhạy cảm. | UC1; `EmployeeController.me` |
-| Danh bạ | Tìm kiếm/xem danh sách | `GET /api/v1/employees` | ✓ | ✓ | ✓ | ✓ | Không giới hạn theo người xem hay phòng ban ngoài bộ lọc được client gửi; loại nhân viên `TERMINATED`; kết quả hiện gồm tên, email, điện thoại, mã, phòng ban, chức danh và quản lý. Có phân trang. | UC2, UC6; `EmployeeService.directory` |
-| Hồ sơ nhân viên | Tạo | `POST /api/v1/employees` | — | — | ✓ | — | Chỉ `HR`; phòng ban và chức danh phải tồn tại; quản lý nếu truyền vào phải tồn tại. `ADMIN` không được phép theo decorator hiện tại. | UC1; `EmployeeController.create` |
-| Hồ sơ nhân viên | Xem thông tin cơ bản/cá nhân | `GET /api/v1/employees/{id}` | ✓ | ✓ | ✓ | ✓ | Bản ghi phải tồn tại. Chủ hồ sơ và quản lý trực tiếp thấy thêm dữ liệu cá nhân; HR thấy cấp HR; người khác, kể cả ADMIN, chỉ thấy cấp danh bạ. Chỉ HR được yêu cầu `include=sensitive`; mỗi lượt xem đó ghi audit. | UC1; `employee-access.ts:viewLevel`; `EmployeeService.profile` |
-| Hồ sơ nhân viên | Cập nhật | `PATCH /api/v1/employees/{id}` | ✓ | ✓ | ✓ | ✓ | HR được cập nhật các trường DTO; mọi role có `employeeId` trùng ID hồ sơ hiện được cập nhật `phone`, `address` trên hồ sơ của chính mình (sắp tới: chỉ qua yêu cầu cập nhật, HR duyệt, UC1 FR-1.2, FR-1.9). Quản lý không có quyền sửa hồ sơ cấp dưới chỉ vì quan hệ quản lý. Người khác bị từ chối; `version` nếu gửi phải khớp. | UC1; `employee-access.ts:forbiddenFields`; `EmployeeService.update` |
-| Danh bạ cấp dưới | Xem cấp dưới trực tiếp của một nhân viên | `GET /api/v1/employees/{id}/direct-reports` | ✓ | ✓ | ✓ | ✓ | ID nhân viên phải tồn tại; truy vấn trả nhân viên ACTIVE/ON_LEAVE có `managerId` bằng ID trên. Hiện không xác minh người gọi là quản lý của ID đó. | UC2; `EmployeeService.directReports` |
-| Danh bạ phòng ban | Xem thành viên | `GET /api/v1/departments/{id}/members` | ✓ | ✓ | ✓ | ✓ | Phòng ban phải tồn tại; kết quả lọc theo ID phòng ban, loại TERMINATED và phân trang. Hiện không giới hạn theo role, phòng ban của người gọi hay quyền quản lý. | UC2; `EmployeeController.members` |
-| Trường nhạy cảm | Xem CCCD, tài khoản ngân hàng, lương | `GET /api/v1/employees/{id}?include=sensitive` | — | — | ✓ | — | Chỉ HR (sắp tới: chủ hồ sơ xem lương, số tài khoản của chính mình, *chưa có*, UC1 AC-1.8.6); bản ghi phải tồn tại. Giá trị giải mã chỉ được thêm vào response khi yêu cầu; mỗi lượt xem ghi `VIEW_SENSITIVE` vào audit. ADMIN không được xem. | UC1.3; ADR-08; `EmployeeService.profile` |
-| Trường nhạy cảm | Cập nhật | `PATCH /api/v1/employees/{id}` | — | — | ✓ | — | Chỉ HR; giá trị được mã hóa qua `FieldCrypto`; audit ghi tên trường đã che, không ghi giá trị nhạy cảm. Endpoint tạo nhân viên hiện không nhận trường nhạy cảm. | UC1.3; ADR-08; `EmployeeService` |
-| Mục hồ sơ *(chưa có)* | Xem; HR thêm, sửa, xóa dòng trực tiếp | `GET/POST /api/v1/employees/{id}/profile/{section}`, `PATCH/DELETE …/{itemId}` | ✓ | ✓ | ✓ | ✓ | Xem theo mức của mục (spec 9.1); quản lý trực tiếp chỉ xem mục mức QL. Chỉ HR ghi thẳng. Không được xem thì 404. Audit `PROFILE_ITEM_*` | UC1 FR-1.9, FR-1.12; spec 8, 9.1 |
-| Yêu cầu cập nhật hồ sơ *(chưa có)* | Gửi, hủy | `POST /api/v1/employees/{id}/change-requests`, `DELETE …/{requestId}` | ✓ | — | ✓ | ✓ | Chỉ chủ hồ sơ (kể cả HR, ADMIN với hồ sơ của mình), chỉ trường và mục NV; tối đa 20 yêu cầu chờ; 30 lệnh ghi/phút. Audit `PROFILE_CHANGE_SUBMIT`, `PROFILE_CHANGE_CANCEL` | UC1 FR-1.9 |
-| Yêu cầu cập nhật hồ sơ *(chưa có)* | Xem danh sách, duyệt, từ chối | `GET /api/v1/change-requests`, `POST …/{requestId}/approve`, `POST …/{requestId}/reject` | — | — | ✓ | — | Chỉ HR; HR không tự duyệt yêu cầu của chính mình. Duyệt kiểm `baseVersion`. Audit `PROFILE_CHANGE_APPROVE`, `PROFILE_CHANGE_REJECT` | UC1 FR-1.9 |
-| File hồ sơ *(chưa có)* | Tải lên, tải xuống, xóa | `POST /api/v1/employees/{id}/files`, `…/{fileId}/confirm`, `…/{fileId}/download`, `DELETE …/{fileId}` | ✓ | — | ✓ | ✓ | Chủ hồ sơ (kể cả ADMIN với hồ sơ của mình) và HR. Chủ hồ sơ không xóa file HR tải lên. HR tải file người khác ghi `PROFILE_FILE_DOWNLOAD`. 10 URL tải lên/giờ, 60 file tải xuống/giờ | UC1 FR-1.10 |
-| Nhật ký hồ sơ *(chưa có)* | Xem | `GET /api/v1/employees/{id}/history` | ✓ | — | ✓ | ✓ | Chủ hồ sơ và HR. Không có giá trị, không có tên file gốc | UC1 FR-1.11 |
+| Hồ sơ của tôi | Xem tài khoản | `GET /api/v1/me` | ✓ | ✓ | ✓ | ✓ | Chỉ `email`, `roles`, `employee { id, employeeCode, fullName }` hoặc `employee: null`; dữ liệu hồ sơ lấy qua `summary` (AC-1.8.7). Tài khoản gắn hồ sơ `TERMINATED`: mọi API trả 403 (AC-1.7.2) | UC1; `EmployeeController.me`; `IdentityService.resolve` |
+| Danh bạ | Tìm kiếm/xem danh sách | `GET /api/v1/employees` | ✓ | ✓ | ✓ | ✓ | Không giới hạn theo người xem hay phòng ban ngoài bộ lọc được client gửi; loại nhân viên `TERMINATED`; kết quả hiện gồm tên, email, điện thoại, mã, phòng ban, chức danh và quản lý. Có phân trang. Có `q` thì tính giới hạn tìm kiếm 20/phút | UC2, UC6; `EmployeeService.directory` |
+| Hồ sơ nhân viên | Tạo | `POST /api/v1/employees` | — | — | ✓ | — | Chỉ `HR`; phòng ban và chức danh phải tồn tại; quản lý theo FR-2.5. `ADMIN` không được phép. Audit `CREATE` theo nhóm trường | UC1; `EmployeeController.create` |
+| Hồ sơ nhân viên | Xem trang mặc định, thẻ xem nhanh | `GET /api/v1/employees/{id}/summary` | ✓ | ✓ | ✓ | ✓ | Chỉ dữ liệu mức danh bạ cộng danh sách mục người xem được thấy (`relation`: HR, OWNER, MANAGER, OTHER); hàng "Diện đối tượng" chỉ từ mức QL | UC1 FR-1.8; `profile-sections.ts` |
+| Hồ sơ nhân viên | Xem đầy đủ (form HR, trang cũ) | `GET /api/v1/employees/{id}` | ✓ | ✓ | ✓ | ✓ | Chủ hồ sơ và quản lý trực tiếp thấy thêm dữ liệu cá nhân; HR thấy cấp HR; người khác, kể cả ADMIN, chỉ thấy cấp danh bạ. `include=sensitive` chỉ HR, mỗi lượt ghi `VIEW_SENSITIVE`, tối đa 100 lượt/giờ | UC1; `employee-access.ts:viewLevel` |
+| Hồ sơ nhân viên | Cập nhật trường chính | `PATCH /api/v1/employees/{id}` | — | — | ✓ | — | **Chỉ HR** (từ #86). Nhân viên đổi điện thoại, địa chỉ qua yêu cầu cập nhật. `version` bắt buộc; không cho chuyển `TERMINATED` khi còn cấp dưới; trùng email 409. Audit theo nhóm trường | UC1 FR-1.2, FR-1.4, FR-1.6, FR-1.7; `employee-access.ts:forbiddenFields` |
+| Danh bạ cấp dưới | Xem cấp dưới trực tiếp của một nhân viên | `GET /api/v1/employees/{id}/direct-reports` | ✓ | ✓ | ✓ | ✓ | ID nhân viên phải tồn tại; truy vấn trả nhân viên ACTIVE/ON_LEAVE có `managerId` bằng ID trên. Mở cho mọi người đã đăng nhập vì là dữ liệu danh bạ, nhưng chỉ trả trường mức danh bạ (ADR-18 mục 5). | UC2; `EmployeeService.directReports` |
+| Danh bạ phòng ban | Xem thành viên | `GET /api/v1/departments/{id}/members` | ✓ | ✓ | ✓ | ✓ | Phòng ban phải tồn tại; kết quả lọc theo ID phòng ban, loại TERMINATED và phân trang. Mở cho mọi người đã đăng nhập ở mức danh bạ (ADR-18 mục 5). | UC2; `EmployeeController.members` |
+| Mục hồ sơ | Xem | `GET /api/v1/employees/{id}/profile/{section}` | ✓ | ✓ | ✓ | ✓ | Theo mức của mục (spec 9.1): QL cho chủ hồ sơ, quản lý trực tiếp, HR; CN, NC cho chủ hồ sơ và HR. Không được xem hoặc mục không tồn tại: 404. `reveal=true` giải mã giá trị NC (chủ hồ sơ, HR) hoặc CCCD (chỉ HR), ghi `VIEW_SENSITIVE` | UC1 FR-1.3, FR-1.8, FR-1.12, FR-1.13 |
+| Mục hồ sơ | HR thêm, sửa, xóa dòng trực tiếp | `POST /api/v1/employees/{id}/profile/{section}`, `PATCH/DELETE …/{itemId}` | — | — | ✓ | — | Chỉ HR; `version` từng dòng; hợp đồng trùng khoảng ngày 409; 30 lệnh ghi/phút. Audit `PROFILE_ITEM_*` | UC1 FR-1.9 A9, FR-1.12 |
+| Hợp đồng sắp hết hạn | Xem | `GET /api/v1/contracts/expiring` | — | — | ✓ | — | Chỉ HR | UC1 AC-1.12.5 |
+| Yêu cầu cập nhật hồ sơ | Gửi, hủy, đóng thông báo từ chối | `POST /api/v1/employees/{id}/change-requests`, `DELETE …/{requestId}`, `POST …/{requestId}/acknowledge` | ✓ | ✓ | ✓ | ✓ | Chỉ chủ hồ sơ (`relation = OWNER`), chỉ mục có cột "Nhập" là NV; `Idempotency-Key` bắt buộc; tối đa 20 yêu cầu chờ; 30 lệnh ghi/phút. Audit `PROFILE_CHANGE_SUBMIT`, `PROFILE_CHANGE_CANCEL`. Xem điểm lệch 7 về HR với hồ sơ của mình | UC1 FR-1.9 |
+| Yêu cầu cập nhật hồ sơ | Xem chi tiết | `GET /api/v1/change-requests/{requestId}` | ✓ | ✓ | ✓ | ✓ | HR hoặc người gửi; người khác 404. `reveal=true` chỉ HR, ghi `VIEW_SENSITIVE` | UC1 FR-1.9 |
+| Yêu cầu cập nhật hồ sơ | Xem danh sách, duyệt, từ chối | `GET /api/v1/change-requests`, `POST …/{requestId}/approve`, `POST …/{requestId}/reject` | — | — | ✓ | — | Chỉ HR. Duyệt kiểm `baseVersion` (409), duyệt lặp lại trả lại yêu cầu; từ chối bắt buộc lý do. Audit `PROFILE_CHANGE_APPROVE`, `PROFILE_CHANGE_REJECT` (không có lý do) | UC1 FR-1.9 |
+| File hồ sơ | Tải lên, xác nhận, xem danh sách, tải xuống | `POST /api/v1/employees/{id}/files`, `…/{fileId}/confirm`, `GET …/files?section=`, `GET …/{fileId}/download` | ✓ | ✓ | ✓ | ✓ | Chủ hồ sơ và HR; người khác (kể cả quản lý trực tiếp) 404. File của hợp đồng, khen thưởng kỷ luật chỉ HR tải lên. HR tải file người khác ghi `PROFILE_FILE_DOWNLOAD`. 10 URL/giờ, 30/ngày; ảnh đại diện 5/ngày; 60 file tải xuống/giờ | UC1 FR-1.10 |
+| File hồ sơ | Xóa trực tiếp | `DELETE /api/v1/employees/{id}/files/{fileId}` | — | — | ✓ | — | Chỉ HR; nhân viên xóa file của mình bằng yêu cầu cập nhật, không xóa được file HR tải lên (403) | UC1 FR-1.10 |
+| Ảnh đại diện | Xem | `GET /api/v1/employees/{id}/avatar` | ✓ | ✓ | ✓ | ✓ | Chỉ ảnh đã được HR duyệt (mức danh bạ) | UC1 AC-1.10.3 |
+| Nhật ký hồ sơ | Xem | `GET /api/v1/employees/{id}/history` | ✓ | ✓ | ✓ | ✓ | Chủ hồ sơ và HR; quản lý trực tiếp, người khác 403. Không có giá trị, không có tên file gốc, không có lý do từ chối | UC1 FR-1.11 |
 
 ### Nghỉ phép
 
@@ -110,6 +116,10 @@ Các mục dưới đây ghi nhận quyết định nghiệp vụ đã thống n
 5. **BR-12 chưa được triển khai:** API tạo đơn hiện chỉ nhận chủ đơn là người gọi; chưa hỗ trợ HR tạo hộ mọi nhân viên hoặc
    MANAGER tạo hộ cấp dưới trực tiếp. Cần hỗ trợ phân biệt người tạo và chủ đơn trong request, history/audit, tính số dư theo
    chủ đơn và gửi email cho chủ đơn. Quản lý được chấp nhận vừa tạo hộ vừa duyệt đơn đó theo BR-05.
+7. **HR với hồ sơ của chính mình (lệch với thiết kế):** ma trận thiết kế ghi HR gửi yêu cầu cập nhật cho hồ sơ của mình như
+   nhân viên và không tự duyệt yêu cầu của mình. Code hiện xét vai trò HR trước quan hệ chủ hồ sơ (`relationTo` trong
+   `profile-sections.ts`), nên HR xem hồ sơ của mình ở mức HR, **ghi thẳng** được (kể cả tài khoản ngân hàng của mình) và không
+   gửi được yêu cầu (403); cũng chưa có kiểm "không tự duyệt". Cần quyết định và sửa ở một nhánh riêng.
 6. **UC5 (Document repository) và các API tài liệu/tìm kiếm chưa xuất hiện trong `docs/openapi.yaml`:** không có endpoint
    hiện tại để đưa vào ma trận; bổ sung khi API được thiết kế.
 

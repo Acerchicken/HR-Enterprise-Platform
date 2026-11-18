@@ -78,4 +78,12 @@ _Góp ý ghi trực tiếp trên PR._
 
 ## Việc đã làm
 
-_Điền T2 (16/11), 9:00._
+> Điền ngày 16/11 từ lịch sử PR trên GitHub (9/11 – 15/11, cùng #80 → #93 merge ngày 15–16/11 vì làm ngay sau đó). Thành viên bổ sung nếu có việc không nằm trên GitHub, kèm link.
+
+| Việc | PR | Ghi chú |
+|---|---|---|
+| Quy tắc kho tài liệu (`document-rules.md`) | #61 | Merge 12/11, đúng hạn mở PR |
+| Thời gian lưu, riêng tư lý do nghỉ, nội dung email | #62 | Merge 12/11 |
+| `docs/matrix-week10` | – | Chưa mở PR |
+| Review nghiệp vụ PR của TV1 | – | Chưa có review nào trên GitHub (kế hoạch: mỗi PR một review) |
+| Review `requirements.md`, `spec.md` UC1, UC2 trên #76 (hạn 16/11, 21:00) | – | Chưa có |

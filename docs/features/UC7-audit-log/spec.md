@@ -32,7 +32,10 @@ tra cứu (người dùng).
 | Module | Hành động (`action`) | Khi nào |
 |---|---|---|
 | Employee | `CREATE`, `UPDATE` | Tạo, sửa hồ sơ. Trường tổ chức ghi giá trị cũ và mới; trường cá nhân và nhạy cảm chỉ ghi tên ([UC1 mục 3](../UC1-employee-profile/spec.md#3-điều-kiện)) |
-| Employee | `VIEW_SENSITIVE` | HR xem CCCD, số tài khoản, lương |
+| Employee | `VIEW_SENSITIVE` | HR xem CCCD, số tài khoản, lương; chủ hồ sơ bấm mắt xem lương, tài khoản của mình; HR xem giá trị nhạy cảm của yêu cầu cập nhật. `changedFields`: `fields`, `section` |
+| Employee | `PROFILE_CHANGE_SUBMIT`, `PROFILE_CHANGE_CANCEL`, `PROFILE_CHANGE_APPROVE`, `PROFILE_CHANGE_REJECT` | Yêu cầu cập nhật hồ sơ (UC1 FR-1.9). Ghi mục, mã yêu cầu, thao tác, tên trường; **không** có giá trị, lý do từ chối |
+| Employee | `PROFILE_ITEM_CREATE`, `PROFILE_ITEM_UPDATE`, `PROFILE_ITEM_DELETE` | HR sửa thẳng dòng của mục (hợp đồng, lương…) |
+| Employee | `PROFILE_FILE_UPLOAD`, `PROFILE_FILE_DELETE`, `PROFILE_FILE_DOWNLOAD` | File hồ sơ: mã file, mục, loại, dung lượng, SHA-256; **không** có tên file gốc. Tải xuống chỉ ghi khi HR tải file của người khác |
 | Organization | `CREATE`, `UPDATE` (`entityType = department`) | Tạo, sửa phòng ban |
 | Leave (`entityType = leave_request`) | `LEAVE_SUBMIT`, `LEAVE_APPROVE`, `LEAVE_REJECT`, `LEAVE_CANCEL`, `LEAVE_COMPLETE` | Mọi bước của đơn nghỉ. Ghi loại phép, ngày, số ngày, trạng thái trước và sau; **không** ghi lý do và ghi chú tự do (BR-14) |
 | Document | `DOCUMENT_CREATE`, `DOCUMENT_PUBLISH`, `DOCUMENT_UPDATE`, `DOCUMENT_HIDE`, `DOCUMENT_RESTORE` | Thao tác quản lý kho tài liệu |
@@ -112,7 +115,7 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 
 **Lịch sử thao tác `/audit`: bộ lọc theo API, bảng mới nhất trước, mở dòng xem trường đã đổi**
 
-![Trang lịch sử thao tác](../mockups/uc7-audit.png)
+![Trang lịch sử thao tác](mockups/uc7-audit.png)
 
 ## 10. Yêu cầu phi chức năng liên quan
 

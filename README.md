@@ -67,7 +67,7 @@ docker compose logs -f seed      # chờ dòng "Seed xong: ... 2000 nhân viên"
 | Mailpit (Web UI xem email) | http://localhost:8025 |
 | S3Mock (kho tài liệu S3 local) | http://localhost:9090 |
 
-> **Lưu ý S3 local:** Nhóm sử dụng `adobe/s3mock:3.3.0` (cổng 9090) làm S3 local service thay cho `minio/minio` để cả nhóm đều pull được mà không gặp lỗi `pull access denied` / rate-limit trên Docker Hub. S3Mock tự khởi tạo sẵn bucket `hr-documents` khi chạy. Nếu muốn sử dụng MinIO, thành viên có thể pull từ Quay (`docker pull quay.io/minio/minio`) và trỏ endpoint về cổng 9000.
+> **Lưu ý S3 local:** Nhóm sử dụng `adobe/s3mock:3.3.0` (cổng 9090) làm S3 local service tương thích AWS S3 thay cho `minio/minio` để cả nhóm đều pull được mà không gặp lỗi `pull access denied` trên Docker Hub hay Quay. S3Mock tự khởi tạo sẵn bucket `hr-documents` và `hr-profile-files-local` khi khởi động.
 
 Tài khoản demo (mật khẩu chung `Passw0rd!`):
 

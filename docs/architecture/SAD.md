@@ -42,3 +42,4 @@ Mỗi ADR là một file trong [`adr/`](adr/README.md) (mẫu, trạng thái, qu
 | ADR-11 | Điều chỉnh phân vai | Dự án | Đã chấp nhận | [ADR-11-role-adjustment.md](adr/ADR-11-role-adjustment.md) |
 | ADR-12 | Cloud provider | Hệ thống | Đã chấp nhận | [ADR-12-cloud-provider.md](adr/ADR-12-cloud-provider.md) |
 | ADR-13 | Kho tài liệu: tải lên trực tiếp, tải xuống qua API, lọc phạm vi trong truy vấn | Phần mềm | Đã chấp nhận | [ADR-13-document-storage.md](adr/ADR-13-document-storage.md) |
+| ADR-15 | Tách Notification và Search thành service riêng qua event | Cả hai | Đề xuất | [ADR-15-service-extraction.md](adr/ADR-15-service-extraction.md) |
