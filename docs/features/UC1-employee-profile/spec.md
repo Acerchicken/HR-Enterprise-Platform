@@ -154,12 +154,12 @@ xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /em
 
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
-| 1 | HR bấm "Thêm nhân viên" | Hiện form; nạp danh sách phòng ban, chức danh, nhân viên để chọn quản lý |
+| 1 | HR bấm "Thêm nhân viên" | Hiện form; nạp danh sách đơn vị đang hoạt động, chức danh đang dùng, nhân viên để chọn quản lý. Chọn đơn vị xong thì ô quản lý điền sẵn trưởng đơn vị đó (UC2 AC-2.9.2), HR đổi được |
 | 2 | HR nhập thông tin (mục 8.1) và bấm Lưu | Gửi `POST /employees` |
-| 3 | | Kiểm dữ liệu: mã `E` + 5 số, email hợp lệ, phòng ban và chức danh tồn tại |
+| 3 | | Kiểm dữ liệu: mã `E` + 5 số, email hợp lệ; đơn vị tồn tại và đang hoạt động (loại bất kỳ, UC2 FR-2.10); chức danh tồn tại và đang dùng (UC2 AC-2.6.2) |
 | 4 | | Kiểm quy tắc quản lý (FR-2.5): có đúng một quản lý trực tiếp đang làm việc, trừ CEO; không tạo vòng quản lý |
 | 5 | | Mã hóa CCCD, số tài khoản, lương nếu có |
-| 6 | | Lưu hồ sơ, ghi audit `CREATE` trong cùng giao dịch |
+| 6 | | Lưu hồ sơ, ghi audit `CREATE` và mở dòng quá trình công tác đầu tiên "Tuyển mới" từ `hireDate` (UC2 AC-2.8.3, khi có FR-2.8) trong cùng giao dịch |
 | 7 | HR được chuyển tới trang hồ sơ vừa tạo | Trả hồ sơ, mã 201 |
 
 ### 4.5 HR xem và sửa trường nhạy cảm, mục HR quản lý (FR-1.3, FR-1.4, FR-1.12)
@@ -169,7 +169,7 @@ xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /em
 | 1 | HR mở hồ sơ, bấm biểu tượng mắt ở một giá trị nhạy cảm | Gọi `GET /employees/{id}?include=sensitive`. Chỉ gọi khi bấm; mở hồ sơ hay mở form sửa không tự tải giá trị nhạy cảm |
 | 2 | | Kiểm giới hạn tần suất xem nhạy cảm; kiểm vai trò; giải mã; ghi audit `VIEW_SENSITIVE` |
 | 3 | HR bấm "Sửa hồ sơ", đổi trường bất kỳ, bấm Lưu. Trường nhạy cảm để trống nghĩa là giữ nguyên | Gửi `PATCH /employees/{id}` kèm `version`, chỉ gửi trường đã đổi |
-| 4 | | Kiểm `version`, kiểm quy tắc quản lý nếu đổi `managerId`, mã hóa trường nhạy cảm |
+| 4 | | Kiểm `version`, kiểm quy tắc quản lý nếu đổi `managerId`, mã hóa trường nhạy cảm. Khi đã có điều chuyển (UC2 FR-2.7): `departmentId`, `positionId`, `managerId` không sửa ở đây mà qua nút "Điều chuyển" (UC2 luồng 4.4); gửi các trường này thì trả 400 (UC2 AC-2.7.7) |
 | 5 | | Lưu, tăng `version`, ghi audit `UPDATE` theo nhóm trường (mục 7) |
 | 6 | Với mục HR quản lý (hợp đồng, lương theo thời gian, BHXH…): HR thêm, sửa dòng như luồng 4.2, tải file như luồng 4.3 | Như 4.2, 4.3; `source = HR`; nhân viên không sửa, không xóa được |
 
@@ -313,8 +313,8 @@ Cột "Mức" theo ký hiệu ở mục 2. "Tối đa" là số dòng tối đa 
 | `phone` | Không | NV | DB | 8–20 ký tự số, có thể có `+`, khoảng trắng, `.`, `-` |
 | `address` | Không | NV | QL | Tối đa 255 ký tự |
 | `dateOfBirth` | Không | HR | QL | Ngày hợp lệ, không ở tương lai |
-| `departmentId`, `positionId` | Có | HR | DB | Phải tồn tại |
-| `managerId` | Có, trừ CEO | HR | DB | Nhân viên đang làm việc; không tạo vòng |
+| `departmentId`, `positionId` | Có | HR (tạo mới; sau đó qua "Điều chuyển", UC2 FR-2.7) | DB | Đơn vị đang hoạt động, loại bất kỳ; chức danh đang dùng |
+| `managerId` | Có, trừ CEO | HR (tạo mới; sau đó qua "Điều chuyển") | DB | Nhân viên đang làm việc; không tạo vòng; điền sẵn trưởng đơn vị (UC2 AC-2.9.2) |
 | `hireDate` | Có | HR (sửa sai sót) | QL | Ngày hợp lệ; dùng tính phép năm theo thâm niên (UC3) |
 | `status` | Mặc định `ACTIVE` | HR | QL | `ACTIVE`, `ON_LEAVE`, `TERMINATED` |
 | `nationalId` | Không | HR | HR | Đúng 12 chữ số; mã hóa |
@@ -420,7 +420,7 @@ HR duyệt yêu cầu).
 | Mã nhân viên | Nhãn nền cyan dưới ảnh | DB | Đã có |
 | Họ tên, chức danh | | DB | Đã có |
 | Thẻ "Quản lý trực tiếp" | Ảnh, tên quản lý trực tiếp, bấm mở hồ sơ người đó | DB | Đã có (ảnh: chưa có) |
-| Thẻ "Xem sơ đồ tổ chức" | Tên phòng ban, bấm mở `/org` tại phòng ban đó | DB | Đã có |
+| Thẻ "Xem sơ đồ tổ chức" | Đường dẫn đơn vị (ví dụ Trung tâm Công nghệ › Phòng Công nghệ › Nhóm Backend, ADR-14), bấm mở `/org` tại đơn vị đó | DB | Đã có tên phòng ban; đường dẫn đơn vị: **chưa có** (cùng nhánh loại đơn vị UC2) |
 | Hàng "Lương mục tiêu" | `********` + mắt | NC | HR: đã có. Chủ hồ sơ: **chưa có** |
 | Hàng "Hệ số lương bảo hiểm" | `********` + mắt | NC | **Chưa có** |
 | Hàng "Diện đối tượng" | Loại hợp đồng đang hiệu lực | QL | **Chưa có** |
@@ -432,10 +432,10 @@ HR duyệt yêu cầu).
 | Thông tin cá nhân | Thông tin cá nhân (8.1) | NV sửa điện thoại, địa chỉ; HR phần còn lại | QL (điện thoại, email: DB; CCCD: HR) | Đã có |
 | | Thông tin liên hệ khẩn cấp | NV | CN | **Chưa có** |
 | | Thân nhân và người phụ thuộc | NV | CN | **Chưa có** |
-| Công việc | Quá trình công tác | Tự tính (UC2 FR-2.8), HR | QL | **Chưa có** |
+| Công việc | Quá trình công tác | Tự tính (tạm từ audit; sau đọc từ UC2 FR-2.8), HR | QL | Đã có (#90) |
 | | Diện đối tượng | HR | CN | **Chưa có** |
-| | Ngày nghỉ dài | Tự tính | QL | **Chưa có** |
-| | Các mốc trong công ty | Tự tính | QL | Ngày vào làm: đã có. Thâm niên, mốc: **chưa có** |
+| | Ngày nghỉ dài | Tự tính | QL | Đã có (#90) |
+| | Các mốc trong công ty | Tự tính | QL | Đã có (#90) |
 | Tài chính | Lương mục tiêu | HR | NC | HR: đã có một mức. Chủ hồ sơ xem, lịch sử: **chưa có** |
 | | Hệ số lương bảo hiểm | HR | NC | **Chưa có** |
 | | Thông tin tài khoản ngân hàng | NV | NC | Số tài khoản (HR nhập): đã có. NV tự khai, ngân hàng, chủ tài khoản: **chưa có** |

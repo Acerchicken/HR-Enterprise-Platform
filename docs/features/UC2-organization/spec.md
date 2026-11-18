@@ -75,9 +75,9 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
 | 1 | HR mở hồ sơ nhân viên, bấm "Điều chuyển"; chọn phòng ban, chức danh, quản lý mới (điền sẵn trưởng phòng mới), ngày hiệu lực, lý do | Gửi `POST /employees/{id}/transfers` |
-| 2 | | Kiểm FR-2.5 với quản lý mới; ngày hiệu lực không trước ngày vào làm, không lùi quá 30 ngày; không có điều chuyển chưa hiệu lực khác của cùng người |
+| 2 | | Kiểm FR-2.5 với quản lý mới; ngày hiệu lực không trước ngày vào làm, không lùi quá 30 ngày; không có điều chuyển chưa hiệu lực khác của cùng người; nếu A còn cấp dưới thì mỗi cấp dưới phải có lựa chọn giữ A hoặc quản lý mới (AC-2.7.6), áp dụng cùng ngày hiệu lực |
 | 3 | | Hiệu lực hôm nay hoặc quá khứ: trong một giao dịch đóng dòng công tác cũ, mở dòng mới, đổi `department_id`, `position_id`, `manager_id`, ghi audit `TRANSFER`, event `EmployeeTransferred` |
-| 4 | | Hiệu lực tương lai: lưu dòng "Sắp hiệu lực"; job chạy 00:00 giờ Việt Nam áp dụng như bước 3 (chạy lại không áp dụng hai lần) |
+| 4 | | Hiệu lực tương lai: lưu dòng "Sắp hiệu lực"; job chạy 00:05 giờ Việt Nam áp dụng như bước 3 (chạy lại không áp dụng hai lần) |
 | 5 | Thấy quá trình công tác cập nhật | Đơn nghỉ `SUBMITTED` của người này tự sang quản lý mới vì quyền duyệt tính theo quản lý hiện tại (BR-05); worker gửi email chung cho quản lý mới |
 
 ### 4.5 HR gán trưởng, phó đơn vị (FR-2.9)
@@ -132,6 +132,12 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
   | `DEPARTMENT` Phòng | `COMPANY`, `CENTER` | Trưởng phòng | Phó phòng (3) |
   | `TEAM` Nhóm | `DEPARTMENT` | Trưởng nhóm | Không có |
 
+- **Nhân viên thuộc đơn vị:** mỗi người thuộc đúng một đơn vị đang hoạt động, loại bất kỳ (CEO thuộc Công ty, Giám đốc trung
+  tâm thuộc Trung tâm, người không trong nhóm nào thuộc Phòng). Phòng ban, chức danh, quản lý chỉ đặt khi tạo nhân viên (UC1
+  luồng 4.4); sau đó chỉ đổi qua điều chuyển (AC-2.7.7).
+- **Ca biên (18/11/2026):** người nghỉ việc hoặc đơn vị ngừng hoạt động thì vai trò trưởng, phó tự gỡ, có audit (AC-2.9.8,
+  AC-2.10.1); quan hệ quản lý trực tiếp không bao giờ tự đổi, HR chọn rõ (AC-1.7.1, AC-2.7.6). Chức danh `CEO` không ngừng dùng,
+  không đổi cấp bậc (AC-2.6.3).
 - **Trưởng đơn vị khác quản lý trực tiếp:** trưởng là vai trò của đơn vị; quản lý trực tiếp là quan hệ giữa hai người và là thứ
   duy nhất quyết định quyền duyệt (BR-05). Gợi ý quản lý mặc định là trưởng của đơn vị, hoặc trưởng đơn vị cha nếu người đó là
   trưởng (AC-2.9.2).
@@ -230,7 +236,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 - **Bảng `org.employment_assignment`** (quá trình công tác): `id`, `employee_id`, `department_id`, `position_id`, `manager_id`,
   `effective_from`, `effective_to` (NULL = đang hiệu lực), `reason` (`HIRE`, `TRANSFER`, `PROMOTION`, `MANAGER_CHANGE`,
-  `CORRECTION`), `note`, `status` (`SCHEDULED`, `ACTIVE`, `CLOSED`, `CANCELLED`), `created_by`, `created_at`. Mỗi người có đúng
+  `CORRECTION`), `note`, `status` (`SCHEDULED`, `ACTIVE`, `CLOSED`, `CANCELLED`, `FAILED`), `created_by`, `created_at`. Mỗi người có đúng
   một dòng `ACTIVE` (unique index có điều kiện) và tối đa một dòng `SCHEDULED`. Chỉ thêm, không sửa nội dung dòng đã đóng.
 - `employee.employee.department_id`, `position_id`, `manager_id` vẫn giữ, là **giá trị hiện tại** để mọi truy vấn cũ (danh bạ,
   quyền duyệt) không đổi; điều chuyển cập nhật cả hai trong một giao dịch.
