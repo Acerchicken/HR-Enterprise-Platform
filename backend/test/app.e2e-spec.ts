@@ -328,7 +328,9 @@ describe('HRHelper API (e2e)', () => {
         `SELECT actor_id, changed_fields FROM audit.audit_log WHERE action = 'ROLE_GRANT' AND entity_id = $1 ORDER BY id DESC LIMIT 1`,
         [employeeAccount],
       );
-      expect(audit).toMatchObject({ actor_id: adminAccount, changed_fields: { role: 'HR', reason } });
+      // audit.audit_log.actor_id là id hồ sơ nhân viên (như mọi audit khác), không phải id tài khoản.
+      const adminEmployee = (await http.get('/api/v1/me').set(ADMIN)).body.employee.id;
+      expect(audit).toMatchObject({ actor_id: adminEmployee, changed_fields: { role: 'HR', reason } });
       const [event] = await db().query(`SELECT payload FROM leave.outbox WHERE event_type = 'RoleGranted' AND aggregate_id = $1 ORDER BY id DESC LIMIT 1`, [employeeAccount]);
       expect(event.payload).toMatchObject({ accountId: employeeAccount, email: 'employee@hr.local', role: 'HR' });
       const found = (await http.get(`${path}?q=employee@hr`).set(ADMIN).expect(200)).body;

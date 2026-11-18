@@ -108,7 +108,7 @@ export class RoleAdminService {
 
   private async record(m: EntityManager, actor: AuthUser, action: string, event: string, p: RoleEventPayload, reason: string) {
     await this.audit.record(
-      { actorId: actor.userId, action, entityType: 'role_assignment', entityId: p.accountId, changedFields: { userId: p.accountId, role: p.role, reason } },
+      { actorId: actor.employeeId, action, entityType: 'role_assignment', entityId: p.accountId, changedFields: { userId: p.accountId, role: p.role, reason } },
       m,
     );
     await m.query(`INSERT INTO leave.outbox (event_type, aggregate_id, payload) VALUES ($1, $2, $3)`, [
