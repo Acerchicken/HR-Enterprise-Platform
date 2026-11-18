@@ -797,14 +797,14 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
       <h3 style="font-size:18px;margin:8px 0 2px;display:flex;align-items:center;gap:8px"><svg class="i" style="color:var(--primary)"><use href="#swap"/></svg>Điều chuyển</h3>
       <div class="mut" style="font-size:13.5px">Hiện tại: Kỹ sư phần mềm · Nhóm Backend · quản lý Nguyễn Minh Khoa</div>
       <div class="fg" style="margin-top:4px">
-        <div><label class="l">Phòng ban mới *</label><div class="input f">Phòng Dữ liệu<span class="dn">▾</span></div></div>
+        <div><label class="l">Đơn vị mới *</label><div class="input f">Phòng Dữ liệu<span class="dn">▾</span></div></div>
         <div><label class="l">Chức danh mới *</label><div class="input">Kỹ sư dữ liệu · cấp 4<span class="dn">▾</span></div></div>
         <div><label class="l">Quản lý trực tiếp mới *</label><div class="input"><span class="av xs alt" style="margin-right:8px">VL</span>Vũ Hải Long<span class="pend" style="margin-left:8px">Trưởng phòng</span><span class="dn">▾</span></div></div>
         <div><label class="l">Ngày hiệu lực *</label><div class="input">01/12/2026<svg class="i" style="margin-left:auto;width:16px;color:var(--muted)"><use href="#cal"/></svg></div></div>
       </div>
       <label class="l">Lý do *</label>
       <div class="ta" style="height:56px;color:var(--text)">Chuyển sang dự án nền tảng dữ liệu</div>
-      <div class="alert w"><svg class="i"><use href="#alert"/></svg><span><b>Sắp hiệu lực.</b> Hồ sơ chưa đổi đến 00:00 ngày 01/12/2026. Hủy được trước ngày đó. An đang có <b>1 đơn nghỉ chờ duyệt</b>: khi điều chuyển có hiệu lực, đơn chuyển sang quản lý mới (BR-05).</span></div>
+      <div class="alert w"><svg class="i"><use href="#alert"/></svg><span><b>Sắp hiệu lực.</b> Hồ sơ đổi lúc 00:05 ngày 01/12/2026. Hủy được trước ngày đó. An đang có <b>1 đơn nghỉ chờ duyệt</b>: khi điều chuyển có hiệu lực, đơn chuyển sang quản lý mới (BR-05).</span></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><span class="btn g">Hủy</span><span class="btn p">Lưu điều chuyển</span></div>
       <div class="h4" style="margin-top:22px">Quá trình công tác (sau khi lưu)</div>
       <div class="tl">
@@ -816,6 +816,99 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
   </div>
   <div class="note" style="top:150px;left:40px;max-width:470px">Nút "Điều chuyển" nằm ở popup hồ sơ khi HR mở (không có trong hồ sơ nhân viên tự xem). Chọn phòng ban mới thì ô quản lý điền sẵn trưởng phòng đó, HR đổi được (AC-2.9.2). Ngày hiệu lực không trước ngày vào làm, không lùi quá 30 ngày; chỉ một điều chuyển chưa hiệu lực mỗi lúc.</div>
   <div class="note" style="top:300px;left:40px;max-width:470px">Danh sách chức danh chỉ có chức danh đang dùng (AC-2.6.2). Quản lý mới phải hợp lệ theo FR-2.5 (đang làm việc, không tạo vòng); lỗi hiện dưới ô quản lý. Nếu An đang là trưởng phòng thì form bắt chọn trưởng phòng mới cho phòng cũ (AC-2.7.5).</div>
+</div>
+
+<div class="frame desk" id="uc2-transfer-reports" style="height:860px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>9</i></span><span class="av alt2">HL</span></div>
+  </div>
+  <div class="page" style="opacity:.5"><div class="crumb">Trang chủ › Danh bạ</div><h1>Danh bạ</h1></div>
+  <div class="dim"></div>
+  <div class="drawer" style="width:760px">
+    <div class="ph" style="text-align:left;padding:14px 20px">
+      <div class="pbar"><svg class="i"><use href="#back"/></svg><span>Nguyễn Minh Khoa · 100207</span><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    </div>
+    <div style="padding:6px 22px">
+      <h3 style="font-size:18px;margin:8px 0 2px;display:flex;align-items:center;gap:8px"><svg class="i" style="color:var(--primary)"><use href="#swap"/></svg>Điều chuyển</h3>
+      <div class="mut" style="font-size:13.5px">Hiện tại: Trưởng nhóm Backend · Nhóm Backend · quản lý Trần Quốc Bình · <b>Trưởng nhóm</b> của Nhóm Backend</div>
+      <div class="fg" style="margin-top:4px">
+        <div><label class="l">Đơn vị mới *</label><div class="input">Phòng Dữ liệu<span class="dn">▾</span></div></div>
+        <div><label class="l">Chức danh mới *</label><div class="input">Trưởng nhóm · cấp 6<span class="dn">▾</span></div></div>
+        <div><label class="l">Quản lý trực tiếp mới *</label><div class="input"><span class="av xs alt" style="margin-right:8px">VL</span>Vũ Hải Long<span class="pend" style="margin-left:8px">Trưởng phòng</span><span class="dn">▾</span></div></div>
+        <div><label class="l">Ngày hiệu lực *</label><div class="input">01/12/2026<svg class="i" style="margin-left:auto;width:16px;color:var(--muted)"><use href="#cal"/></svg></div></div>
+      </div>
+      <label class="l">Trưởng mới cho Nhóm Backend * <span class="mut" style="font-weight:400">(Khoa rời nhóm, AC-2.7.5)</span></label>
+      <div class="input f">Lý Thanh Hằng · 100118<span class="dn">▾</span></div>
+      <div class="h4" style="display:flex;align-items:center;margin-top:14px">Cấp dưới trực tiếp của Khoa (8) <span style="margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400" class="lnk">Chọn cho tất cả: Chuyển sang Lý Thanh Hằng</span></div>
+      <table class="tbl" style="border:1px solid var(--line);border-radius:10px">
+        <tr><th>Nhân viên</th><th>Giữ quản lý</th><th>Đổi quản lý (cùng ngày hiệu lực)</th></tr>
+        <tr><td><div class="who"><span class="av sm">AN</span>Nguyễn Văn An</div></td><td style="white-space:nowrap"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line);margin-right:6px;vertical-align:-2px"></span>Giữ Khoa</td><td><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:4.5px solid var(--primary);margin-right:6px;vertical-align:-2px"></span>Chuyển sang <span class="input" style="display:inline-flex;height:30px;margin:0 0 0 4px;padding:0 8px;font-size:13px;width:190px">Lý Thanh Hằng<span class="dn">▾</span></span></td></tr>
+        <tr><td><div class="who"><span class="av sm">TN</span>Nguyễn Thị Ngọc</div></td><td style="white-space:nowrap"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line);margin-right:6px;vertical-align:-2px"></span>Giữ Khoa</td><td><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:4.5px solid var(--primary);margin-right:6px;vertical-align:-2px"></span>Chuyển sang <span class="input" style="display:inline-flex;height:30px;margin:0 0 0 4px;padding:0 8px;font-size:13px;width:190px">Lý Thanh Hằng<span class="dn">▾</span></span></td></tr>
+        <tr><td><div class="who"><span class="av sm">QV</span>Nguyễn Quang Vinh</div></td><td style="white-space:nowrap"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:4.5px solid var(--primary);margin-right:6px;vertical-align:-2px"></span>Giữ Khoa</td><td><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line);margin-right:6px;vertical-align:-2px"></span>Chuyển sang <span class="input" style="display:inline-flex;height:30px;margin:0 0 0 4px;padding:0 8px;font-size:13px;width:190px">Lý Thanh Hằng<span class="dn">▾</span></span></td></tr>
+      </table>
+      <div class="pager" style="border:0;padding:6px 0 0"><span class="tot">3 / 8 · còn 5 người chưa chọn</span></div>
+      <div class="alert e"><svg class="i"><use href="#alert"/></svg><span>Còn <b>5 cấp dưới</b> chưa chọn giữ hay đổi quản lý. Mỗi người phải có lựa chọn trước khi lưu (AC-2.7.6).</span></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px"><span class="btn g">Hủy</span><span class="btn p" style="opacity:.5">Lưu điều chuyển</span></div>
+    </div>
+  </div>
+  <div class="note" style="top:150px;left:30px;max-width:450px">Phần "Cấp dưới trực tiếp" chỉ hiện khi người được điều chuyển còn cấp dưới đang làm việc. Ô "Chuyển sang" điền sẵn trưởng mới của đơn vị cũ; HR chọn hàng loạt được. Không có lựa chọn ngầm: quan hệ quản lý quyết định ai duyệt đơn (BR-05).</div>
+  <div class="note" style="top:330px;left:30px;max-width:450px">Khi lưu: mỗi cấp dưới được đổi có một dòng quá trình công tác lý do "Đổi quản lý", cùng ngày hiệu lực; đơn nghỉ đang chờ của họ đi theo quản lý mới (AC-2.7.3). Người "Giữ Khoa" vẫn báo cáo Khoa dù khác đơn vị.</div>
+</div>
+
+<div class="frame desk" id="uc2-terminate" style="height:700px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>9</i></span><span class="av alt2">HL</span></div>
+  </div>
+  <div class="page" style="opacity:.5"><div class="crumb">Trang chủ › Hồ sơ › Sửa hồ sơ</div><h1>Sửa hồ sơ</h1></div>
+  <div class="dim"></div>
+  <div class="modal" style="top:80px;left:360px;width:580px">
+    <div class="mh">Xác nhận cho nghỉ việc<span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    <div class="mb">
+      <div class="pcard" style="margin-bottom:12px"><span class="av md alt2">QB</span><div><b>Trần Quốc Bình</b><small>Giám đốc công nghệ · Phòng Công nghệ · nghỉ từ 30/11/2026</small></div></div>
+      <div class="h4" style="margin-top:4px">Phải xử lý trước</div>
+      <div class="row ok" style="display:flex;gap:8px;align-items:center;font-size:14px;padding:4px 0"><span class="badge ok">Xong</span>Cấp dưới trực tiếp đang làm việc: 0 (đã chuyển hết, AC-1.7.1)</div>
+      <div class="row" style="display:flex;gap:8px;align-items:center;font-size:14px;padding:4px 0"><span class="badge ok">Xong</span>Là quản lý mới trong điều chuyển chưa hiệu lực của người khác: 0</div>
+      <div class="h4" style="margin-top:14px">Hệ thống sẽ tự làm khi lưu</div>
+      <div style="font-size:14px;line-height:1.7">
+        • Gỡ vai trò <b>Trưởng phòng</b> của Phòng Công nghệ → phòng hiện "Chưa có trưởng" (AC-2.9.8)<br>
+        • Gỡ vai trò <b>Phó Giám đốc trung tâm</b> của Trung tâm Công nghệ<br>
+        • Hủy 1 điều chuyển chưa hiệu lực của Bình (01/12/2026)<br>
+        • Đóng dòng quá trình công tác hiện tại ở ngày 30/11/2026
+      </div>
+      <div class="alert w"><svg class="i"><use href="#alert"/></svg><span>Không đổi quản lý trực tiếp của ai. Nhớ gán trưởng mới cho Phòng Công nghệ sau khi lưu.</span></div>
+    </div>
+    <div class="mf"><span class="btn g">Quay lại</span><span class="btn p" style="background:var(--danger);border-color:var(--danger)">Xác nhận nghỉ việc</span></div>
+  </div>
+  <div class="note" style="top:200px;left:960px;max-width:280px">Hộp này lấy dữ liệu từ <code>GET /employees/{id}/termination-impact</code>. Mục "Phải xử lý trước" còn số khác 0 thì nút xác nhận bị khóa, mỗi dòng có link mở danh sách để xử lý (UC1 AC-1.7.1, AC-1.7.3).</div>
+</div>
+
+<div class="frame desk" id="uc2-deactivate" style="height:600px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>9</i></span><span class="av alt2">HL</span></div>
+  </div>
+  <div class="page" style="opacity:.5"><div class="crumb">Trang chủ › Sơ đồ tổ chức</div><h1>Sơ đồ tổ chức</h1></div>
+  <div class="dim"></div>
+  <div class="modal" style="top:80px;left:360px;width:560px">
+    <div class="mh">Ngừng hoạt động Phòng Hạ tầng<span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    <div class="mb">
+      <div class="alert e" style="margin-top:0"><svg class="i"><use href="#alert"/></svg><span><b>Chưa ngừng được.</b> Đơn vị phải trống trước khi ngừng hoạt động (AC-2.10.1).</span></div>
+      <table class="tbl" style="border:1px solid var(--line);border-radius:10px;margin-top:12px">
+        <tr><th>Còn lại</th><th>Số lượng</th><th></th></tr>
+        <tr><td>Nhân viên đang làm việc trong phòng</td><td><b>12</b></td><td><span class="lnk">Điều chuyển ›</span></td></tr>
+        <tr><td>Đơn vị con đang hoạt động</td><td><b>1</b></td><td><span class="lnk">Xem ›</span></td></tr>
+        <tr><td>Điều chuyển chưa hiệu lực vào phòng này</td><td><b>1</b></td><td><span class="lnk">Xem ›</span></td></tr>
+      </table>
+      <div class="alert i"><svg class="i"><use href="#info"/></svg><span>Trưởng, phó kiêm nhiệm từ Trung tâm Công nghệ không tính là người của phòng; khi ngừng, vai trò của họ tự gỡ. Sáp nhập: điều chuyển hết người sang phòng mới (cùng ngày hiệu lực) rồi ngừng phòng cũ (AC-2.10.3).</span></div>
+    </div>
+    <div class="mf"><span class="btn g">Đóng</span><span class="btn p" style="opacity:.5">Ngừng hoạt động</span></div>
+  </div>
+  <div class="note" style="top:200px;left:940px;max-width:300px">Gọi <code>PATCH /departments/{id}</code> với <code>status: INACTIVE</code>; API trả 409 kèm ba con số này. Khi trống, đơn vị biến khỏi cây, danh bạ, danh sách chọn nhưng vẫn hiện trong quá trình công tác cũ.</div>
 </div>
 
 <div class="frame desk" id="uc2-positions" style="height:640px">

@@ -9,7 +9,7 @@
 | Quy tắc | Issue #21 (xem toàn bộ cây, không tra theo mã), issue #22 (một quản lý trừ CEO), ADR-10, ADR-14 (loại đơn vị) |
 | Mức ưu tiên | M (FR-2.4, FR-2.6 → FR-2.9 là S; FR-2.10 là C) |
 | Trạng thái | Đã có; tạo, sửa phòng ban mới có API, chưa có giao diện |
-| Phiên bản | 1.2 – 15/11/2026 (ADR-14: loại đơn vị Công ty, Trung tâm, Phòng, Nhóm; trưởng, phó mọi cấp; quyền trưởng, kiêm nhiệm; ngừng hoạt động đơn vị). 1.1 – 14/11/2026 (chức danh, điều chuyển, quá trình công tác, trưởng/phó phòng) |
+| Phiên bản | 1.3 – 18/11/2026 (sơ đồ luồng `flows/`, bản vẽ điều chuyển có cấp dưới, nghỉ việc, ngừng đơn vị; hợp đồng API mục 9.2; thiết kế dữ liệu mục 13). 1.2 – 15/11/2026 (ADR-14: loại đơn vị Công ty, Trung tâm, Phòng, Nhóm; trưởng, phó mọi cấp; quyền trưởng, kiêm nhiệm; ngừng hoạt động đơn vị). 1.1 – 14/11/2026 (chức danh, điều chuyển, quá trình công tác, trưởng/phó phòng) |
 
 ## 1. Mô tả ngắn
 
@@ -165,13 +165,30 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 
 ## 9. Giao diện và API
 
-| Luồng | Màn hình | API |
+| Luồng | Màn hình | API (chi tiết ở 9.2) |
 |---|---|---|
 | 4.1 | `/directory` | `GET /employees` |
-| 4.2 | `/org` | `GET /departments/tree`, `GET /departments/{id}`, `GET /departments/{id}/members`, `GET /employees/{id}/direct-reports`, `GET /positions` |
-| 4.3, 4.5 | `/org`, `/org/{id}` (nút "Thêm phòng ban", "Sửa phòng ban" chỉ HR, ADMIN thấy; chưa có) | `POST /departments`, `PATCH /departments/{id}` |
-| 4.4 | Nút "Điều chuyển" trong hồ sơ (chế độ HR); mục "Quá trình công tác" của popup hồ sơ (UC1) | `POST /employees/{id}/transfers`, `DELETE /employees/{id}/transfers/{transferId}` (hủy khi chưa hiệu lực), `GET /employees/{id}/profile/career-history` |
-| FR-2.6 | `/org/positions` (HR) | `GET /positions`, `POST /positions`, `PATCH /positions/{id}` (tên, cấp bậc, `active`) |
+| 4.2 | `/org`, `/org/{id}` | `GET /departments/tree`, `GET /departments/{id}`, `GET /departments/{id}/members`, `GET /employees/{id}/direct-reports` |
+| 4.3, 4.5, 4.6 | `/org/{id}`: nút "Thêm đơn vị", "Sửa đơn vị", "Ngừng hoạt động" (chỉ HR, ADMIN thấy) | `POST /departments`, `PATCH /departments/{id}` |
+| 4.4 | Nút "Điều chuyển" trong popup hồ sơ (chế độ HR); mục "Quá trình công tác" (UC1) | `POST /employees/{id}/transfers`, `GET /employees/{id}/transfers`, `DELETE /employees/{id}/transfers/{transferId}`, `GET /employees/{id}/profile/career-history` |
+| Nghỉ việc (UC1 AC-1.7.3) | Hộp xác nhận khi HR chọn trạng thái "Nghỉ việc" | `GET /employees/{id}/termination-impact`, `PATCH /employees/{id}` |
+| FR-2.6 | `/org/positions` (HR) | `GET /positions`, `POST /positions`, `PATCH /positions/{id}` |
+
+**Sơ đồ luồng** (bấm "Chạy" để xem từng bước): [`flows/flows.html`](flows/flows.html), ảnh PNG cùng thư mục, xuất lại bằng
+`flows/render.js` (Playwright) hoặc `flows/render.ps1` (Windows).
+
+| Luồng | Sơ đồ |
+|---|---|
+| Xem sơ đồ tổ chức, danh bạ (4.1, 4.2) | [uc2-f1.png](flows/uc2-f1.png) |
+| Tạo, sửa đơn vị (4.3) | [uc2-f2.png](flows/uc2-f2.png) |
+| Gán trưởng, phó (4.5) | [uc2-f3.png](flows/uc2-f3.png) |
+| Điều chuyển (4.4) | [uc2-f4.png](flows/uc2-f4.png) |
+| Job áp dụng điều chuyển (mục 13) | [uc2-f5.png](flows/uc2-f5.png) |
+| Ngừng hoạt động đơn vị (4.6) | [uc2-f6.png](flows/uc2-f6.png) |
+| Cho nghỉ việc người đang là trưởng (UC1 AC-1.7.3) | [uc2-f7.png](flows/uc2-f7.png) |
+| Luật loại đơn vị (mục 7) | [uc2-g1.png](flows/uc2-g1.png) |
+| Trạng thái điều chuyển (mục 13) | [uc2-g2.png](flows/uc2-g2.png) |
+| Gợi ý quản lý trực tiếp (AC-2.9.2) | [uc2-g3.png](flows/uc2-g3.png) |
 
 ### 9.1 Bản vẽ giao diện
 
@@ -195,6 +212,18 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 
 ![Form điều chuyển có ngày hiệu lực](mockups/uc2-transfer.png)
 
+**Điều chuyển người còn cấp dưới: chọn trưởng mới cho đơn vị cũ, giữ hoặc đổi quản lý cho từng cấp dưới (AC-2.7.5, AC-2.7.6)**
+
+![Điều chuyển trưởng nhóm có 8 cấp dưới](mockups/uc2-transfer-reports.png)
+
+**Hộp xác nhận nghỉ việc với người đang là trưởng, phó (UC1 AC-1.7.3, AC-2.9.8)**
+
+![Xác nhận nghỉ việc](mockups/uc2-terminate.png)
+
+**Ngừng hoạt động đơn vị chưa trống (AC-2.10.1)**
+
+![Ngừng hoạt động đơn vị bị chặn](mockups/uc2-deactivate.png)
+
 **Danh mục chức danh `/org/positions` (FR-2.6)**
 
 ![Danh mục chức danh](mockups/uc2-positions.png)
@@ -204,6 +233,58 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 | Phòng ban | Quá trình công tác |
 |---|---|
 | ![Phòng ban trên điện thoại](mockups/uc2-org-mobile.png) | ![Quá trình công tác](mockups/uc2-career-mobile.png) |
+
+### 9.2 Hợp đồng API
+
+Tất cả dưới `/api/v1`, cần đăng nhập (E1). `docs/openapi.yaml` sinh từ code (`npm run openapi`) nên chỉ cập nhật khi code merge;
+bảng dưới là hợp đồng để code theo. Lỗi theo dạng chung `{code, message, traceId, fields?}`
+([error-codes.md](../../development/error-codes.md)). "HR+" là HR hoặc ADMIN.
+
+**Đơn vị**
+
+| API | Ai gọi | Vào | Ra | Lỗi |
+|---|---|---|---|---|
+| `GET /departments/tree` | Mọi người | – | `{id, code, name, unitType, office, memberCount, head: {id, fullName, acting} \| null, children[]}` gốc là `COMPANY`; chỉ `ACTIVE` | – |
+| `GET /departments/{id}` | Mọi người | – | Như trên (không `children`) + `path[]: {id, name, unitType, headEmployeeId}` từ gốc tới đơn vị, `deputies[]: {id, fullName, positionTitle}`, `status`, `parentId` | 404 (E5; đơn vị `INACTIVE` chỉ HR+ thấy) |
+| `GET /departments/{id}/members?page=&size=&includeChildren=false` | Mọi người | – | Trang nhân viên (trường danh bạ) | E6 |
+| `POST /departments` | HR+ | `{unitType, code, name, office, parentId, headEmployeeId?, headActing?, deputyEmployeeIds?}` | 201 đơn vị | E2, E3, E4, E7, E8, E12 |
+| `PATCH /departments/{id}` | HR+ | Bất kỳ trường: `name, office, parentId, unitType, headEmployeeId (null = bỏ), headActing, deputyEmployeeIds (thay cả danh sách), status` | 200 đơn vị | E2, E3, E7, E8, E12, E13 (`details: {members, activeChildren, scheduledTransfers}`) |
+
+`code` không sửa sau khi tạo. Danh sách chọn trưởng, phó dùng `GET /employees?dept={id}&includeAncestors=true&status=ACTIVE`.
+
+**Danh bạ**
+
+| API | Thay đổi |
+|---|---|
+| `GET /employees?q=&dept=&includeChildren=true&page=&size=` | Thêm `includeChildren` (mặc định `true`, AC-2.1.5); thêm `includeAncestors` (chỉ HR+, dùng cho danh sách chọn trưởng, phó) |
+
+**Chức danh**
+
+| API | Ai gọi | Vào | Ra | Lỗi |
+|---|---|---|---|---|
+| `GET /positions?active=true` | Mọi người | – | `{id, code, title, level, active, system, holderCount}` | – |
+| `POST /positions` | HR | `{code, title, level}` | 201 | 403, 400, 409 (mã trùng) |
+| `PATCH /positions/{id}` | HR | `{title?, level?, active?}` | 200 | 400 (chức danh hệ thống `CEO`: đổi `level`, `active`, AC-2.6.3), 403 |
+
+Không có `DELETE /positions`: chỉ ngừng dùng (E11 giữ cho trường hợp sau này mở xóa).
+
+**Điều chuyển và quá trình công tác**
+
+| API | Ai gọi | Vào | Ra | Lỗi |
+|---|---|---|---|---|
+| `POST /employees/{id}/transfers` | HR | `{effectiveDate, departmentId, positionId, managerId, reason: TRANSFER\|PROMOTION\|MANAGER_CHANGE\|CORRECTION, note?, newHeadForOldUnit?: {departmentId, employeeId \| null}, reports?: [{employeeId, managerId}]}`; `reports` bắt buộc đủ mọi cấp dưới đang làm việc khi có (giữ = `managerId` là chính người này) | 201 `{id, status: ACTIVE\|SCHEDULED, effectiveDate, …, reports[]}` | 400 (E9, `fields`), 409 (E10) |
+| `GET /employees/{id}/transfers` | HR | – | Các điều chuyển (mọi trạng thái), mới nhất trước | 403 |
+| `DELETE /employees/{id}/transfers/{transferId}` | HR | – | 204; chỉ khi `SCHEDULED` (kéo theo dòng của cấp dưới) | 409 nếu đã `ACTIVE`, `FAILED` |
+| `GET /employees/{id}/profile/career-history` | Mức QL (UC1) | – | `[{from, to, departmentName, unitType, positionTitle, managerName, reason, status}]` mới nhất trước; đọc từ bảng quá trình công tác | 404 (UC1 E7) |
+| `GET /employees/{id}/termination-impact` | HR | – | `{activeReports, headRoles: [{departmentId, name, role: HEAD\|DEPUTY}], scheduledTransfers, pendingAsNewManager: [{transferId, employeeName}]}` | 403 |
+
+`PATCH /employees/{id}` (UC1): khi có điều chuyển, gửi `departmentId`, `positionId`, `managerId` thì 400 (AC-2.7.7); chuyển
+`TERMINATED` làm thêm các việc ở UC1 AC-1.7.3 trong cùng giao dịch.
+
+**Audit** (`entityType`): `department` (`CREATE`, `UPDATE`); `position` (`CREATE`, `UPDATE`); `employee` (`TRANSFER`,
+`TRANSFER_SCHEDULE`, `TRANSFER_CANCEL`, `TRANSFER_FAIL`), `changedFields` ghi id đơn vị, chức danh, quản lý cũ và mới (nhóm trường
+tổ chức, UC1 AC-1.4.3). **Event** (outbox, ADR-15): `EmployeeTransferred {employeeId, oldManagerId, newManagerId, effectiveDate}`,
+`TransferFailed {transferId, employeeId, reason}`.
 
 ## 10. Yêu cầu phi chức năng liên quan
 
@@ -234,24 +315,43 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 ## 13. Thiết kế đề xuất cho phần chưa có
 
-- **Bảng `org.employment_assignment`** (quá trình công tác): `id`, `employee_id`, `department_id`, `position_id`, `manager_id`,
-  `effective_from`, `effective_to` (NULL = đang hiệu lực), `reason` (`HIRE`, `TRANSFER`, `PROMOTION`, `MANAGER_CHANGE`,
-  `CORRECTION`), `note`, `status` (`SCHEDULED`, `ACTIVE`, `CLOSED`, `CANCELLED`, `FAILED`), `created_by`, `created_at`. Mỗi người có đúng
-  một dòng `ACTIVE` (unique index có điều kiện) và tối đa một dòng `SCHEDULED`. Chỉ thêm, không sửa nội dung dòng đã đóng.
-- `employee.employee.department_id`, `position_id`, `manager_id` vẫn giữ, là **giá trị hiện tại** để mọi truy vấn cũ (danh bạ,
-  quyền duyệt) không đổi; điều chuyển cập nhật cả hai trong một giao dịch.
-- **Migration:** tạo dòng `HIRE` cho mọi nhân viên hiện có từ `hire_date` với phòng ban, chức danh, quản lý hiện tại.
-- **Loại đơn vị (ADR-14):** thêm vào `org.department` các cột `unit_type varchar(12) NOT NULL` (CHECK trong `COMPANY`,
-  `CENTER`, `DEPARTMENT`, `TEAM`), `status varchar(10) NOT NULL DEFAULT 'ACTIVE'`, `head_acting boolean NOT NULL DEFAULT false`;
-  unique index có điều kiện `WHERE unit_type = 'COMPANY'` để chỉ có một Công ty. Luật loại cha, loại con và kiêm nhiệm kiểm ở
-  service (cần đọc đơn vị cha). Migration: gốc thành `COMPANY`, đơn vị có con dưới gốc thành `CENTER`, còn lại `DEPARTMENT`.
-- **Phó:** bảng `org.department_deputy` (`department_id`, `employee_id`, `created_by`, `created_at`), dùng cho mọi loại; số dòng
-  tối đa theo loại (kiểm ở service).
+Ba nhánh code theo thứ tự, mỗi nhánh một PR, mỗi PR sửa `database-schema.md`, `test.md` và mục 12 cùng lúc:
+
+| Nhánh | Nội dung | Tiêu chí |
+|---|---|---|
+| `feat/org-unit-types` | Migration loại đơn vị, trạng thái; luật cha con; seed mới; cây, chi tiết đơn vị có `path`, `head`; lọc danh bạ gồm đơn vị con; sơ đồ tổ chức hiện loại | AC-2.2.3, AC-2.4.6, AC-2.4.8, AC-2.4.9, AC-2.1.5 |
+| `feat/department-admin-ui` | Trưởng, phó, quyền trưởng, kiêm nhiệm; ngừng hoạt động; danh mục chức danh; form "Thêm, sửa đơn vị"; trang `/org/positions` | AC-2.4.5, AC-2.4.7, AC-2.6.x, AC-2.9.x, AC-2.10.x |
+| `feat/employee-transfer` | Bảng quá trình công tác, điều chuyển, job, hộp xác nhận nghỉ việc; "Quá trình công tác" của UC1 đọc từ bảng mới | AC-2.7.x, AC-2.8.x, UC1 AC-1.7.3 |
+
+**Dữ liệu** (migration mới, không sửa migration cũ):
+
+- **`org.department`** thêm `unit_type varchar(12) NOT NULL` (CHECK `COMPANY`, `CENTER`, `DEPARTMENT`, `TEAM`), `status
+  varchar(10) NOT NULL DEFAULT 'ACTIVE'` (CHECK `ACTIVE`, `INACTIVE`), `head_acting boolean NOT NULL DEFAULT false`; unique index
+  `ux_department_company ON org.department((1)) WHERE unit_type = 'COMPANY'` để chỉ có một Công ty. Luật cha con kiểm ở service
+  (cần đọc đơn vị cha). Migration điền sẵn: gốc thành `COMPANY`, đơn vị có con và cha là gốc thành `CENTER`, còn lại `DEPARTMENT`.
+- **`org.department_deputy`** (`department_id` FK, `employee_id` ref, `created_by`, `created_at`, PK hai cột đầu); số dòng tối đa
+  theo loại kiểm ở service.
+- **`org.position`** thêm `active boolean NOT NULL DEFAULT true`, `is_system boolean NOT NULL DEFAULT false` (`CEO` = `true`).
+- **`employee.employment_assignment`** (quá trình công tác; thuộc module Employee vì điều chuyển đổi `employee.employee` trong cùng
+  giao dịch): `id`, `employee_id` FK, `department_id`, `position_id`, `manager_id` (ref, không FK chéo schema), `effective_from date`,
+  `effective_to date NULL`, `reason` (`HIRE`, `TRANSFER`, `PROMOTION`, `MANAGER_CHANGE`, `CORRECTION`), `note`, `status`
+  (`SCHEDULED`, `ACTIVE`, `CLOSED`, `CANCELLED`, `FAILED`), `failure_reason`, `parent_id` (dòng của cấp dưới trỏ về điều chuyển của
+  quản lý để hủy cùng), `created_by`, `created_at`, `applied_at`. Unique index có điều kiện: một `ACTIVE` mỗi người, một
+  `SCHEDULED` mỗi người; index `(status, effective_from)` cho job. Chỉ thêm dòng; dòng đã đóng chỉ được đổi `status`,
+  `effective_to`.
+- `employee.employee.department_id`, `position_id`, `manager_id` vẫn là **giá trị hiện tại** để danh bạ, quyền duyệt (BR-05),
+  ADR-10 không đổi; điều chuyển cập nhật cả hai trong một giao dịch.
+- **Migration dữ liệu:** một dòng `HIRE` `ACTIVE` cho mỗi nhân viên từ `hire_date` với giá trị hiện tại (người `TERMINATED`: `CLOSED`).
+  Các dòng "Quá trình công tác" dựng từ audit (UC1 #90) không chuyển sang; UC1 đọc bảng mới và giữ phần HR nhập tay.
 - **Seed mới:** gốc `HQ` "Công ty Cổ phần HRHelper Demo" (CEO); các "Khối" thành Trung tâm ("Trung tâm Công nghệ", "Trung tâm
   Nhân sự", "Trung tâm Tài chính", "Trung tâm Kinh doanh"), "Chăm sóc khách hàng", "Vận hành" cũng là Trung tâm vì có phòng con
-  (chức danh `DIR` đổi tên "Giám đốc trung tâm"); Marketing, Pháp chế
-  là Phòng thẳng dưới Công ty; thêm 2–3 Nhóm trong Web Engineering (Backend, Frontend, Kiểm thử) cho đúng bản vẽ giao diện; mỗi
-  Trung tâm lớn một Phó Giám đốc, một số Phòng có Phó phòng; thêm 2 Phó Tổng Giám đốc. Sửa test e2e đang tìm mã `BOD`.
-- **Chức danh:** thêm `org.position.active` (mặc định `true`); `level` 1–10.
-- **Job áp dụng điều chuyển tương lai:** chạy trong worker mỗi ngày 00:05 giờ Việt Nam, lấy dòng `SCHEDULED` có
-  `effective_from <= hôm nay`, áp dụng từng dòng trong một giao dịch, bỏ qua dòng đã áp dụng (idempotent).
+  (chức danh `DIR` đổi tên "Giám đốc trung tâm"); Marketing, Pháp chế là Phòng thẳng dưới Công ty; thêm 3 Nhóm trong Web
+  Engineering (Backend, Frontend, Kiểm thử) cho đúng bản vẽ; mỗi Trung tâm lớn một Phó Giám đốc, một số Phòng có Phó phòng; thêm
+  2 Phó Tổng Giám đốc. Sửa test e2e đang tìm mã `BOD`.
+
+**Job áp dụng điều chuyển:** trong worker, mỗi 5 phút gọi `applyDueTransfers()`: lấy dòng `SCHEDULED` có `effective_from <=
+hôm nay (Asia/Ho_Chi_Minh)` bằng `FOR UPDATE SKIP LOCKED`, mỗi dòng một giao dịch, kiểm lại quy tắc (AC-2.7.8). Chạy mỗi 5 phút
+thay vì đúng một lần lúc 00:05 để worker khởi động lại vẫn không bỏ sót; dòng đã xử lý không còn `SCHEDULED` nên không áp dụng
+hai lần. Nhiều instance worker chạy cùng lúc vẫn an toàn nhờ `SKIP LOCKED`.
+
+**Cache** (ADR-07): cây, chức danh cache 10 phút trong bộ nhớ; mọi lệnh ghi đơn vị, chức danh, điều chuyển xóa cache.
