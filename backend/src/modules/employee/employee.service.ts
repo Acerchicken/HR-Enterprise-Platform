@@ -380,7 +380,7 @@ export class EmployeeService {
         await repo.save({ ...e, ...changes });
         // UC8 FR-8.4, A5, AC-8.3.6: khóa, mở, đổi email tài khoản trên IdP qua outbox (worker identity-sync).
         if (changes.status !== undefined && (changes.status === 'TERMINATED') !== (e.status === 'TERMINATED')) {
-          await onEmploymentChanged(m, id, changes.status === 'TERMINATED');
+          await onEmploymentChanged(m, id, changes.status === 'TERMINATED', actor);
         }
         if (changes.workEmail) await onWorkEmailChanged(m, id, changes.workEmail);
         // AC-2.9.8, UC1 AC-1.7.3: người nghỉ việc được gỡ khỏi vai trò trưởng, phó trong cùng giao dịch (có audit).

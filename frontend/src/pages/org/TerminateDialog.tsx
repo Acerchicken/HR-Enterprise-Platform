@@ -16,7 +16,7 @@ export function TerminateDialog({ employeeId, name, onClose, onConfirm }: { empl
   useDialog(box, title, onClose);
   const impact = useApi(() => api<TerminationImpact>(`/employees/${employeeId}/termination-impact`), [employeeId]);
   const d = impact.data;
-  const blocked = !!d && (d.activeReports > 0 || d.pendingAsNewManager.length > 0);
+  const blocked = !!d && (d.activeReports > 0 || d.pendingAsNewManager.length > 0 || d.lastAdmin);
   const tag = (ok: boolean) => <span className={`badge ${ok ? 'ok' : 'bad'}`}>{ok ? 'Xong' : 'Chưa'}</span>;
 
   return (
@@ -42,8 +42,13 @@ export function TerminateDialog({ employeeId, name, onClose, onConfirm }: { empl
                   {d.pendingAsNewManager.map((p) => <li key={p.transferId}>{p.employeeName}, từ {formatDate(p.effectiveDate)}</li>)}
                 </ul>
               )}
+              {d.lastAdmin && (
+                <p>{tag(false)} Là ADMIN cuối cùng: cấp ADMIN cho người khác ở trang Phân quyền trước (UC8 AC-8.7.4)</p>
+              )}
               <h4 className="section-label">Hệ thống sẽ tự làm khi lưu</h4>
               <ul>
+                {d.grantedRoles.length > 0 && <li>Thu hồi vai trò <b>{d.grantedRoles.join(', ')}</b>; khôi phục sau này thì ADMIN phải cấp lại</li>}
+                <li>Khóa tài khoản đăng nhập và đăng xuất mọi phiên</li>
                 {d.headRoles.map((r) => (
                   <li key={`${r.departmentId}-${r.role}`}>
                     Gỡ vai trò <b>{r.role === 'HEAD' ? 'trưởng' : 'phó'}</b> của {r.name}{r.role === 'HEAD' ? ' (đơn vị hiện "Chưa có trưởng")' : ''}

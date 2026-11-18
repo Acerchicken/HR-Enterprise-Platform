@@ -46,6 +46,9 @@ Một người có thể có nhiều vai trò (HR cũng là EMPLOYEE, có thể 
 **Nguồn vai trò:** chỉ database (`iam.role_assignment` cho `HR`, `ADMIN`; sơ đồ tổ chức cho `MANAGER`). Claim vai trò trong token
 bị bỏ qua. Nhóm trên IdP là bản sao để IdP bắt MFA theo vai trò (ADR-17 mục 2).
 
+**Nghỉ việc:** chuyển hồ sơ sang `TERMINATED` thu hồi `HR`, `ADMIN` trong cùng giao dịch; khôi phục không trả lại, ADMIN cấp lại
+nếu cần. Không cho nghỉ việc ADMIN cuối cùng đang làm việc (409), cùng luật với thu hồi bằng tay (UC8 AC-8.7.9).
+
 ## 3. Cấp và thu hồi vai trò
 
 | Bước | Hệ thống |

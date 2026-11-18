@@ -106,6 +106,9 @@ Trạng thái hiện cho HR: "Chưa có tài khoản" (`NONE`, chưa có dòng `
 - **AC-8.7.7** Giả sử nhân viên chưa có tài khoản hoặc đã nghỉ việc. Thì 400 (E10, E13); vai trò đã có thì 409 (E14).
 - **AC-8.7.8** Giả sử ADMIN mở trang "Phân quyền". Thì thấy mọi người đang có `HR`, `ADMIN` với người cấp, ngày cấp,
   lý do; lọc theo vai trò; tìm theo tên, email.
+- **AC-8.7.9** Giả sử HR cho một người có `HR` hoặc `ADMIN` nghỉ việc. Thì vai trò đó bị thu hồi trong cùng giao dịch (audit
+  `ROLE_REVOKE` lý do "Nghỉ việc", event `RoleRevoked`); khôi phục hồ sơ không tự trả lại vai trò. Người đó là ADMIN cuối cùng
+  đang làm việc thì hộp xác nhận báo trước và lưu bị 409 (rà soát chéo 18/11).
 
 ## 3. Yêu cầu phi chức năng liên quan
 

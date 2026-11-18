@@ -87,4 +87,8 @@ export interface TerminationImpact {
   headRoles: { departmentId: string; name: string; role: 'HEAD' | 'DEPUTY' }[];
   scheduledTransfers: number;
   pendingAsNewManager: { transferId: string; employeeName: string; effectiveDate: string }[];
+  /** Vai trò được cấp sẽ bị thu hồi khi nghỉ việc (ADR-18). */
+  grantedRoles: ('HR' | 'ADMIN')[];
+  /** Là ADMIN cuối cùng đang làm việc: phải cấp ADMIN cho người khác trước (409 khi lưu). */
+  lastAdmin: boolean;
 }

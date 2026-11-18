@@ -1,5 +1,7 @@
 import { ConflictException } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
+import { wouldRemoveLastAdmin } from '../identity/role-access';
+import { AuthUser } from '../identity/roles';
 
 /**
  * Vòng đời tài khoản đăng nhập theo hồ sơ (UC8 FR-8.3, 8.4, AC-8.3.6; ADR-17 mục 4). Gọi trong giao dịch lưu hồ sơ: ghi
@@ -33,10 +35,46 @@ async function accountOf(m: EntityManager, employeeId: string): Promise<{ id: st
 }
 
 /** Nghỉ việc (4.3) hoặc khôi phục (A5). Hồ sơ chưa có tài khoản thì không có gì để khóa, mở. */
-export async function onEmploymentChanged(m: EntityManager, employeeId: string, terminated: boolean) {
+export async function onEmploymentChanged(m: EntityManager, employeeId: string, terminated: boolean, actor: AuthUser) {
   const acc = await accountOf(m, employeeId);
   if (!acc) return;
+  if (terminated) await revokeGrantedRoles(m, acc, actor);
   await outbox(m, terminated ? 'EmployeeTerminated' : 'EmployeeReinstated', acc.id, { employeeId, accountId: acc.id, email: acc.email });
+}
+
+const TERMINATION_REASON = 'Nghỉ việc';
+
+/**
+ * Nghỉ việc thì mất `HR`, `ADMIN` (ADR-18): khôi phục hồ sơ không tự trả lại quyền, ADMIN phải cấp lại. Không cho nghỉ việc
+ * ADMIN cuối cùng đang làm việc (cùng luật E12 của trang Phân quyền, UC8 AC-8.7.4). Ghi audit `ROLE_REVOKE` và event
+ * `RoleRevoked` như thu hồi bằng tay để worker bỏ nhóm trên IdP.
+ */
+async function revokeGrantedRoles(m: EntityManager, acc: { id: string; email: string }, actor: AuthUser) {
+  const held: { role: 'HR' | 'ADMIN' }[] = await m.query(
+    `SELECT role FROM iam.role_assignment WHERE user_id = $1 AND role IN ('HR', 'ADMIN')`,
+    [acc.id],
+  );
+  if (!held.length) return;
+  if (held.some((r) => r.role === 'ADMIN')) {
+    const admins: { user_id: string; status: string | null }[] = await m.query(
+      `SELECT r.user_id, e.status FROM iam.role_assignment r
+         JOIN iam.user_account a ON a.id = r.user_id
+         LEFT JOIN employee.employee e ON e.id = a.employee_id
+       WHERE r.role = 'ADMIN' FOR UPDATE OF r`,
+    );
+    const active = admins.filter((x) => x.status !== 'TERMINATED').map((x) => x.user_id);
+    if (wouldRemoveLastAdmin(active, acc.id)) {
+      throw new ConflictException('Người này là ADMIN cuối cùng. Cấp ADMIN cho người khác trước khi cho nghỉ việc');
+    }
+  }
+  await m.query(`DELETE FROM iam.role_assignment WHERE user_id = $1 AND role IN ('HR', 'ADMIN')`, [acc.id]);
+  for (const { role } of held) {
+    await m.query(
+      `INSERT INTO audit.audit_log (actor_id, action, entity_type, entity_id, changed_fields) VALUES ($1, 'ROLE_REVOKE', 'role_assignment', $2, $3)`,
+      [actor.employeeId, acc.id, JSON.stringify({ userId: acc.id, role, reason: TERMINATION_REASON })],
+    );
+    await outbox(m, 'RoleRevoked', acc.id, { accountId: acc.id, email: acc.email, role });
+  }
 }
 
 /** HR đổi email công ty (A8, AC-8.3.6): đổi email đăng nhập ngay, IdP đổi theo; `subject` giữ nguyên. */
