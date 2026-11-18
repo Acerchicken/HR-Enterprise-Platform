@@ -793,6 +793,12 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         CreateDepartmentDto: {
+            /**
+             * @description ADR-14: Công ty, Trung tâm, Phòng, Nhóm
+             * @example DEPARTMENT
+             * @enum {string}
+             */
+            unitType: "COMPANY" | "CENTER" | "DEPARTMENT" | "TEAM";
             /** @example ENG-PLT */
             code: string;
             /** @example Platform Engineering */
@@ -803,6 +809,8 @@ export interface components {
             headEmployeeId?: Record<string, never>;
         };
         UpdateDepartmentDto: {
+            /** @enum {string} */
+            unitType?: "COMPANY" | "CENTER" | "DEPARTMENT" | "TEAM";
             name?: string;
             office?: string;
             parentId?: Record<string, never> | null;
@@ -1205,6 +1213,8 @@ export interface operations {
                 q?: string;
                 /** @description Lọc theo phòng ban */
                 dept?: string;
+                /** @description Khi lọc theo đơn vị: kèm nhân viên của đơn vị con cháu (mặc định true, AC-2.1.5) */
+                includeChildren?: boolean;
             };
             header?: never;
             path?: never;
@@ -1379,7 +1389,10 @@ export interface operations {
     };
     EmployeeController_members: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Kèm nhân viên của đơn vị con cháu (mặc định false) */
+                includeChildren?: boolean;
+            };
             header?: never;
             path: {
                 id: string;

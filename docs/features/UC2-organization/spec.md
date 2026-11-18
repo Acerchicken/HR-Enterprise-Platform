@@ -308,9 +308,9 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Danh mục chức danh (FR-2.6) | Chỉ có `GET /positions` và seed | TV1, tuần 13 |
 | Điều chuyển, quá trình công tác (FR-2.7, FR-2.8) | Chưa có: sửa hồ sơ ghi đè phòng ban, quản lý, không giữ lịch sử | TV1, `feat/employee-transfer` tuần 13 |
 | Gán quản lý đã nghỉ việc | Đã chặn (400, PR #60) | – |
-| Chặn gốc thứ hai (E7), kiểm `headEmployeeId` (E8) | Code chưa có: API chấp nhận cả hai | TV1, `fix/employee-org-integrity` tuần 11 |
+| Chặn gốc thứ hai (E7), kiểm `headEmployeeId` (E8) | Đã có (#84) | Kiểm trưởng thuộc đơn vị: `feat/department-admin-ui` |
 | Giải thể, sáp nhập đơn vị | Đã đưa vào FR-2.10 (ADR-14, mức C): ngừng hoạt động thay cho xóa | TV1, `feat/department-admin-ui` |
-| Loại đơn vị, luật cha con (ADR-14) | Chưa có: cây không phân loại; seed gốc "Ban Giám đốc", các "Khối", chưa có Nhóm | TV1, `fix/employee-org-integrity` (mục 13) |
+| Loại đơn vị, luật cha con (ADR-14) | Đã có (`feat/org-unit-types`): migration, luật cha con, cây có loại, trưởng, số người; chi tiết có `path`; lọc danh bạ gồm đơn vị con; seed Công ty, Trung tâm, Nhóm | – |
 | Audit phòng ban | Đã có | `changedFields` ghi giá trị mới (tên, mã, văn phòng, cha, trưởng đơn vị); không có dữ liệu cá nhân |
 
 ## 13. Thiết kế đề xuất cho phần chưa có

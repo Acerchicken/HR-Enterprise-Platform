@@ -268,13 +268,66 @@ describe('HRHelper API (e2e)', () => {
     expect(update.changedFields.salary).toBe('***');
   });
 
-  it('cây tổ chức có 1 gốc (Ban Giám đốc) và đủ 25 phòng ban', async () => {
+  it('cây tổ chức có 1 gốc loại Công ty, mỗi đơn vị có loại, trưởng, số người (AC-2.2.1, AC-2.2.3)', async () => {
     const tree = (await http.get('/api/v1/departments/tree').set(EMPLOYEE).expect(200)).body;
-    const roots = tree.filter((n: any) => !n.code.startsWith('T-')); // bỏ phòng ban do test tạo
-    expect(roots).toHaveLength(1);
-    expect(roots[0].code).toBe('BOD');
+    expect(tree).toHaveLength(1);
+    expect(tree[0]).toMatchObject({ code: 'HQ', unitType: 'COMPANY' });
+    expect(tree[0].head?.fullName).toBeTruthy();
+    const flatTree = (nodes: any[]): any[] => nodes.flatMap((n) => [n, ...flatTree(n.children)]);
+    const nodes = flatTree(tree);
+    const eng = nodes.find((n) => n.code === 'ENG');
+    expect(eng).toMatchObject({ unitType: 'CENTER', parentId: tree[0].id });
+    expect(nodes.find((n) => n.code === 'LEG')).toMatchObject({ unitType: 'DEPARTMENT', parentId: tree[0].id });
+    expect(nodes.find((n) => n.code === 'ENG-WEB-BE')).toMatchObject({ unitType: 'TEAM' });
+    expect(nodes.find((n) => n.code === 'ENG-WEB').memberCount).toBeGreaterThan(0);
+    // Cây xếp trung tâm trước phòng đứng riêng.
+    const types = tree[0].children.map((c: any) => c.unitType);
+    expect(types.indexOf('DEPARTMENT')).toBeGreaterThan(types.lastIndexOf('CENTER'));
     const flat = (await http.get('/api/v1/departments').set(EMPLOYEE)).body;
-    expect(flat.length).toBeGreaterThanOrEqual(25); // test khác có thể tạo thêm phòng ban
+    expect(flat.length).toBeGreaterThanOrEqual(28); // test khác có thể tạo thêm đơn vị
+  });
+
+  it('chi tiết đơn vị có đường dẫn từ gốc và trưởng (AC-2.9.4)', async () => {
+    const flat = (await http.get('/api/v1/departments').set(EMPLOYEE)).body;
+    const be = flat.find((d: any) => d.code === 'ENG-WEB-BE');
+    const detail = (await http.get(`/api/v1/departments/${be.id}`).set(EMPLOYEE).expect(200)).body;
+    expect(detail).toMatchObject({ unitType: 'TEAM', status: 'ACTIVE' });
+    expect(detail.path.map((p: any) => p.unitType)).toEqual(['COMPANY', 'CENTER', 'DEPARTMENT', 'TEAM']);
+    expect(detail.head?.fullName).toBeTruthy();
+  });
+
+  it('luật loại cha, loại con (AC-2.4.8, AC-2.4.9)', async () => {
+    const flat = (await http.get('/api/v1/departments').set(HR)).body;
+    const id = (c: string) => flat.find((d: any) => d.code === c).id;
+    const code = () => `T-${Math.floor(Math.random() * 1e6)}`;
+    const unit = (name: string, unitType: string, parentId: string) => ({ code: code(), name, office: 'Hà Nội', unitType, parentId });
+    // AC-2.4.9: phòng thẳng dưới công ty.
+    const leg = (await http.post('/api/v1/departments').set(HR).send(unit('Kiểm soát nội bộ test', 'DEPARTMENT', id('HQ'))).expect(201)).body;
+    expect(leg.unitType).toBe('DEPARTMENT');
+    // AC-2.4.8: nhóm dưới trung tâm, trung tâm dưới trung tâm, phòng dưới phòng.
+    for (const [type, parent] of [['TEAM', 'ENG'], ['CENTER', 'ENG'], ['DEPARTMENT', 'ENG-WEB'], ['COMPANY', 'HQ']]) {
+      const res = await http.post('/api/v1/departments').set(HR).send(unit('Sai luật', type, id(parent))).expect(400);
+      expect(res.body.message).toBeTruthy();
+    }
+    // Đổi loại làm đơn vị con sai luật: Trung tâm Công nghệ thành Phòng thì các phòng con nằm dưới phòng.
+    await http.patch(`/api/v1/departments/${id('ENG')}`).set(HR).send({ unitType: 'DEPARTMENT' }).expect(400);
+    // Chuyển nhóm sang dưới phòng khác: hợp lệ; sang dưới trung tâm: sai luật.
+    const team = (await http.post('/api/v1/departments').set(HR).send(unit('Nhóm test', 'TEAM', leg.id)).expect(201)).body;
+    await http.patch(`/api/v1/departments/${team.id}`).set(HR).send({ parentId: id('ENG') }).expect(400);
+    await http.patch(`/api/v1/departments/${team.id}`).set(HR).send({ parentId: id('ENG-PLT') }).expect(200);
+  });
+
+  it('lọc danh bạ theo đơn vị mặc định gồm đơn vị con (AC-2.1.5)', async () => {
+    const flat = (await http.get('/api/v1/departments').set(EMPLOYEE)).body;
+    const eng = flat.find((d: any) => d.code === 'ENG').id;
+    const all = (await http.get(`/api/v1/employees?dept=${eng}&size=1`).set(EMPLOYEE).expect(200)).body.total;
+    const own = (await http.get(`/api/v1/employees?dept=${eng}&includeChildren=false&size=1`).set(EMPLOYEE).expect(200)).body.total;
+    expect(own).toBeGreaterThanOrEqual(1); // giám đốc trung tâm
+    expect(all).toBeGreaterThan(own);
+    const members = (await http.get(`/api/v1/departments/${eng}/members?size=1`).set(EMPLOYEE).expect(200)).body.total;
+    expect(members).toBe(own);
+    const withChildren = (await http.get(`/api/v1/departments/${eng}/members?size=1&includeChildren=true`).set(EMPLOYEE)).body.total;
+    expect(withChildren).toBe(all);
   });
 
   it('thành viên phòng ban và nhân viên trực thuộc', async () => {
@@ -286,8 +339,8 @@ describe('HRHelper API (e2e)', () => {
   });
 
   it('nhân viên không tạo được phòng ban; HR tạo được', async () => {
-    const bod = (await http.get('/api/v1/departments').set(EMPLOYEE)).body.find((d: any) => d.code === 'BOD');
-    const dto = { code: `T-${Date.now() % 100000}`, name: 'Phòng test', office: 'Hà Nội', parentId: bod.id };
+    const hq = (await http.get('/api/v1/departments').set(EMPLOYEE)).body.find((d: any) => d.code === 'HQ');
+    const dto = { code: `T-${Date.now() % 100000}`, name: 'Phòng test', office: 'Hà Nội', unitType: 'DEPARTMENT', parentId: hq.id };
     await http.post('/api/v1/departments').set(EMPLOYEE).send(dto).expect(403);
     await http.post('/api/v1/departments').set(HR).send(dto).expect(201);
   });
@@ -318,11 +371,11 @@ describe('HRHelper API (e2e)', () => {
     });
 
     it('tạo, sửa phòng ban: HR và ADMIN; EMPLOYEE, MANAGER bị chặn; không tạo được vòng lặp', async () => {
-      const bod = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code === 'BOD');
-      const dept = (name: string, parentId: string) => ({ code: code(), name, office: 'Hà Nội', parentId });
-      const a = (await http.post('/api/v1/departments').set(ADMIN).send(dept('Phòng test A', bod.id)).expect(201)).body;
-      await http.post('/api/v1/departments').set(MANAGER).send(dept('Phòng test', bod.id)).expect(403);
-      const b = (await http.post('/api/v1/departments').set(HR).send(dept('Phòng test B', a.id)).expect(201)).body;
+      const hq = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code === 'HQ');
+      const dept = (name: string, parentId: string, unitType = 'DEPARTMENT') => ({ code: code(), name, office: 'Hà Nội', unitType, parentId });
+      const a = (await http.post('/api/v1/departments').set(ADMIN).send(dept('Phòng test A', hq.id)).expect(201)).body;
+      await http.post('/api/v1/departments').set(MANAGER).send(dept('Phòng test', hq.id)).expect(403);
+      const b = (await http.post('/api/v1/departments').set(HR).send(dept('Nhóm test B', a.id, 'TEAM')).expect(201)).body;
 
       await http.patch(`/api/v1/departments/${a.id}`).set(EMPLOYEE).send({ name: 'Đổi tên' }).expect(403);
       await http.patch(`/api/v1/departments/${a.id}`).set(MANAGER).send({ name: 'Đổi tên' }).expect(403);
@@ -339,7 +392,7 @@ describe('HRHelper API (e2e)', () => {
     });
 
     it('HR tạo nhân viên kèm quản lý và trường nhạy cảm: 201, audit chỉ ghi tên trường nhạy cảm (FR-1.5)', async () => {
-      const dept = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code !== 'BOD');
+      const dept = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code !== 'HQ');
       const pos = (await http.get('/api/v1/positions').set(HR)).body.find((p: any) => p.code !== 'CEO');
       const code = `E9${String(Date.now() % 10000).padStart(4, '0')}`;
       const res = await http
@@ -435,7 +488,7 @@ describe('HRHelper API (e2e)', () => {
     });
 
     it('tạo nhân viên không phải CEO mà thiếu quản lý → 400; tạo CEO thứ hai → 400', async () => {
-      const dept = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code !== 'BOD');
+      const dept = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code !== 'HQ');
       const positions = (await http.get('/api/v1/positions').set(HR)).body;
       const staff = positions.find((p: any) => p.code !== 'CEO');
       const base = { fullName: 'Kiểm Thử Quản Lý', departmentId: dept.id, hireDate: '2026-11-01' };
@@ -632,7 +685,7 @@ describe('HRHelper API (e2e)', () => {
       await http.post(`/api/v1/documents/${d.id}/restore`).set(HR).expect(200);
       await http.get(`/api/v1/documents/${d.id}`).set(EMPLOYEE).expect(200);
 
-      const other = depts.find((x: any) => x.id !== me.departmentId && x.parentId !== me.departmentId && x.code !== 'BOD');
+      const other = depts.find((x: any) => x.id !== me.departmentId && x.parentId !== me.departmentId && x.code !== 'HQ');
       const before = (await http.get(`/api/v1/employees/${me.id}`).set(HR)).body;
       await http.patch(`/api/v1/employees/${me.id}`).set(HR).send({ departmentId: other.id, version: before.version }).expect(200);
       try {
@@ -751,17 +804,21 @@ describe('HRHelper API (e2e)', () => {
 
     it('cây tổ chức chỉ một gốc; trưởng đơn vị phải đang làm việc (UC2 AC-2.4.6, AC-2.4.7)', async () => {
       const depts = (await http.get('/api/v1/departments').set(HR)).body;
-      const bod = depts.find((d: any) => d.code === 'BOD');
-      const child = depts.find((d: any) => d.parentId === bod.id);
+      const hq = depts.find((d: any) => d.code === 'HQ');
+      const child = depts.find((d: any) => d.parentId === hq.id);
       const code = () => `T-${Math.floor(Math.random() * 1e5)}`;
-      await http.post('/api/v1/departments').set(HR).send({ code: code(), name: 'Gốc thứ hai', office: 'Hà Nội' }).expect(400);
+      await http
+        .post('/api/v1/departments')
+        .set(HR)
+        .send({ code: code(), name: 'Gốc thứ hai', office: 'Hà Nội', unitType: 'COMPANY' })
+        .expect(400);
       await http.patch(`/api/v1/departments/${child.id}`).set(HR).send({ parentId: null }).expect(400);
       const { DataSource } = await import('typeorm');
       const [{ id: leaver }] = await app.get(DataSource).query(`SELECT id FROM employee.employee WHERE status = 'TERMINATED' LIMIT 1`);
       await http
         .post('/api/v1/departments')
         .set(HR)
-        .send({ code: code(), name: 'Trưởng đã nghỉ', office: 'Hà Nội', parentId: bod.id, headEmployeeId: leaver })
+        .send({ code: code(), name: 'Trưởng đã nghỉ', office: 'Hà Nội', unitType: 'DEPARTMENT', parentId: hq.id, headEmployeeId: leaver })
         .expect(400);
     });
   });

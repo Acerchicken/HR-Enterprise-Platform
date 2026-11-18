@@ -208,11 +208,23 @@ export interface Page<T> {
   total: number;
 }
 
+export type UnitType = 'COMPANY' | 'CENTER' | 'DEPARTMENT' | 'TEAM';
+
+/** Tên loại đơn vị và vai trò trưởng theo loại (ADR-14). */
+export const UNIT_LABEL: Record<UnitType, { name: string; head: string }> = {
+  COMPANY: { name: 'Công ty', head: 'Tổng Giám đốc' },
+  CENTER: { name: 'Trung tâm', head: 'Giám đốc trung tâm' },
+  DEPARTMENT: { name: 'Phòng', head: 'Trưởng phòng' },
+  TEAM: { name: 'Nhóm', head: 'Trưởng nhóm' },
+};
+
 export interface Department {
   id: string;
   code: string;
   name: string;
   office: string;
+  unitType: UnitType;
+  status: 'ACTIVE' | 'INACTIVE';
   parentId: string | null;
   headEmployeeId: string | null;
 }
@@ -223,7 +235,9 @@ export interface Position {
   title: string;
 }
 
-export interface DepartmentNode extends Department {
+export interface DepartmentNode extends Omit<Department, 'status'> {
+  head: { id: string; fullName: string } | null;
+  memberCount: number;
   children: DepartmentNode[];
 }
 

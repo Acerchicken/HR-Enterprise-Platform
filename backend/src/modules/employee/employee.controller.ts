@@ -1,7 +1,6 @@
 import { Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiExtraModels, ApiOkResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { Request } from 'express';
-import { PageQuery } from '../../common/pagination';
 import { RateLimit } from '../../common/rate-limit/rate-limit.interceptor';
 import { RateLimitService } from '../../common/rate-limit/rate-limit.service';
 import { CurrentUser, Roles } from '../identity/auth.decorators';
@@ -11,6 +10,7 @@ import {
   BankAccountSection,
   CreateEmployeeDto,
   DirectoryQuery,
+  MembersQuery,
   MeResponse,
   PersonalSection,
   ProfileQuery,
@@ -52,7 +52,9 @@ export class EmployeeController {
   async directory(@Query() q: DirectoryQuery, @CurrentUser() user: AuthUser) {
     // NFR-5.21: tìm kiếm có giới hạn riêng 20 lượt/phút (ô tìm đồng nghiệp gọi API này).
     if (q.q) await this.limiter.consume(user.userId, 'search');
-    return this.employees.directory(q);
+    // AC-2.1.5: lọc theo đơn vị mặc định gồm cả đơn vị con cháu.
+    const dept = q.dept && q.includeChildren !== false ? await this.org.descendantIds(q.dept) : q.dept;
+    return this.employees.directory({ q: q.q, dept, page: q.page, size: q.size });
   }
 
   @Post('employees')
@@ -131,10 +133,11 @@ export class EmployeeController {
   }
 
   @Get('departments/:id/members')
-  async members(@Param('id', ParseUUIDPipe) id: string, @Query() q: PageQuery) {
+  async members(@Param('id', ParseUUIDPipe) id: string, @Query() q: MembersQuery) {
     await this.org.getDepartment(id).catch(() => {
       throw new NotFoundException('Không tìm thấy phòng ban');
     });
-    return this.employees.directory({ dept: id, page: q.page, size: q.size });
+    const dept = q.includeChildren ? await this.org.descendantIds(id) : id;
+    return this.employees.directory({ dept, page: q.page, size: q.size });
   }
 }
