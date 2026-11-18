@@ -1450,5 +1450,114 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
   <div class="note" style="top:690px;left:640px;max-width:360px">Chỉ xem, không có nút sửa hay xóa. Không bao giờ hiện giá trị CCCD, số tài khoản, lương, lý do nghỉ (AC-7.1.3). Nút sao chép traceId để đối chiếu log.</div>
 </div>
 
+<!-- ================= UC8: Đăng nhập và tài khoản ================= -->
+<div class="frame desk" id="uc8-account" style="height:900px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>9</i></span><span class="av alt2">HL</span></div>
+  </div>
+  <div class="page" style="opacity:.5"><div class="crumb">Trang chủ › Danh bạ</div><h1>Danh bạ</h1></div>
+  <div class="dim"></div>
+  <div class="drawer">
+    <div class="ph" style="text-align:left;padding:14px 20px">
+      <div class="pbar"><svg class="i"><use href="#back"/></svg><span>Trần Thị Mai · 100318</span><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    </div>
+    <span class="gh">Công việc</span>
+    <div class="blk">
+      <div class="row"><svg class="i ri"><use href="#briefcase"/></svg><span class="t">Thông tin công việc</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+      <div class="row"><svg class="i ri"><use href="#clock"/></svg><span class="t">Quá trình công tác</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+      <div class="row" style="background:var(--soft1)"><svg class="i ri"><use href="#lock"/></svg><span class="t">Tài khoản đăng nhập</span><span class="v"><span class="badge w">Chờ kích hoạt</span><svg class="i ch" style="transform:rotate(90deg)"><use href="#chev"/></svg></span></div>
+    </div>
+    <div class="blk" style="padding:6px 16px 14px">
+      <div class="kv"><span class="k">Trạng thái</span><span class="badge w">Chờ kích hoạt</span><span class="mut" style="font-size:13px">Đã gửi thư, người này chưa đăng nhập lần nào</span></div>
+      <div class="kv"><span class="k">Email đăng nhập</span><span>mai.tran@hrhelper.demo</span></div>
+      <div class="kv"><span class="k">Gửi lời mời lúc</span><span>16/11/2026 09:12</span></div>
+      <div class="kv"><span class="k">Đăng nhập gần nhất</span><span class="mut">Chưa đăng nhập</span></div>
+      <div style="display:flex;gap:8px;margin-top:12px"><span class="btn o"><svg class="i"><use href="#send"/></svg>Gửi lại lời mời</span></div>
+      <div class="alert i"><svg class="i"><use href="#info"/></svg><span>Mật khẩu, MFA do trang đăng nhập quản lý. HR không thấy, không đặt mật khẩu cho nhân viên.</span></div>
+    </div>
+    <span class="gh">Các trạng thái khác</span>
+    <div class="blk" style="padding:6px 16px">
+      <div class="kv"><span class="k" style="width:150px"><span class="badge g">Chưa có tài khoản</span></span><span>Nút <b>Gửi lời mời</b> (nhân viên tạo trước khi có UC8)</span></div>
+      <div class="kv"><span class="k" style="width:150px"><span class="badge p">Đang tạo</span></span><span>Không có nút; tự chuyển trong 1 phút</span></div>
+      <div class="kv"><span class="k" style="width:150px"><span class="badge ok">Đang dùng</span></span><span>Hiện lần đăng nhập gần nhất; không có nút</span></div>
+      <div class="kv"><span class="k" style="width:150px"><span class="badge g">Đã khóa</span></span><span>Nhân viên đã nghỉ việc; mở lại bằng cách khôi phục hồ sơ</span></div>
+      <div class="kv"><span class="k" style="width:150px"><span class="badge no">Lỗi</span></span><span>"Không kết nối được trang đăng nhập" + nút <b>Gửi lại lời mời</b></span></div>
+    </div>
+  </div>
+  <div class="note" style="top:120px;left:40px;max-width:440px">Chỉ HR thấy dòng "Tài khoản đăng nhập" (AC-8.6.1); người khác xem hồ sơ không thấy. Bấm dòng mới gọi <code>GET /employees/{id}/account</code>.</div>
+  <div class="note" style="top:300px;left:40px;max-width:440px">Bấm "Gửi lại lời mời": <code>POST …/account/invite</code>, trả 202, trạng thái thành "Đang tạo" rồi "Chờ kích hoạt". Nút chỉ có ở Chờ kích hoạt, Lỗi, Chưa có tài khoản (AC-8.6.2, AC-8.6.4). Mỗi lần bấm có audit.</div>
+  <div class="note" style="top:500px;left:40px;max-width:440px">Lỗi chỉ hiện câu dễ hiểu theo mã lỗi, không hiện thông báo gốc của IdP.</div>
+</div>
+
+<div class="frame desk" id="uc8-roles" style="height:760px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>2</i></span><span class="av alt">QT</span></div>
+  </div>
+  <div class="page">
+    <div class="crumb">Trang chủ › Quản trị › Phân quyền</div>
+    <div class="hdr"><h1>Phân quyền</h1><div class="acts"><span class="btn p"><svg class="i"><use href="#plus"/></svg>Cấp vai trò</span></div></div>
+    <div class="fbar"><div class="sbig" style="width:340px;height:40px;font-size:14px"><svg class="i"><use href="#search"/></svg>Tìm tên, email…</div><div class="chips"><span class="chip on">Tất cả (7)</span><span class="chip">HR (5)</span><span class="chip">ADMIN (2)</span></div></div>
+    <div class="box">
+      <table class="tbl">
+        <tr><th>Nhân viên</th><th>Đơn vị</th><th>Vai trò</th><th>Người cấp</th><th>Ngày cấp</th><th>Lý do</th><th></th></tr>
+        <tr><td><div class="who"><span class="av sm alt2">HL</span>Lê Thu Hà</div></td><td>Phòng Nhân sự</td><td><span class="badge g">HR</span></td><td>Phạm Quang Tùng</td><td>18/11/2026</td><td>Chuyên viên C&amp;B mới</td><td><span class="btn d sm">Thu hồi</span></td></tr>
+        <tr><td><div class="who"><span class="av sm">NH</span>Ngô Thị Hạnh</div></td><td>Phòng Nhân sự</td><td><span class="badge g">HR</span></td><td class="mut">–</td><td class="mut">trước 18/11</td><td class="mut">–</td><td><span class="btn d sm">Thu hồi</span></td></tr>
+        <tr><td><div class="who"><span class="av sm alt">QT</span>Phạm Quang Tùng <span class="mut">(bạn)</span></div></td><td>Phòng CNTT nội bộ</td><td><span class="badge p">ADMIN</span></td><td class="mut">seed</td><td>01/11/2026</td><td>ADMIN đầu tiên</td><td><span class="btn dis sm">Thu hồi</span></td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="dim"></div>
+  <div class="modal" style="top:250px;left:560px;width:520px">
+    <div class="mh">Cấp vai trò<span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    <div class="mb">
+      <label class="l">Nhân viên *</label>
+      <div class="input f"><span class="av xs" style="margin-right:8px">VD</span>Vũ Đức Duy · Phòng Nhân sự<span class="dn">▾</span></div>
+      <label class="l">Vai trò *</label>
+      <div class="seg"><span class="on">HR</span><span>ADMIN</span></div>
+      <label class="l">Lý do * (5 – 200 ký tự)</label>
+      <div class="input" style="height:64px;align-items:flex-start;padding-top:10px">Chuyển sang mảng tuyển dụng từ 18/11</div>
+      <div class="alert w"><svg class="i"><use href="#alert"/></svg><span>Người này có quyền HR ngay ở thao tác kế tiếp. Lần đăng nhập sau sẽ phải đăng ký mã xác thực hai lớp.</span></div>
+    </div>
+    <div class="mf"><span class="btn g">Hủy</span><span class="btn p">Cấp vai trò</span></div>
+  </div>
+  <div class="note" style="top:470px;left:40px;max-width:480px">Chỉ ADMIN thấy menu "Quản trị" (AC-8.7.5); HR cũng bị 403. Ô chọn nhân viên tìm ở mức danh bạ, chỉ người đang làm việc có tài khoản. Không có <code>EMPLOYEE</code>, <code>MANAGER</code> để chọn: hai vai trò này tự suy ra.</div>
+  <div class="note" style="top:640px;left:40px;max-width:480px">Không tự thu hồi, tự cấp cho mình: nút bị khóa (API vẫn trả 403). Thu hồi mở hộp nhập lý do; ADMIN cuối cùng thì báo "Phải còn ít nhất một ADMIN" (409). Dòng có từ trước UC8 hiện "–".</div>
+</div>
+
+<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+<div class="frame desk" id="uc8-session" style="width:640px;height:520px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="navr" style="margin-left:auto"><span class="av">AN</span></div>
+  </div>
+  <div class="page" style="opacity:.5"><div class="crumb">Trang chủ › Nghỉ phép</div><h1>Đơn nghỉ của tôi</h1></div>
+  <div class="dim"></div>
+  <div class="modal" style="top:110px;left:110px;width:420px">
+    <div class="mh">Phiên sắp hết</div>
+    <div class="mb">
+      <div style="font-size:14.5px;line-height:1.5">Bạn không thao tác 29 phút. Hệ thống sẽ đăng xuất sau <b style="color:var(--warn)">0:47</b> để bảo vệ dữ liệu.</div>
+    </div>
+    <div class="mf"><span class="btn g">Đăng xuất</span><span class="btn p">Tiếp tục làm việc</span></div>
+  </div>
+  <div class="note" style="top:330px;left:40px;max-width:560px">Thời gian lấy từ <code>VITE_IDLE_TIMEOUT_MINUTES</code> (mặc định 30). Hộp hiện ở mọi tab; bấm ở một tab thì tab khác cũng đóng. Hết giờ: xóa token, đăng xuất trên IdP, mở trang "Phiên đã hết" có nút "Đăng nhập lại" (AC-8.1.6). Dữ liệu form chưa lưu sẽ mất; form dài nên lưu nháp.</div>
+</div>
+
+<div class="frame desk" id="uc8-login-error" style="width:640px;height:520px;background:var(--bg)">
+  <div style="position:absolute;top:70px;left:120px;width:400px;background:#fff;border-radius:16px;box-shadow:0 4px 24px #0f172a14;padding:28px;text-align:center">
+    <div class="logo" style="justify-content:center;margin-bottom:18px"><b>H</b>HRHelper</div>
+    <span style="width:52px;height:52px;border-radius:50%;background:#FEF3F2;color:var(--danger);display:inline-grid;place-items:center"><svg class="i" style="width:26px;height:26px"><use href="#alert"/></svg></span>
+    <h2 style="font-size:19px;margin:14px 0 6px">Đăng nhập không thành công</h2>
+    <div class="mut" style="font-size:14px;line-height:1.5">Phiên đăng nhập đã hết hạn hoặc bị gián đoạn. Hãy thử lại.</div>
+    <div style="margin-top:20px"><span class="btn p" style="width:100%">Thử lại</span></div>
+    <div class="mut" style="font-size:12px;margin-top:12px">Mã tra cứu: <span class="mono">a91b…0d77</span></div>
+  </div>
+  <div class="note" style="top:400px;left:40px;max-width:560px">Trang <code>/callback</code> khi <code>state</code> sai, thiếu <code>code</code> hoặc IdP trả <code>error</code> (E1, AC-8.1.11). Không lưu token, không hiện chi tiết kỹ thuật. "Thử lại" bắt đầu lại luồng đăng nhập.</div>
+</div>
+</div>
+
 </body>
 </html>

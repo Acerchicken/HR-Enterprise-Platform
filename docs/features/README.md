@@ -37,7 +37,7 @@ UC8 "Đăng nhập và tài khoản" ([ADR-17](../architecture/adr/ADR-17-authen
 | UC5 – Kho tài liệu | [requirements](UC5-document-repository/requirements.md) | [spec](UC5-document-repository/spec.md) | [deploy](UC5-document-repository/deploy.md) | [test](UC5-document-repository/test.md) | FR-5.1 → 5.3 | Đã có API; chưa có giao diện; staging chưa có bucket |
 | UC6 – Tra cứu chung và trợ lý | [requirements](UC6-self-service-search/requirements.md) | [spec](UC6-self-service-search/spec.md) | [deploy](UC6-self-service-search/deploy.md) | [test](UC6-self-service-search/test.md) | FR-6.1 → 6.3 | Tìm đồng nghiệp đã có; tìm tài liệu, trợ lý chưa có |
 | UC7 – Lịch sử thao tác | [requirements](UC7-audit-log/requirements.md) | [spec](UC7-audit-log/spec.md) | [deploy](UC7-audit-log/deploy.md) | [test](UC7-audit-log/test.md) | FR-7.1 → 7.3 | Ghi audit, API có; màn hình tra cứu chưa có |
-| UC8 – Đăng nhập và tài khoản (thêm 17/11) | [requirements](UC8-authentication/requirements.md) | [spec](UC8-authentication/spec.md) | [deploy](UC8-authentication/deploy.md) | [test](UC8-authentication/test.md) | FR-8.1 → 8.6 | Đăng nhập local đã có; staging, quên mật khẩu, MFA, tạo và khóa tài khoản chưa có |
+| UC8 – Đăng nhập và tài khoản (thêm 17/11) | [requirements](UC8-authentication/requirements.md) | [spec](UC8-authentication/spec.md) | [deploy](UC8-authentication/deploy.md) | [test](UC8-authentication/test.md) | FR-8.1 → 8.7 | Đăng nhập local đã có; thiết kế đủ (sơ đồ luồng, bản vẽ, API) 18/11; code tuần 11 theo 3 nhánh `feat/uc8-*` |
 
 Lịch làm phần còn lại: [kế hoạch hoàn thành từng chức năng](../progress/ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13).
 

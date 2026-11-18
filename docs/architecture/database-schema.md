@@ -132,6 +132,11 @@ erDiagram
 | `role` | varchar(20) | PK (2/2), CHECK `EMPLOYEE`, `MANAGER`, `HR`, `ADMIN` | Một tài khoản có nhiều vai trò, mỗi vai trò một dòng |
 | `scope_department_id` | uuid | ref → `org.department.id` | Dự phòng cho vai trò giới hạn theo phòng ban; **hiện code chưa dùng** |
 
+**Kế hoạch tuần 11** ([UC8 spec mục 13](../features/UC8-authentication/spec.md#13-thiết-kế-đề-xuất-cho-phần-chưa-có), ADR-18):
+migration `RoleAssignmentAudit` thêm `granted_by` (ref `iam.user_account.id`), `granted_at` (NN, mặc định `now()`), `reason`
+varchar(200); chỉ `HR`, `ADMIN` được ghi tay. `user_account` thêm `idp_status`, `invited_at`, `idp_synced_at`, `idp_error`
+(migration `AccountLifecycle`). Bảng này cập nhật khi PR code merge.
+
 ### `iam.rate_limit_counter`
 
 Bộ đếm giới hạn tần suất theo **ngày** (NFR-5.21, UC1 FR-1.14). Giới hạn theo phút, giờ đếm trong bộ nhớ từng instance; giới
