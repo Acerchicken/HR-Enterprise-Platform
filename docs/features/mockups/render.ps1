@@ -1,4 +1,5 @@
 # Render each frame of mockups.html to a PNG with headless Microsoft Edge (nothing to install).
+# Shared screens go to this folder, UC screens to docs/features/UCn-*/mockups/.
 # Run from the repo root:  powershell -ExecutionPolicy Bypass -File docs/features/mockups/render.ps1
 $ErrorActionPreference = 'Stop'
 $dir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -37,9 +38,16 @@ $frames = [ordered]@{
   'uc56-mobile' = '390,844'
   'uc7-audit' = '1280,820'
 }
+# Ảnh màn hình chung ở thư mục này; ảnh riêng của từng UC ở docs/features/UCn-*/mockups/.
+$ucDirs = @{ '2' = 'UC2-organization'; '3' = 'UC3-create-leave-request'; '4' = 'UC4-approve-leave-request'
+  '5' = 'UC5-document-repository'; '56' = 'UC5-document-repository'; '6' = 'UC6-self-service-search'; '7' = 'UC7-audit-log' }
 $profile = Join-Path $env:TEMP ('hrh-mock-' + [guid]::NewGuid())
 foreach ($id in $frames.Keys) {
-  $out = Join-Path $dir "$id.png"
+  $uc = $null
+  if ($id -match '^(profile-|subpage-)') { $uc = 'UC1-employee-profile' }
+  elseif ($id -match '^uc(\d+)-') { $uc = $ucDirs[$Matches[1]] }
+  $outDir = if ($uc) { Join-Path (Split-Path -Parent $dir) "$uc\mockups" } else { $dir }
+  $out = Join-Path $outDir "$id.png"
   & $edge --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 "--user-data-dir=$profile" `
     "--window-size=$($frames[$id])" "--screenshot=$out" "$url`?only=$id" | Out-Null
   Start-Sleep -Milliseconds 300

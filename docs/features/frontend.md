@@ -268,6 +268,9 @@ Bản vẽ để duyệt bố cục trước khi code, không phải ảnh chụ
 Nguồn là [`mockups/mockups.html`](mockups/mockups.html) (mở bằng trình duyệt là xem được); sửa file đó rồi xuất lại ảnh PNG
 bằng `powershell -ExecutionPolicy Bypass -File docs/features/mockups/render.ps1` (Windows, dùng Edge) hoặc
 `node docs/features/mockups/render.js` (máy có Playwright). Ô vàng là ghi chú cho người đọc, không có trong giao diện thật.
+Ảnh của màn hình chung (trang chủ, tìm đồng nghiệp, thẻ xem nhanh, Việc cần duyệt) nằm ở `docs/features/mockups/`; ảnh riêng
+của từng UC nằm ở thư mục `mockups/` trong thư mục UC đó (ví dụ `UC2-organization/mockups/`). Hai lệnh trên tự ghi ảnh vào
+đúng thư mục theo mã khung: `profile-*`, `subpage-*` vào UC1, `ucN-*` vào UC N, `uc56-*` vào UC5.
 Bản vẽ theo mục 2 → 7 ở trên và [UC1 spec mục 9.1](UC1-employee-profile/spec.md#91-bố-cục-trang-hồ-sơ); chỗ nào bản vẽ khác
 chữ thì chữ đúng.
 
@@ -298,13 +301,13 @@ Chỉ có nhóm Đồng nghiệp; tài liệu tra ở trang "Tra cứu tài li�
 
 Ngăn phải 720 px. Hai nhóm xếp thành hai cột để đỡ cuộn; trên điện thoại là một cột như ảnh mẫu.
 
-![Popup hồ sơ dạng ngăn bên phải](mockups/profile-desktop.png)
+![Popup hồ sơ dạng ngăn bên phải](UC1-employee-profile/mockups/profile-desktop.png)
 
 ### 10.6 Hồ sơ trên điện thoại, trang con và người khác xem
 
 | Hồ sơ của mình (toàn màn hình) | Trang con "Thông tin cá nhân", gửi yêu cầu sửa | Đồng nghiệp xem (mức danh bạ) |
 |---|---|---|
-| ![Hồ sơ trên điện thoại](mockups/profile-mobile.png) | ![Trang con và form gửi yêu cầu](mockups/subpage-mobile.png) | ![Đồng nghiệp xem hồ sơ](mockups/profile-directory-view.png) |
+| ![Hồ sơ trên điện thoại](UC1-employee-profile/mockups/profile-mobile.png) | ![Trang con và form gửi yêu cầu](UC1-employee-profile/mockups/subpage-mobile.png) | ![Đồng nghiệp xem hồ sơ](UC1-employee-profile/mockups/profile-directory-view.png) |
 
 ### 10.7 Trang "Việc cần duyệt" của HR, tab "Sửa hồ sơ" (mục 2.4, UC1 FR-1.9)
 

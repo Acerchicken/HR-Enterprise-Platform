@@ -175,29 +175,29 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 
 **Danh bạ `/directory` (4.1)**
 
-![Danh bạ có ô tìm, lọc phòng ban, phân trang](../mockups/uc2-directory.png)
+![Danh bạ có ô tìm, lọc phòng ban, phân trang](mockups/uc2-directory.png)
 
 **Sơ đồ tổ chức `/org/{id}` (4.2, FR-2.9): cây bên trái, phòng ban đang chọn bên phải, trưởng phòng và phó phòng lên đầu**
 
-![Sơ đồ tổ chức](../mockups/uc2-org.png)
+![Sơ đồ tổ chức](mockups/uc2-org.png)
 
 **HR sửa phòng ban, gán trưởng phòng, phó phòng (4.3, 4.5)**
 
-![Hộp thoại sửa phòng ban](../mockups/uc2-dept-edit.png)
+![Hộp thoại sửa phòng ban](mockups/uc2-dept-edit.png)
 
 **HR điều chuyển trong popup hồ sơ (4.4, FR-2.7)**
 
-![Form điều chuyển có ngày hiệu lực](../mockups/uc2-transfer.png)
+![Form điều chuyển có ngày hiệu lực](mockups/uc2-transfer.png)
 
 **Danh mục chức danh `/org/positions` (FR-2.6)**
 
-![Danh mục chức danh](../mockups/uc2-positions.png)
+![Danh mục chức danh](mockups/uc2-positions.png)
 
 **Trên điện thoại: phòng ban theo từng cấp; mục "Quá trình công tác" trong hồ sơ (FR-2.8)**
 
 | Phòng ban | Quá trình công tác |
 |---|---|
-| ![Phòng ban trên điện thoại](../mockups/uc2-org-mobile.png) | ![Quá trình công tác](../mockups/uc2-career-mobile.png) |
+| ![Phòng ban trên điện thoại](mockups/uc2-org-mobile.png) | ![Quá trình công tác](mockups/uc2-career-mobile.png) |
 
 ## 10. Yêu cầu phi chức năng liên quan
 
