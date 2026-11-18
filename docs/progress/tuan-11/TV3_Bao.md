@@ -34,6 +34,13 @@ trên #74 hoặc mở issue. Báo cáo ghi "TV3 review", không ghi là người
 Như [tuần 10 mục 5](../tuan-10/TV3_Bao.md): tắt tự đăng ký, chính sách mật khẩu, khóa sau 5 lần sai, thời hạn token và phiên cho
 Cognito (`validate`, `plan`) và Keycloak local. Kiểm tra 4 tài khoản demo vẫn đăng nhập được, ghi kết quả vào mô tả PR.
 
+**Thêm 17/11 ([ADR-17](../../architecture/adr/ADR-17-authentication.md), [UC8 deploy](../../features/UC8-authentication/deploy.md) mục 3):**
+
+- Thêm `/callback` vào `callback_urls` của Cognito (localhost và CloudFront); thiếu thì staging lỗi `redirect_mismatch` (AC-8.1.2).
+- `explicit_auth_flows` chỉ giữ `ALLOW_REFRESH_TOKEN_AUTH` (AC-8.1.8); `user_pool_tier = "ESSENTIALS"`.
+- Quên mật khẩu (AC-8.2.x): Cognito `account_recovery_setting` (`verified_email`) và `email_configuration` qua SES; Keycloak
+  `resetPasswordAllowed: true`, SMTP Mailpit.
+
 ### 3. `infra/profile-files` (UC1)
 
 Phần file hồ sơ đã có trong code (#87). Bucket hồ sơ staging (chặn public, mã hóa), lifecycle xóa file đã xóa mềm sau 30 ngày,
@@ -44,6 +51,9 @@ viết. Chỉ `fmt`, `validate`, `plan`; ghi dòng `Plan:` vào mô tả PR.
 
 Keycloak: luồng đăng nhập bắt OTP với role `hr`, `admin`. Cognito: bật TOTP, MFA bắt buộc cho HR, ADMIN. Ghi cách đăng ký OTP cho
 tài khoản demo vào `infra/README.md`.
+
+**Sửa 17/11 (ADR-17 mục 2):** Cognito không bắt MFA theo nhóm, nên đặt `mfa_configuration = "ON"` (bắt buộc mọi tài khoản), chỉ
+TOTP, không SMS. Cognito chỉ cho đặt `ON` lúc tạo pool: phải có trong Terraform trước lần `apply` đầu (T3 24/11). Tiêu chí: AC-8.5.x.
 
 ### 5. `infra/service-extraction` (ADR-15)
 

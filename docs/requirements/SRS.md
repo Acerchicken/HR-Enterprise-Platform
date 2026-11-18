@@ -3,8 +3,8 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform – môn Cloud Application Development |
-| Phiên bản tài liệu | 1.2 |
-| Ngày | 13/11/2026 (tuần 10) |
+| Phiên bản tài liệu | 1.3 |
+| Ngày | 17/11/2026 (tuần 11) |
 | Người soạn | TV1 (Dương), tách từ BRD 1.0 |
 | Người review | TV2 (Thanh) nghiệp vụ, TV4 (Duy) khả năng kiểm thử |
 | Trạng thái | Bản nháp, chờ review trên PR |
@@ -15,6 +15,7 @@
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
+| 1.3 | 17/11/2026 | Thêm UC8 – Đăng nhập và tài khoản (mục 4.8, FR-8.1 → FR-8.6) theo [ADR-17](../architecture/adr/ADR-17-authentication.md); cập nhật trạng thái NFR-5.1 → 5.10; chốt câu hỏi số 2 (MFA) ở mục 8 |
 | 1.2 | 13/11/2026 | Thêm tài liệu theo tính năng UC1 → UC7 trong `docs/features/`: mỗi tính năng có `requirements.md` (user story, tiêu chí chấp nhận), `spec.md` (đặc tả use case), `deploy.md`, `test.md`; link từ mục 4 |
 | 1.1 | 13/11/2026 | Tách rõ FR và NFR (định nghĩa, tiêu đề mục, bảng phân biệt). Viết lại mục 6: 11 nhóm NFR, 74 yêu cầu có ngưỡng đo, cách kiểm chứng và trạng thái; bảo mật chia 5 phần (đăng nhập và phiên, phân quyền, bảo vệ dữ liệu, bảo mật ứng dụng web, secret); thêm SLI/SLO/SLA (6.13) và kịch bản lỗi (6.14) |
 | 1.0 | 12/11/2026 | Tách từ BRD 1.0: yêu cầu chức năng (BRD mục 7), dữ liệu (mục 9), phi chức năng (mục 10), ma trận truy vết (mục 14). Thêm mô tả tổng quan, giao diện ngoài, phương pháp kiểm chứng và cột thiết kế trong ma trận truy vết. Nội dung yêu cầu giữ nguyên |
@@ -23,7 +24,7 @@
 
 | Loại | Trả lời câu hỏi | Ví dụ | Mã | Nằm ở |
 |---|---|---|---|---|
-| **FR** – yêu cầu chức năng (Functional Requirement) | Hệ thống **làm gì**? | "Nhân viên tạo đơn nghỉ" | `FR-x.y`: x là số use case (UC1 → UC7), y là số thứ tự trong use case. Ví dụ FR-3.2 là yêu cầu thứ 2 của UC3 | [Mục 4](#4-yêu-cầu-chức-năng-fr) |
+| **FR** – yêu cầu chức năng (Functional Requirement) | Hệ thống **làm gì**? | "Nhân viên tạo đơn nghỉ" | `FR-x.y`: x là số use case (UC1 → UC8), y là số thứ tự trong use case. Ví dụ FR-3.2 là yêu cầu thứ 2 của UC3 | [Mục 4](#4-yêu-cầu-chức-năng-fr) |
 | **NFR** – yêu cầu phi chức năng (Non-Functional Requirement) | Hệ thống làm **tốt đến mức nào**? | "Tạo đơn phản hồi dưới 500 ms", "Khóa tài khoản sau 5 lần sai mật khẩu" | `NFR-n` là nhóm chất lượng, `NFR-n.m` là một yêu cầu trong nhóm. Ví dụ NFR-5.3 là yêu cầu thứ 3 của nhóm bảo mật | [Mục 6](#6-yêu-cầu-phi-chức-năng-nfr) |
 
 Mã khác: `MT-n` là mục tiêu kinh doanh (trong BRD), `BR-nn` là business rule chi tiết trong
@@ -65,7 +66,7 @@ phạm vi (tính lương, chấm công, tuyển dụng, ứng dụng di động,
 - Thuật ngữ nghiệp vụ: [BRD mục 16](../business/BRD.md#16-thuật-ngữ).
 - Business rule nghỉ phép: [`leave-rules.md`](../business/leave-rules.md); loại phép, ngày lễ:
   [`leave-types-holidays.md`](../business/leave-types-holidays.md); kho tài liệu: [`document-rules.md`](../business/document-rules.md).
-- Phân quyền từng API: [ma trận phân quyền](../security/access-control-matrix.md); mối đe dọa: [threat model](../security/threat-model.md).
+- Mô hình phân quyền: [authorization.md](../security/authorization.md) (ADR-18). Phân quyền từng API: [ma trận phân quyền](../security/access-control-matrix.md); mối đe dọa: [threat model](../security/threat-model.md).
 - Quy ước API: [`CONVENTIONS.md` mục 4](../CONVENTIONS.md#4-api).
 
 ## 2. Mô tả tổng quan
@@ -88,6 +89,7 @@ LLM API (trợ lý, tuần 12) và hệ thống Payroll (ngoài phạm vi versio
 | UC5 Kho tài liệu | Đăng tài liệu theo phạm vi xem, phiên bản | FR-5.1 → FR-5.3 |
 | UC6 Tra cứu chung và trợ lý | Ô tìm đồng nghiệp trên nav bar; trang "Tra cứu tài liệu" gồm tìm trong nội dung tài liệu và trợ lý chính sách | FR-6.1 → FR-6.3 |
 | UC7 Lịch sử thao tác | Audit append-only, tra cứu audit | FR-7.1 → FR-7.3 |
+| UC8 Đăng nhập và tài khoản | Đăng nhập, đăng xuất qua identity provider, quên mật khẩu, MFA, tạo và khóa tài khoản theo hồ sơ | FR-8.1 → FR-8.6 |
 
 ### 2.3 Lớp người dùng
 
@@ -246,7 +248,20 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-7.2 | Audit chỉ được thêm, không ai sửa/xóa | M | Lệnh UPDATE/DELETE trên bảng audit bị database chặn | Đã có |
 | FR-7.3 | HR, ADMIN tra cứu audit theo đối tượng, người thực hiện, khoảng thời gian | M | Vai trò khác trả 403 | Một phần: API có, giao diện tuần 10 |
 
-**Tổng hợp FR:** 34 yêu cầu chức năng; 23 đã có, 4 một phần (API có, chưa có giao diện), 7 theo kế hoạch tuần 10–12 (cập nhật 10/11).
+### 4.8 UC8 – Đăng nhập và tài khoản (FR-8.x)
+
+Đặc tả: [features/UC8-authentication/spec.md](../features/UC8-authentication/spec.md) (yêu cầu kèm tiêu chí: [requirements.md](../features/UC8-authentication/requirements.md)). Quyết định: [ADR-17](../architecture/adr/ADR-17-authentication.md). Thêm ngày 17/11/2026; yêu cầu bảo mật dùng chung vẫn ở NFR-5.
+
+| Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
+|---|---|---|---|---|
+| FR-8.1 | Đăng nhập, đăng xuất qua identity provider; tự đăng xuất sau 30 phút không thao tác | M | Không có form mật khẩu trong web; đăng nhập 4 tài khoản demo ở local và staging | Một phần: local đã có; staging lỗi `callback_urls`, chưa tự đăng xuất |
+| FR-8.2 | Quên mật khẩu tự phục vụ qua email đã xác minh | M | Thư đặt lại tới; email không tồn tại có cùng thông báo | Kế hoạch tuần 11 (`infra/idp-hardening`) |
+| FR-8.3 | Tạo tài khoản đăng nhập khi HR tạo hồ sơ, gửi email mời, bắt đổi mật khẩu tạm | M | Thư mời tới trong 1 phút; không tạo trùng khi event lặp | Kế hoạch tuần 12 (`feat/idp-account-lifecycle`) |
+| FR-8.4 | Khóa tài khoản và thu hồi phiên khi nghỉ việc; mở lại khi khôi phục | M | Trong 1 phút không đăng nhập lại được; token còn hạn bị 403 | Một phần: API đã chặn 403 (FR-1.7); khóa trên IdP tuần 12 |
+| FR-8.5 | MFA bằng ứng dụng TOTP | M | HR, ADMIN bị hỏi mã ở cả hai môi trường | Kế hoạch tuần 11 (`infra/idp-mfa`) |
+| FR-8.6 | HR xem trạng thái tài khoản đăng nhập, gửi lại lời mời | S | Vai trò khác bị 403; ghi audit | Kế hoạch tuần 12 (`feat/idp-account-lifecycle`) |
+
+**Tổng hợp FR:** 34 yêu cầu chức năng ở UC1 → UC7 (cộng 6 yêu cầu UC8 thêm 17/11); 23 đã có, 4 một phần (API có, chưa có giao diện), 7 theo kế hoạch tuần 10–12 (cập nhật 10/11).
 
 ## 5. Yêu cầu dữ liệu
 
@@ -362,16 +377,16 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 
 | Mã | Yêu cầu | Ngưỡng | Kiểm chứng | Trạng thái |
 |---|---|---|---|---|
-| NFR-5.1 | Chỉ đăng nhập qua identity provider (OIDC, Authorization Code + PKCE S256); ứng dụng không nhận, không lưu mật khẩu | Không API nào nhận mật khẩu | Review code; e2e | Đã có (Keycloak local, Cognito staging) |
+| NFR-5.1 | Chỉ đăng nhập qua identity provider (OIDC, Authorization Code + PKCE S256); ứng dụng không nhận, không lưu mật khẩu | Không API nào nhận mật khẩu | Review code; e2e | Đã có ở local; staging cần sửa `callback_urls` và bỏ `ALLOW_USER_PASSWORD_AUTH` (`infra/idp-hardening`, ADR-17) |
 | NFR-5.2 | Chính sách mật khẩu | Tối thiểu 8 ký tự, có chữ hoa, chữ thường và số; không trùng email; không bắt đổi định kỳ (theo NIST SP 800-63B) | Thử đặt mật khẩu yếu | Một phần: Cognito chưa bắt chữ hoa, Keycloak chưa đặt chính sách. Sửa tuần 10 (`infra/idp-hardening`) |
 | NFR-5.3 | Chống dò mật khẩu | Sai 5 lần liên tiếp trong 15 phút thì khóa tạm tài khoản 15 phút; thông báo lỗi không cho biết sai email hay sai mật khẩu | Thử sai 6 lần | Một phần: Keycloak bật chống dò nhưng chưa đặt ngưỡng 5 lần. Sửa tuần 10 (`infra/idp-hardening`) |
-| NFR-5.4 | Xác thực hai lớp (MFA) cho tài khoản đặc quyền | Bắt buộc với HR và ADMIN (ứng dụng TOTP); nhân viên tự chọn | Đăng nhập bằng tài khoản HR | Kế hoạch tuần 11 (`infra/idp-mfa`) |
+| NFR-5.4 | Xác thực hai lớp (MFA) cho tài khoản đặc quyền | Bắt buộc với HR và ADMIN (ứng dụng TOTP); nhân viên tự chọn. Trên Cognito bắt buộc cho mọi tài khoản vì Cognito không bắt theo nhóm (ADR-17) | Đăng nhập bằng tài khoản HR | Kế hoạch tuần 11 (`infra/idp-mfa`) |
 | NFR-5.5 | Thời hạn phiên | Access token ≤ 15 phút; phiên hết sau 30 phút không thao tác; tối đa 10 giờ thì phải đăng nhập lại; token tự gia hạn khi đang dùng | Review cấu hình IdP | Một phần: Keycloak đúng 15 và 30 phút; Cognito đang để mặc định. Sửa tuần 10 (`infra/idp-hardening`) |
 | NFR-5.6 | Đăng xuất | Kết thúc phiên ở identity provider và xóa token ở trình duyệt | Đăng xuất rồi bấm Back | Đã có |
 | NFR-5.7 | Giữ token an toàn ở trình duyệt | Token chỉ trong `sessionStorage` (đóng tab là mất), không trong `localStorage`, URL hay log | Review code | Đã có |
 | NFR-5.8 | API kiểm token ở mọi request | Kiểm chữ ký (JWKS), issuer, hạn dùng, client (`azp`/`aud`); sai thì 401 | e2e test token giả, token hết hạn | Đã có |
 | NFR-5.9 | Không tự đăng ký tài khoản | Tài khoản do HR hoặc ADMIN tạo; chỉ liên kết tài khoản với hồ sơ khi email đã xác minh (T-02) | Thử đăng ký trên trang đăng nhập | Một phần: Keycloak đã tắt, Cognito còn cho tự đăng ký. Sửa tuần 10 (`infra/idp-hardening`) |
-| NFR-5.10 | Ghi nhận đăng nhập | Lưu đăng nhập thành công, thất bại, bị khóa và mọi lần cấp, thu hồi vai trò HR, ADMIN (T-03, T-06) | Xem event của IdP và audit | Chưa có |
+| NFR-5.10 | Ghi nhận đăng nhập | Lưu đăng nhập thành công, thất bại, bị khóa và mọi lần cấp, thu hồi vai trò HR, ADMIN (T-03, T-06) | Xem event của IdP và audit | Chưa có. Cách làm theo ADR-17 mục 6; trên Cognito gói Essentials chỉ ghi được lần thành công |
 
 **b) Phân quyền**
 
@@ -536,6 +551,7 @@ Chiều xuôi: mục tiêu (BRD) → yêu cầu (SRS) → thiết kế (SAD) →
 | MT-2 | UC3, UC4 | FR-3.1 → FR-3.7, FR-4.1 → FR-4.8 | BR-01 → BR-12, BR-16 | Module Leave, Worker; outbox + queue (ADR-03) | 22 ca kiểm thử `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
 | MT-3 | UC1, UC7 | FR-1.3, FR-1.4, FR-7.1 → FR-7.3 | ADR-08, ADR-09 | Module Employee (`FieldCrypto`, ADR-08), Audit (ADR-09) | e2e audit, `VIEW_SENSITIVE`; ma trận phân quyền |
 | MT-4 | UC5, UC6 | FR-5.1 → FR-5.3, FR-6.1 → FR-6.3 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13) | Kế hoạch kiểm thử tuần 10, 12 |
+| MT-3 | UC8 | FR-8.1 → FR-8.6, NFR-5.1 → NFR-5.10 | Threat model T-02, T-03, T-06 | Module Identity, Keycloak/Cognito, outbox + SNS/SQS (ADR-17) | `test.md` UC8; ca kiểm thử bảo mật |
 
 Thiết kế chi tiết từng module: [kiến trúc phần mềm mục 4](../architecture/SAD-2-software-architecture.md#4-danh-mục-module).
 NFR-1 → NFR-11 dẫn tới quyết định kiến trúc ở [kiến trúc hệ thống mục 1](../architecture/SAD-1-system-architecture.md#1-yêu-cầu-dẫn-dắt-kiến-trúc).
@@ -547,7 +563,7 @@ Câu hỏi riêng của SRS, cần chốt trước nghiệm thu:
 | # | Câu hỏi | Đề xuất | Ảnh hưởng |
 |---|---|---|---|
 | 1 | SLA với phòng HR | 99,0% trong giờ làm việc, như bảng ở mục 6.13 | NFR-3.1, mục 6.13 |
-| 2 | MFA cho HR, ADMIN có bắt buộc từ version 1 không | Bắt buộc trên staging, tắt ở local cho tiện demo | NFR-5.4 |
+| 2 | MFA cho HR, ADMIN có bắt buộc từ version 1 không | **Đã chốt 17/11/2026 (ADR-17):** bắt buộc. Local: Keycloak bắt OTP với role `hr`, `admin`; staging: Cognito bắt buộc mọi tài khoản | NFR-5.4, FR-8.5 |
 | 3 | Thời gian lưu audit | 2 năm | NFR-6.3 |
 
 Các câu hỏi chưa chốt khác ảnh hưởng tới yêu cầu nằm ở [BRD mục 15](../business/BRD.md#15-vấn-đề-còn-mở-và-quyết-định-đã-chốt). Khi chốt, cập nhật FR hoặc BR liên quan và tăng phiên bản tài liệu này.
