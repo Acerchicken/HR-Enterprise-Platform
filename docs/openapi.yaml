@@ -121,7 +121,47 @@ paths:
   /api/v1/positions:
     get:
       operationId: OrganizationController_positions
+      parameters:
+        - name: active
+          required: false
+          in: query
+          description: "true: chỉ chức danh đang dùng (danh sách chọn)"
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: ""
+      tags: *a1
+      security: *a2
+    post:
+      operationId: OrganizationController_createPosition
       parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePositionDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a1
+      security: *a2
+  /api/v1/positions/{id}:
+    patch:
+      operationId: OrganizationController_updatePosition
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePositionDto"
       responses:
         "200":
           description: ""
@@ -163,6 +203,13 @@ paths:
           in: query
           description: "Khi lọc theo đơn vị: kèm nhân viên của đơn vị con cháu (mặc định
             true, AC-2.1.5)"
+          schema:
+            type: boolean
+        - name: includeAncestors
+          required: false
+          in: query
+          description: "HR, ADMIN: đơn vị và các đơn vị cha (danh sách chọn trưởng, phó
+            kiêm nhiệm, AC-2.9.1)"
           schema:
             type: boolean
       responses:
@@ -1165,6 +1212,15 @@ components:
           type: object
         headEmployeeId:
           type: object
+        headActing:
+          type: boolean
+          description: 'FR-2.9: trưởng là "Quyền trưởng"'
+        deputyEmployeeIds:
+          description: "Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung
+            tâm 3, Phòng 3, Nhóm 0"
+          type: array
+          items:
+            type: string
       required:
         - unitType
         - code
@@ -1186,6 +1242,49 @@ components:
         headEmployeeId:
           type: object
           nullable: true
+        headActing:
+          type: boolean
+          description: 'FR-2.9: trưởng là "Quyền trưởng"'
+        deputyEmployeeIds:
+          description: "Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung
+            tâm 3, Phòng 3, Nhóm 0"
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+          description: "INACTIVE: ngừng hoạt động (FR-2.10), chỉ khi đơn vị đã trống"
+    CreatePositionDto:
+      type: object
+      properties:
+        code:
+          type: string
+          example: PM
+        title:
+          type: string
+          example: Quản lý dự án
+        level:
+          type: number
+          minimum: 1
+          maximum: 10
+      required:
+        - code
+        - title
+        - level
+    UpdatePositionDto:
+      type: object
+      properties:
+        title:
+          type: string
+        level:
+          type: number
+          minimum: 1
+          maximum: 10
+        active:
+          type: boolean
     MeEmployee:
       type: object
       properties:

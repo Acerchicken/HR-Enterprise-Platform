@@ -175,14 +175,25 @@ erDiagram
 | `unit_type` | varchar(12) | NN, CHECK `COMPANY`/`CENTER`/`DEPARTMENT`/`TEAM` | Loại đơn vị ([ADR-14](adr/ADR-14-org-unit-types.md)). Luật loại cha, loại con kiểm ở service (`unit-rules.ts`) |
 | `status` | varchar(10) | NN, mặc định `ACTIVE`, CHECK `ACTIVE`/`INACTIVE` | Đơn vị ngừng hoạt động ẩn khỏi cây (FR-2.10) |
 | `parent_id` | uuid | FK → `org.department.id` | Đơn vị cha; NULL là gốc cây. Service chặn tạo vòng |
-| `head_employee_id` | uuid | ref → `employee.employee.id` | Trưởng đơn vị |
+| `head_employee_id` | uuid | ref → `employee.employee.id` | Trưởng đơn vị (người của đơn vị hoặc đơn vị cha, kiểm ở service) |
+| `head_acting` | boolean | NN, mặc định `false` | "Quyền trưởng" (FR-2.9) |
 | `created_at`, `updated_at` | timestamptz | NN, mặc định `now()` | |
 
 Index: `ix_department_parent (parent_id)` để lấy cây tổ chức và phòng ban con; `ux_department_company` (unique, chỉ dòng
 `unit_type = 'COMPANY'`) bảo đảm đúng một Công ty. CHECK `ck_department_company_root`: Công ty khi và chỉ khi `parent_id` NULL.
 
-> **Đã quyết, chưa có migration ([ADR-14](adr/ADR-14-org-unit-types.md)):** sẽ thêm `head_acting` và bảng
-> `org.department_deputy`; `org.position` thêm `active`, `is_system`; bảng mới `employee.employment_assignment` (quá trình công
+### `org.department_deputy`
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| `department_id` | uuid | PK, FK → `org.department.id` | Đơn vị |
+| `employee_id` | uuid | PK, ref → `employee.employee.id` | Phó đơn vị; số phó tối đa theo loại kiểm ở service (Công ty 5, Trung tâm 3, Phòng 3, Nhóm 0) |
+| `created_by` | uuid | ref → `employee.employee.id` | Người gán |
+| `created_at` | timestamptz | NN, mặc định `now()` | |
+
+Index: `ix_department_deputy_employee (employee_id)` để gỡ vai trò khi nghỉ việc (AC-2.9.8).
+
+> **Đã quyết, chưa có migration ([ADR-14](adr/ADR-14-org-unit-types.md)):** bảng mới `employee.employment_assignment` (quá trình công
 > tác, điều chuyển). Thiết kế: [UC2 spec mục 13](../features/UC2-organization/spec.md#13-thiết-kế-đề-xuất-cho-phần-chưa-có).
 > Khi migration merge thì cập nhật bảng trên và sơ đồ.
 
@@ -194,6 +205,8 @@ Index: `ix_department_parent (parent_id)` để lấy cây tổ chức và phòn
 | `code` | varchar(20) | NN, UQ | Mã chức danh |
 | `title` | varchar(100) | NN | Tên chức danh |
 | `level` | smallint | NN, CHECK `level BETWEEN 1 AND 10` | Cấp bậc |
+| `active` | boolean | NN, mặc định `true` | Ngừng dùng thì không còn trong danh sách chọn; người đang giữ không đổi (AC-2.6.2) |
+| `is_system` | boolean | NN, mặc định `false` | `CEO` = `true`: chỉ đổi được tên (AC-2.6.3) |
 
 ## 6. Schema `employee` – hồ sơ nhân viên
 
@@ -735,6 +748,7 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `1731800000000-ProfileChangeRequests` | 11 | `employee.profile_item`, `employee.profile_change_request` (#86) |
 | `1731900000000-ProfileFiles` | 11 | `employee.profile_file`, cột `employee.avatar_file_id` (#87) |
 | `1732000000000-OrgUnitTypes` | 11 | `org.department`: `unit_type`, `status`, CHECK, index một Công ty; điền loại cho dữ liệu cũ (`feat/org-unit-types`) |
+| `1732100000000-OrgUnitRoles` | 11 | `org.department.head_acting`, `org.department_deputy`, `org.position.active`, `is_system` (`feat/department-admin-ui`) |
 
 Lệnh: `npm run migration:run` (dev, ts-node), `npm run migration:run:prod` (bản build, dùng trên staging),
 `npm run migration:revert` (lùi một migration). Dữ liệu mẫu: `npm run seed`.

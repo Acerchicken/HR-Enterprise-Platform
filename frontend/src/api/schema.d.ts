@@ -93,11 +93,27 @@ export interface paths {
         };
         get: operations["OrganizationController_positions"];
         put?: never;
-        post?: never;
+        post: operations["OrganizationController_createPosition"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/positions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["OrganizationController_updatePosition"];
         trace?: never;
     };
     "/api/v1/me": {
@@ -807,6 +823,10 @@ export interface components {
             office: string;
             parentId?: Record<string, never>;
             headEmployeeId?: Record<string, never>;
+            /** @description FR-2.9: trưởng là "Quyền trưởng" */
+            headActing?: boolean;
+            /** @description Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung tâm 3, Phòng 3, Nhóm 0 */
+            deputyEmployeeIds?: string[];
         };
         UpdateDepartmentDto: {
             /** @enum {string} */
@@ -815,6 +835,27 @@ export interface components {
             office?: string;
             parentId?: Record<string, never> | null;
             headEmployeeId?: Record<string, never> | null;
+            /** @description FR-2.9: trưởng là "Quyền trưởng" */
+            headActing?: boolean;
+            /** @description Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung tâm 3, Phòng 3, Nhóm 0 */
+            deputyEmployeeIds?: string[];
+            /**
+             * @description INACTIVE: ngừng hoạt động (FR-2.10), chỉ khi đơn vị đã trống
+             * @enum {string}
+             */
+            status?: "ACTIVE" | "INACTIVE";
+        };
+        CreatePositionDto: {
+            /** @example PM */
+            code: string;
+            /** @example Quản lý dự án */
+            title: string;
+            level: number;
+        };
+        UpdatePositionDto: {
+            title?: string;
+            level?: number;
+            active?: boolean;
         };
         MeEmployee: {
             id: string;
@@ -1172,12 +1213,59 @@ export interface operations {
     };
     OrganizationController_positions: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description true: chỉ chức danh đang dùng (danh sách chọn) */
+                active?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OrganizationController_createPosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePositionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OrganizationController_updatePosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePositionDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -1215,6 +1303,8 @@ export interface operations {
                 dept?: string;
                 /** @description Khi lọc theo đơn vị: kèm nhân viên của đơn vị con cháu (mặc định true, AC-2.1.5) */
                 includeChildren?: boolean;
+                /** @description HR, ADMIN: đơn vị và các đơn vị cha (danh sách chọn trưởng, phó kiêm nhiệm, AC-2.9.1) */
+                includeAncestors?: boolean;
             };
             header?: never;
             path?: never;

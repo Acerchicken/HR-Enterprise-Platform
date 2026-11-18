@@ -46,7 +46,7 @@
 - **AC-2.4.2** Khi đổi phòng ban cha thành chính nó hoặc một phòng ban con của nó. Thì trả 400.
 - **AC-2.4.3** Khi mã phòng ban đã tồn tại. Thì trả 409.
 - **AC-2.4.4** Khi nhân viên hoặc quản lý tạo, sửa phòng ban. Thì trả 403.
-- **AC-2.4.5** *(chưa có)* HR, ADMIN tạo và sửa phòng ban trên giao diện, lỗi hiện đúng ô.
+- **AC-2.4.5** HR, ADMIN tạo và sửa phòng ban trên giao diện, lỗi hiện đúng ô.
 - **AC-2.4.6** Khi tạo phòng ban không có `parentId`, hoặc sửa `parentId` thành `null`. Thì trả 400; cây giữ
   đúng một gốc.
 - **AC-2.4.7** Khi `headEmployeeId` không phải nhân viên đang làm việc. Thì trả 400.
@@ -63,11 +63,11 @@
 
 ### FR-2.6 Danh mục chức danh, cấp bậc (S, chưa có; hiện chỉ có `GET /positions`)
 
-- **AC-2.6.1** *(chưa có)* Khi HR tạo chức danh có mã (duy nhất, không sửa sau khi tạo), tên, cấp bậc 1–10. Thì trả 201, có
+- **AC-2.6.1** Khi HR tạo chức danh có mã (duy nhất, không sửa sau khi tạo), tên, cấp bậc 1–10. Thì trả 201, có
   audit. Vai trò khác thì trả 403.
-- **AC-2.6.2** *(chưa có)* Khi HR ngừng dùng một chức danh. Thì chức danh không còn trong danh sách chọn khi tạo, điều chuyển
+- **AC-2.6.2** Khi HR ngừng dùng một chức danh. Thì chức danh không còn trong danh sách chọn khi tạo, điều chuyển
   nhân viên; nhân viên đang giữ chức danh đó không bị đổi. Xóa hẳn chức danh đang được dùng (hoặc có trong lịch sử) thì trả 409.
-- **AC-2.6.3** *(chưa có)* Chức danh `CEO` là chức danh hệ thống (FR-2.5 dựa vào nó). Khi HR ngừng dùng, xóa, hoặc đổi cấp bậc
+- **AC-2.6.3** Chức danh `CEO` là chức danh hệ thống (FR-2.5 dựa vào nó). Khi HR ngừng dùng, xóa, hoặc đổi cấp bậc
   của `CEO`. Thì trả 400. Đổi tên hiển thị (ví dụ "Tổng Giám đốc") vẫn được, có audit.
 
 ### FR-2.7 Điều chuyển có ngày hiệu lực (S, chưa có)
@@ -116,21 +116,21 @@
 | Phòng | Trưởng phòng | Phó phòng (3) |
 | Nhóm | Trưởng nhóm | Không có |
 
-- **AC-2.9.1** *(chưa có)* Trưởng và phó là nhân viên đang làm việc, thuộc **chính đơn vị đó hoặc một đơn vị cha của nó**
+- **AC-2.9.1** Trưởng và phó là nhân viên đang làm việc, thuộc **chính đơn vị đó hoặc một đơn vị cha của nó**
   (kiêm nhiệm, ví dụ Giám đốc trung tâm kiêm trưởng một phòng của trung tâm). Gán người ngoài nhánh, người đã nghỉ việc, hoặc
   quá số phó theo bảng trên thì trả 400. Một người làm trưởng nhiều đơn vị được.
-- **AC-2.9.2** *(chưa có)* Khi HR tạo nhân viên mới vào đơn vị X. Thì ô "Quản lý trực tiếp" điền sẵn trưởng của X (HR đổi được).
+- **AC-2.9.2** Khi HR tạo nhân viên mới vào đơn vị X. Thì ô "Quản lý trực tiếp" điền sẵn trưởng của X (HR đổi được).
   Nếu người mới là trưởng của X thì điền sẵn trưởng của đơn vị cha gần nhất có trưởng. HR được chọn người khác, ví dụ Giám
   đốc trung tâm báo cáo một Phó Tổng Giám đốc phụ trách.
 - **AC-2.9.3** *(chưa có)* Khi HR tạo phân công duyệt thay cho trưởng đơn vị X (UC4 FR-4.3). Thì danh sách chọn người thay đưa
   phó của X lên đầu. Phó **không** tự động có quyền duyệt đơn của cả đơn vị.
-- **AC-2.9.4** *(chưa có)* Trang đơn vị trong sơ đồ tổ chức hiện trưởng, phó trước (đúng tên vai trò theo loại), rồi tới thành
+- **AC-2.9.4** Trang đơn vị trong sơ đồ tổ chức hiện trưởng, phó trước (đúng tên vai trò theo loại), rồi tới thành
   viên, rồi tới đơn vị con.
-- **AC-2.9.5** *(chưa có)* Đổi trưởng, phó có audit; không tự đổi quản lý trực tiếp của ai.
-- **AC-2.9.6** *(chưa có)* Khi HR đánh dấu trưởng X là "Quyền" (`headActing = true`). Thì sơ đồ tổ chức và hồ sơ hiện
+- **AC-2.9.5** Đổi trưởng, phó có audit; không tự đổi quản lý trực tiếp của ai.
+- **AC-2.9.6** Khi HR đánh dấu trưởng X là "Quyền" (`headActing = true`). Thì sơ đồ tổ chức và hồ sơ hiện
   "Quyền Trưởng phòng" (hoặc "Quyền Giám đốc trung tâm"…); quyền hạn không khác trưởng chính thức.
-- **AC-2.9.7** *(chưa có)* CEO là trưởng của đơn vị Công ty và thuộc đơn vị đó. Đơn nghỉ của CEO do HR xử lý (UC4 E8).
-- **AC-2.9.8** *(chưa có)* Giả sử B là trưởng hoặc phó của một hay nhiều đơn vị. Khi HR cho B nghỉ việc (UC1, sau khi đã chuyển
+- **AC-2.9.7** CEO là trưởng của đơn vị Công ty và thuộc đơn vị đó. Đơn nghỉ của CEO do HR xử lý (UC4 E8).
+- **AC-2.9.8** Giả sử B là trưởng hoặc phó của một hay nhiều đơn vị. Khi HR cho B nghỉ việc (UC1, sau khi đã chuyển
   hết cấp dưới theo AC-1.7.1). Thì hộp xác nhận liệt kê các đơn vị B đang làm trưởng, phó; khi lưu, B được gỡ khỏi các vai trò
   đó trong cùng giao dịch, có audit; đơn vị hiện "Chưa có trưởng" cho tới khi HR gán người mới. Không chặn việc nghỉ việc.
 
@@ -145,11 +145,11 @@ Phó Tổng Giám đốc. Quyền duyệt đơn nghỉ luôn theo quản lý tr�
 
 ### FR-2.10 Ngừng hoạt động đơn vị (C, chưa có; ADR-14)
 
-- **AC-2.10.1** *(chưa có)* Giả sử đơn vị X còn nhân viên đang làm việc (người có phòng ban là X) hoặc còn đơn vị con đang hoạt
+- **AC-2.10.1** Giả sử đơn vị X còn nhân viên đang làm việc (người có phòng ban là X) hoặc còn đơn vị con đang hoạt
   động. Khi HR ngừng hoạt động X. Thì trả 409 và nói rõ còn bao nhiêu người, bao nhiêu đơn vị con. Trưởng, phó kiêm nhiệm từ
   đơn vị cha **không** tính là người của X: khi X đã trống, ngừng hoạt động thành công và các vai trò trưởng, phó của X được gỡ
   trong cùng giao dịch, có audit.
-- **AC-2.10.2** *(chưa có)* Khi HR ngừng hoạt động đơn vị X đã trống. Thì X không còn trong cây, danh bạ, danh sách chọn khi
+- **AC-2.10.2** Khi HR ngừng hoạt động đơn vị X đã trống. Thì X không còn trong cây, danh bạ, danh sách chọn khi
   tạo, điều chuyển nhân viên; quá trình công tác cũ vẫn hiện tên X; có audit. Không xóa hẳn đơn vị.
 - **AC-2.10.3** *(chưa có)* Sáp nhập phòng A vào phòng B: HR điều chuyển hết người của A sang B (FR-2.7, cùng ngày hiệu lực) rồi
   ngừng hoạt động A. Không có thao tác "sáp nhập" riêng.
@@ -169,6 +169,6 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 | Chặn gốc thứ hai, kiểm `headEmployeeId` đang làm việc | AC-2.4.6, AC-2.4.7 (một phần) | TV1 | `fix/employee-org-integrity` | Xong (#84) |
 | Sơ đồ luồng, bản vẽ, hợp đồng API, thiết kế dữ liệu | – | TV1 | `docs/uc2-design` | 11 |
 | Loại đơn vị, luật cha con, seed mới, lọc danh bạ gồm đơn vị con | AC-2.2.3, AC-2.4.8, AC-2.4.9, AC-2.1.5 | TV1 | `feat/org-unit-types` | Code xong, chờ merge |
-| Trưởng, phó mọi cấp; chức danh; ngừng hoạt động đơn vị; giao diện quản lý đơn vị | AC-2.4.5, AC-2.4.7, AC-2.6.x, AC-2.9.x, AC-2.10.x | TV1 | `feat/department-admin-ui` | 11–12 |
+| Trưởng, phó mọi cấp; chức danh; ngừng hoạt động đơn vị; giao diện quản lý đơn vị | AC-2.4.5, AC-2.4.7, AC-2.6.x, AC-2.9.x, AC-2.10.x | TV1 | `feat/department-admin-ui` | Code xong, chờ merge |
 | Quá trình công tác, điều chuyển có ngày hiệu lực, hộp xác nhận nghỉ việc | AC-2.7.x, AC-2.8.x, UC1 AC-1.7.3 | TV1 | `feat/employee-transfer` | 12 |
 | Ca kiểm thử cho các AC mới | AC-2.x | TV4 | theo từng PR code | 11–12 |

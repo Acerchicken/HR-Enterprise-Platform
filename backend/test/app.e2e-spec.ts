@@ -1239,6 +1239,136 @@ describe('HRHelper API (e2e)', () => {
     });
   });
 
+  describe('UC2 trưởng, phó, ngừng hoạt động đơn vị, chức danh (FR-2.6, FR-2.9, FR-2.10)', () => {
+    const units = async () => (await http.get('/api/v1/departments').set(HR)).body as any[];
+    const unitOf = async (code: string) => (await units()).find((d) => d.code === code);
+    const detail = async (id: string, who = HR) => (await http.get(`/api/v1/departments/${id}`).set(who)).body;
+    const code = () => `T-${Math.floor(Math.random() * 1e6)}`;
+
+    it('trưởng, phó thuộc đơn vị hoặc đơn vị cha, đang làm việc, không quá số phó (AC-2.9.1, AC-2.9.6)', async () => {
+      const team = await unitOf('ENG-WEB-BE');
+      const web = await unitOf('ENG-WEB');
+      const eng = await unitOf('ENG');
+      const sal = await unitOf('SAL');
+      const before = await detail(team.id);
+      const { DataSource } = await import('typeorm');
+      const [{ id: leaver }] = await app.get(DataSource).query(`SELECT id FROM employee.employee WHERE status = 'TERMINATED' LIMIT 1`);
+      try {
+        // Kiêm nhiệm: Giám đốc trung tâm làm "Quyền Trưởng nhóm".
+        await http.patch(`/api/v1/departments/${team.id}`).set(HR).send({ headEmployeeId: eng.headEmployeeId, headActing: true }).expect(200);
+        const d = await detail(team.id, EMPLOYEE);
+        expect(d.head).toMatchObject({ id: eng.headEmployeeId, acting: true });
+        // Người nhánh khác, người đã nghỉ: 400.
+        await http.patch(`/api/v1/departments/${team.id}`).set(HR).send({ headEmployeeId: sal.headEmployeeId }).expect(400);
+        await http.patch(`/api/v1/departments/${team.id}`).set(HR).send({ headEmployeeId: leaver }).expect(400);
+        // Nhóm không có phó.
+        await http.patch(`/api/v1/departments/${team.id}`).set(HR).send({ deputyEmployeeIds: [web.headEmployeeId] }).expect(400);
+      } finally {
+        await http.patch(`/api/v1/departments/${team.id}`).set(HR).send({ headEmployeeId: before.headEmployeeId, headActing: false }).expect(200);
+      }
+      // Phòng: tối đa 3 phó; phó không trùng trưởng.
+      const webDetail = await detail(web.id);
+      expect(webDetail.deputies.length).toBeGreaterThanOrEqual(1); // seed có Phó phòng
+      const members = (await http.get(`/api/v1/departments/${web.id}/members?size=10`).set(HR)).body.items.map((m: any) => m.id);
+      const others = members.filter((id: string) => id !== web.headEmployeeId);
+      await http.patch(`/api/v1/departments/${web.id}`).set(HR).send({ deputyEmployeeIds: others.slice(0, 4) }).expect(400);
+      await http.patch(`/api/v1/departments/${web.id}`).set(HR).send({ deputyEmployeeIds: [web.headEmployeeId] }).expect(400);
+      const ids = webDetail.deputies.map((x: any) => x.id);
+      // Danh sách chọn trưởng, phó: gồm người của đơn vị cha (HR).
+      const pick = (await http.get(`/api/v1/employees?dept=${team.id}&includeAncestors=true&size=100`).set(HR).expect(200)).body;
+      expect(pick.total).toBeGreaterThan((await http.get(`/api/v1/departments/${team.id}/members?size=1`).set(HR)).body.total);
+      // Đổi phó có audit (AC-2.9.5).
+      const extra = others.find((id: string) => !ids.includes(id));
+      await http.patch(`/api/v1/departments/${web.id}`).set(HR).send({ deputyEmployeeIds: [...ids, extra] }).expect(200);
+      expect((await detail(web.id)).deputies.map((x: any) => x.id)).toContain(extra);
+      await http.patch(`/api/v1/departments/${web.id}`).set(HR).send({ deputyEmployeeIds: ids }).expect(200);
+      const logs = (await http.get(`/api/v1/audit-logs?entity=department&entityId=${web.id}`).set(HR)).body.items;
+      expect(logs.some((l: any) => l.changedFields?.deputies?.added?.includes(extra))).toBe(true);
+    });
+
+    it('ngừng hoạt động: còn người hoặc đơn vị con thì 409; đã trống thì ẩn khỏi cây, gỡ trưởng kiêm nhiệm (AC-2.10.1, AC-2.10.2)', async () => {
+      const web = await unitOf('ENG-WEB');
+      const res = await http.patch(`/api/v1/departments/${web.id}`).set(HR).send({ status: 'INACTIVE' }).expect(409);
+      expect(res.body.details).toMatchObject({ activeChildren: 3 });
+      expect(res.body.details.members).toBeGreaterThan(0);
+      await http.patch(`/api/v1/departments/${(await unitOf('HQ')).id}`).set(HR).send({ status: 'INACTIVE' }).expect(400);
+
+      const leg = await unitOf('LEG');
+      const unit = (
+        await http
+          .post('/api/v1/departments')
+          .set(HR)
+          .send({ code: code(), name: 'Nhóm sắp giải thể', office: 'Hà Nội', unitType: 'TEAM', parentId: leg.id, headEmployeeId: leg.headEmployeeId })
+          .expect(201)
+      ).body;
+      await http.patch(`/api/v1/departments/${unit.id}`).set(EMPLOYEE).send({ status: 'INACTIVE' }).expect(403);
+      await http.patch(`/api/v1/departments/${unit.id}`).set(HR).send({ status: 'INACTIVE' }).expect(200);
+      const tree = JSON.stringify((await http.get('/api/v1/departments/tree').set(HR)).body);
+      expect(tree).not.toContain(unit.id);
+      await http.get(`/api/v1/departments/${unit.id}`).set(EMPLOYEE).expect(404);
+      expect((await units()).map((d) => d.id)).toContain(unit.id); // HR vẫn thấy để kích hoạt lại
+      expect((await http.get('/api/v1/departments').set(EMPLOYEE)).body.map((d: any) => d.id)).not.toContain(unit.id);
+      const inactive = await detail(unit.id);
+      expect(inactive).toMatchObject({ status: 'INACTIVE', headEmployeeId: null });
+      await http.patch(`/api/v1/departments/${unit.id}`).set(HR).send({ name: 'Sửa khi đã ngừng' }).expect(400);
+      await http.patch(`/api/v1/departments/${unit.id}`).set(HR).send({ status: 'ACTIVE' }).expect(200);
+      await http.patch(`/api/v1/departments/${unit.id}`).set(HR).send({ status: 'INACTIVE' }).expect(200);
+    });
+
+    it('chức danh: HR tạo, ngừng dùng; CEO là chức danh hệ thống (AC-2.6.1, AC-2.6.2, AC-2.6.3)', async () => {
+      const list = (await http.get('/api/v1/positions').set(EMPLOYEE).expect(200)).body;
+      const ceo = list.find((p: any) => p.code === 'CEO');
+      expect(ceo).toMatchObject({ system: true, active: true, holderCount: 1 });
+      const dto = { code: `P${Math.floor(Math.random() * 1e6)}`, title: 'Chức danh test', level: 2 };
+      await http.post('/api/v1/positions').set(ADMIN).send(dto).expect(403);
+      await http.post('/api/v1/positions').set(HR).send({ ...dto, level: 11 }).expect(400);
+      const created = (await http.post('/api/v1/positions').set(HR).send(dto).expect(201)).body;
+      await http.post('/api/v1/positions').set(HR).send(dto).expect(409);
+      await http.patch(`/api/v1/positions/${created.id}`).set(HR).send({ active: false }).expect(200);
+      const active = (await http.get('/api/v1/positions?active=true').set(HR)).body.map((p: any) => p.id);
+      expect(active).not.toContain(created.id);
+      const dept = await unitOf('LEG');
+      await http
+        .post('/api/v1/employees')
+        .set(HR)
+        .send({ employeeCode: 'E99777', fullName: 'Chức Danh Cũ', workEmail: 'old-title@hr.local', departmentId: dept.id, positionId: created.id, managerId: dept.headEmployeeId, hireDate: '2026-11-01' })
+        .expect(400);
+      // CEO: chỉ đổi được tên.
+      await http.patch(`/api/v1/positions/${ceo.id}`).set(HR).send({ level: 9 }).expect(400);
+      await http.patch(`/api/v1/positions/${ceo.id}`).set(HR).send({ active: false }).expect(400);
+      await http.patch(`/api/v1/positions/${ceo.id}`).set(HR).send({ title: 'Tổng Giám đốc điều hành' }).expect(200);
+      await http.patch(`/api/v1/positions/${ceo.id}`).set(HR).send({ title: ceo.title }).expect(200);
+    });
+
+    it('nghỉ việc gỡ vai trò trưởng, phó trong cùng giao dịch, có audit (AC-2.9.8)', async () => {
+      const leg = await unitOf('LEG');
+      const pos = (await http.get('/api/v1/positions?active=true').set(HR)).body.find((p: any) => p.code === 'DHEAD');
+      const n = Math.floor(Math.random() * 9000) + 1000;
+      const created = (
+        await http
+          .post('/api/v1/employees')
+          .set(HR)
+          .send({ employeeCode: `E8${n}`, fullName: 'Phó Sắp Nghỉ', workEmail: `deputy-${n}@hr.local`, departmentId: leg.id, positionId: pos.id, managerId: leg.headEmployeeId, hireDate: '2026-11-01' })
+          .expect(201)
+      ).body;
+      const unit = (
+        await http
+          .post('/api/v1/departments')
+          .set(HR)
+          .send({ code: code(), name: 'Nhóm có trưởng sắp nghỉ', office: 'Hà Nội', unitType: 'TEAM', parentId: leg.id, headEmployeeId: created.id })
+          .expect(201)
+      ).body;
+      const before = (await detail(leg.id)).deputies.map((x: any) => x.id);
+      await http.patch(`/api/v1/departments/${leg.id}`).set(HR).send({ deputyEmployeeIds: [...before, created.id] }).expect(200);
+      const profile = (await http.get(`/api/v1/employees/${created.id}`).set(HR)).body;
+      await http.patch(`/api/v1/employees/${created.id}`).set(HR).send({ status: 'TERMINATED', version: profile.version }).expect(200);
+      expect((await detail(leg.id)).deputies.map((x: any) => x.id)).not.toContain(created.id);
+      expect((await detail(unit.id)).head).toBeNull();
+      const logs = (await http.get(`/api/v1/audit-logs?entity=department&entityId=${unit.id}`).set(HR)).body.items;
+      expect(logs.some((l: any) => l.changedFields?.reason === 'EMPLOYEE_TERMINATED')).toBe(true);
+    });
+  });
+
   describe('workflow nghỉ phép', () => {
     let ds: import('typeorm').DataSource;
     let savedBalances: { leave_type_id: string; used: string }[];

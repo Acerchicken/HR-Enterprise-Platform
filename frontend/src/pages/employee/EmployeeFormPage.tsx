@@ -46,10 +46,18 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
     setInitial(v);
   }, [current.data]);
 
-  // Gợi ý quản lý: trưởng phòng của phòng ban đang chọn.
+  // Gợi ý quản lý (AC-2.9.2): trưởng của đơn vị đang chọn; đơn vị chưa có trưởng (hoặc người đang sửa chính là trưởng) thì
+  // lấy trưởng của đơn vị cha gần nhất có trưởng. HR đổi được.
   const deptId = values.departmentId;
   useEffect(() => {
-    const head = departments.data?.find((d) => d.id === deptId)?.headEmployeeId;
+    const byId = new Map((departments.data ?? []).map((d) => [d.id, d]));
+    let head: string | null | undefined;
+    for (let d = deptId ? byId.get(deptId) : undefined, guard = 0; d && guard < 20; d = d.parentId ? byId.get(d.parentId) : undefined, guard++) {
+      if (d.headEmployeeId && d.headEmployeeId !== id) {
+        head = d.headEmployeeId;
+        break;
+      }
+    }
     if (!head) return setSuggested(null);
     api<DirectoryEntry>(`/employees/${head}`).then(setSuggested).catch(() => setSuggested(null));
   }, [deptId, departments.data]);
@@ -109,7 +117,11 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
   if (current.error) return <ErrorBox error={current.error} />;
   if (mode === 'edit' && !current.data) return <p>Đang tải…</p>;
 
-  const lookups = { departments: departments.data ?? [], positions: positions.data ?? [] };
+  // AC-2.6.2, AC-2.10.2: chỉ chọn đơn vị đang hoạt động, chức danh đang dùng; giá trị hiện tại của hồ sơ vẫn hiện.
+  const lookups = {
+    departments: (departments.data ?? []).filter((d) => d.status === 'ACTIVE' || d.id === initial.departmentId),
+    positions: (positions.data ?? []).filter((p) => p.active || p.id === initial.positionId),
+  };
   const groups: FieldGroup[] = ['basic', 'work', 'sensitive'];
 
   return (

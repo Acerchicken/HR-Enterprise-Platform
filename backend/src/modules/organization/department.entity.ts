@@ -29,6 +29,10 @@ export class Department {
   @Column({ name: 'head_employee_id', type: 'uuid', nullable: true })
   headEmployeeId: string | null;
 
+  /** FR-2.9: "Quyền trưởng" (người phụ trách khi chưa bổ nhiệm chính thức). Chỉ khác tên hiển thị. */
+  @Column({ name: 'head_acting', default: false })
+  headActing: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
