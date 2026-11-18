@@ -21,7 +21,7 @@ import { FileView, fileView, ProfileFileService } from './profile-file.service';
 import { ProfileEventType } from './profile-events';
 import { onLeavePeriods, seniority } from './profile-computed';
 import { CONTRACT_LABEL, FieldSpec, SECTION_SCHEMAS, SectionSchema, validateSection } from './profile-schema';
-import { canSeeLevel, findSection, relationTo } from './profile-sections';
+import { canSeeLevel, findSection, relationTo, resolveRelation } from './profile-sections';
 
 /** Mỗi nhân viên tối đa 20 yêu cầu đang chờ (AC-1.9.7, E21). */
 export const MAX_PENDING = 20;
@@ -148,7 +148,7 @@ export class ProfileChangeService {
   async readSection(employeeId: string, code: string, viewer: AuthUser, reveal: boolean, meta: RequestMeta = {}) {
     const e = await this.employees.findOneBy({ id: employeeId });
     if (!e) throw new NotFoundException('Không tìm thấy nhân viên');
-    const relation = relationTo(viewer, e);
+    const relation = await resolveRelation(this.employees, viewer, e);
     const def = findSection(code);
     const schema = SECTION_SCHEMAS[code];
     if (!def || !def.available || !schema || schema.kind === 'main' || !canSeeLevel(relation, def.level)) {
@@ -697,7 +697,7 @@ export class ProfileChangeService {
   ) {
     const e = await this.employees.findOneBy({ id: employeeId });
     if (!e) throw new NotFoundException('Không tìm thấy nhân viên');
-    const relation = relationTo(viewer, e);
+    const relation = await resolveRelation(this.employees, viewer, e);
     // AC-1.11.2: chỉ chủ hồ sơ và HR; quản lý trực tiếp, người khác 403.
     if (relation !== 'OWNER' && relation !== 'HR') throw new ForbiddenException('Chỉ chủ hồ sơ và HR xem lịch sử thay đổi');
     const page = await this.audit.history({ entityType: 'employee', entityId: employeeId, ...q, actions: HISTORY_ACTIONS });
@@ -756,7 +756,7 @@ export class ProfileChangeService {
   async computed(employeeId: string, code: string, viewer: AuthUser) {
     const e = await this.employees.findOneBy({ id: employeeId });
     if (!e) throw new NotFoundException('Không tìm thấy nhân viên');
-    const relation = relationTo(viewer, e);
+    const relation = await resolveRelation(this.employees, viewer, e);
     const def = findSection(code);
     if (!def || !def.available || !canSeeLevel(relation, def.level)) throw new NotFoundException('Không tìm thấy mục hồ sơ');
     const base = { section: code, kind: 'computed' as const, canEdit: relation === 'HR' };

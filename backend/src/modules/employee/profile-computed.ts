@@ -1,6 +1,6 @@
 /**
- * Thông tin tự tính của hồ sơ (UC1 FR-1.13), viết thành hàm thuần để test: thâm niên và các mốc, quá trình công tác dựng từ
- * audit nhóm trường tổ chức (AC-1.4.3).
+ * Thông tin tự tính của hồ sơ (UC1 FR-1.13), viết thành hàm thuần để test: thâm niên và các mốc, khoảng tạm nghỉ. Quá trình
+ * công tác đọc từ bảng `employee.employment_assignment` (UC2 FR-2.8), không còn dựng từ audit.
  */
 
 export interface Seniority {
@@ -38,64 +38,6 @@ export function seniority(hireDate: string, today: string): Seniority {
     nextMilestone: addYears(hireDate, (milestones.length + 1) * 5),
     annualLeaveBonus: Math.floor(years / 5),
   };
-}
-
-export interface OrgState {
-  departmentId: string | null;
-  positionId: string | null;
-  managerId: string | null;
-}
-
-export interface OrgChange {
-  at: string;
-  changes: Partial<Record<keyof OrgState, { from: unknown; to: unknown }>>;
-}
-
-export interface CareerPeriod extends OrgState {
-  from: string;
-  to: string | null;
-  reason: string;
-}
-
-const KEYS: (keyof OrgState)[] = ['departmentId', 'positionId', 'managerId'];
-
-/**
- * AC-1.13.1: dựng các giai đoạn công tác từ ngày vào làm và các lần đổi phòng ban, chức danh, quản lý trong audit (cũ nhất
- * trước). Trạng thái ban đầu là giá trị `from` của lần đổi đầu tiên mỗi trường, nếu chưa đổi thì là giá trị hiện tại.
- */
-export function careerTimeline(hireDate: string, current: OrgState, changes: OrgChange[]): CareerPeriod[] {
-  const ordered = changes.filter((c) => KEYS.some((k) => c.changes[k])).sort((a, b) => a.at.localeCompare(b.at));
-  const state: OrgState = { ...current };
-  for (const k of KEYS) {
-    const first = ordered.find((c) => c.changes[k]);
-    if (first) state[k] = (first.changes[k]!.from as string | null) ?? null;
-  }
-  const periods: CareerPeriod[] = [{ ...state, from: hireDate, to: null, reason: 'Vào làm' }];
-  for (const c of ordered) {
-    const day = c.at.slice(0, 10);
-    const next: OrgState = { ...periods[periods.length - 1]! };
-    for (const k of KEYS) if (c.changes[k]) next[k] = (c.changes[k]!.to as string | null) ?? null;
-    const reasons = [
-      c.changes.departmentId && 'Điều chuyển phòng ban',
-      c.changes.positionId && 'Đổi chức danh',
-      c.changes.managerId && 'Đổi quản lý trực tiếp',
-    ].filter(Boolean);
-    const prev = periods[periods.length - 1]!;
-    if (prev.from === day) {
-      Object.assign(prev, next, { reason: prev.reason === 'Vào làm' ? prev.reason : reasons.join(', ') });
-      continue;
-    }
-    prev.to = day;
-    periods.push({ ...next, from: day, to: null, reason: reasons.join(', ') });
-  }
-  // Đổi rồi đổi lại (ví dụ sửa nhầm trong ngày) không tạo giai đoạn mới: gộp các giai đoạn liền nhau có cùng tổ chức.
-  const merged: CareerPeriod[] = [];
-  for (const p of periods) {
-    const last = merged[merged.length - 1];
-    if (last && KEYS.every((k) => last[k] === p[k])) last.to = p.to;
-    else merged.push(p);
-  }
-  return merged.reverse();
 }
 
 /** Khoảng trạng thái `ON_LEAVE` từ các lần đổi trạng thái trong audit (AC-1.13.3). */

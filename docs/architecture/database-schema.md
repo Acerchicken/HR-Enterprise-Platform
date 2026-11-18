@@ -19,8 +19,8 @@
 | Schema | Module sở hữu (`backend/src/modules/`) | Bảng | Tạo ở migration |
 |---|---|---|---|
 | `iam` | `identity`; `common/rate-limit` | `user_account`, `role_assignment`, `rate_limit_counter` | InitSchemas, RateLimitCounter |
-| `org` | `organization` | `department`, `position` | InitSchemas |
-| `employee` | `employee` | `employee`, `employee_sensitive`, `profile_item`, `profile_change_request`, `profile_file` | InitSchemas, ProfileChangeRequests, ProfileFiles |
+| `org` | `organization` | `department`, `department_deputy`, `position` | InitSchemas, OrgUnitTypes, OrgUnitRoles |
+| `employee` | `employee` | `employee`, `employee_sensitive`, `profile_item`, `profile_change_request`, `profile_file`, `employment_assignment` | InitSchemas, ProfileChangeRequests, ProfileFiles, EmploymentAssignment |
 | `leave` | `leave` | `leave_type`, `leave_balance`, `leave_request`, `leave_request_history`, `holiday`, `outbox` | InitSchemas, LeaveWorkflow, LeaveOutbox |
 | `notification` | `worker` (notification worker) | `processed_event` | LeaveOutbox |
 | `audit` | `audit` | `audit_log` | InitSchemas |
@@ -60,6 +60,8 @@ erDiagram
 
   org_department ||--o{ org_department : "parent_id"
   org_department }o..o| employee_employee : "head_employee_id (ref)"
+  org_department ||--o{ org_department_deputy : "phó đơn vị"
+  org_department_deputy }o..|| employee_employee : "employee_id (ref)"
   employee_employee }o..|| org_department : "department_id (ref)"
   employee_employee }o..|| org_position : "position_id (ref)"
   employee_employee ||--o{ employee_employee : "manager_id"
@@ -69,6 +71,9 @@ erDiagram
   employee_employee ||--o{ employee_profile_file : "file hồ sơ"
   employee_profile_item ||--o{ employee_profile_change_request : "item_id"
   employee_profile_item ||--o{ employee_profile_file : "item_id"
+  employee_employee ||--o{ employee_employment_assignment : "quá trình công tác"
+  employee_employment_assignment }o..|| org_department : "department_id (ref)"
+  employee_employment_assignment }o..|| org_position : "position_id (ref)"
 
   leave_leave_type ||--o{ leave_leave_balance : ""
   leave_leave_type ||--o{ leave_leave_request : ""
@@ -146,21 +151,33 @@ Index: `ix_rate_limit_counter_window (window_start)` để dọn cửa sổ cũ.
 ```mermaid
 erDiagram
   department ||--o{ department : "parent_id"
+  department ||--o{ department_deputy : "department_id"
   department {
     uuid id PK
     varchar code UK
     varchar name
     varchar office
-    uuid parent_id FK "phòng ban cha"
+    varchar unit_type "COMPANY, CENTER, DEPARTMENT, TEAM"
+    varchar status "ACTIVE, INACTIVE"
+    uuid parent_id FK "đơn vị cha"
     uuid head_employee_id "ref employee.employee"
+    boolean head_acting "Quyền trưởng"
     timestamptz created_at
     timestamptz updated_at
+  }
+  department_deputy {
+    uuid department_id PK, FK
+    uuid employee_id PK "ref employee.employee"
+    uuid created_by "ref employee.employee"
+    timestamptz created_at
   }
   position {
     uuid id PK
     varchar code UK
     varchar title
     smallint level "1..10"
+    boolean active
+    boolean is_system "CEO"
   }
 ```
 
@@ -179,7 +196,8 @@ erDiagram
 | `head_acting` | boolean | NN, mặc định `false` | "Quyền trưởng" (FR-2.9) |
 | `created_at`, `updated_at` | timestamptz | NN, mặc định `now()` | |
 
-Index: `ix_department_parent (parent_id)` để lấy cây tổ chức và phòng ban con; `ux_department_company` (unique, chỉ dòng
+Index: `ix_department_parent (parent_id)` để lấy cây tổ chức và phòng ban con; `ix_department_head (head_employee_id) WHERE
+head_employee_id IS NOT NULL` để tìm vai trò trưởng của một người (điều chuyển, nghỉ việc); `ux_department_company` (unique, chỉ dòng
 `unit_type = 'COMPANY'`) bảo đảm đúng một Công ty. CHECK `ck_department_company_root`: Công ty khi và chỉ khi `parent_id` NULL.
 
 ### `org.department_deputy`
@@ -721,7 +739,9 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 |---|---|---|
 | `iam.user_account.employee_id` | `employee.employee.id` | Ghép theo email khi đăng nhập |
 | `iam.role_assignment.scope_department_id` | `org.department.id` | Chưa dùng |
-| `org.department.head_employee_id` | `employee.employee.id` | |
+| `org.department.head_employee_id` | `employee.employee.id` | Kiểm đang làm việc, thuộc đơn vị hoặc đơn vị cha (`assertRoleHolders`) |
+| `org.department_deputy.employee_id`, `created_by` | `employee.employee.id` | Như trưởng đơn vị; nghỉ việc, điều chuyển thì gỡ |
+| `employee.employment_assignment.department_id`, `position_id` | `org.department.id`, `org.position.id` | Kiểm qua `OrganizationService` khi tạo điều chuyển; job kiểm lại trạng thái đơn vị lúc áp dụng |
 | `employee.employee.department_id` | `org.department.id` | Kiểm tra qua `OrganizationService` |
 | `employee.employee.position_id` | `org.position.id` | Kiểm tra qua `OrganizationService` |
 | `leave.leave_balance.employee_id` | `employee.employee.id` | |
@@ -741,7 +761,8 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 
 | Code | Đọc/ghi | Bảng | Lý do |
 |---|---|---|---|
-| `OrganizationService.assertActiveEmployee` | Đọc | `employee.employee.status` | Kiểm trưởng đơn vị đang làm việc (AC-2.4.7); Employee đã phụ thuộc Organization nên không gọi ngược service |
+| `OrganizationService` (`assertRoleHolders`, `deputiesOf`, `headsOf`, `memberCounts`, `positionViews`, ngừng hoạt động đơn vị) | Đọc | `employee.employee` (`status`, `department_id`, `position_id`, `full_name`) | Kiểm trưởng, phó đang làm việc và thuộc đơn vị (AC-2.9.1), đếm người của đơn vị (AC-2.10.1) và người giữ chức danh; Employee đã phụ thuộc Organization nên không gọi ngược service |
+| `TransferService.apply` | Đọc | `org.department.status` | Job kiểm đơn vị đích còn hoạt động ngay trong transaction áp dụng điều chuyển, không qua cache (AC-2.7.8) |
 | `ProfileChangeService.computed` (`long-leaves`) | Đọc | `leave.leave_request`, `leave.leave_type` | Ngày nghỉ dài (AC-1.13.3); Leave phụ thuộc Employee nên không gọi ngược |
 | `ProfileChangeService` (outbox) | Ghi | `leave.outbox` | Event email của yêu cầu cập nhật hồ sơ dùng chung outbox và publisher hiện có. **Nợ kỹ thuật:** quy tắc 3 của [hợp đồng event](event-contract.md#6-quy-tắc-khi-đổi-hợp-đồng) yêu cầu `employee.outbox` riêng |
 | Worker `handleProfile` | Đọc | `iam.user_account`, `iam.role_assignment` | Lấy email HR để báo có yêu cầu mới |
@@ -755,6 +776,9 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `half_day` chỉ khi một ngày | `leave.leave_request` | Nửa ngày không áp cho đơn nhiều ngày |
 | UQ `(employee_id, idempotency_key)` | `leave.leave_request` | Gửi trùng không tạo hai đơn |
 | `manager_id <> id` | `employee.employee` | Không tự làm quản lý của mình |
+| UQ một phần `ux_department_company`, CHECK `ck_department_company_root` | `org.department` | Đúng một Công ty, và Công ty là gốc duy nhất của cây (ADR-14) |
+| UQ một phần `ux_assignment_active`, `ux_assignment_scheduled` | `employee.employment_assignment` | Mỗi người một dòng đang hiệu lực, tối đa một điều chuyển chờ |
+| CHECK `effective_to >= effective_from - 1`, CHECK `reason`, `status` | `employee.employment_assignment` | Quá trình công tác không có khoảng ngày âm |
 | Trigger `trg_audit_append_only` | `audit.audit_log` | Không sửa, không xóa log |
 | UQ `(document_id, version_no)` | `document.document_version` | Không có hai file cùng số phiên bản |
 | UQ một phần `uq_profile_change_pending_place`, `uq_profile_change_pending_main` | `employee.profile_change_request` | Mỗi trường hoặc dòng chỉ một yêu cầu đang chờ |

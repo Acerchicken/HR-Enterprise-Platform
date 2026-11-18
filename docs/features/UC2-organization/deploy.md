@@ -39,7 +39,8 @@ Không có biến riêng. Dùng `DB_*` và `OIDC_*` như UC1.
 
 1. Mở `/org`: cây có một gốc và đủ phòng ban.
 2. Mở `/directory`, tìm theo một phần tên: có kết quả, có phân trang.
-3. HR tạo một phòng ban thử dưới `BOD`: trả 201, xuất hiện trong cây.
+3. HR tạo một đơn vị thử dưới `HQ`: trả 201, xuất hiện trong cây.
+4. Mở hồ sơ một nhân viên, mục "Quá trình công tác": có dòng "Tuyển mới". Log worker có `TransferJob` chạy 5 phút một lần.
 
 ## 6. Rollback và sự cố
 

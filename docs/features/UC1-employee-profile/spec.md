@@ -196,7 +196,7 @@ xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /em
 ## 5. Luồng thay thế
 
 - **A1 (từ 4.1 bước 1):** người dùng mở hồ sơ của người khác qua danh bạ. Hệ thống trả mức danh bạ, hoặc mức QL nếu người gọi
-  là quản lý trực tiếp, hoặc toàn bộ nếu là HR. `sections` chỉ liệt kê mục người gọi được xem.
+  là quản lý trực tiếp hoặc gián tiếp (AC-1.1.4), hoặc toàn bộ nếu là HR. `sections` chỉ liệt kê mục người gọi được xem.
 - **A2 (từ 4.5 bước 3):** client không gửi `version`. Hệ thống từ chối (E9), không ghi đè.
 - **A3 (từ 4.4 bước 4):** chức danh là CEO. Cho phép không có quản lý; chỉ được có một CEO đang làm việc.
 - **A4 (từ 4.5 bước 3), HR chuyển nhân viên sang `TERMINATED`:** nếu người đó còn cấp dưới đang làm việc, hệ thống từ chối
@@ -432,7 +432,7 @@ HR duyệt yêu cầu).
 | Thông tin cá nhân | Thông tin cá nhân (8.1) | NV sửa điện thoại, địa chỉ; HR phần còn lại | QL (điện thoại, email: DB; CCCD: HR) | Đã có |
 | | Thông tin liên hệ khẩn cấp | NV | CN | **Chưa có** |
 | | Thân nhân và người phụ thuộc | NV | CN | **Chưa có** |
-| Công việc | Quá trình công tác | Tự tính (tạm từ audit; sau đọc từ UC2 FR-2.8), HR | QL | Đã có (#90) |
+| Công việc | Quá trình công tác | Tự tính (bảng quá trình công tác UC2 FR-2.8), HR | QL | Đã có (#90; đọc bảng mới từ `feat/employee-transfer`) |
 | | Diện đối tượng | HR | CN | **Chưa có** |
 | | Ngày nghỉ dài | Tự tính | QL | Đã có (#90) |
 | | Các mốc trong công ty | Tự tính | QL | Đã có (#90) |
@@ -450,10 +450,10 @@ HR duyệt yêu cầu).
 
 **Theo người xem:**
 
-- Mức danh bạ (người không phải HR, không phải quản lý trực tiếp): chỉ đầu trang (ảnh, mã, họ tên, chức danh, quản lý trực
+- Mức danh bạ (người không phải HR, không phải quản lý trực tiếp hay gián tiếp): chỉ đầu trang (ảnh, mã, họ tên, chức danh, quản lý trực
   tiếp, sơ đồ tổ chức) cộng số điện thoại và email công ty, hiện ngay dưới đầu trang. Không có địa chỉ, ngày sinh; không có các
   hàng lương, hệ số, diện đối tượng và các nhóm bên dưới.
-- Quản lý trực tiếp: thêm các mục mức QL.
+- Quản lý trực tiếp và gián tiếp (mọi cấp phía trên trong chuỗi quản lý, AC-1.1.4): thêm các mục mức QL.
 - Chủ hồ sơ: mọi mục của mình; nút "Sửa", "Thêm", "Tải lên" ở mục NV đều kết thúc bằng "Gửi yêu cầu".
 - HR: mọi mục, nút "Sửa hồ sơ", "Thêm" ở mọi mục (ghi thẳng), "Hiện dòng đã xóa"; danh sách yêu cầu chờ của hồ sơ đó.
 - Số dư phép không nằm trên trang hồ sơ; xem ở trang "Đơn nghỉ" (UC3).
@@ -498,7 +498,6 @@ Quyết định 14/11/2026 (rà soát trước khi làm UC1):
 |---|---|---|
 | Bucket `hr-profile-files-staging` (chặn public, SSE-KMS, lifecycle theo tag `deleted=true`, CORS PUT), cảnh báo 429 (AC-1.14.5) | TV3 | `infra/profile-files`; chạy lại e2e file với MinIO/S3 thật |
 | HR với hồ sơ của chính mình: code cho HR ghi thẳng (kể cả tài khoản ngân hàng của mình), chưa chặn tự duyệt; ma trận phân quyền yêu cầu đi qua yêu cầu cập nhật | TV1 (chờ quyết định) | Ma trận phân quyền, điểm lệch 7 (#103) |
-| Quá trình công tác đang dựng từ audit; khi có UC2 FR-2.8 (lịch sử bổ nhiệm, điều chuyển có hiệu lực) thì đọc từ đó | TV1 khi làm UC2 | Xem điểm mâu thuẫn trong [UC2 requirements](../UC2-organization/requirements.md) |
 | "Các mốc" hiện số ngày phép cộng theo thâm niên nhưng số dư phép (UC3 AC-3.1.3) chưa cộng | TV1 khi làm UC3 | Hai nơi phải dùng cùng một hàm tính |
 | Event email hồ sơ ghi chung `leave.outbox` | – | Nợ kỹ thuật, chuyển `employee.outbox` theo ADR-15 |
 | Quét mã độc file tải lên | – | Không làm trong MVP, rủi ro chấp nhận (mục 7) |

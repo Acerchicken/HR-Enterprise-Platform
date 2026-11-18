@@ -36,7 +36,7 @@ Chỉ RBAC là không đủ: "quản lý duyệt đơn" đúng ở mức vai tr�
 | Vai trò | Loại | Có khi nào | Ý nghĩa |
 |---|---|---|---|
 | `EMPLOYEE` | Suy ra | Tài khoản gắn hồ sơ chưa `TERMINATED` | Dữ liệu của mình, danh bạ |
-| `MANAGER` | Suy ra | Có ít nhất một cấp dưới trực tiếp (ADR-10) | Thêm: dữ liệu mức quản lý của cấp dưới trực tiếp, duyệt đơn của họ |
+| `MANAGER` | Suy ra | Có ít nhất một cấp dưới trực tiếp (ADR-10) | Thêm: dữ liệu mức quản lý của mọi cấp dưới trực tiếp và gián tiếp (chuỗi quản lý, `resolveRelation`, chốt 18/11/2026); duyệt đơn chỉ của cấp dưới trực tiếp |
 | `HR` | Được cấp | ADMIN cấp trong ứng dụng | Toàn bộ hồ sơ, trường nhạy cảm (có audit), quản lý tổ chức, tài liệu |
 | `ADMIN` | Được cấp | ADMIN khác cấp; người đầu tiên tạo bằng seed hoặc `grant-admin` | Quản trị kỹ thuật: tài khoản, vai trò, đơn vị, audit. **Không** xem hồ sơ cá nhân, trường nhạy cảm của người khác |
 
