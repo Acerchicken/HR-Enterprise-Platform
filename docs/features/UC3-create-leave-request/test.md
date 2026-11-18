@@ -22,18 +22,23 @@ là hàm thuần nên kiểm kỹ bằng unit test; luồng có số dư, lịch
 | Tiêu chí | Test tự động (e2e, tên test) | Ca tay | Trạng thái |
 |---|---|---|---|
 | AC-3.1.1, AC-3.1.2 | "số dư phép của tôi", "tạo → quản lý duyệt → HR hoàn tất; số dư, lịch sử và audit đúng" | TC-01 | Có |
-| AC-3.1.3, AC-3.1.4 | – | – | Chưa đạt (chưa tính tỉ lệ; nghỉ cưới đang trừ như số dư năm) |
+| AC-3.1.3 | – | TC-23 | Chờ TV1 triển khai phép năm theo tỉ lệ và thâm niên |
+| AC-3.1.4 | – | TC-24 | Chờ TV1 triển khai giới hạn theo sự kiện, không theo tổng số lần/năm |
+| AC-3.1.5 | – | TC-23 | Chờ xác nhận thời gian thử việc được tính nếu tiếp tục làm việc |
+| AC-3.1.6 | – | TC-31 | Chờ chức năng HR đặt hạn mức theo hồ sơ BHXH xác minh |
 | AC-3.2.1 | "tạo → quản lý duyệt → HR hoàn tất…" | TC-01 | Có (email kiểm tay ở Mailpit) |
 | AC-3.2.2, AC-3.2.3 | "không đủ số dư, dữ liệu sai hoặc thiếu Idempotency-Key → 400 (BR-01)" | TC-03, TC-10 | Có |
-| AC-3.2.4, AC-3.2.5 | – | – | Chưa đạt (đơn qua năm bị 400; chưa gắn hồ sơ trả 404) |
+| AC-3.2.4 | – | TC-25 | Chờ TV1 triển khai đơn qua năm, giữ/trừ số dư nguyên tử theo từng năm |
+| AC-3.2.5 | – | – | Chưa đạt (chưa gắn hồ sơ trả 404, yêu cầu là 403; TV1 xử lý) |
 | AC-3.3.1 | "trùng lịch với đơn đang chờ → 409 (TC-04, BR-02)" | TC-04 | Có |
 | AC-3.3.2, AC-3.3.3 | "trùng lịch bị chặn; hai nửa ngày khác buổi thì được…" | TC-08, TC-09 | Có |
 | AC-3.4.1, AC-3.4.2 | "ngày lễ không trừ phép: 29/4–4/5/2026 tính 2 ngày…" | TC-05 → TC-07 | Có |
+| AC-3.4.3 | – | TC-30 | Chờ TV1 triển khai điều chỉnh lịch lễ có audit/lịch sử |
 | AC-3.5.1 | – | TC-02 | Có ca tay |
 | AC-3.5.2 | "không đủ số dư, dữ liệu sai hoặc thiếu Idempotency-Key → 400" | – | Có |
 | AC-3.5.3 | – | Cần thêm | Chưa |
-| AC-3.6.1 | "trùng lịch bị chặn; … hủy trả lại số dư" | TC-17 | Có |
-| AC-3.6.2, AC-3.6.3 | "chỉ quản lý trực tiếp duyệt/từ chối, chỉ HR hoàn tất, chỉ chủ đơn hủy (TC-22…)" | TC-18, TC-19, SEC-35 → SEC-44 | Có |
+| AC-3.6.1 | "trùng lịch bị chặn; … hủy trả lại số dư" | TC-17, TC-26, TC-27 | Có cho SUBMITTED; PENDING_HR/hủy muộn chờ TV1 |
+| AC-3.6.2 → AC-3.6.5 | – | TC-18, TC-27, TC-28 | Chờ TV1 triển khai quyền hủy đã duyệt và chặn tự hủy từ ngày bắt đầu |
 | AC-3.7.1 → AC-3.7.4 | – | – | Chưa có tính năng |
 
 ## 4. Dữ liệu và tài khoản
@@ -55,12 +60,13 @@ Email: mở Mailpit http://localhost:8025 sau khi tạo đơn.
 ## 6. Kiểm thử phi chức năng
 
 - NFR-1.2: tạo, hủy đơn p95 < 500 ms trong load test tuần 11.
+- NFR-3.4: tắt queue/email worker nhưng API `POST /leave-requests` vẫn tạo đơn 201 và không mất dữ liệu.
 - Đồng thời: hai request tạo đơn song song dùng hết số dư, chỉ một đơn được tạo.
 
 ## 7. Ca còn thiếu (TV4)
 
 - Hai request tạo đơn song song với cùng số dư.
 - e2e cho AC-3.5.1 (gửi lại cùng key trả đúng đơn cũ, số dư không đổi) và AC-3.5.3 (cùng key, đơn khác → 409).
-- AC-3.1.3, AC-3.1.4, AC-3.2.4, AC-3.2.5 khi `fix/leave-balance-rules` xong. Ca mẫu: nhân viên vào làm 1/7 được 6 ngày;
-  10 năm thâm niên được 14 ngày; đơn 29/12 – 4/1 trừ đúng hai năm.
-- AC-3.7.x khi `feat/leave-delegation` xong.
+- Bổ sung e2e cho AC-3.6.1 với đơn `PENDING_HR` (TC-26) và chặn tự hủy từ `startDate` (TC-27).
+- Thực hiện TC-23 → TC-31 khi TV1 hoàn thành tính số dư, nghỉ theo sự kiện, đơn qua năm, lịch lễ, hủy đơn và hạn mức BHXH; các ca này hiện là tiêu chí nghiệp vụ, chưa phải kết quả test.
+- AC-3.7.x khi `feat/leave-delegation` xong, kèm ca bảo mật chặn quản lý gọi `GET /leave-balances?employeeId=` của nhân viên không phải cấp dưới trực tiếp (`403`).

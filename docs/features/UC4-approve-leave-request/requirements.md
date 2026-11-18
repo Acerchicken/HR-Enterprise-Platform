@@ -52,7 +52,8 @@
 - **AC-4.5.1** Khi HR hoàn tất đơn `APPROVED`. Thì đơn `COMPLETED`, số ngày chuyển từ `pending` sang `used` (BR-10), audit
   `LEAVE_COMPLETE`.
 - **AC-4.5.2** Khi hoàn tất đơn chưa duyệt. Thì trả 409, đơn giữ nguyên. Khi quản lý hoặc nhân viên hoàn tất. Thì trả 403.
-- **AC-4.5.3** *(chưa đạt)* Khi HR hoàn tất đơn mà hôm nay chưa qua ngày kết thúc của đơn. Thì trả 409.
+- **AC-4.5.3** *(chưa đạt)* Khi HR hoàn tất đơn `APPROVED`. Chỉ cho phép nếu ngày hiện tại theo múi giờ Việt Nam đã sau `endDate` (sớm nhất là ngày kế tiếp); hoàn tất trong ngày kết thúc hoặc trước đó trả 409. Thiếu giấy tờ bắt buộc thì giữ `APPROVED` (BR-10).
+- **AC-4.5.4** *(mới, TV1 triển khai)* Khi chủ đơn đề nghị hủy đơn `APPROVED` trước ngày bắt đầu nghỉ. Thì quản lý trực tiếp hiện tại hoặc HR xác nhận kèm lý do; đơn chuyển `CANCELLED`, số ngày trả khỏi `pending` theo từng năm, `used` không đổi; lịch sử lưu người đề nghị/người xác nhận/lý do, audit không chứa lý do tự do, gửi email chung (BR-08, BR-15). Từ ngày bắt đầu trở đi trả 409 cho luồng hủy này.
 
 ### FR-4.6 Email thông báo (M, đã có; nội dung chưa đạt BR-15)
 
@@ -63,6 +64,7 @@
 - **AC-4.6.4** Khi queue hoặc dịch vụ email lỗi. Thì quyết định vẫn được lưu; event chờ trong outbox, thử lại rồi vào DLQ.
 - **AC-4.6.5** *(chưa đạt)* Khi CEO tạo đơn. Thì HR nhận email "có đơn cần xử lý". Hiện worker không gửi vì CEO không có
   quản lý trực tiếp.
+- **AC-4.6.6** *(mới, TV1 triển khai)* Khi đơn vẫn `SUBMITTED` sau một ngày làm việc đầy đủ. Thì gửi đúng một email nhắc chung cho người duyệt hiện có quyền (quản lý trực tiếp/người duyệt thay); nếu đơn vẫn `PENDING_HR` sau một ngày làm việc đầy đủ kể từ lúc vào trạng thái đó, gửi đúng một email nhắc chung tới nhóm HR. Không gửi sau khi đơn đã quyết định/hủy/hoàn tất; không lặp nhắc trong cùng giai đoạn; email tuân BR-15. Nhắc việc không tự quyết định đơn (BR-17).
 
 ### FR-4.7 Chi tiết và lịch sử (M, đã có)
 
@@ -105,8 +107,8 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 |---|---|---|---|---|
 | Người duyệt thay | AC-4.3.1 → AC-4.3.4 | TV1 | `feat/leave-delegation` | 11 |
 | Email chung, email đơn CEO cho HR, ẩn lý do nghỉ ốm, audit không chứa ghi chú | AC-4.6.3, AC-4.6.5, AC-4.7.3, AC-4.7.4 | TV1 | `feat/leave-privacy` | 11 |
-| Quy tắc hủy đơn đã duyệt; chỉ hoàn tất sau ngày kết thúc; nhắc đơn chờ lâu | AC-4.5.3 | TV2 | `docs/leave-rules-week11` | 11 |
-| Chỉ hoàn tất sau ngày kết thúc; hủy đơn đã duyệt theo quy tắc TV2 | AC-4.5.3 | TV1 | `fix/leave-balance-rules` | 11 |
+| Chốt hủy đơn đã duyệt, mốc hoàn tất, nhắc đơn chờ; đồng bộ các điểm rà soát PR #96 | AC-4.5.3 → AC-4.5.4, AC-4.6.6 | TV2 | `docs/leave-rules-week11` | 11 |
+| Chỉ hoàn tất sau ngày kết thúc; hủy đơn đã duyệt/hủy muộn theo quy tắc TV2 | AC-4.5.3 → AC-4.5.4; UC3 AC-3.6.5 | TV1 | `fix/leave-balance-rules` | 11 |
 | Ca kiểm thử đổi quản lý khi đơn đang chờ, người duyệt thay, riêng tư | AC-4.2.6, AC-4.3.x, AC-4.6.3, AC-4.7.3 | TV4 | `docs/test-cases-uc3-uc4` | 11 |
 | HR duyệt thêm theo loại phép | AC-4.8.1 → AC-4.8.8 | TV1 | `feat/leave-hr-approval` | 11 |
 | Ca kiểm thử HR duyệt thêm | AC-4.8.x | TV4 | `docs/test-cases-uc3-uc4` | 11 |

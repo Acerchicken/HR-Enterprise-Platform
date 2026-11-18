@@ -6,10 +6,10 @@
 | Tác nhân chính | Quản lý trực tiếp (duyệt, từ chối); HR (duyệt thêm loại phép cần HR duyệt, BR-16; hoàn tất; duyệt đơn của CEO) |
 | Tác nhân phụ, hệ thống ngoài | Người duyệt thay (BR-06, chưa có); nhân viên (nhận email); queue và dịch vụ email |
 | Yêu cầu (SRS) | FR-4.1 → FR-4.8 |
-| Quy tắc | [BR-05, BR-06, BR-09 → BR-11, BR-14 → BR-16](../../business/leave-rules.md), ADR-03, ADR-09, ADR-10 |
+| Quy tắc | [BR-05 → BR-11, BR-14 → BR-19](../../business/leave-rules.md), ADR-03, ADR-09, ADR-10 |
 | Mức ưu tiên | M (FR-4.3, FR-4.4 là S) |
 | Trạng thái | Đã có; người duyệt thay (FR-4.3) kế hoạch tuần 10 |
-| Phiên bản | 1.1 – 14/11/2026 (thêm HR duyệt thêm theo loại phép, BR-16, A6) |
+| Phiên bản | 1.2 – 17/11/2026 (chốt hạn hoàn tất, hủy sau duyệt, nhắc đơn chờ; BR-08, BR-10, BR-17) |
 
 ## 1. Mô tả ngắn
 
@@ -38,7 +38,8 @@ ngày đã dùng. Mỗi bước gửi email cho người liên quan và ghi lị
   |---|---|---|---|---|
   | Duyệt | `SUBMITTED` → `APPROVED` | Không đổi (vẫn giữ trong `pending`) | `LEAVE_APPROVE` | `LeaveApproved` → nhân viên |
   | Từ chối | `SUBMITTED` → `REJECTED` | `pending` giảm (BR-09) | `LEAVE_REJECT` | `LeaveRejected` → nhân viên |
-  | Hoàn tất | `APPROVED` → `COMPLETED` | `pending` giảm, `used` tăng (BR-10) | `LEAVE_COMPLETE` | `LeaveCompleted` → nhân viên |
+  | Hủy đơn đã duyệt | `APPROVED` → `CANCELLED` trước `startDate`, do quản lý trực tiếp/HR xác nhận theo đề nghị của chủ đơn | `pending` giảm theo từng năm, `used` không đổi (BR-08) | `LEAVE_CANCEL_APPROVED` | `LeaveCancelled` → nhân viên, quản lý |
+  | Hoàn tất | `APPROVED` → `COMPLETED` sau `endDate` theo giờ Việt Nam | `pending` giảm, `used` tăng (BR-10) | `LEAVE_COMPLETE` | `LeaveCompleted` → nhân viên |
 
   Mọi thao tác thêm một dòng lịch sử (người xử lý, trạng thái trước và sau, ghi chú, thời điểm) và tăng `version`.
 - **Điều kiện sau khi thất bại:** đơn, số dư, `version` giữ nguyên; không có event.
@@ -55,6 +56,9 @@ stateDiagram-v2
   PENDING_HR --> CANCELLED: nhân viên hủy (UC3)
   SUBMITTED --> REJECTED: quản lý trực tiếp từ chối
   SUBMITTED --> CANCELLED: nhân viên hủy (UC3)
+  SUBMITTED --> CANCELLED: HR hủy sau khi xác minh thực tế, từ startDate trở đi (BR-07)
+  PENDING_HR --> CANCELLED: HR hủy sau khi xác minh thực tế, từ startDate trở đi (BR-07)
+  APPROVED --> CANCELLED: quản lý trực tiếp/HR xác nhận yêu cầu trước startDate (BR-08)
   APPROVED --> COMPLETED: HR hoàn tất
   REJECTED --> [*]
   CANCELLED --> [*]
@@ -78,8 +82,9 @@ stateDiagram-v2
   1. HR mở "Đơn cần hoàn tất". Hệ thống gọi `GET /leave-requests` với mặc định `status=APPROVED`.
   2. HR bấm Hoàn tất. Web gửi `POST /leave-requests/{id}/complete` kèm `version`.
   3. Hệ thống chuyển số ngày từ `pending` sang `used` (BR-10).
-  4. HR chỉ hoàn tất sau ngày kết thúc của đơn, khi nhân viên đã thật sự nghỉ. Với loại phép cần giấy tờ (ốm, cưới, tang, thai
-     sản), HR kiểm giấy tờ trước khi hoàn tất ([danh mục loại phép](../../business/leave-types-holidays.md)).
+  4. HR chỉ hoàn tất từ ngày kế tiếp `endDate` theo múi giờ Việt Nam, khi nhân viên đã thật sự nghỉ. Với loại phép cần giấy
+     tờ (ốm, cưới, tang, thai sản), HR kiểm giấy tờ trước khi hoàn tất ([danh mục loại phép](../../business/leave-types-holidays.md));
+     thiếu giấy tờ thì giữ `APPROVED` (BR-10).
 - **A3, đơn của CEO (FR-4.4):** đơn hiện trong danh sách chờ của HR. HR duyệt hoặc từ chối như bước 3–7.
 - **A4, người duyệt thay (FR-4.3, BR-06, chưa có):**
   1. HR tạo phân công gồm quản lý vắng, người thay và khoảng ngày.
@@ -95,6 +100,12 @@ stateDiagram-v2
   5. HR từ chối: `POST /leave-requests/{id}/hr-reject` kèm `version` và `comment` bắt buộc → `REJECTED`, trả `pending` (BR-09),
      audit `LEAVE_HR_REJECT` (không chứa `comment`, BR-14), email cho nhân viên và quản lý.
   6. Trong lúc `PENDING_HR`, nhân viên vẫn tự hủy được (UC3 A1, BR-07); đơn vẫn giữ lịch (BR-02).
+- **A7, hủy đơn đã duyệt (BR-08):** Chủ đơn đề nghị hủy trước ngày bắt đầu. Quản lý trực tiếp hiện tại hoặc HR xác nhận
+  qua `POST /leave-requests/{id}/cancel`, gửi `version` và lý do bắt buộc. Hệ thống chuyển `APPROVED` → `CANCELLED`, trả
+  `pending` theo từng năm, không cộng `used`, ghi người đề nghị/người xử lý/lý do vào lịch sử (không đưa lý do tự do vào
+  audit), gửi email chung. Nhân viên tự gọi endpoint này trên đơn `APPROVED` nhận 403/409 theo quyền và trạng thái.
+- **A8, nhắc đơn chờ (BR-17):** Sau một ngày làm việc đầy đủ, nếu `SUBMITTED` thì nhắc người duyệt đang có quyền; nếu
+  `PENDING_HR` thì nhắc nhóm HR. Chỉ nhắc một lần cho mỗi giai đoạn, dùng email chung; không tự duyệt/hủy.
 - **A5 (bước 5), bấm duyệt hai lần:** lần hai trả lại đơn, không đổi số dư, không gửi email lần nữa (BR-11).
 
 ## 6. Ngoại lệ
@@ -110,6 +121,8 @@ stateDiagram-v2
 | E7 | Xem chi tiết đơn khi không phải chủ đơn, quản lý trực tiếp hoặc HR | 403 `FORBIDDEN` |
 | E8 | Chủ đơn không có quản lý trực tiếp | CEO: email "có đơn cần xử lý" gửi tới HR. Người khác (dữ liệu lỗi, vì FR-2.5 bắt buộc có quản lý): đơn chờ, worker ghi cảnh báo để HR sửa sơ đồ tổ chức |
 | E10 | HR hoàn tất đơn khi chưa qua ngày kết thúc | 409 `CONFLICT` |
+| E14 | HR hoàn tất trong chính ngày kết thúc hoặc trước `endDate` theo giờ Việt Nam | 409 `CONFLICT` (BR-10) |
+| E15 | Quản lý/HR hủy đơn `APPROVED` từ ngày bắt đầu trở đi theo luồng hủy trước ngày nghỉ | 409 `CONFLICT`; HR dùng quy trình xác minh/điều chỉnh thực tế |
 | E11 | HR duyệt thêm đơn của chính mình | 403 `FORBIDDEN` |
 | E12 | HR từ chối ở bước duyệt thêm mà không có lý do | 400 `VALIDATION_ERROR`, `fields: ["comment"]` |
 | E13 | Hoàn tất đơn `PENDING_HR`; quản lý gọi `hr-approve` | 409 `CONFLICT`; 403 `FORBIDDEN` |
@@ -119,7 +132,9 @@ stateDiagram-v2
 
 - [BR-05](../../business/leave-rules.md) người duyệt hợp lệ, BR-06 người duyệt thay.
 - BR-09 từ chối trả số ngày, BR-10 HR hoàn tất, BR-11 lịch sử và thao tác lặp.
-- BR-14 chỉ chủ đơn và HR xem lý do nghỉ ốm, BR-15 email không chứa chi tiết đơn, BR-16 HR duyệt thêm theo loại phép.
+- BR-07 hủy đơn chờ trước ngày bắt đầu, BR-08 hủy đơn đã duyệt theo đề nghị.
+- BR-14 chỉ chủ đơn và HR xem lý do nghỉ ốm, BR-15 email không chứa chi tiết đơn, BR-16 HR duyệt thêm theo loại phép,
+  BR-17 nhắc đơn chờ, BR-18 hạn mức nghỉ ốm, BR-19 cập nhật lịch lễ.
 - [ADR-10](../../architecture/adr/ADR-10-manager-role-derived.md): vai trò MANAGER suy ra từ sơ đồ tổ chức.
 - [ADR-09](../../architecture/adr/ADR-09-append-only-audit.md): audit chỉ thêm, cùng giao dịch.
 - [Hợp đồng event](../../architecture/event-contract.md): payload, người nhận, chống gửi trùng.
@@ -194,10 +209,11 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Email chỉ báo chung, không chi tiết (BR-15) | Chưa có: email, payload outbox có loại phép, ngày, số ngày, ghi chú | TV1, `feat/leave-privacy` |
 | Audit không chứa ghi chú tự do (BR-14) | Code chưa đúng: audit duyệt, từ chối có `comment` | TV1, `feat/leave-privacy` |
 | Email "có đơn mới" của CEO gửi tới HR (E8) | Code chưa có: worker bỏ qua vì CEO không có quản lý | TV1, `feat/leave-privacy` (cùng chỗ sửa worker) |
-| Chỉ hoàn tất sau ngày kết thúc (A2 bước 4, E10) | Code chưa có: hoàn tất được bất kỳ lúc nào | TV2 xác nhận, TV1 làm |
-| Hủy đơn đã duyệt khi nhân viên không nghỉ nữa | **Thiếu quy tắc.** BR-08 cấm nhân viên tự hủy, nhưng không ai khác hủy được; đơn chỉ có thể bị HR hoàn tất và trừ phép sai | TV2 bổ sung quy tắc. Đề xuất: trước ngày bắt đầu, quản lý trực tiếp hoặc HR hủy theo yêu cầu của nhân viên, trả số ngày khỏi `pending` |
+| Chỉ hoàn tất sau ngày kết thúc (A2 bước 4, E10/E14, BR-10) | Code chưa có: hoàn tất được bất kỳ lúc nào | TV1 chặn hoàn tất đến ngày kế tiếp `endDate` theo giờ Việt Nam; kiểm giấy tờ |
+| Hủy đơn đã duyệt trước ngày bắt đầu (A7, BR-08) | Chưa có luồng quản lý/HR xác nhận hủy; nhân viên tự hủy `APPROVED` tiếp tục bị chặn | TV1 triển khai theo UC3 AC-3.6.2 → AC-3.6.4 |
+| Hủy đơn chờ từ ngày bắt đầu trở đi (BR-07, UC3 A7) | Chưa phân biệt hủy tự phục vụ trước/sau `startDate` | TV1 chặn tự hủy muộn; HR xác minh thực tế nghỉ và điều chỉnh có audit |
 | HR duyệt thêm theo loại phép (FR-4.8, BR-16, A6) | Chưa có: chưa có trạng thái `PENDING_HR`, cấu hình loại phép, API `pending-hr`, `hr-approve`, `hr-reject` | TV1, nhánh `feat/leave-hr-approval`, tuần 12. Xem 13.3 |
-| Nhắc đơn chờ quá 1 ngày làm việc | Chưa có trong yêu cầu | Đề xuất cho MT-2: email nhắc người duyệt, TV2 quyết định |
+| Nhắc đơn chờ quá một ngày làm việc (BR-17, AC-4.6.6) | Chưa có | TV1 gửi một email chung cho người đang có quyền duyệt/nhóm HR theo từng giai đoạn chờ |
 | Đo MT-2 (thời gian gửi → quyết định) | Chưa có báo cáo | Truy vấn trên `leave_request_history` khi có dữ liệu staging |
 
 ## 13. Thiết kế đề xuất cho phần chưa có

@@ -6,9 +6,9 @@
 | Tác nhân chính | Nhân viên (chủ đơn) |
 | Tác nhân phụ, hệ thống ngoài | Quản lý trực tiếp (nhận email); HR, quản lý trực tiếp (tạo đơn hộ, BR-12); queue và dịch vụ email |
 | Yêu cầu (SRS) | FR-3.1 → FR-3.7 |
-| Quy tắc | [BR-01 → BR-04, BR-07, BR-08, BR-11 → BR-15](../../business/leave-rules.md), [loại phép, ngày lễ](../../business/leave-types-holidays.md), ADR-03 |
+| Quy tắc | [BR-01 → BR-04, BR-07 → BR-08, BR-11 → BR-19](../../business/leave-rules.md), [loại phép, ngày lễ](../../business/leave-types-holidays.md), ADR-03 |
 | Mức ưu tiên | M (FR-3.7 là S) |
-| Trạng thái | Đã có; tạo đơn hộ (FR-3.7) kế hoạch tuần 10 |
+| Trạng thái | Đã có; tạo đơn hộ (FR-3.7) kế hoạch tuần 11 |
 | Phiên bản | 1.0 – 13/11/2026 |
 
 ## 1. Mô tả ngắn
@@ -30,10 +30,14 @@ qua email. Gửi lại do mạng lỗi không tạo đơn thứ hai.
 - **Điều kiện trước:**
   - Người dùng đã đăng nhập, tài khoản gắn với hồ sơ đang làm việc.
   - Số dư theo [danh mục loại phép](../../business/leave-types-holidays.md):
-    - `ANNUAL`: 12 ngày cho người làm đủ 12 tháng, cộng 1 ngày cho mỗi 5 năm thâm niên; người vào làm chưa đủ 12 tháng được
-      tính theo tỉ lệ số tháng làm việc (Điều 113, 114 BLLĐ). Hệ thống cấp số dư năm mới từ `hireDate` (UC1).
-    - Nghỉ theo sự kiện (`MARRIAGE`, `BEREAVEMENT`…): tính theo từng lần, không trừ vào số dư năm.
-    - `SICK`: theo số năm đóng BHXH; HR kiểm giấy chứng nhận khi hoàn tất (UC4).
+    - `ANNUAL`: mức chuẩn 12 ngày/năm ở điều kiện bình thường; mức 14/16 ngày cho nhóm công việc/điều kiện tương ứng.
+      Cứ đủ 5 năm làm việc cho cùng người sử dụng lao động cộng 1 ngày. Chưa đủ 12 tháng trong năm thì tính theo tỷ lệ
+      tháng làm việc thực tế và quy tắc tháng lẻ ở BR-01. Số dư lưu 2 chữ số thập phân, không làm tròn giảm; hệ thống cấp
+      số dư từ `hireDate` (UC1).
+    - Nghỉ theo sự kiện (`MARRIAGE`, `CHILD_MARRIAGE`, `BEREAVEMENT`, `MATERNITY`, `PATERNITY`): theo từng sự kiện và
+      giới hạn trong danh mục loại phép, không trừ vào số dư phép năm.
+    - `SICK`: hạn mức do HR nhập/cập nhật từ dữ liệu BHXH và nhóm điều kiện lao động đã xác minh; không suy từ `hireDate`.
+      HR kiểm giấy chứng nhận khi hoàn tất (UC4, BR-18).
   - Danh sách ngày lễ của năm đã có.
 - **Kích hoạt:** nhân viên bấm "Tạo đơn nghỉ".
 - **Điều kiện sau khi thành công:**
@@ -77,10 +81,14 @@ sequenceDiagram
 ## 5. Luồng thay thế
 
 - **A1, nhân viên hủy đơn (FR-3.6):**
-  1. Nhân viên mở đơn `SUBMITTED` hoặc `PENDING_HR` (đã qua quản lý, chờ HR, BR-16) của mình và bấm Hủy. Web gửi `POST /leave-requests/{id}/cancel` kèm `version`.
+  1. Trước ngày bắt đầu nghỉ, nhân viên mở đơn `SUBMITTED` hoặc `PENDING_HR` (đã qua quản lý, chờ HR, BR-16) của mình và bấm Hủy. Web gửi `POST /leave-requests/{id}/cancel` kèm `version`.
   2. Hệ thống chuyển đơn sang `CANCELLED` và trả số ngày khỏi `pending` (BR-07).
   3. Hệ thống ghi lịch sử, audit `LEAVE_CANCEL` và event `LeaveCancelled`, rồi email báo quản lý trực tiếp.
   4. Bấm hủy lần hai không đổi gì (BR-11).
+- **A6, hủy đơn đã duyệt (BR-08):** Chủ đơn đề nghị; trước ngày bắt đầu nghỉ, quản lý trực tiếp hiện tại hoặc HR xác nhận
+  với lý do bắt buộc. Đơn chuyển `CANCELLED`, trả `pending` theo từng năm, `used` không đổi; lịch sử ghi người đề nghị,
+  người xác nhận và lý do, audit không chứa lý do tự do; email chỉ báo chung. Nhân viên không tự hủy đơn `APPROVED`.
+  Từ ngày bắt đầu nghỉ, không dùng luồng hủy này; điều chỉnh số ngày nghỉ thực tế thuộc quy trình HR riêng.
 - **A2, xem đơn của mình:** `GET /leave-requests/me`, lọc theo trạng thái, có phân trang. Mở chi tiết thì thấy lịch sử
   trạng thái (FR-4.7).
 - **A3, HR hoặc quản lý tạo đơn hộ (FR-3.7, BR-12, chưa có):**
@@ -90,6 +98,8 @@ sequenceDiagram
 - **A4 (từ bước 2), nghỉ nửa ngày vào ngày nghỉ:** số ngày bằng 0, đi tới ngoại lệ E4.
 - **A5 (từ bước 6), đơn qua hai năm, ví dụ 29/12/2026 – 4/1/2027:** hệ thống tách số ngày theo từng năm và trừ vào số dư của
   năm tương ứng; mỗi năm phải đủ số dư. Nhân viên vẫn gửi một đơn.
+- **A7, tự hủy đơn chờ sau ngày bắt đầu (BR-07):** nhân viên nhận 409. HR xác minh ngày nghỉ thực tế, sau đó dùng quy trình
+  điều chỉnh/hủy có lý do; số dư chỉ được trả theo ngày chưa nghỉ đã xác minh, không tự trả toàn bộ số ngày.
 
 ## 6. Ngoại lệ
 
@@ -105,13 +115,15 @@ sequenceDiagram
 | E8 | Hủy với `version` cũ | 409 `CONFLICT` |
 | E9 | Tài khoản chưa gắn hồ sơ | 403 `FORBIDDEN` |
 | E10 | Dùng lại `Idempotency-Key` cũ cho đơn khác (loại phép, ngày hoặc buổi khác) | 409 `CONFLICT` |
+| E11 | Chủ đơn tự hủy `SUBMITTED`/`PENDING_HR` từ ngày bắt đầu nghỉ trở đi | 409 `CONFLICT`; HR xử lý sau khi xác minh thực tế nghỉ (BR-07) |
 
 ## 7. Quy tắc áp dụng
 
 - [BR-01](../../business/leave-rules.md) số dư.
 - BR-02 trùng lịch, BR-03 ngày làm việc và ngày lễ, BR-04 nửa ngày.
-- BR-07 hủy đơn chờ, BR-08 không tự hủy đơn đã duyệt.
+- BR-07 hủy đơn chờ trước ngày bắt đầu; BR-08 người duyệt xác nhận hủy đơn đã duyệt trước ngày bắt đầu.
 - BR-11 thao tác lặp, BR-12 tạo đơn hộ.
+- BR-17 nhắc đơn chờ; BR-18 nguồn hạn mức nghỉ ốm; BR-19 thay đổi lịch lễ sau khi gửi đơn.
 - BR-13 thời hạn lưu, BR-14 người xem lý do nghỉ ốm, BR-15 email không chứa chi tiết.
 - Loại phép, số ngày được hưởng, ngày lễ 2026: [`leave-types-holidays.md`](../../business/leave-types-holidays.md).
 - [ADR-03](../../architecture/adr/ADR-03-sync-workflow-async-notification.md): ghi đơn đồng bộ, email bất đồng bộ qua outbox.
@@ -170,12 +182,18 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
 | Số dư, tạo đơn, ngày lễ, nửa ngày, trùng lịch, idempotency, hủy | Đã có | – |
-| Tạo đơn hộ (FR-3.7, BR-12) | Chưa có | TV1, nhánh `feat/leave-delegation`, mức 3 tuần 10 |
+| Tạo đơn hộ (FR-3.7, BR-12) | Chưa có | TV1, nhánh `feat/leave-delegation`, mức 3 tuần 11 |
 | Email chỉ chứa thông báo chung (BR-15) | Chưa có: email còn tên, loại phép, ngày | TV1 sửa `buildEmail` và payload event |
 | Ẩn lý do nghỉ ốm với quản lý (BR-14) | Chưa có | TV1 sửa response chi tiết, danh sách, lịch sử |
 | Lưu trữ 5 năm, legal hold (BR-13) | Chưa có | Thiết kế sau MVP; ghi trong SRS mục 8 |
-| Phép năm theo thâm niên, theo tỉ lệ khi chưa đủ 12 tháng | Code chưa đúng: seed có cộng thâm niên nhưng không tính tỉ lệ cho người vào làm trong năm; nhân viên tạo mới không được cấp số dư, khi tạo đơn số dư tự tạo bằng `max_days_per_year`, kể cả nghỉ cưới | TV2 xác nhận cách tính, TV1 làm (cấp số dư đầu năm và khi tạo nhân viên) |
+| Phép năm theo tỉ lệ, tháng lẻ và thâm niên (BR-01) | Code chưa đúng: seed có cộng thâm niên nhưng chưa tính tỷ lệ cho người vào làm trong năm; nhân viên mới không được cấp đúng số dư, khi tạo đơn số dư tự tạo bằng `max_days_per_year` | TV1 cấp/cập nhật số dư khi tạo nhân viên và đầu năm; kiểm thử AC-3.1.3 theo cách tính đã chốt |
+| Thời gian thử việc (BR-01, AC-3.1.5) | Chưa có kiểm tra chính sách thử việc có tiếp tục làm sau thời gian thử việc | TV1 tính từ `hireDate` khi nhân viên tiếp tục làm việc; cho dùng số dư đã phát sinh trong MVP |
+| Nghỉ theo sự kiện không trừ phép năm (BR-01, AC-3.1.4) | Code chưa đúng: tạo đơn loại sự kiện có thể tự tạo số dư phép theo `max_days_per_year` | TV1 tách số dư phép năm khỏi giới hạn theo từng sự kiện |
+| Hạn mức nghỉ ốm (BR-18, AC-3.1.6) | Code không có lịch sử đóng BHXH/nhóm điều kiện lao động; không thể suy hạn mức đúng từ `hireDate` | HR quản lý hạn mức từ hồ sơ BHXH đã xác minh cho tới khi có dữ liệu tích hợp |
 | Đơn qua hai năm (A5) | Code chưa đúng: trả 400, bắt tách hai đơn | TV1 |
+| Hủy đơn chờ sau ngày bắt đầu (BR-07, A7) | Code chưa phân biệt tự hủy trước/sau `startDate` | TV1 chặn tự hủy muộn; HR xác minh và điều chỉnh |
+| Hủy đơn đã duyệt theo đề nghị (BR-08, A6) | Chưa có luồng hủy của quản lý/HR; nhân viên tự hủy `APPROVED` phải tiếp tục bị chặn | TV1 triển khai theo UC3 AC-3.6.2 → AC-3.6.4 và UC4 |
+| Cập nhật lịch lễ ảnh hưởng đơn đang chờ/đã duyệt (BR-19, AC-3.4.3) | Chưa có xử lý điều chỉnh lịch được ghi audit/lịch sử | TV1 thêm luồng điều chỉnh có kiểm soát; không tự thay số dư |
 | Tài khoản chưa gắn hồ sơ (E9) | Code trả 404 thay vì 403 | TV1 |
 
 ## 13. Thiết kế đề xuất cho phần chưa có
