@@ -36,7 +36,7 @@
   trạng thái; không thấy CCCD, số tài khoản, lương.
 - **AC-1.1.3** Giả sử người dùng có vai trò ADMIN. Khi mở hồ sơ người khác. Thì chỉ thấy mức danh bạ.
 
-### FR-1.2 Nhân viên sửa liên hệ qua yêu cầu (M; code chưa đạt: đang lưu thẳng)
+### FR-1.2 Nhân viên sửa liên hệ qua yêu cầu (M)
 
 - **AC-1.2.1** Giả sử nhân viên đã đăng nhập. Khi sửa `phone`, `address` của chính mình với giá trị hợp lệ và bấm
   "Gửi yêu cầu". Thì trả 202, tạo yêu cầu `PENDING` (FR-1.9); hồ sơ **chưa đổi**, `version` giữ nguyên.

@@ -8,8 +8,8 @@
 | Yêu cầu (SRS) | FR-1.1 → FR-1.14 |
 | Quy tắc | ADR-08 (mã hóa trường nhạy cảm), ADR-09 (audit), ADR-10 (MANAGER suy ra từ tổ chức), ADR-13 (lưu file qua presigned URL), [ma trận phân quyền – Hồ sơ nhân viên](../../security/access-control-matrix.md#hồ-sơ-nhân-viên) |
 | Mức ưu tiên | M: FR-1.1 → FR-1.5, FR-1.7, FR-1.14. S: FR-1.6, FR-1.8 → FR-1.11. C: FR-1.12, FR-1.13 |
-| Trạng thái | Đã có: xem theo mức, tự sửa liên hệ, HR tạo, sửa, xem trường nhạy cảm (PR #63). Còn lại chưa có, xem mục 12 |
-| Phiên bản | 2.1 – 14/11/2026 (thay đổi của nhân viên phải qua HR xác nhận, luồng 4.2, 4.7) |
+| Trạng thái | Đã có FR-1.1 → FR-1.14 trên `dev` (#80, #84 → #90, 15/11/2026). Còn lại phía hạ tầng và điểm lệch: mục 12 |
+| Phiên bản | 2.2 – 18/11/2026 (cập nhật hiện trạng sau khi code xong; 2.1: thay đổi của nhân viên phải qua HR xác nhận) |
 
 ## 1. Mô tả ngắn
 
@@ -484,26 +484,24 @@ Quyết định 14/11/2026 (rà soát trước khi làm UC1):
 - Mục "Các mốc trong công ty" để tiêu đề đỏ tới khi tính thâm niên (FR-1.13); ngày vào làm xem ở "Thông tin cá nhân".
 - Danh sách cấp dưới trực tiếp không nằm trong popup hồ sơ; xem ở sơ đồ tổ chức.
 
-| Nội dung | Trạng thái | Việc còn lại |
+| Nội dung | Trạng thái | PR |
 |---|---|---|
-| Xem theo mức, tự sửa liên hệ, HR xem trường nhạy cảm, audit | Đã có | – |
-| HR tạo, sửa hồ sơ trên giao diện | Đã có (PR #63) | TV2 cập nhật trạng thái FR-1.4, FR-1.5 trong SRS |
-| `version` bắt buộc khi sửa (E9) | Code chưa đúng: chỉ so khi client gửi | TV1, `fix/employee-org-integrity` |
-| Chặn chuyển `TERMINATED` khi còn cấp dưới (A4, E10) | Code chưa có | TV2 xác nhận, TV1 làm |
-| Người `TERMINATED` không dùng được hệ thống | Code chưa có | TV1; TV3 thêm bước khóa tài khoản Cognito vào quy trình nghỉ việc |
-| HR sửa `hireDate`, `workEmail` | Code chưa có | TV1 |
-| Audit theo nhóm trường (mục 7) | Code chưa đúng: ghi giá trị mới của mọi trường thường, không ghi giá trị cũ | TV1 |
-| Sửa chỉ trường nhạy cảm tăng `version` | Code chưa đúng | TV1 |
-| Chỉ tải trường nhạy cảm khi bấm mắt | Code chưa đúng: form sửa tự tải | TV1 |
-| Trang hồ sơ theo nhóm, màu cyan, mục chưa có tiêu đề đỏ (9.1) | Chưa có: trang hiện là các thẻ rời, màu xanh dương | TV1, `feat/profile-layout` |
-| Tải theo nhu cầu: `summary` cho trang mặc định, API riêng cho từng mục | Code chưa đúng: `GET /me` và `GET /employees/{id}` trả mọi trường cá nhân ngay khi mở trang; trang "Hồ sơ của tôi" còn tải số dư phép | TV1, `feat/profile-layout` |
-| Chủ hồ sơ tự xem lương, số tài khoản | Chưa có | TV1, `feat/profile-layout` |
-| Giới hạn tần suất, hạn mức (mục 7) | Chưa có: chưa có rate limit nào | TV1, `feat/security-headers-ratelimit` |
-| Nhân viên sửa điện thoại, địa chỉ qua yêu cầu (AC-1.2.1) | Code chưa đúng: đang lưu thẳng | TV1, `feat/profile-change-requests` |
-| Yêu cầu cập nhật, màn hình duyệt của HR, nhật ký thay đổi (FR-1.9, FR-1.11) | Chưa có | TV1, `feat/profile-change-requests` |
-| Tệp đính kèm, ảnh đại diện (FR-1.10) | Chưa có | TV1 `feat/profile-files`; TV3 `infra/profile-files` |
-| Mục HR quản lý, thông tin tự tính (FR-1.12, FR-1.13) | Chưa có | Sau MVP; mục vẫn hiện với tiêu đề đỏ |
-| Quét mã độc file tải lên | Không làm trong MVP | Rủi ro chấp nhận, mục 7 |
+| Trang hồ sơ theo nhóm, popup có URL, nav bar, trang chủ, ô tìm đồng nghiệp, tải theo nhu cầu, chủ hồ sơ tự xem lương, tài khoản | Đã có | #80 |
+| `version` bắt buộc, audit theo nhóm trường, HR sửa `hireDate`, `workEmail`, nghỉ việc, chặn người đã nghỉ, form HR không tự tải nhạy cảm | Đã có | #84 |
+| Giới hạn tần suất, body 64 KiB, header bảo mật | Đã có | #85 |
+| Yêu cầu cập nhật, HR duyệt ("Việc cần duyệt" tab Sửa hồ sơ), HR sửa thẳng mục, nhật ký thay đổi, email | Đã có | #86 |
+| File hồ sơ, CV, ảnh đại diện, hạn mức, xóa mềm | Đã có (e2e dùng bucket giả trong bộ nhớ) | #87 |
+| Mục HR quản lý, thuế TNCN, hợp đồng sắp hết hạn | Đã có | #89 |
+| Quá trình công tác, các mốc, ngày nghỉ dài | Đã có | #90 |
+
+| Còn lại | Ai | Ghi chú |
+|---|---|---|
+| Bucket `hr-profile-files-staging` (chặn public, SSE-KMS, lifecycle theo tag `deleted=true`, CORS PUT), cảnh báo 429 (AC-1.14.5) | TV3 | `infra/profile-files`; chạy lại e2e file với MinIO/S3 thật |
+| HR với hồ sơ của chính mình: code cho HR ghi thẳng (kể cả tài khoản ngân hàng của mình), chưa chặn tự duyệt; ma trận phân quyền yêu cầu đi qua yêu cầu cập nhật | TV1 (chờ quyết định) | Ma trận phân quyền, điểm lệch 7 (#103) |
+| Quá trình công tác đang dựng từ audit; khi có UC2 FR-2.8 (lịch sử bổ nhiệm, điều chuyển có hiệu lực) thì đọc từ đó | TV1 khi làm UC2 | Xem điểm mâu thuẫn trong [UC2 requirements](../UC2-organization/requirements.md) |
+| "Các mốc" hiện số ngày phép cộng theo thâm niên nhưng số dư phép (UC3 AC-3.1.3) chưa cộng | TV1 khi làm UC3 | Hai nơi phải dùng cùng một hàm tính |
+| Event email hồ sơ ghi chung `leave.outbox` | – | Nợ kỹ thuật, chuyển `employee.outbox` theo ADR-15 |
+| Quét mã độc file tải lên | – | Không làm trong MVP, rủi ro chấp nhận (mục 7) |
 
 ## 13. Thiết kế đề xuất
 

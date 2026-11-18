@@ -30,7 +30,7 @@ UC8 "Đăng nhập và tài khoản" ([ADR-17](../architecture/adr/ADR-17-authen
 
 | Tính năng | Yêu cầu | Đặc tả | Deploy | Kiểm thử | FR | Trạng thái (13/11) |
 |---|---|---|---|---|---|---|
-| UC1 – Hồ sơ nhân viên | [requirements](UC1-employee-profile/requirements.md) | [spec](UC1-employee-profile/spec.md) | [deploy](UC1-employee-profile/deploy.md) | [test](UC1-employee-profile/test.md) | FR-1.1 → 1.6 | Đã có API và giao diện |
+| UC1 – Hồ sơ nhân viên | [requirements](UC1-employee-profile/requirements.md) | [spec](UC1-employee-profile/spec.md) | [deploy](UC1-employee-profile/deploy.md) | [test](UC1-employee-profile/test.md) | FR-1.1 → 1.6 | Đã có FR-1.1 → FR-1.14 (#80, #84 → #90); còn bucket staging, cảnh báo 429 (TV3) |
 | UC2 – Thông tin tổ chức | [requirements](UC2-organization/requirements.md) | [spec](UC2-organization/spec.md) | [deploy](UC2-organization/deploy.md) | [test](UC2-organization/test.md) | FR-2.1 → 2.9 | Đã có; quản lý phòng ban chưa có giao diện |
 | UC3 – Tạo đơn nghỉ | [requirements](UC3-create-leave-request/requirements.md) | [spec](UC3-create-leave-request/spec.md) | [deploy](UC3-create-leave-request/deploy.md) | [test](UC3-create-leave-request/test.md) | FR-3.1 → 3.7 | Đã có; tạo đơn hộ chưa có |
 | UC4 – Duyệt đơn nghỉ | [requirements](UC4-approve-leave-request/requirements.md) | [spec](UC4-approve-leave-request/spec.md) | [deploy](UC4-approve-leave-request/deploy.md) | [test](UC4-approve-leave-request/test.md) | FR-4.1 → 4.8 | Đã có; người duyệt thay, email chung, ẩn lý do ốm chưa có |
