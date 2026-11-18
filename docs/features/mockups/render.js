@@ -17,7 +17,7 @@ function outPath(id) {
 const ids = ['home', 'home-hr', 'search', 'quickview', 'profile-desktop', 'profile-mobile',
   'subpage-mobile', 'profile-directory-view', 'approvals',
   // UC2 → UC7
-  'uc2-directory', 'uc2-org', 'uc2-dept-edit', 'uc2-transfer',
+  'uc2-directory', 'uc2-org', 'uc2-dept-edit', 'uc2-transfer', 'uc2-transfer-reports', 'uc2-terminate', 'uc2-deactivate',
   'uc2-positions', 'uc2-org-mobile', 'uc2-career-mobile', 'uc3-new',
   'uc3-new-mobile', 'uc3-list', 'uc3-detail-mobile', 'uc4-manager',
   'uc4-hr', 'uc4-complete', 'uc4-delegation', 'uc4-mobile',

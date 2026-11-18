@@ -180,7 +180,8 @@ Index: `ix_department_parent (parent_id)` để lấy cây tổ chức và phòn
 
 > **Đã quyết, chưa có migration ([ADR-14](adr/ADR-14-org-unit-types.md)):** bảng này là cây **đơn vị** có loại. Sẽ thêm
 > `unit_type` (`COMPANY`, `CENTER`, `DEPARTMENT`, `TEAM`), `status` (`ACTIVE`, `INACTIVE`), `head_acting` và bảng
-> `org.department_deputy`. Thiết kế: [UC2 spec mục 13](../features/UC2-organization/spec.md#13-thiết-kế-đề-xuất-cho-phần-chưa-có).
+> `org.department_deputy`; `org.position` thêm `active`, `is_system`; bảng mới `employee.employment_assignment` (quá trình công
+> tác, điều chuyển). Thiết kế: [UC2 spec mục 13](../features/UC2-organization/spec.md#13-thiết-kế-đề-xuất-cho-phần-chưa-có).
 > Khi migration merge thì cập nhật bảng trên và sơ đồ.
 
 ### `org.position`

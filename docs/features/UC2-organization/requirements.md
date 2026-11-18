@@ -165,8 +165,10 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| Rà lại quy tắc trưởng, phó đơn vị (FR-2.9) và ADR-14 đã soạn thay | – | TV2 | `docs/org-integrity-rules` | 11 (rà lại sau #83, #84) |
-| Chặn gốc thứ hai, kiểm `headEmployeeId`; thêm loại đơn vị, luật cha con, đổi seed (Công ty, Trung tâm, Nhóm) | AC-2.4.6 → AC-2.4.9, AC-2.2.3 | TV1 | `fix/employee-org-integrity` | 11 (gốc thứ hai, `headEmployeeId` đã merge #84; loại đơn vị ở `feat/org-unit-types`) |
-| Giao diện quản lý phòng ban (mức S, cắt đầu tiên nếu thiếu thời gian) | AC-2.4.5 | TV1 | `feat/department-admin-ui` | 13 |
-| Trưởng, phó đơn vị mọi cấp; danh mục chức danh; ngừng hoạt động đơn vị | AC-2.9.x, AC-2.6.x, AC-2.10.x | TV1 | `feat/department-admin-ui` (cùng nhánh) | 13 |
-| Quá trình công tác, điều chuyển có ngày hiệu lực | AC-2.8.x, AC-2.7.x | TV1 | `feat/employee-transfer` | 13 (mức S; nếu không kịp thì chỉ làm AC-2.8.x với dòng ghi khi tạo, sửa hồ sơ) |
+| Rà lại quy tắc trưởng, phó đơn vị (FR-2.9) và ADR-14 | – | TV2 | `docs/org-integrity-rules` | Xong (#96) |
+| Chặn gốc thứ hai, kiểm `headEmployeeId` đang làm việc | AC-2.4.6, AC-2.4.7 (một phần) | TV1 | `fix/employee-org-integrity` | Xong (#84) |
+| Sơ đồ luồng, bản vẽ, hợp đồng API, thiết kế dữ liệu | – | TV1 | `docs/uc2-design` | 11 |
+| Loại đơn vị, luật cha con, seed mới, lọc danh bạ gồm đơn vị con | AC-2.2.3, AC-2.4.8, AC-2.4.9, AC-2.1.5 | TV1 | `feat/org-unit-types` | 11 |
+| Trưởng, phó mọi cấp; chức danh; ngừng hoạt động đơn vị; giao diện quản lý đơn vị | AC-2.4.5, AC-2.4.7, AC-2.6.x, AC-2.9.x, AC-2.10.x | TV1 | `feat/department-admin-ui` | 11–12 |
+| Quá trình công tác, điều chuyển có ngày hiệu lực, hộp xác nhận nghỉ việc | AC-2.7.x, AC-2.8.x, UC1 AC-1.7.3 | TV1 | `feat/employee-transfer` | 12 |
+| Ca kiểm thử cho các AC mới | AC-2.x | TV4 | theo từng PR code | 11–12 |
