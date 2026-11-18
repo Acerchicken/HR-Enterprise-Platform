@@ -42,10 +42,9 @@ const PHONE = /^\+?[0-9 .-]{8,20}$/;
 export const SELF_EDITABLE = ['phone', 'address'] as const;
 
 export class UpdateEmployeeDto {
-  @ApiPropertyOptional({ description: 'Version hiện tại (optimistic locking). Lệch → 409.' })
-  @IsOptional()
-  @IsInt()
-  version?: number;
+  @ApiProperty({ description: 'Version hiện tại (optimistic locking). Bắt buộc (E9); lệch → 409.' })
+  @IsInt({ message: 'Thiếu version của hồ sơ' })
+  version: number;
 
   @ApiPropertyOptional({ example: '0912 345 678' })
   @IsOptional()
@@ -69,6 +68,16 @@ export class UpdateEmployeeDto {
   @IsOptional()
   @IsDateString()
   dateOfBirth?: string;
+
+  @ApiPropertyOptional({ description: 'Email công ty (AC-1.4.4). Đổi cùng lúc với tài khoản ở identity provider' })
+  @IsOptional()
+  @IsEmail()
+  workEmail?: string;
+
+  @ApiPropertyOptional({ description: 'Ngày vào làm (sửa sai sót, AC-1.4.4)' })
+  @IsOptional()
+  @IsDateString()
+  hireDate?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -210,6 +219,11 @@ export class ProfileSectionQuery {
   @IsOptional()
   @IsIn(['true', 'false'])
   reveal?: 'true' | 'false';
+
+  @ApiPropertyOptional({ description: 'Quá trình công tác: true trả các dòng HR nhập tay thay cho dòng thời gian tự tính' })
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  raw?: 'true' | 'false';
 }
 
 export class SectionSummary {
@@ -234,6 +248,7 @@ export class ProfileSummary {
   @ApiProperty() workEmail: string;
   @ApiProperty({ enum: ['HR', 'OWNER', 'MANAGER', 'OTHER'] }) relation: 'HR' | 'OWNER' | 'MANAGER' | 'OTHER';
   @ApiProperty({ description: 'HR: hiện nút "Sửa hồ sơ"' }) canEdit: boolean;
+  @ApiProperty({ description: 'Có ảnh đại diện đã duyệt: tải ở GET /employees/{id}/avatar' }) hasAvatar: boolean;
   @ApiPropertyOptional({
     nullable: true,
     description: 'Loại hợp đồng đang hiệu lực (hàng "Diện đối tượng", mức QL). null: chưa có dữ liệu. Không có trường này ở mức danh bạ',
@@ -251,6 +266,7 @@ export class MaskedField {
 
 export class PersonalSection {
   @ApiProperty({ example: 'personal' }) section: 'personal';
+  @ApiProperty({ enum: ['HR', 'OWNER', 'MANAGER', 'OTHER'] }) relation: 'HR' | 'OWNER' | 'MANAGER' | 'OTHER';
   @ApiProperty() version: number;
   @ApiProperty({ nullable: true }) phone: string | null;
   @ApiProperty() workEmail: string;

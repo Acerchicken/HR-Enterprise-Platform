@@ -147,3 +147,55 @@ button.row:hover { background: var(--primary-soft); }
   .toolbar { flex-direction: column; }
   .kv .k { width: 96px; }
 }
+
+/* Yêu cầu cập nhật hồ sơ và trang Việc cần duyệt (UC1 FR-1.9, frontend.md 2.4) */
+.req { color: var(--danger); }
+label.check { display: flex; align-items: center; gap: 8px; color: var(--text); }
+label.check input { width: auto; margin: 0; }
+textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; margin-top: 4px; }
+.req-box { margin: 10px 0 6px; border: 1px dashed #fec84b; background: #fffaeb; border-radius: 12px; padding: 10px 14px; font-size: 13.5px; }
+.req-box b { color: var(--warn); }
+.req-box.rejected { border-color: #fda29b; background: #fef3f2; }
+.req-box.rejected b { color: var(--danger); }
+.req-box ul { margin: 6px 0; }
+.req-box .actions { margin-top: 6px; }
+.row-actions { padding: 8px 0 6px; }
+.row-actions button { display: inline-flex; align-items: center; gap: 6px; }
+.history { list-style: none; padding: 0; margin: 0; }
+.history .fld { padding: 10px 14px; }
+.page-title { font-size: 22px; margin: 0 0 8px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; overflow-x: auto; }
+.tabs a { padding: 9px 14px; color: var(--muted); white-space: nowrap; }
+.tabs a.on { color: var(--primary); border-bottom: 2px solid var(--primary); font-weight: 600; }
+.split { display: grid; grid-template-columns: minmax(280px, 420px) 1fr; gap: 18px; align-items: start; }
+.inbox-list { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.inbox-row { display: flex; gap: 12px; width: 100%; border: none; border-radius: 8px; background: none; text-align: left; padding: 10px; align-items: flex-start; }
+.inbox-row small { display: block; color: var(--muted); font-size: 12.5px; }
+.inbox-row.sel, .inbox-row:hover { background: var(--primary-soft); box-shadow: inset 3px 0 0 var(--primary); }
+.inbox-row .age { margin-left: auto; text-align: right; font-size: 12px; color: var(--muted); display: grid; gap: 4px; justify-items: end; }
+.overdue { display: inline-block; font-size: 11px; font-weight: 600; color: var(--warn); background: #fffaeb; border: 1px solid #fec84b; border-radius: 6px; padding: 0 6px; margin-left: 6px; }
+.det { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+.det h2 { font-size: 18px; margin: 0 0 4px; }
+table.cmp { margin: 14px 0; }
+table.cmp td.new { background: #ecfdf3; color: var(--ok); font-weight: 600; }
+@media (max-width: 899px) {
+  .split { grid-template-columns: minmax(0, 1fr); }
+  .split.has-detail .inbox-list { display: none; }
+  .split:not(.has-detail) .inbox-detail { display: none; }
+}
+.back-mobile { display: none; }
+@media (max-width: 899px) { .back-mobile { display: inline-block; margin-bottom: 8px; } }
+
+/* File hồ sơ (UC1 FR-1.10) */
+img.avatar { object-fit: cover; }
+.avatar-change { margin: 8px 0 4px; display: flex; justify-content: center; }
+.file-upload { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.file-upload button { display: inline-flex; align-items: center; gap: 6px; }
+.file-upload progress { width: 120px; }
+.files { margin: 6px 0; }
+.file-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.file-row:last-child { border-bottom: none; }
+.file-row svg { color: var(--primary); flex: none; }
+.file-row .ellipsis { flex: 1; }
+.attach { display: grid; gap: 6px; margin: 10px 0; }
+button.link.danger { color: var(--danger); }

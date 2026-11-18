@@ -88,4 +88,18 @@ _Góp ý ghi trực tiếp trên PR._
 
 ## Việc đã làm
 
-_Điền T2 (16/11)._
+> Điền ngày 16/11 từ lịch sử PR trên GitHub (9/11 – 15/11, cùng #80 → #93 merge ngày 15–16/11 vì làm ngay sau đó). Thành viên bổ sung nếu có việc không nằm trên GitHub, kèm link.
+
+| Việc | PR | Ghi chú |
+|---|---|---|
+| Một quản lý trừ CEO, HR duyệt đơn CEO (issue #22) | #60 | Merge 12/11 |
+| HR tạo và sửa hồ sơ trên giao diện | #63 | Merge 12/11 |
+| API kho tài liệu, ADR-13 | #64 | Merge 12/11 |
+| Tách SRS khỏi BRD, đặt tên SAD; NFR bảo mật, SLI/SLO | #65, #66, #71 | |
+| Kế hoạch siết bảo mật; database schema; hợp đồng event, biến môi trường, mã lỗi; tách ADR | #72 → #75 | |
+| Tài liệu theo tính năng UC1 → UC7 (requirements, spec, deploy, test) | #76 | Phần thuộc vai trò TV2, TV3, TV4: thành viên review (kế hoạch tổng 7.9) |
+| Kế hoạch tổng, kế hoạch tuần 11, driver email SES | #77, #78, #82 | |
+| UC1 (15–16/11): trang hồ sơ, toàn vẹn hồ sơ, rate limit và header, yêu cầu cập nhật, file hồ sơ, mục HR, thông tin tự tính | #80, #84 → #87, #89, #90, #93 | UC1 code xong |
+| Bản vẽ UC2 → UC7; ADR-14 loại đơn vị; ADR-15 tách service | #81, #83, #92 | |
+| Review PR của thành viên | #61, #62, #68, #69, #70, #91 | |
+| Không làm | – | `feat/document-search`, `feat/audit-ui`, `fix/auth-email-verified`, `feat/leave-delegation` chuyển sang tuần 11–12 |

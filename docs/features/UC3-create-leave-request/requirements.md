@@ -20,7 +20,8 @@
 - **AC-3.1.1** Khi nhân viên xem số dư. Thì mỗi loại phép có được hưởng, đã dùng, đang chờ, còn lại; còn lại = được hưởng −
   đã dùng − đang chờ.
 - **AC-3.1.2** Giả sử nhân viên vừa tạo đơn 2 ngày. Khi xem lại số dư. Thì đang chờ tăng 2, còn lại giảm 2.
-- **AC-3.1.3** *(chưa đạt)* Giả sử nhân viên vào làm 1/7/2026. Khi xem số dư phép năm 2026. Thì được hưởng 6 ngày (12 × 6/12,
+- **AC-3.1.3** *(rà 18/11: UC1 "Các mốc trong công ty" đã hiện số ngày phép cộng theo thâm niên bằng `seniority()` trong
+  `profile-computed.ts`; khi làm AC này, số dư phép phải dùng cùng hàm để hai nơi không lệch)* *(chưa đạt)* Giả sử nhân viên vào làm 1/7/2026. Khi xem số dư phép năm 2026. Thì được hưởng 6 ngày (12 × 6/12,
   Điều 113 BLLĐ). Người có 10 năm thâm niên được hưởng 14 ngày.
 - **AC-3.1.4** *(chưa đạt)* Nghỉ cưới, nghỉ tang tính theo từng lần (3 ngày/lần), không trừ vào số dư năm.
 
@@ -85,8 +86,8 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| Tạo đơn hộ (làm chung nhánh với người duyệt thay) | AC-3.7.1 → AC-3.7.4 | TV1 | `feat/leave-delegation` | 12 |
-| Email chung, ẩn lý do nghỉ ốm | UC4 AC-4.6.3, AC-4.7.3 | TV1 | `feat/leave-privacy` | 12 |
+| Tạo đơn hộ (làm chung nhánh với người duyệt thay) | AC-3.7.1 → AC-3.7.4 | TV1 | `feat/leave-delegation` | 11 |
+| Email chung, ẩn lý do nghỉ ốm | UC4 AC-4.6.3, AC-4.7.3 | TV1 | `feat/leave-privacy` | 11 |
 | Xác nhận cách tính phép năm (tỉ lệ, thâm niên), nghỉ theo sự kiện, đơn qua hai năm | AC-3.1.3, AC-3.1.4, AC-3.2.4 | TV2 | `docs/leave-rules-week11` | 11 |
-| Cấp số dư theo luật, đơn qua hai năm, 403 khi chưa gắn hồ sơ | AC-3.1.3, AC-3.1.4, AC-3.2.4, AC-3.2.5 | TV1 | `fix/leave-balance-rules` | 12 |
+| Cấp số dư theo luật, đơn qua hai năm, 403 khi chưa gắn hồ sơ | AC-3.1.3, AC-3.1.4, AC-3.2.4, AC-3.2.5 | TV1 | `fix/leave-balance-rules` | 11 |
 | Lưu trữ 5 năm, legal hold (BR-13) | – | – | – | Ngoài MVP, ghi ở SRS mục 8 |

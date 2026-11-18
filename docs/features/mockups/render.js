@@ -1,9 +1,19 @@
-// Bản cho máy có Playwright; trên Windows dùng render.ps1. Xuất mỗi khung trong mockups.html thành một ảnh PNG trong cùng thư mục.
+// Bản cho máy có Playwright; trên Windows dùng render.ps1. Xuất mỗi khung trong mockups.html thành một ảnh PNG
+// vào thư mục mockups/ của UC chứa màn hình đó (xem outPath).
 // Cần Playwright: npm i -D playwright && npx playwright install chromium (một lần).
 // Chạy: node docs/features/mockups/render.js            (mọi khung)
 //       node docs/features/mockups/render.js uc3-new   (chỉ các khung kể tên)
 const path = require('path');
 const { chromium } = require('playwright');
+// Ảnh của màn hình chung (trang chủ, tìm kiếm, xem nhanh, Việc cần duyệt) nằm ở thư mục này;
+// ảnh riêng của từng UC nằm ở docs/features/UCn-*/mockups/.
+const UC = { 2: 'UC2-organization', 3: 'UC3-create-leave-request', 4: 'UC4-approve-leave-request',
+  5: 'UC5-document-repository', 56: 'UC5-document-repository', 6: 'UC6-self-service-search', 7: 'UC7-audit-log' };
+function outPath(id) {
+  const m = /^uc(\d+)-/.exec(id);
+  const uc = /^(profile-|subpage-)/.test(id) ? 'UC1-employee-profile' : m ? UC[m[1]] : null;
+  return uc ? path.join(__dirname, '..', uc, 'mockups', id + '.png') : path.join(__dirname, id + '.png');
+}
 const ids = ['home', 'home-hr', 'search', 'quickview', 'profile-desktop', 'profile-mobile',
   'subpage-mobile', 'profile-directory-view', 'approvals',
   // UC2 → UC7
@@ -19,7 +29,7 @@ const ids = ['home', 'home-hr', 'search', 'quickview', 'profile-desktop', 'profi
   await page.goto('file://' + path.join(__dirname, 'mockups.html'));
   const only = process.argv.slice(2);
   for (const id of (only.length ? only : ids)) {
-    await page.locator('div#' + id).screenshot({ path: path.join(__dirname, id + '.png') });
+    await page.locator('div#' + id).screenshot({ path: outPath(id) });
   }
   await browser.close();
 })();

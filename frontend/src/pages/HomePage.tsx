@@ -1,4 +1,5 @@
 import {
+  CalendarClock,
   CalendarDays,
   CalendarPlus,
   ClipboardCheck,
@@ -45,9 +46,10 @@ const COMMON: Tile[] = [
 
 /** Nhóm "Chức năng HR" (bản vẽ 10.2). Trang "Việc cần duyệt" có tab (frontend.md 2.4) làm ở tuần 12; tạm dẫn tới trang cũ. */
 const HR_TILES: Tile[] = [
-  { title: 'Việc cần duyệt', desc: 'Đơn nghỉ của CEO, đơn chờ HR', icon: Inbox, to: '/leave/approvals', who: ['HR'] },
+  { title: 'Việc cần duyệt', desc: 'Yêu cầu cập nhật hồ sơ, đơn nghỉ', icon: Inbox, to: '/approvals?type=profile', who: ['HR'] },
   { title: 'Hoàn tất đơn nghỉ', desc: 'Đơn đã duyệt chờ HR hoàn tất', icon: CalendarDays, to: '/leave/hr', who: ['HR'] },
   { title: 'Quản lý nhân viên', desc: 'Thêm, sửa hồ sơ, nghỉ việc', icon: UserPlus, to: '/employees/new', who: ['HR'] },
+  { title: 'Hợp đồng sắp hết hạn', desc: 'Hết hạn trong 30 ngày tới', icon: CalendarClock, to: '/contracts/expiring', who: ['HR'] },
   { title: 'Đăng tài liệu', desc: 'Quy chế, biểu mẫu, phạm vi xem', icon: Upload, to: '/coming-soon', who: ['HR'], ready: false },
   { title: 'Lịch sử thao tác', desc: 'Ai làm gì, lúc nào', icon: History, to: '/coming-soon', who: ['HR', 'ADMIN'], ready: false },
 ];
@@ -56,7 +58,7 @@ const DAY = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', 
 
 /** Trang chủ (frontend.md 2.2): lời chào, ô chức năng theo vai trò, số dư phép năm. */
 export function HomePage() {
-  const { me } = useShell();
+  const { me, meError } = useShell();
   const openProfile = useOpenProfile();
   const hasEmployee = !!me?.employee;
   const balance = useApi(
@@ -64,6 +66,8 @@ export function HomePage() {
     [hasEmployee],
   );
 
+  // Ví dụ tài khoản đã nghỉ việc (AC-1.7.2): API trả 403 kèm lý do.
+  if (meError) return <p className="warn-box">{meError.message}</p>;
   if (!me) return <Skeleton lines={4} />;
   const canSee = (t: Tile) =>
     !t.who || t.who.some((w) => (w === 'employee' ? hasEmployee : me.roles.includes(w)));

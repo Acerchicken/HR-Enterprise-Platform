@@ -52,7 +52,13 @@ npm run test:e2e
 
 - NFR-1.3: tìm đồng nghiệp p95 < 1 s với 2.000 nhân viên, trong load test tuần 11.
 - NFR-1.6: mọi danh sách tối đa 100 dòng (AC-2.1.4).
+- NFR-5.21: giới hạn 20 request tìm kiếm danh bạ (`GET /employees`) mỗi phút cho mỗi người dùng, vượt ngưỡng trả 429 (chống quét danh bạ T-11).
 
 ## 7. Ca còn thiếu (TV4)
 
-AC-2.1.1 (theo mã, email), AC-2.1.2, AC-2.1.3, AC-2.1.4, AC-2.4.3; AC-2.4.6, AC-2.4.7 khi `fix/employee-org-integrity` xong.
+- Cơ bản & phân quyền: AC-2.1.1 (theo mã, email), AC-2.1.2, AC-2.1.3, AC-2.1.4, AC-2.4.3; AC-2.4.6, AC-2.4.7 (đối chiếu sau PR #84).
+- Đồng bộ dữ liệu khi có tính năng mới: cập nhật mã gốc seed từ `BOD` sang `HQ` và phân loại đơn vị (`ADR-14`) khi merge `feat/org-unit-types`; chốt giờ chạy job điều chuyển tương lai (`00:05` giờ Việt Nam) cho AC-2.7.2.
+- Các ca biên nghiệp vụ cần bổ sung sau khi TV1/TV2 chốt quy tắc Tuần 11:
+  - Xử lý vai trò `headEmployeeId` / `deputyEmployeeIds` khi nhân sự chuyển sang `TERMINATED`.
+  - Ngừng hoạt động đơn vị X (`AC-2.10.1`) khi X không còn nhân viên trực thuộc nhưng vẫn gắn trưởng/phó kiêm nhiệm từ đơn vị cha.
+  - Bảo vệ chức danh hệ thống `CEO` không bị ngừng dùng (`active = false`) hoặc đổi cấp bậc (`AC-2.6.2`).

@@ -1,28 +1,29 @@
 import { FormEvent, useEffect, useState } from 'react';
-import {
-  api,
-  ApiError,
-  BankAccountSection,
-  PersonalSection,
-  ProfileSummary,
-  SalarySection,
-  SectionSummary,
-} from '../api/client';
+import { api, ApiError, HistoryEntry, Page, PersonalSection, ProfileSummary, SectionSummary } from '../api/client';
 import { invalidateSummary } from '../api/cache';
 import { useApi } from '../api/useApi';
-import { errorText, formatDate, formatMoney, MaskedValue, Skeleton } from '../components/ui';
-import { formFields } from '../pages/employee/employee-fields';
-import { FieldInput } from '../pages/employee/FieldInput';
+import { errorText, formatDate, MaskedValue, Skeleton, useCooldown } from '../components/ui';
+import { FieldEditor, newKey, RequestBox } from './fields';
+import { ComputedSectionPage } from './ComputedSectionPage';
+import { FilesSectionPage } from './FilesSectionPage';
+import { RowSectionPage } from './RowSectionPage';
 
 const STATUS_LABEL: Record<string, string> = { ACTIVE: 'Đang làm việc', ON_LEAVE: 'Tạm nghỉ', TERMINATED: 'Đã nghỉ việc' };
+const ROW_SECTIONS = new Set([
+  'emergency-contacts', 'relatives', 'qualifications', 'bank-account',
+  // Mục HR quản lý (FR-1.12): cùng trang dòng, nhân viên chỉ xem.
+  'contracts', 'salary', 'insurance-salary', 'tax', 'social-insurance', 'health-insurance', 'allowances', 'rewards-discipline',
+]);
 
 /** Trang con của một mục, mở bên trong popup (frontend.md 4.2). Chỉ lúc này mới gọi API của mục (AC-1.8.8). */
 export function SectionPage({ summary, code, def }: { summary: ProfileSummary; code: string; def?: SectionSummary }) {
   // Mục chưa làm hoặc không được xem: không gọi API (AC-1.8.2).
   if (!def || !def.available) return <ComingSoon known={!!def} />;
   if (code === 'personal') return <Personal s={summary} />;
-  if (code === 'salary') return <Salary s={summary} />;
-  if (code === 'bank-account') return <BankAccount s={summary} />;
+  if (code === 'history') return <History s={summary} />;
+  if (code === 'cv') return <FilesSectionPage s={summary} code={code} />;
+  if (code === 'career-history' || code === 'milestones' || code === 'long-leaves') return <ComputedSectionPage s={summary} code={code} />;
+  if (ROW_SECTIONS.has(code)) return <RowSectionPage s={summary} code={code} />;
   return <ComingSoon known />;
 }
 
@@ -35,10 +36,6 @@ function ComingSoon({ known }: { known: boolean }) {
   );
 }
 
-function useSection<T>(s: ProfileSummary, code: string) {
-  return useApi<T>(() => api<T>(`/employees/${s.id}/profile/${code}`), [s.id, code]);
-}
-
 function Kv({ k, children }: { k: string; children: React.ReactNode }) {
   return (
     <div className="kv">
@@ -48,35 +45,25 @@ function Kv({ k, children }: { k: string; children: React.ReactNode }) {
   );
 }
 
-/** Nhân viên tự sửa điện thoại, địa chỉ: tạm lưu thẳng cho tới khi có `feat/profile-change-requests` (quyết định 14/11). */
-const SELF_FIELDS = formFields('edit', 'SELF');
-
+/** Nhân viên đề xuất sửa điện thoại, địa chỉ; HR xác nhận mới ghi vào hồ sơ (AC-1.2.1, FR-1.9). */
 function Personal({ s }: { s: ProfileSummary }) {
-  const data = useSection<PersonalSection>(s, 'personal');
-  const [editing, setEditing] = useState(false);
-  const [values, setValues] = useState({ phone: '', address: '' });
+  const data = useApi<PersonalSection>(() => api(`/employees/${s.id}/profile/personal`), [s.id]);
+  const [editing, setEditing] = useState<{ values: Record<string, unknown>; key: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<Error | null>(null);
   const [saving, setSaving] = useState(false);
   const d = data.data;
+  const cooldown = useCooldown(error);
 
-  useEffect(() => {
-    if (d) setValues({ phone: d.phone ?? '', address: d.address ?? '' });
-  }, [d]);
+  useEffect(() => setEditing(null), [d]);
 
-  async function save(ev: FormEvent) {
-    ev.preventDefault();
-    if (!d) return;
+  async function run(fn: () => Promise<unknown>) {
     setSaving(true);
     setError(null);
     setErrors({});
     try {
-      await api(`/employees/${s.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ phone: values.phone || undefined, address: values.address, version: d.version }),
-      });
+      await fn();
       invalidateSummary(s.id);
-      setEditing(false);
       data.reload();
     } catch (e) {
       if (e instanceof ApiError && e.fields) setErrors(e.fields);
@@ -86,8 +73,25 @@ function Personal({ s }: { s: ProfileSummary }) {
     }
   }
 
+  function submit(ev: FormEvent) {
+    ev.preventDefault();
+    if (!d || !editing) return;
+    // Chỉ gửi trường đã đổi.
+    const proposed = Object.fromEntries(
+      Object.entries(editing.values).filter(([k, v]) => (v ?? '') !== ((d as unknown as Record<string, unknown>)[k] ?? '')),
+    );
+    void run(() =>
+      api(`/employees/${s.id}/change-requests`, {
+        method: 'POST',
+        headers: { 'Idempotency-Key': editing.key },
+        body: JSON.stringify({ section: 'personal', action: 'UPDATE', proposed }),
+      }),
+    );
+  }
+
   if (data.error) return <p className="error pad">{errorText(data.error)}</p>;
   if (!d) return <div className="pad"><Skeleton lines={6} /></div>;
+  const pending = d.requests.find((r) => r.status === 'PENDING');
   return (
     <>
       <div className="fld">
@@ -110,71 +114,98 @@ function Personal({ s }: { s: ProfileSummary }) {
             />
           </Kv>
         )}
+        {d.requests.map((r) => (
+          <RequestBox
+            key={r.id}
+            req={r}
+            fields={d.fields}
+            onCancel={() => void run(() => api(`/employees/${s.id}/change-requests/${r.id}`, { method: 'DELETE' }))}
+            onDismiss={() => void run(() => api(`/employees/${s.id}/change-requests/${r.id}/acknowledge`, { method: 'POST' }))}
+          />
+        ))}
       </div>
-      {s.relation === 'OWNER' && !editing && (
+      {d.canPropose && !editing && (
         <div className="pad">
-          <button type="button" className="primary" onClick={() => setEditing(true)}>Sửa điện thoại, địa chỉ</button>
+          <button
+            type="button"
+            className="primary"
+            onClick={() => setEditing({ values: { phone: pending?.proposed.phone ?? d.phone ?? '', address: pending?.proposed.address ?? d.address ?? '' }, key: newKey() })}
+          >
+            {pending ? 'Sửa yêu cầu đang chờ' : 'Sửa điện thoại, địa chỉ'}
+          </button>
         </div>
       )}
-      {s.relation === 'OWNER' && editing && (
-        <form className="fld form" onSubmit={save}>
-          {SELF_FIELDS.map((f) => (
-            <FieldInput
+      {editing && (
+        <form className="fld form" onSubmit={submit}>
+          {d.fields.map((f) => (
+            <FieldEditor
               key={f.key}
               field={f}
-              value={values[f.key as 'phone' | 'address']}
-              onChange={(v) => setValues((x) => ({ ...x, [f.key]: v }))}
+              value={editing.values[f.key]}
+              onChange={(v) => setEditing({ ...editing, values: { ...editing.values, [f.key]: v } })}
               error={errors[f.key]}
-              lookups={{ departments: [], positions: [] }}
             />
           ))}
           {error && !Object.keys(errors).length && <p className="error">{errorText(error)}</p>}
           <div className="actions">
-            <button className="primary" disabled={saving}>{saving ? 'Đang lưu…' : 'Lưu'}</button>
-            <button type="button" onClick={() => setEditing(false)}>Hủy</button>
+            <button className="primary" disabled={saving || cooldown > 0}>
+              {saving ? 'Đang gửi…' : cooldown ? `Thử lại sau ${cooldown} giây` : 'Gửi yêu cầu'}
+            </button>
+            <button type="button" onClick={() => setEditing(null)}>Hủy</button>
           </div>
-          <p className="muted small">Các trường khác do HR cập nhật.</p>
+          <p className="muted small">Thay đổi chỉ vào hồ sơ sau khi HR xác nhận. Các trường khác do HR cập nhật.</p>
         </form>
       )}
     </>
   );
 }
 
-function Salary({ s }: { s: ProfileSummary }) {
-  const data = useSection<SalarySection>(s, 'salary');
-  if (data.error) return <p className="error pad">{errorText(data.error)}</p>;
-  if (!data.data) return <div className="pad"><Skeleton lines={2} /></div>;
-  return (
-    <div className="fld">
-      <Kv k="Mức lương">
-        <MaskedValue
-          label="lương mục tiêu"
-          hasValue={data.data.salary.hasValue}
-          format={formatMoney}
-          load={() => api<SalarySection>(`/employees/${s.id}/profile/salary?reveal=true`).then((r) => r.salary.value)}
-        />
-      </Kv>
-      <p className="muted small">Lịch sử lương theo ngày hiệu lực sẽ có khi làm FR-1.12.</p>
-    </div>
-  );
-}
+const ACTION_TEXT: Record<string, string> = {
+  CREATE: 'HR tạo hồ sơ',
+  UPDATE: 'HR sửa trực tiếp',
+  VIEW_SENSITIVE: 'Xem thông tin nhạy cảm',
+  PROFILE_CHANGE_SUBMIT: 'Gửi yêu cầu cập nhật',
+  PROFILE_CHANGE_CANCEL: 'Hủy yêu cầu',
+  PROFILE_CHANGE_APPROVE: 'HR duyệt yêu cầu',
+  PROFILE_CHANGE_REJECT: 'HR từ chối yêu cầu',
+  PROFILE_ITEM_CREATE: 'HR thêm dòng',
+  PROFILE_ITEM_UPDATE: 'HR sửa dòng',
+  PROFILE_ITEM_DELETE: 'HR xóa dòng',
+  PROFILE_FILE_UPLOAD: 'Tải file lên',
+  PROFILE_FILE_DELETE: 'Xóa file',
+  PROFILE_FILE_DOWNLOAD: 'HR tải file',
+};
 
-function BankAccount({ s }: { s: ProfileSummary }) {
-  const data = useSection<BankAccountSection>(s, 'bank-account');
+const DT = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
+
+/** Lịch sử thay đổi hồ sơ (FR-1.11): thời điểm, người làm, thao tác, mục, tên trường; không có giá trị. */
+function History({ s }: { s: ProfileSummary }) {
+  const [page, setPage] = useState(1);
+  const data = useApi<Page<HistoryEntry>>(() => api(`/employees/${s.id}/history?page=${page}&size=20`), [s.id, page]);
+  const titles = new Map(s.sections.map((x) => [x.code, x.title]));
   if (data.error) return <p className="error pad">{errorText(data.error)}</p>;
-  if (!data.data) return <div className="pad"><Skeleton lines={2} /></div>;
+  if (!data.data) return <div className="pad"><Skeleton lines={6} /></div>;
+  const pages = Math.max(1, Math.ceil(data.data.total / data.data.size));
   return (
-    <div className="fld">
-      <Kv k="Số tài khoản">
-        <MaskedValue
-          label="số tài khoản"
-          hasValue={data.data.bankAccount.hasValue}
-          load={() =>
-            api<BankAccountSection>(`/employees/${s.id}/profile/bank-account?reveal=true`).then((r) => r.bankAccount.value)
-          }
-        />
-      </Kv>
-      <p className="muted small">Ngân hàng, chi nhánh, chủ tài khoản sẽ có khi nhân viên tự khai (FR-1.9).</p>
-    </div>
+    <>
+      <ul className="history">
+        {data.data.items.map((h, i) => (
+          <li key={i} className="fld">
+            <div className="small muted">{DT.format(new Date(h.at))} · {h.actorName ?? 'Hệ thống'}</div>
+            <div>
+              <b>{ACTION_TEXT[h.action] ?? h.action}</b>
+              {h.section && <> · {titles.get(h.section) ?? h.section}</>}
+            </div>
+            {h.fields.length > 0 && <div className="small muted">Trường: {h.fields.join(', ')}</div>}
+          </li>
+        ))}
+      </ul>
+      {data.data.items.length === 0 && <p className="pad muted">Chưa có thay đổi nào.</p>}
+      <div className="pager pad">
+        <button disabled={page <= 1} onClick={() => setPage(page - 1)}>‹ Trước</button>
+        <span>Trang {page}/{pages}</span>
+        <button disabled={page >= pages} onClick={() => setPage(page + 1)}>Sau ›</button>
+      </div>
+    </>
   );
 }
