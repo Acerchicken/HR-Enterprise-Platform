@@ -65,19 +65,26 @@
   audit. Vai trò khác thì trả 403.
 - **AC-2.6.2** *(chưa có)* Khi HR ngừng dùng một chức danh. Thì chức danh không còn trong danh sách chọn khi tạo, điều chuyển
   nhân viên; nhân viên đang giữ chức danh đó không bị đổi. Xóa hẳn chức danh đang được dùng (hoặc có trong lịch sử) thì trả 409.
+- **AC-2.6.3** *(chưa có)* Chức danh `CEO` là chức danh hệ thống (FR-2.5 dựa vào nó). Khi HR ngừng dùng, xóa, hoặc đổi cấp bậc
+  của `CEO`. Thì trả 400. Đổi tên hiển thị (ví dụ "Tổng Giám đốc") vẫn được, có audit.
 
 ### FR-2.7 Điều chuyển có ngày hiệu lực (S, chưa có)
 
 - **AC-2.7.1** *(chưa có)* Khi HR điều chuyển nhân viên A sang phòng ban, chức danh, quản lý mới, hiệu lực hôm nay. Thì hồ sơ A
   đổi ngay; quá trình công tác có dòng cũ đóng ở hôm qua và dòng mới mở từ hôm nay; có audit `TRANSFER`.
 - **AC-2.7.2** *(chưa có)* Khi hiệu lực là ngày 1 tháng sau. Thì hồ sơ A chưa đổi; quá trình công tác có dòng "Sắp hiệu lực";
-  đúng 00:00 ngày đó (giờ Việt Nam) job áp dụng điều chuyển. HR hủy được điều chuyển chưa hiệu lực.
+  job chạy lúc 00:05 ngày đó (giờ Việt Nam) áp dụng điều chuyển; kiểm thử chấp nhận áp dụng xong trước 00:15. HR hủy được
+  điều chuyển chưa hiệu lực.
 - **AC-2.7.3** *(chưa có)* Giả sử A có đơn nghỉ `SUBMITTED`. Khi điều chuyển có hiệu lực và A đổi quản lý. Thì đơn chuyển sang
   danh sách chờ của quản lý mới, quản lý cũ không duyệt được nữa (UC4 AC-4.2.6); quản lý mới nhận email chung.
 - **AC-2.7.4** *(chưa có)* Khi điều chuyển vi phạm FR-2.5 (quản lý đã nghỉ việc, tạo vòng, bỏ quản lý của người không phải
   CEO) hoặc hiệu lực trước ngày vào làm. Thì trả 400. Hiệu lực ở quá khứ chỉ cho tối đa 30 ngày (ghi lại điều chuyển làm muộn).
 - **AC-2.7.5** *(chưa có)* Giả sử A đang là trưởng phòng X. Khi điều chuyển A sang phòng khác. Thì phải chọn trưởng phòng mới
   cho X hoặc để trống có chủ ý; không để X trỏ tới người không còn trong phòng.
+- **AC-2.7.6** *(chưa có)* Giả sử A còn cấp dưới trực tiếp đang làm việc. Khi HR điều chuyển A. Thì form liệt kê từng cấp dưới
+  và HR phải chọn cho mỗi người (chọn hàng loạt được): **giữ A làm quản lý** hoặc **chuyển sang quản lý khác** (điền sẵn trưởng
+  đơn vị cũ của A). Không chọn thì trả 400. Các thay đổi quản lý của cấp dưới có cùng ngày hiệu lực, mỗi người một dòng quá
+  trình công tác lý do `MANAGER_CHANGE`; đơn nghỉ đang chờ đi theo quản lý mới (AC-2.7.3).
 
 ### FR-2.8 Quá trình công tác (S, chưa có)
 
@@ -115,6 +122,13 @@
 - **AC-2.9.6** *(chưa có)* Khi HR đánh dấu trưởng X là "Quyền" (`headActing = true`). Thì sơ đồ tổ chức và hồ sơ hiện
   "Quyền Trưởng phòng" (hoặc "Quyền Giám đốc trung tâm"…); quyền hạn không khác trưởng chính thức.
 - **AC-2.9.7** *(chưa có)* CEO là trưởng của đơn vị Công ty và thuộc đơn vị đó. Đơn nghỉ của CEO do HR xử lý (UC4 E8).
+- **AC-2.9.8** *(chưa có)* Giả sử B là trưởng hoặc phó của một hay nhiều đơn vị. Khi HR cho B nghỉ việc (UC1, sau khi đã chuyển
+  hết cấp dưới theo AC-1.7.1). Thì hộp xác nhận liệt kê các đơn vị B đang làm trưởng, phó; khi lưu, B được gỡ khỏi các vai trò
+  đó trong cùng giao dịch, có audit; đơn vị hiện "Chưa có trưởng" cho tới khi HR gán người mới. Không chặn việc nghỉ việc.
+
+**Ca biên (chốt 18/11/2026 theo câu hỏi của TV4 ở PR #95):** vai trò trưởng, phó là phụ thuộc vào người và đơn vị, nên tự gỡ
+khi người nghỉ việc (AC-2.9.8) hoặc đơn vị ngừng hoạt động (AC-2.10.1), không bao giờ chặn hai thao tác đó. Ngược lại, quan hệ
+quản lý trực tiếp quyết định quyền duyệt, nên không bao giờ tự đổi: HR phải chọn rõ (AC-1.7.1, AC-2.7.6).
 
 **Quy tắc (chốt 14/11/2026, mở rộng cho mọi cấp theo ADR-14 ngày 15/11/2026; soạn thay TV2, TV1 và TV2 rà lại):** trưởng đơn
 vị là **vai trò của đơn vị**, quản lý trực tiếp là **quan hệ giữa hai người**. Hai thứ thường trùng (trưởng phòng quản lý trực
@@ -123,8 +137,10 @@ Phó Tổng Giám đốc. Quyền duyệt đơn nghỉ luôn theo quản lý tr�
 
 ### FR-2.10 Ngừng hoạt động đơn vị (C, chưa có; ADR-14)
 
-- **AC-2.10.1** *(chưa có)* Giả sử đơn vị X còn nhân viên đang làm việc hoặc còn đơn vị con đang hoạt động. Khi HR ngừng hoạt
-  động X. Thì trả 409 và nói rõ còn bao nhiêu người, bao nhiêu đơn vị con.
+- **AC-2.10.1** *(chưa có)* Giả sử đơn vị X còn nhân viên đang làm việc (người có phòng ban là X) hoặc còn đơn vị con đang hoạt
+  động. Khi HR ngừng hoạt động X. Thì trả 409 và nói rõ còn bao nhiêu người, bao nhiêu đơn vị con. Trưởng, phó kiêm nhiệm từ
+  đơn vị cha **không** tính là người của X: khi X đã trống, ngừng hoạt động thành công và các vai trò trưởng, phó của X được gỡ
+  trong cùng giao dịch, có audit.
 - **AC-2.10.2** *(chưa có)* Khi HR ngừng hoạt động đơn vị X đã trống. Thì X không còn trong cây, danh bạ, danh sách chọn khi
   tạo, điều chuyển nhân viên; quá trình công tác cũ vẫn hiện tên X; có audit. Không xóa hẳn đơn vị.
 - **AC-2.10.3** *(chưa có)* Sáp nhập phòng A vào phòng B: HR điều chuyển hết người của A sang B (FR-2.7, cùng ngày hiệu lực) rồi
