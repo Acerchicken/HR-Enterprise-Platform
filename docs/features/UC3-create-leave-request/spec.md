@@ -143,17 +143,17 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 
 **Đăng ký nghỉ `/leave/new`: form bên trái, số dư bên phải, số ngày tính sẵn trước khi gửi**
 
-![Form đăng ký nghỉ](../mockups/uc3-new.png)
+![Form đăng ký nghỉ](mockups/uc3-new.png)
 
 **Đơn nghỉ của tôi `/leave`, chi tiết `/leave/{id}` (A1, A2)**
 
-![Danh sách đơn của tôi](../mockups/uc3-list.png)
+![Danh sách đơn của tôi](mockups/uc3-list.png)
 
 **Trên điện thoại: form có lỗi trùng lịch và ghi chú BR-16; xác nhận hủy đơn**
 
 | Đăng ký nghỉ | Hủy đơn |
 |---|---|
-| ![Đăng ký nghỉ trên điện thoại](../mockups/uc3-new-mobile.png) | ![Xác nhận hủy đơn](../mockups/uc3-detail-mobile.png) |
+| ![Đăng ký nghỉ trên điện thoại](mockups/uc3-new-mobile.png) | ![Xác nhận hủy đơn](mockups/uc3-detail-mobile.png) |
 
 ## 10. Yêu cầu phi chức năng liên quan
 

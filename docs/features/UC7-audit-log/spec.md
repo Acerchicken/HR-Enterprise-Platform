@@ -112,7 +112,7 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 
 **Lịch sử thao tác `/audit`: bộ lọc theo API, bảng mới nhất trước, mở dòng xem trường đã đổi**
 
-![Trang lịch sử thao tác](../mockups/uc7-audit.png)
+![Trang lịch sử thao tác](mockups/uc7-audit.png)
 
 ## 10. Yêu cầu phi chức năng liên quan
 

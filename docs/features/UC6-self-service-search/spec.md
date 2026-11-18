@@ -117,11 +117,11 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 
 **Kết quả tìm tài liệu, xếp theo mức khớp, có đoạn trích (4.2)**
 
-![Kết quả tìm tài liệu](../mockups/uc6-search.png)
+![Kết quả tìm tài liệu](mockups/uc6-search.png)
 
 **Trợ lý chính sách: câu trả lời có trích dẫn; câu hỏi ngoài phạm vi (4.3)**
 
-![Trợ lý chính sách](../mockups/uc6-assistant.png)
+![Trợ lý chính sách](mockups/uc6-assistant.png)
 
 ## 10. Yêu cầu phi chức năng liên quan
 
