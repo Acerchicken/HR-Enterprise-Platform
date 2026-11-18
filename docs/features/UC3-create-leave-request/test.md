@@ -30,6 +30,7 @@ là hàm thuần nên kiểm kỹ bằng unit test; luồng có số dư, lịch
 | AC-3.2.2, AC-3.2.3 | "không đủ số dư, dữ liệu sai hoặc thiếu Idempotency-Key → 400 (BR-01)" | TC-03, TC-10 | Có |
 | AC-3.2.4 | – | TC-25 | Chờ TV1 triển khai đơn qua năm, giữ/trừ số dư nguyên tử theo từng năm |
 | AC-3.2.5 | – | – | Chưa đạt (chưa gắn hồ sơ trả 404, yêu cầu là 403; TV1 xử lý) |
+| AC-3.2.6 | – | Cần thêm (TV4) | Chưa có tính năng (nhánh `feat/leave-balance-rules`) |
 | AC-3.3.1 | "trùng lịch với đơn đang chờ → 409 (TC-04, BR-02)" | TC-04 | Có |
 | AC-3.3.2, AC-3.3.3 | "trùng lịch bị chặn; hai nửa ngày khác buổi thì được…" | TC-08, TC-09 | Có |
 | AC-3.4.1, AC-3.4.2 | "ngày lễ không trừ phép: 29/4–4/5/2026 tính 2 ngày…" | TC-05 → TC-07 | Có |
@@ -39,7 +40,10 @@ là hàm thuần nên kiểm kỹ bằng unit test; luồng có số dư, lịch
 | AC-3.5.3 | – | Cần thêm | Chưa |
 | AC-3.6.1 | "trùng lịch bị chặn; … hủy trả lại số dư" | TC-17, TC-26, TC-27 | Có cho SUBMITTED; PENDING_HR/hủy muộn chờ TV1 |
 | AC-3.6.2 → AC-3.6.5 | – | TC-18, TC-27, TC-28 | Chờ TV1 triển khai quyền hủy đã duyệt và chặn tự hủy từ ngày bắt đầu |
+| AC-3.6.6, AC-3.6.7 | – | Cần thêm (TV4) | Chưa có tính năng (nhánh `feat/leave-cancel-rules`) |
 | AC-3.7.1 → AC-3.7.4 | – | – | Chưa có tính năng |
+| AC-3.1.7 | – | Cần thêm (TV4): nghỉ việc khi có đơn chờ, đơn đã duyệt tương lai | Chưa có tính năng |
+| AC-3.8.1 → AC-3.8.4 | – | Cần thêm (TV4) | Chưa có tính năng |
 
 ## 4. Dữ liệu và tài khoản
 

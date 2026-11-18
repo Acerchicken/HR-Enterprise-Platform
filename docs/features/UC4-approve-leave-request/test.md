@@ -35,6 +35,7 @@ email kiểm tay ở Mailpit.
 | AC-4.5.1, AC-4.5.2 | "tạo → … HR hoàn tất", "HR hoàn tất đơn chưa duyệt → 409 (TC-21…)" | TC-20 → TC-22 | Có |
 | AC-4.5.3 | – | TC-29 | Chờ TV1 chặn hoàn tất đến ngày kế tiếp `endDate` theo giờ Việt Nam và kiểm giấy tờ |
 | AC-4.5.4 | – | TC-28 | Chờ TV1 triển khai quản lý/HR xác nhận hủy đơn đã duyệt trước ngày bắt đầu |
+| AC-4.5.5 → AC-4.5.7 | – | Cần thêm (TV4) | Chưa có tính năng (nhánh `feat/leave-cancel-rules`) |
 | AC-4.6.1, AC-4.6.2 | Unit `notification-worker.spec.ts` | Kiểm Mailpit | Có |
 | AC-4.6.3 | – | – | Chưa đạt (BR-15) |
 | AC-4.6.5 | – | – | Chưa đạt (CEO tạo đơn, HR không nhận email) |
@@ -42,7 +43,9 @@ email kiểm tay ở Mailpit.
 | AC-4.6.6 | – | TC-32 | Chờ TV1 triển khai nhắc một lần theo từng giai đoạn chờ |
 | AC-4.7.1, AC-4.7.2 | "người ngoài không xem được đơn của nhân viên" | SEC-57, SEC-58 | Có |
 | AC-4.7.3, AC-4.7.4 | – | – | Chưa đạt (BR-14) |
+| AC-4.7.5 | – | Cần thêm: quản lý gián tiếp, phó phòng mở đơn → 403 | Code đã đúng (chỉ quản lý trực tiếp), thiếu test |
 | AC-4.8.1 → AC-4.8.8 | – | Cần thêm (TV4) | Chưa có tính năng |
+| AC-4.9.1 → AC-4.9.4 | – | Cần thêm (TV4) | Chưa có tính năng (nhánh `feat/leave-holidays`) |
 
 ## 4. Dữ liệu và tài khoản
 

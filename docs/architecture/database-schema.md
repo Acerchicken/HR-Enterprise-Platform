@@ -516,6 +516,12 @@ erDiagram
   }
 ```
 
+> **Đã thiết kế, chưa có migration (18/11/2026):** UC3, UC4 thêm `leave.leave_request_allocation` (số ngày của đơn theo từng
+> năm), đổi số dư sang `numeric(5,2)`, thêm `quota_kind` cho loại phép, `event_date`, `requires_hr_approval`, trạng thái
+> `PENDING_HR`, các cột đề nghị hủy và nhắc đơn cho `leave_request`, cột `action` cho lịch sử, `kind` cho ngày lễ. Bảng đủ ở
+> [UC3 spec mục 13.6](../features/UC3-create-leave-request/spec.md#136-thiết-kế-dữ-liệu-chung-uc3-uc4), mỗi cột ghi nhánh code
+> sẽ thêm nó. Khi migration merge thì cập nhật các bảng dưới và sơ đồ.
+
 ### `leave.leave_type`
 
 | Cột | Kiểu | Ràng buộc | Mô tả |

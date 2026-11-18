@@ -84,8 +84,8 @@ LLM API (trợ lý, tuần 12) và hệ thống Payroll (ngoài phạm vi versio
 |---|---|---|
 | UC1 Hồ sơ nhân viên | Xem hồ sơ theo mức, trang hồ sơ chia nhóm, nhân viên đề xuất cập nhật và tải file, HR xác nhận, nhật ký thay đổi, HR quản lý hồ sơ và trường nhạy cảm, chống spam | FR-1.1 → FR-1.14 |
 | UC2 Thông tin tổ chức | Danh bạ, cây đơn vị (Công ty, Trung tâm, Phòng, Nhóm), quản lý trực tiếp, quản lý đơn vị, chức danh, điều chuyển, quá trình công tác, trưởng/phó đơn vị | FR-2.1 → FR-2.10 |
-| UC3 Tạo đơn nghỉ | Xem số dư, tạo, hủy đơn, tạo đơn hộ | FR-3.1 → FR-3.7 |
-| UC4 Duyệt đơn | Duyệt, từ chối, duyệt thay, HR duyệt thêm theo loại phép, HR hoàn tất, email thông báo | FR-4.1 → FR-4.8 |
+| UC3 Tạo đơn nghỉ | Xem số dư, tạo, hủy đơn, đề nghị hủy đơn đã duyệt, tạo đơn hộ, HR chỉnh hạn mức | FR-3.1 → FR-3.8 |
+| UC4 Duyệt đơn | Duyệt, từ chối, duyệt thay, HR duyệt thêm theo loại phép, HR hoàn tất, email thông báo, HR cập nhật lịch lễ | FR-4.1 → FR-4.9 |
 | UC5 Kho tài liệu | Đăng tài liệu theo phạm vi xem, phiên bản | FR-5.1 → FR-5.3 |
 | UC6 Tra cứu chung và trợ lý | Ô tìm đồng nghiệp trên nav bar; trang "Tra cứu tài liệu" gồm tìm trong nội dung tài liệu và trợ lý chính sách | FR-6.1 → FR-6.3 |
 | UC7 Lịch sử thao tác | Audit append-only, tra cứu audit | FR-7.1 → FR-7.3 |
@@ -202,6 +202,7 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-3.5 | Gửi lại do mạng lỗi không tạo đơn thứ hai | M | Cùng `Idempotency-Key` trả lại đơn cũ (BR-11) | Đã có |
 | FR-3.6 | Nhân viên hủy đơn chưa có quyết định; không tự hủy đơn đã duyệt | M | Hủy trả lại số ngày; hủy đơn đã duyệt trả 409 (BR-07, BR-08) | Đã có |
 | FR-3.7 | HR và quản lý trực tiếp tạo đơn hộ nhân viên | S | Số dư là của nhân viên; nhân viên nhận email, vẫn tự hủy được; lịch sử ghi người tạo hộ (BR-12) | Kế hoạch tuần 10 |
+| FR-3.8 | HR chỉnh mức nền phép năm (12, 14, 16 ngày) và hạn mức nghỉ ốm theo hồ sơ BHXH | S | Phép năm tính lại theo BR-01; hạn mức nhỏ hơn đã dùng cộng đang chờ trả 409; có audit (BR-18) | Thiết kế 18/11 (UC3 spec 13.2, 13.3) |
 
 ### 4.4 UC4 – Duyệt đơn (FR-4.x)
 
@@ -217,6 +218,7 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-4.6 | Email thông báo: đơn mới → quản lý; duyệt, từ chối, hoàn tất → nhân viên; hủy → quản lý | M | Email tới đúng người; không gửi trùng khi hệ thống gửi lại event | Đã có |
 | FR-4.7 | Xem chi tiết đơn và lịch sử trạng thái | M | Chỉ chủ đơn, quản lý trực tiếp, HR xem được | Đã có |
 | FR-4.8 | HR duyệt thêm sau quản lý với loại phép được cấu hình (thai sản; nghỉ không lương trên 3 ngày) | S | Quản lý duyệt → `PENDING_HR`; HR duyệt → `APPROVED`, từ chối phải có lý do; HR không duyệt đơn của chính mình (BR-16) | Chưa có, kế hoạch tuần 12 |
+| FR-4.9 | HR cập nhật lịch lễ, nghỉ bù và tính lại đơn bị ảnh hưởng | S | Sửa lịch không tự đổi đơn; HR tính lại từng đơn có lý do, không vượt số dư (BR-19) | Thiết kế 18/11 (UC4 spec 13.6) |
 
 ### 4.5 UC5 – Kho tài liệu chính sách (FR-5.x)
 
@@ -548,7 +550,7 @@ Chiều xuôi: mục tiêu (BRD) → yêu cầu (SRS) → thiết kế (SAD) →
 | Mục tiêu (BRD) | Use case | Yêu cầu (SRS) | Business rule | Thiết kế (SAD) | Kiểm chứng |
 |---|---|---|---|---|---|
 | MT-1 | UC1, UC2 | FR-1.1 → FR-1.14, FR-2.1 → FR-2.5 | Quy tắc hồ sơ, issue #21, #22 | Module Employee, Organization, Identity; ADR-10 | e2e `app.e2e-spec.ts`; biên bản kiểm thử tuần 7 |
-| MT-2 | UC3, UC4 | FR-3.1 → FR-3.7, FR-4.1 → FR-4.8 | BR-01 → BR-12, BR-16 | Module Leave, Worker; outbox + queue (ADR-03) | 22 ca kiểm thử `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
+| MT-2 | UC3, UC4 | FR-3.1 → FR-3.8, FR-4.1 → FR-4.9 | BR-01 → BR-19 | Module Leave, Worker; outbox + queue (ADR-03) | 22 ca kiểm thử `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
 | MT-3 | UC1, UC7 | FR-1.3, FR-1.4, FR-7.1 → FR-7.3 | ADR-08, ADR-09 | Module Employee (`FieldCrypto`, ADR-08), Audit (ADR-09) | e2e audit, `VIEW_SENSITIVE`; ma trận phân quyền |
 | MT-4 | UC5, UC6 | FR-5.1 → FR-5.3, FR-6.1 → FR-6.3 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13) | Kế hoạch kiểm thử tuần 10, 12 |
 | MT-3 | UC8 | FR-8.1 → FR-8.6, NFR-5.1 → NFR-5.10 | Threat model T-02, T-03, T-06 | Module Identity, Keycloak/Cognito, outbox + SNS/SQS (ADR-17) | `test.md` UC8; ca kiểm thử bảo mật |
