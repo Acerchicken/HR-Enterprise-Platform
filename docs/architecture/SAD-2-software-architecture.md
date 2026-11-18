@@ -106,7 +106,7 @@ sequenceDiagram
   C->>MW: HTTP /api/v1/...
   MW->>G: gắn traceId (header X-Trace-Id)
   G->>TV: kiểm chữ ký JWT (JWKS), issuer, client
-  TV-->>G: subject, email, role trong token
+  TV-->>G: subject, email (không đọc nhóm trong token, ADR-18)
   G->>ID: map tài khoản ↔ nhân viên, gom role (HR/ADMIN từ DB, MANAGER suy ra từ sơ đồ tổ chức); hồ sơ TERMINATED → 403
   G->>G: kiểm @Roles của endpoint (lớp 1)
   G->>RL: request đã xác thực

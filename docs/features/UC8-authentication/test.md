@@ -17,7 +17,8 @@
 
 | Mức | File | Nội dung |
 |---|---|---|
-| Unit | `backend/src/modules/identity/token-verifier.spec.ts` | Đọc claim Keycloak (`azp`, `realm_access.roles`) và Cognito (`client_id`, `cognito:groups`), chỉ nhận access token |
+| Unit | `backend/src/modules/identity/token-verifier.spec.ts` | Đọc claim Keycloak (`azp`, `email`) và Cognito (`client_id`, email qua userinfo), không đọc nhóm; chỉ nhận access token |
+| Unit | `backend/src/modules/identity/identity.service.spec.ts` | Vai trò chỉ từ database: nhóm trong token bị bỏ qua; dòng `MANAGER` cũ bị bỏ qua; MANAGER khi có cấp dưới; `TERMINATED` → 403 |
 | Unit | `backend/src/config/config.spec.ts` | Cấu hình `AUTH_MODE`, issuer, JWKS |
 | e2e | `backend/test/app.e2e-spec.ts` | 401 khi không có token, token sai; 403 người đã nghỉ việc |
 
@@ -35,7 +36,7 @@
 | AC-8.4.1 | e2e `TERMINATED` → 403 | – | Có |
 | AC-8.4.2, 8.4.3 | Unit consumer | Cho nghỉ việc rồi đăng nhập lại; khôi phục | Chưa |
 | AC-8.5.x | – | HR, ADMIN bị hỏi TOTP; nhân viên (local) không bị hỏi | Chưa |
-| AC-8.1.10 | Unit `IdentityService.resolve`; e2e token `hr` không có dòng database → 403 | – | Chưa (`feat/uc8-roles-from-db`) |
+| AC-8.1.10 | Unit `identity.service.spec.ts` (token có `hr`, `manager`, `admin` mà database không có → chỉ `EMPLOYEE`) | Đăng nhập `manager@hr.local` sau khi import lại realm: vẫn là MANAGER nhờ có cấp dưới | Có |
 | AC-8.1.11 | Unit `CallbackPage` | Sửa `state` trong URL `/callback` | Chưa |
 | AC-8.3.6 | Unit consumer `EmployeeEmailChanged` | Đổi email, đăng nhập bằng email mới | Chưa |
 | AC-8.6.x | e2e quyền gửi lại lời mời, 409 theo trạng thái | Xem trạng thái, gửi lại | Chưa |

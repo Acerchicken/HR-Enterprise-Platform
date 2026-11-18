@@ -57,7 +57,6 @@ Local dùng Keycloak (realm `hr`), staging dùng Amazon Cognito.
 | `OIDC_JWKS_URI` | `<OIDC_ISSUER>/protocol/openid-connect/certs` | `<issuer>/.well-known/jwks.json` | Staging | API | Nơi lấy public key kiểm tra chữ ký. Mặc định là đường dẫn kiểu Keycloak, nên với Cognito phải đặt |
 | `OIDC_ALLOWED_CLIENTS` | `hr-web` | Id client web của Cognito | Staging | API | Danh sách client được gọi API, cách nhau dấu phẩy. Local thêm `hr-api-test` để dùng curl/Postman |
 | `OIDC_CLIENT_CLAIM` | `azp` | `client_id` | Staging | API | Claim chứa client id trong access token |
-| `OIDC_ROLES_CLAIM` | `realm_access.roles` | `cognito:groups` | Staging | API | Đường dẫn claim chứa danh sách role |
 | `OIDC_USERINFO_URL` | (không có) | `https://<domain>.auth.<region>.amazoncognito.com/oauth2/userInfo` | Staging | API | Access token Cognito không có email: API gọi userinfo lấy email, cache theo `sub` 10 phút. Để trống với Keycloak |
 
 ### Mã hóa trường nhạy cảm

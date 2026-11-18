@@ -37,7 +37,7 @@ Môi trường: **L** = local (Keycloak), **S** = staging (Cognito). Không ghi 
 - **AC-8.1.7** *(chưa đạt ở S)* Giả sử đang dùng liên tục. Thì token tự gia hạn; sau 10 giờ kể từ lúc đăng nhập phải đăng nhập lại.
 - **AC-8.1.8** *(chưa đạt ở S)* Giả sử gọi `InitiateAuth` với `USER_PASSWORD_AUTH` tới app client của web. Thì Cognito từ chối.
 - **AC-8.1.9** *(chưa đạt ở S)* Giả sử chưa có tài khoản. Khi tìm nút "Đăng ký" trên trang đăng nhập. Thì không có (NFR-5.9).
-- **AC-8.1.10** *(chưa có)* Giả sử token có nhóm `hr` hoặc `manager` nhưng database không cấp `HR` và người đó không có cấp dưới.
+- **AC-8.1.10** Giả sử token có nhóm `hr` hoặc `manager` nhưng database không cấp `HR` và người đó không có cấp dưới.
   Khi gọi API chỉ dành cho HR hoặc quản lý. Thì 403: vai trò chỉ lấy từ database và sơ đồ tổ chức (ADR-18).
 - **AC-8.1.11** *(chưa có)* Giả sử `/callback` thiếu `code`, sai `state` hoặc IdP trả `error`. Thì web hiện "Đăng nhập không thành
   công" kèm nút "Thử lại", không lưu token, không lặp chuyển hướng (E1).

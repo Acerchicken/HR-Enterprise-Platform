@@ -15,10 +15,6 @@
         "description": "Nhân viên"
       },
       {
-        "name": "manager",
-        "description": "Quản lý"
-      },
-      {
         "name": "hr",
         "description": "Nhân sự"
       },
@@ -91,8 +87,7 @@
         }
       ],
       "realmRoles": [
-        "employee",
-        "manager"
+        "employee"
       ]
     },
     {
