@@ -25,6 +25,8 @@
 - **AC-2.1.1** Khi tìm theo một phần tên, email hoặc mã. Thì trả các nhân viên khớp, có phân trang.
 - **AC-2.1.2** Giả sử nhân viên X đã `TERMINATED`. Khi tìm đúng tên X. Thì X không có trong kết quả.
 - **AC-2.1.3** Khi lọc theo `dept` (UUID phòng ban). Thì chỉ trả nhân viên thuộc phòng ban đó.
+- **AC-2.1.5** *(chưa có)* Khi lọc theo một Trung tâm hoặc Phòng có đơn vị con. Thì mặc định trả cả nhân viên của các đơn vị con
+  (như phạm vi tài liệu UC5); `includeChildren=false` thì chỉ đơn vị đó.
 - **AC-2.1.4** Khi gửi `size` lớn hơn 100. Thì trả 400.
 
 ### FR-2.2 Cây tổ chức (M, đã có)
@@ -85,6 +87,12 @@
   và HR phải chọn cho mỗi người (chọn hàng loạt được): **giữ A làm quản lý** hoặc **chuyển sang quản lý khác** (điền sẵn trưởng
   đơn vị cũ của A). Không chọn thì trả 400. Các thay đổi quản lý của cấp dưới có cùng ngày hiệu lực, mỗi người một dòng quá
   trình công tác lý do `MANAGER_CHANGE`; đơn nghỉ đang chờ đi theo quản lý mới (AC-2.7.3).
+- **AC-2.7.7** *(chưa có)* Khi đã có điều chuyển, HR gửi `departmentId`, `positionId` hoặc `managerId` qua `PATCH /employees/{id}`
+  (UC1 luồng 4.5). Thì trả 400, chỉ sang "Điều chuyển". Sửa nhầm thì làm điều chuyển lý do `CORRECTION`. Nhờ vậy mọi thay đổi
+  tổ chức đều có dòng quá trình công tác và ngày hiệu lực.
+- **AC-2.7.8** *(chưa có)* Khi job 00:05 áp dụng điều chuyển tương lai. Thì kiểm lại FR-2.5 tại lúc áp dụng (quản lý mới còn làm
+  việc, không tạo vòng, đơn vị đích còn hoạt động); sai thì không áp dụng, dòng chuyển `FAILED`, HR nhận thông báo. Người được
+  điều chuyển đã nghỉ việc thì điều chuyển đã bị hủy từ trước (UC1 AC-1.7.3).
 
 ### FR-2.8 Quá trình công tác (S, chưa có)
 
