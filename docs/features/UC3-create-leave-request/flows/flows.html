@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UC3 – Sơ đồ luồng tạo đơn nghỉ</title>
+<!--
+  Sơ đồ luồng động cho UC3 (nguồn: ../spec.md v1.1, mục 4 → 6, 9.3, 13; BR-01 → BR-19).
+  Mở trực tiếp bằng trình duyệt, không cần server. Dữ liệu sơ đồ nằm trong biến FLOWS bên dưới;
+  sửa luồng trong spec thì sửa FLOWS rồi chạy lại render.js để xuất PNG.
+  Tham số URL: #f2 chọn luồng; ?static=1 ẩn nút điều khiển (dùng khi xuất ảnh).
+-->
+<style>
+  :root {
+    --primary: #0E7490; --primary-soft: #E0F2F7; --ink: #0F172A; --muted: #64748B; --line: #CBD5E1;
+    --bg: #F8FAFC; --card: #FFFFFF; --err: #DC2626; --async: #7C3AED; --ok: #15803D; --warn: #B45309;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); background: var(--bg); }
+  header { background: var(--primary); color: #fff; padding: 14px 20px; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header p { margin: 2px 0 0; opacity: .85; font-size: 13px; }
+  .wrap { display: grid; grid-template-columns: 250px 1fr; gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
+  nav { display: flex; flex-direction: column; gap: 4px; }
+  nav .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 10px 4px 2px; }
+  nav button { text-align: left; border: 1px solid transparent; background: none; padding: 7px 10px; border-radius: 8px;
+    font: inherit; color: var(--ink); cursor: pointer; }
+  nav button:hover { background: var(--primary-soft); }
+  nav button.on { background: var(--card); border-color: var(--primary); color: var(--primary); font-weight: 600; }
+  nav button small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
+  main { min-width: 0; }
+  .card { background: var(--card); border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; }
+  .title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; margin-bottom: 4px; }
+  .title h2 { margin: 0; font-size: 17px; }
+  .title .refs { color: var(--muted); font-size: 13px; }
+  .intro { margin: 0 0 12px; color: #334155; }
+  .ctrl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .ctrl button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; font: inherit; cursor: pointer; }
+  .ctrl button.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .ctrl button:disabled { opacity: .4; cursor: default; }
+  .ctrl .pos { color: var(--muted); margin-left: 4px; }
+  .ctrl label { color: var(--muted); display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .stage { overflow-x: auto; border: 1px solid #E2E8F0; border-radius: 10px; background: #fff; }
+  #diagram { display: block; }
+  .detail { margin-top: 12px; padding: 12px 14px; border-left: 4px solid var(--primary); background: var(--primary-soft);
+    border-radius: 0 8px 8px 0; min-height: 52px; }
+  .detail b { color: var(--primary); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; color: var(--muted); font-size: 12.5px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { display: inline-block; width: 28px; border-top: 2px solid var(--ink); }
+  .legend i.ret { border-top-style: dashed; border-color: var(--muted); }
+  .legend i.as { border-top-style: dashed; border-color: var(--async); }
+  .legend i.er { border-color: var(--err); }
+
+  /* SVG */
+  svg text { font-family: "Segoe UI", Roboto, Arial, sans-serif; }
+  .pbox { fill: var(--primary); }
+  .pbox.ext { fill: #334155; }
+  .ptext { fill: #fff; font-size: 13px; font-weight: 600; }
+  .life { stroke: var(--line); stroke-dasharray: 4 4; }
+  .msg line, .msg path { stroke: var(--ink); stroke-width: 1.6; fill: none; }
+  .msg text { font-size: 12.5px; fill: var(--ink); }
+  .msg.ret line, .msg.ret path { stroke: var(--muted); stroke-dasharray: 5 4; }
+  .msg.ret text { fill: #475569; }
+  .msg.async line, .msg.async path { stroke: var(--async); stroke-dasharray: 5 4; }
+  .msg.async text { fill: var(--async); }
+  .msg.err line, .msg.err path { stroke: var(--err); }
+  .msg.err text { fill: var(--err); }
+  .msg .num { fill: #fff; stroke: var(--primary); stroke-width: 1.4; }
+  .msg .numt { fill: var(--primary); font-size: 10.5px; font-weight: 700; }
+  .msg .hit { fill: transparent; stroke: none; cursor: pointer; }
+  .msg.cur .hl { fill: #FEF3C7; }
+  .msg .hl { fill: transparent; }
+  .frag rect.box { fill: none; stroke: #94A3B8; stroke-width: 1.2; }
+  .frag .tab { fill: #F1F5F9; stroke: #94A3B8; stroke-width: 1.2; }
+  .frag text { font-size: 12px; fill: #334155; }
+  .frag text.kw { font-weight: 700; }
+  .frag line.else { stroke: #94A3B8; stroke-dasharray: 6 4; }
+  .ref rect { fill: #F1F5F9; stroke: #94A3B8; }
+  .ref text { font-size: 12.5px; fill: #334155; }
+  .ref text.kw { font-weight: 700; }
+  .node rect, .node polygon, .node ellipse { fill: #fff; stroke: var(--primary); stroke-width: 1.8; }
+  .node.start ellipse, .node.end ellipse.in { fill: var(--ink); stroke: var(--ink); }
+  .node.end ellipse.out { fill: #fff; stroke: var(--ink); }
+  .node.decision polygon { fill: #FFF7ED; stroke: var(--warn); }
+  .node.result rect { fill: var(--primary-soft); }
+  .node.bad rect { stroke: var(--err); fill: #FEF2F2; }
+  .node.good rect { stroke: var(--ok); fill: #F0FDF4; }
+  .node text { font-size: 12.5px; fill: var(--ink); }
+  .node text.big { font-weight: 700; font-size: 13px; }
+  .edge path { stroke: var(--ink); stroke-width: 1.6; fill: none; }
+  .edge.err path { stroke: var(--err); }
+  .edge text { font-size: 12px; fill: #334155; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+  .edge.err text { fill: var(--err); }
+  .edge .hit, .edge.err .hit { stroke: transparent; stroke-width: 14; fill: none; cursor: pointer; }
+
+  /* trạng thái chạy từng bước */
+  svg.play .msg.future, svg.play .edge.future, svg.play .frag.future, svg.play .ref.future { opacity: .14; }
+  svg.play .msg.cur line, svg.play .msg.cur path, svg.play .edge.cur path { stroke-width: 2.6; }
+  svg.play .edge.cur text { font-weight: 700; }
+  .msg.cur line, .msg.cur path { animation: draw .55s ease-out; }
+  @keyframes draw { from { stroke-dashoffset: 400; } }
+
+  body.static header, body.static nav, body.static .ctrl, body.static .detail, body.static .intro { display: none; }
+  body.static .wrap { display: block; padding: 0; }
+  body.static { background: #fff; }
+  body.static .card { border: 0; border-radius: 0; padding: 0; display: inline-block; }
+  body.static .stage { border: 0; border-radius: 0; }
+  body.static .title { padding: 12px 16px 0; }
+
+  @media (max-width: 860px) {
+    .wrap { grid-template-columns: 1fr; padding: 10px; }
+    nav { flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 4px; }
+    nav .grp { display: none; }
+    nav button { white-space: nowrap; border-color: var(--line); background: #fff; }
+    nav button small { display: none; }
+    .ctrl label { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>UC3 – Tạo đơn nghỉ: sơ đồ luồng</h1>
+  <p>Theo spec.md v1.1 (mục 4 luồng chính, 5 luồng thay thế, 6 ngoại lệ, 9.3 API, 13 thiết kế) và leave-rules.md. Chọn luồng bên trái, bấm "Chạy" để xem từng bước.</p>
+</header>
+<div class="wrap">
+  <nav id="nav"></nav>
+  <main>
+    <div class="card">
+      <div class="title"><h2 id="ftitle"></h2><span class="refs" id="frefs"></span></div>
+      <p class="intro" id="fintro"></p>
+      <div class="ctrl">
+        <button id="bPlay" class="primary">▶ Chạy</button>
+        <button id="bPrev">◀ Lùi</button>
+        <button id="bNext">Tiếp ▶</button>
+        <button id="bAll">Hiện tất cả</button>
+        <span class="pos" id="pos"></span>
+        <label>Tốc độ <input id="speed" type="range" min="600" max="3000" step="200" value="1600"></label>
+      </div>
+      <div class="stage"><svg id="diagram" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      <div class="detail" id="detail">Bấm "Chạy" hoặc bấm vào một mũi tên để xem giải thích bước đó.</div>
+      <div class="legend" id="legend">
+        <span><i></i>Gọi</span><span><i class="ret"></i>Trả về</span><span><i class="as"></i>Bất đồng bộ (outbox, email)</span>
+        <span><i class="er"></i>Lỗi, ngoại lệ (mã E ở spec mục 6)</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ------------------------------------------------------------------ */
+/* Dữ liệu sơ đồ                                                        */
+/* Tin nhắn: {f, t, l, k?: 'ret'|'async'|'err', s?: tham chiếu spec, d?: giải thích thêm}
+   Khối: {frag: 'alt'|'opt'|'loop', c: điều kiện, m: [...], else?: [{c, m}]}
+   Tham chiếu: {ref: 'văn bản', s?}                                       */
+/* ------------------------------------------------------------------ */
+const P = {
+  N: { n: 'Nhân viên' }, M: { n: 'Quản lý' }, H: { n: 'HR' }, W: { n: 'Web (React)' }, A: { n: 'API (NestJS)' },
+  D: { n: 'PostgreSQL', ext: 1 }, J: { n: 'Worker (job, event)', ext: 1 }, O: { n: 'Outbox → Email', ext: 1 },
+};
+const FLOWS = [
+{
+  id: 'f1', grp: 'Nhân viên', name: 'Tạo đơn nghỉ', sub: 'Luồng chính, A5, 13.3, 13.4',
+  refs: 'FR-3.1 → FR-3.5 · AC-3.2.x, AC-3.2.4, AC-3.2.6 · BR-01 → BR-04',
+  intro: 'Một giao dịch, khóa theo chủ đơn. Loại có số dư thì tách số ngày theo năm và giữ chỗ từng năm; loại theo sự kiện thì kiểm ngày sự kiện và mức tối đa, không đụng số dư.',
+  type: 'seq', p: ['N', 'W', 'A', 'D', 'O'],
+  m: [
+    { f: 'N', t: 'W', l: 'Mở "Đăng ký nghỉ"', s: 'bước 1' },
+    { f: 'W', t: 'A', l: 'GET /leave-balances/me, /leave-types, /leave-holidays' },
+    { f: 'A', t: 'D', l: 'ensureBalances(nv, năm): tạo dòng ANNUAL (13.2), SICK, UNPAID nếu chưa có' },
+    { f: 'A', t: 'W', l: '200: số dư (2 chữ số thập phân), loại phép có quotaKind, lịch lễ', k: 'ret', s: 'AC-3.1.1' },
+    { f: 'N', t: 'W', l: 'Chọn loại, ngày, buổi, lý do; loại theo sự kiện thì nhập ngày sự kiện', s: 'bước 2' },
+    { f: 'W', t: 'A', l: 'POST /leave-requests (Idempotency-Key) {leaveType, startDate, endDate, halfDay?, eventDate?, reason?}', s: 'bước 3' },
+    { f: 'A', t: 'A', l: 'Thiếu key, sai ngày, thiếu hoặc thừa eventDate → 400 (E1, E2, E12)', k: 'err' },
+    { f: 'A', t: 'D', l: 'Giao dịch: khóa advisory theo chủ đơn; key đã dùng → trả đơn cũ (BR-11)', s: 'bước 4, 5' },
+    { f: 'A', t: 'A', l: 'Đếm ngày làm việc theo lịch chung, tách theo năm: 29/12–4/1 → {2026: 3, 2027: 2}', s: 'bước 6, A5' },
+    { frag: 'alt', c: 'quotaKind = PER_EVENT', m: [
+      { f: 'A', t: 'W', l: 'Vượt mức của sự kiện → 400 (E12); trùng loại + eventDate → 409 (E13)', k: 'err', s: 'AC-3.1.4, AC-3.2.6' },
+    ], else: [{ c: 'ACCRUED, YEARLY', m: [
+      { f: 'A', t: 'D', l: 'Khóa dòng số dư từng năm (năm tăng dần); năm nào thiếu → 400, không ghi gì (E3)', k: 'err', s: 'AC-3.2.4' },
+    ] }] },
+    { f: 'A', t: 'A', l: 'Trùng lịch với SUBMITTED, PENDING_HR, APPROVED → 409 (E5)', k: 'err', s: 'bước 7' },
+    { f: 'A', t: 'D', l: 'Ghi đơn SUBMITTED (requiresHrApproval chụp lúc gửi), allocation từng năm, pending từng năm, lịch sử SUBMIT, audit, outbox LeaveRequested', s: 'bước 9' },
+    { f: 'A', t: 'W', l: '201: đơn + allocations', k: 'ret', s: 'bước 10' },
+    { f: 'D', t: 'O', l: 'Publisher → worker → email chung cho quản lý (BR-15)', k: 'async' },
+  ],
+},
+{
+  id: 'f2', grp: 'Nhân viên', name: 'Tự hủy đơn chờ', sub: 'A1, A7, 13.5',
+  refs: 'FR-3.6 · AC-3.6.1, AC-3.6.3, AC-3.6.5 · BR-07',
+  intro: 'Chủ đơn chỉ tự hủy đơn SUBMITTED hoặc PENDING_HR trước ngày bắt đầu. Từ ngày bắt đầu, đơn đi tiếp luồng duyệt như thường.',
+  type: 'seq', p: ['N', 'W', 'A', 'D', 'O'],
+  m: [
+    { f: 'N', t: 'W', l: 'Mở đơn, bấm "Hủy đơn" (nút chỉ hiện khi canCancel)', s: 'A1 bước 1' },
+    { f: 'W', t: 'A', l: 'POST /leave-requests/{id}/cancel {version}' },
+    { f: 'A', t: 'A', l: 'Không phải chủ đơn → 403 (E7)', k: 'err', s: 'AC-3.6.3' },
+    { frag: 'alt', c: 'không hủy được', m: [
+      { f: 'A', t: 'W', l: 'APPROVED → 409 "dùng Đề nghị hủy" (E6); hôm nay ≥ startDate → 409 (E11); version cũ → 409 (E8)', k: 'err', s: 'AC-3.6.2, AC-3.6.5' },
+    ], else: [{ c: 'SUBMITTED, PENDING_HR và hôm nay < startDate', m: [
+      { f: 'A', t: 'D', l: 'Giao dịch: → CANCELLED; trừ pending theo từng dòng allocation; lịch sử CANCEL; audit LEAVE_CANCEL; outbox LeaveCancelled (reason OWNER)', s: 'A1 bước 2, 3' },
+      { f: 'A', t: 'W', l: '200: đơn CANCELLED', k: 'ret' },
+      { f: 'D', t: 'O', l: 'Email chung tới người đang có quyền duyệt (quản lý, hoặc nhóm HR nếu PENDING_HR)', k: 'async' },
+    ] }] },
+    { ref: 'Bấm hủy lần hai: trả lại đơn, không đổi gì (BR-11)' },
+  ],
+},
+{
+  id: 'f3', grp: 'Nhân viên', name: 'Đề nghị hủy đơn đã duyệt', sub: 'A6, 13.5',
+  refs: 'FR-3.6 · AC-3.6.6, AC-3.6.7 · BR-08 · UC4 13.4',
+  intro: 'Đơn vẫn APPROVED và vẫn giữ chỗ cho tới khi người có quyền xác nhận. Bước xác nhận, bác ở UC4 (sơ đồ uc4-f3).',
+  type: 'seq', p: ['N', 'W', 'A', 'D', 'O'],
+  m: [
+    { f: 'N', t: 'W', l: 'Mở đơn đã duyệt, bấm "Đề nghị hủy" (khi canRequestCancel), nhập lý do', s: 'A6' },
+    { f: 'W', t: 'A', l: 'POST /leave-requests/{id}/cancel-request {version, reason}' },
+    { frag: 'alt', c: 'sai điều kiện', m: [
+      { f: 'A', t: 'W', l: 'Không phải chủ đơn → 403; thiếu lý do → 400', k: 'err', s: 'AC-3.6.6' },
+      { f: 'A', t: 'W', l: 'Không APPROVED, đã có đề nghị, hôm nay ≥ startDate → 409 (E14)', k: 'err', s: 'AC-3.6.6' },
+    ], else: [{ c: 'hợp lệ', m: [
+      { f: 'A', t: 'D', l: 'Giao dịch: cancel_requested_at, _by; lịch sử CANCEL_REQUEST (có lý do); audit LEAVE_CANCEL_REQUEST (không lý do); outbox LeaveCancelRequested' },
+      { f: 'A', t: 'W', l: '200: đơn APPROVED, cancelRequest có giá trị', k: 'ret' },
+      { f: 'D', t: 'O', l: 'Email chung: quản lý trực tiếp, người duyệt thay; HR nếu đơn đã qua HR hoặc của CEO', k: 'async' },
+    ] }] },
+    { ref: 'Bị bác: đơn giữ APPROVED, chủ đơn nhận email, gửi lại được nếu còn trước startDate (AC-3.6.7)' },
+  ],
+},
+{
+  id: 'f4', grp: 'HR, quản lý', name: 'Tạo đơn hộ', sub: 'A3, 13.1',
+  refs: 'FR-3.7 · AC-3.7.x · BR-12',
+  intro: 'Chủ đơn là người được chọn: số dư, khóa, idempotency đều theo chủ đơn. Lịch sử ghi người tạo riêng.',
+  type: 'seq', p: ['H', 'W', 'A', 'D', 'O'],
+  m: [
+    { f: 'H', t: 'W', l: 'Ô "Tạo cho": HR tìm mọi nhân viên; quản lý chọn trong cấp dưới trực tiếp' },
+    { f: 'W', t: 'A', l: 'GET /leave-balances?employeeId=X' },
+    { f: 'A', t: 'W', l: 'Không phải HR hoặc quản lý trực tiếp hiện tại của X → 403', k: 'err', s: 'AC-3.8.4' },
+    { f: 'A', t: 'W', l: '200: số dư của X (quản lý không thấy mức nền, ghi chú)', k: 'ret' },
+    { f: 'W', t: 'A', l: 'POST /leave-requests {employeeId: X, …} (Idempotency-Key)' },
+    { f: 'A', t: 'A', l: 'Quan hệ duyệt thay không tính → 403', k: 'err', s: 'AC-3.7.3' },
+    { f: 'A', t: 'D', l: 'Như luồng tạo đơn, theo chủ đơn X; created_by = người gọi; lịch sử actor = người gọi; audit onBehalfOf = X' },
+    { f: 'D', t: 'O', l: 'Email quản lý như thường + email chung cho X "có đơn được tạo cho bạn"', k: 'async' },
+  ],
+},
+{
+  id: 'f5', grp: 'Hệ thống', name: 'Cấp và tính lại số dư', sub: '13.2',
+  refs: 'FR-3.1 · AC-3.1.3, AC-3.1.5, AC-3.1.7 · BR-01',
+  intro: 'Mọi việc tính số dư nằm trong module Leave. Module Employee không gọi ngược; nó chỉ phát event EmployeeTerminated qua outbox.',
+  type: 'seq', p: ['H', 'A', 'D', 'J', 'O'],
+  m: [
+    { frag: 'loop', c: 'job 00:10 giờ Việt Nam mỗi ngày', m: [
+      { f: 'J', t: 'D', l: 'Mỗi người chưa nghỉ việc: tính entitled ANNUAL năm nay theo 13.2 (bắt được sửa hireDate, mốc thâm niên)' },
+      { f: 'J', t: 'D', l: 'Ngày 01/01: tạo dòng năm mới; không chuyển số dư năm cũ' },
+    ] },
+    { f: 'H', t: 'A', l: 'PATCH /employees/{id} status = TERMINATED (UC1 AC-1.7.3)', s: 'AC-3.1.7' },
+    { f: 'A', t: 'D', l: 'Giao dịch của module Employee + outbox EmployeeTerminated {employeeId, effectiveDate}' },
+    { f: 'D', t: 'J', l: 'Worker nhận EmployeeTerminated', k: 'async' },
+    { f: 'J', t: 'D', l: 'Hủy SUBMITTED, PENDING_HR và APPROVED bắt đầu sau ngày nghỉ việc: CANCELLED, lịch sử SYSTEM_CANCEL, trả pending từng năm' },
+    { f: 'J', t: 'D', l: 'Tính lại ANNUAL tới tháng nghỉ việc; entitled < used + pending → đặt bằng used + pending, audit LEAVE_BALANCE_OVERDRAWN', k: 'err' },
+    { f: 'D', t: 'O', l: 'LeaveCancelled (reason SYSTEM) → quản lý cũ; không email cho tài khoản đã khóa', k: 'async' },
+  ],
+},
+{
+  id: 'f6', grp: 'HR, quản lý', name: 'HR chỉnh hạn mức', sub: 'FR-3.8, 13.2, 13.3',
+  refs: 'FR-3.8 · AC-3.8.1 → AC-3.8.3 · BR-18',
+  intro: 'Phép năm: HR chỉ đặt mức nền 12, 14, 16; số được hưởng do hệ thống tính. Nghỉ ốm, không lương: HR đặt hạn mức năm theo hồ sơ.',
+  type: 'seq', p: ['H', 'W', 'A', 'D'],
+  m: [
+    { f: 'H', t: 'W', l: 'Mở /leave/balances, tìm nhân viên, chọn năm' },
+    { f: 'W', t: 'A', l: 'GET /leave-balances?employeeId=&year=' },
+    { f: 'A', t: 'W', l: '200: dòng ANNUAL (baseDays, entitled), SICK (source DEFAULT hoặc MANUAL), UNPAID', k: 'ret' },
+    { f: 'H', t: 'W', l: 'Sửa mức nền hoặc hạn mức, nhập ghi chú (bắt buộc)' },
+    { f: 'W', t: 'A', l: 'PUT /leave-balances/{employeeId}/{leaveType}/{year} {version, baseDays? | entitled?, note}' },
+    { frag: 'alt', c: 'sai', m: [
+      { f: 'A', t: 'W', l: 'Không phải HR → 403; baseDays ngoài 12/14/16, sửa entitled của ANNUAL → 400', k: 'err', s: 'AC-3.8.1, AC-3.8.3' },
+      { f: 'A', t: 'W', l: 'entitled < used + pending, version cũ → 409', k: 'err', s: 'AC-3.8.2' },
+    ], else: [{ c: 'hợp lệ', m: [
+      { f: 'A', t: 'D', l: 'Giao dịch: cập nhật dòng (ANNUAL tính lại theo 13.2; SICK source = MANUAL), version + 1; audit LEAVE_BALANCE_ADJUST (cũ, mới, không ghi chú)' },
+      { f: 'A', t: 'W', l: '200: dòng số dư mới', k: 'ret' },
+    ] }] },
+  ],
+},
+{
+  id: 'g1', grp: 'Quy tắc', name: 'Cách tính phép năm', sub: '13.2, BR-01',
+  refs: 'AC-3.1.3, AC-3.1.5',
+  intro: 'Tính cho một nhân viên, một năm. Ngày làm việc bỏ T7, CN và ngày lễ theo lịch chung. Thâm niên dùng cùng hàm seniority() với UC1.',
+  type: 'graph', w: 1080, h: 520,
+  n: [
+    { id: 's', k: 'start', x: 40, y: 70 },
+    { id: 'b', k: 'result', x: 230, y: 70, l: 'nền = baseDays ?? 12\ncộng = seniority(hireDate, 31/12)\n.annualLeaveBonus', w: 250, h: 74 },
+    { id: 'r', k: 'result', x: 560, y: 70, l: 'từ = max(hireDate, 1/1)\nđến = min(ngày nghỉ việc, 31/12)', w: 260, h: 64 },
+    { id: 'q1', k: 'decision', x: 560, y: 230, l: 'Tháng m\nnằm trọn trong\n[từ, đến]?', w: 200, h: 100 },
+    { id: 't1', k: 'good', x: 880, y: 230, l: 'Tính tháng m', w: 180, h: 50 },
+    { id: 'q2', k: 'decision', x: 560, y: 400, l: 'Ngày làm việc của nv\ntrong m ≥ 50%\nngày làm việc của m?', w: 230, h: 104 },
+    { id: 't2', k: 'bad', x: 230, y: 400, l: 'Bỏ tháng m', w: 170, h: 50 },
+    { id: 'f', k: 'result', x: 900, y: 90, l: '12 tháng: nền + cộng\nngược lại: (nền + cộng) / 12 × tháng\nlàm tròn nửa lên 2 chữ số', w: 300, h: 74 },
+  ],
+  e: [
+    { f: 's', t: 'b', l: '' },
+    { f: 'b', t: 'r', l: '' },
+    { f: 'r', t: 'q1', l: 'mỗi tháng m' },
+    { f: 'q1', t: 't1', l: 'có' },
+    { f: 'q1', t: 'q2', l: 'không (tháng vào làm,\ntháng nghỉ việc)' },
+    { f: 'q2', t: 't1', l: 'có', via: [[880, 400]], lp: [740, 388] },
+    { f: 'q2', t: 't2', l: 'không', k: 'err' },
+    { f: 't1', t: 'f', l: 'cộng dồn', lp: [960, 175] },
+  ],
+},
+{
+  id: 'g2', grp: 'Quy tắc', name: 'Loại phép theo cách tính số dư', sub: '13.3',
+  refs: 'AC-3.1.4, AC-3.1.6, AC-3.2.6 · BR-01, BR-18',
+  intro: 'quotaKind quyết định có dòng số dư hay không và kiểm gì khi tạo đơn. Loại theo sự kiện không trừ, không cộng vào phép năm.',
+  type: 'graph', w: 1080, h: 420,
+  n: [
+    { id: 's', k: 'start', x: 40, y: 210 },
+    { id: 'q', k: 'decision', x: 220, y: 210, l: 'quotaKind?', w: 160, h: 70 },
+    { id: 'a', k: 'state', x: 560, y: 70, l: 'ACCRUED – ANNUAL', sub: 'hệ thống tính (13.2); HR chỉ đặt mức nền', w: 330, h: 60 },
+    { id: 'y', k: 'state', x: 560, y: 210, l: 'YEARLY – SICK, UNPAID', sub: 'mặc định 30; HR đặt theo hồ sơ (BR-18)', w: 330, h: 60 },
+    { id: 'e', k: 'state', x: 560, y: 350, l: 'PER_EVENT – cưới, con cưới, tang, sinh con', sub: 'không có dòng số dư; cần eventDate', w: 360, h: 60 },
+    { id: 'c1', k: 'result', x: 930, y: 140, l: 'Kiểm số dư từng năm\n(allocation)', w: 210, h: 60 },
+    { id: 'c2', k: 'result', x: 930, y: 350, l: 'Kiểm mức của sự kiện,\nmột đơn mỗi sự kiện', w: 210, h: 60 },
+  ],
+  e: [
+    { f: 's', t: 'q', l: '' },
+    { f: 'q', t: 'a', l: '' },
+    { f: 'q', t: 'y', l: '' },
+    { f: 'q', t: 'e', l: '' },
+    { f: 'a', t: 'c1', l: '' },
+    { f: 'y', t: 'c1', l: '' },
+    { f: 'e', t: 'c2', l: '' },
+  ],
+},
+];
+
+/* ------------------------------------------------------------------ */
+/* Vẽ                                                                   */
+/* ------------------------------------------------------------------ */
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('diagram');
+const FONT = '12.5px "Segoe UI", Roboto, Arial, sans-serif';
+const ctx = document.createElement('canvas').getContext('2d');
+ctx.font = FONT;
+
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function wrap(text, width) {
+  const out = [];
+  for (const para of String(text).split('\n')) {
+    let line = '';
+    for (const w of para.split(' ')) {
+      const t = line ? line + ' ' + w : w;
+      if (ctx.measureText(t).width > width && line) { out.push(line); line = w; } else line = t;
+    }
+    out.push(line);
+  }
+  return out;
+}
+function textLines(parent, lines, x, y, anchor, cls) {
+  const t = el('text', { x, y, 'text-anchor': anchor || 'start' }, parent);
+  if (cls) t.setAttribute('class', cls);
+  lines.forEach((ln, i) => { const s = el('tspan', { x, dy: i ? 15 : 0 }, t); s.textContent = ln; });
+  return t;
+}
+function defs() {
+  const d = el('defs', {}, svg);
+  const mk = (id, color, open) => {
+    const m = el('marker', { id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 8, markerHeight: 8, orient: 'auto-start-reverse' }, d);
+    el('path', open ? { d: 'M1,1 L9,5 L1,9', fill: 'none', stroke: color, 'stroke-width': 1.5 } : { d: 'M0,0 L10,5 L0,10 z', fill: color }, m);
+  };
+  mk('a', '#0F172A'); mk('ar', '#64748B', 1); mk('aa', '#7C3AED', 1); mk('ae', '#DC2626');
+}
+const markerOf = (k) => ({ ret: 'ar', async: 'aa', err: 'ae' }[k] || 'a');
+
+let steps = [];   // phần tử theo thứ tự chạy: {g, info}
+
+function drawSeq(f) {
+  const ids = f.p, gap = ids.length > 5 ? 175 : 205, left = 90;
+  const X = {}; ids.forEach((id, i) => X[id] = left + i * gap);
+  const W = left * 2 + (ids.length - 1) * gap;
+  const top = 18, ph = 40;
+  let y = top + ph + 26;
+  const layer = el('g', {}, svg), fragLayer = el('g', {}, layer), msgLayer = el('g', {}, layer);
+  let n = 0;
+
+  function msg(m) {
+    n++;
+    const self = m.f === m.t;
+    const x1 = X[m.f], x2 = X[m.t];
+    const width = self ? Math.round(gap * 1.25) : Math.abs(x2 - x1) - 24;
+    const lines = wrap(m.l, Math.max(width, 120));
+    const g = el('g', { class: 'msg ' + (m.k || '') }, msgLayer);
+    const lh = lines.length * 15;
+    const hl = el('rect', { class: 'hl', x: Math.min(x1, x2) - 20, y: y - 12, width: Math.abs(x2 - x1) + (self ? width + 60 : 40), height: lh + (self ? 34 : 18), rx: 6 }, g);
+    if (self) {
+      textLines(g, lines, x1 + 40, y + 2, 'start');
+      const ay = y + lh - 6;
+      el('path', { d: `M${x1},${ay} h30 v18 h-28`, 'marker-end': `url(#${markerOf(m.k)})` }, g);
+      y += lh + 32;
+    } else {
+      textLines(g, lines, (x1 + x2) / 2, y + 2, 'middle');
+      const ay = y + lh - 4;
+      el('line', { x1, y1: ay, x2: x2 + (x2 > x1 ? -2 : 2), y2: ay, 'marker-end': `url(#${markerOf(m.k)})` }, g);
+      y += lh + 20;
+    }
+    const nx = self ? x1 - 14 : x1 + (x2 > x1 ? -14 : 14), ny = self ? y - 22 - 6 : y - 24;
+    el('circle', { class: 'num', cx: nx, cy: ny, r: 9 }, g);
+    const nt = el('text', { class: 'numt', x: nx, y: ny + 3.5, 'text-anchor': 'middle' }, g); nt.textContent = n;
+    el('rect', { class: 'hit', x: hl.getAttribute('x'), y: hl.getAttribute('y'), width: hl.getAttribute('width'), height: hl.getAttribute('height') }, g);
+    steps.push({ g, info: m, n });
+  }
+  function ref(r) {
+    const g = el('g', { class: 'ref' }, msgLayer);
+    const lines = wrap(r.ref, W - 200);
+    const h = lines.length * 15 + 16;
+    el('rect', { x: 40, y, width: W - 80, height: h, rx: 4 }, g);
+    const kw = el('text', { class: 'kw', x: 52, y: y + 18 }, g); kw.textContent = 'ref';
+    textLines(g, lines, W / 2, y + 18, 'middle');
+    y += h + 16;
+    steps.push({ g, info: { l: r.ref, s: r.s, ref: 1 } });
+  }
+  function frag(fr, depth) {
+    const g = el('g', { class: 'frag' }, fragLayer);
+    const x0 = 34 + depth * 10, x1 = W - 34 - depth * 10, y0 = y;
+    const label = (c) => '[' + c + ']';
+    el('path', { class: 'tab', d: `M${x0},${y0} h${ctx.measureText(fr.frag).width + 18} v14 l-8,8 h${-(ctx.measureText(fr.frag).width + 10)} z` }, g);
+    const kw = el('text', { class: 'kw', x: x0 + 6, y: y0 + 15 }, g); kw.textContent = fr.frag;
+    const ct = el('text', { x: x0 + ctx.measureText(fr.frag).width + 26, y: y0 + 15 }, g); ct.textContent = label(fr.c);
+    y += 36;
+    const start = steps.length;
+    walk(fr.m, depth + 1);
+    for (const e of fr.else || []) {
+      y += 2;
+      el('line', { class: 'else', x1: x0, x2: x1, y1: y, y2: y }, g);
+      const t = el('text', { x: x0 + 8, y: y + 15 }, g); t.textContent = label(e.c);
+      y += 30;
+      walk(e.m, depth + 1);
+    }
+    y += 6;
+    el('rect', { class: 'box', x: x0, y: y0, width: x1 - x0, height: y - y0, rx: 3 }, g);
+    y += 14;
+    steps[start] && (steps[start].frag = (steps[start].frag || []).concat(g));
+  }
+  function walk(list, depth) {
+    for (const it of list) it.frag ? frag(it, depth) : it.ref ? ref(it) : msg(it);
+  }
+  walk(f.m, 0);
+
+  const bottom = y + 6;
+  const heads = el('g', {}, svg);
+  svg.insertBefore(heads, layer);
+  for (const id of ids) {
+    el('line', { class: 'life', x1: X[id], x2: X[id], y1: top + ph, y2: bottom }, heads);
+    for (const yy of [top, bottom]) {
+      const w = Math.max(ctx.measureText(P[id].n).width + 28, 110);
+      el('rect', { class: 'pbox' + (P[id].ext ? ' ext' : ''), x: X[id] - w / 2, y: yy, width: w, height: ph, rx: 8 }, heads);
+      const t = el('text', { class: 'ptext', x: X[id], y: yy + 25, 'text-anchor': 'middle' }, heads); t.textContent = P[id].n;
+    }
+  }
+  return [W, bottom + ph + 18];
+}
+
+function drawGraph(f) {
+  const N = {}; f.n.forEach((n) => N[n.id] = n);
+  const edgeLayer = el('g', {}, svg), nodeLayer = el('g', {}, svg);
+  const half = (n) => n.k === 'start' ? [9, 9] : n.k === 'end' ? [12, 12] : [(n.w || 150) / 2, (n.h || 56) / 2];
+  function clip(n, px, py) {           // điểm trên biên nút theo hướng tới (px, py)
+    const [hw, hh] = half(n), dx = px - n.x, dy = py - n.y;
+    if (!dx && !dy) return [n.x, n.y];
+    if (n.k === 'start' || n.k === 'end') { const d = Math.hypot(dx, dy); return [n.x + dx / d * hw, n.y + dy / d * hh]; }
+    if (n.k === 'decision') { const s = 1 / (Math.abs(dx) / hw + Math.abs(dy) / hh); return [n.x + dx * s, n.y + dy * s]; }
+    const s = Math.min(hw / Math.abs(dx || 1e-9), hh / Math.abs(dy || 1e-9));
+    return [n.x + dx * s, n.y + dy * s];
+  }
+  for (const n of f.n) {
+    const g = el('g', { class: 'node ' + n.k }, nodeLayer);
+    const [hw, hh] = half(n);
+    if (n.k === 'start') el('ellipse', { cx: n.x, cy: n.y, rx: 9, ry: 9 }, g);
+    else if (n.k === 'end') { el('ellipse', { class: 'out', cx: n.x, cy: n.y, rx: 12, ry: 12 }, g); el('ellipse', { class: 'in', cx: n.x, cy: n.y, rx: 7, ry: 7 }, g); }
+    else if (n.k === 'decision') el('polygon', { points: `${n.x},${n.y - hh} ${n.x + hw},${n.y} ${n.x},${n.y + hh} ${n.x - hw},${n.y}` }, g);
+    else el('rect', { x: n.x - hw, y: n.y - hh, width: hw * 2, height: hh * 2, rx: n.k === 'state' || n.k === 'good' || n.k === 'bad' && n.sub ? 22 : 8 }, g);
+    if (n.l) {
+      const lines = n.l.split('\n');
+      if (n.sub) {
+        const t = el('text', { class: 'big', x: n.x, y: n.y - 3, 'text-anchor': 'middle' }, g); t.textContent = n.l;
+        const s = el('text', { x: n.x, y: n.y + 15, 'text-anchor': 'middle' }, g); s.textContent = n.sub;
+      } else textLines(g, lines, n.x, n.y + 4 - (lines.length - 1) * 7.5, 'middle');
+    }
+  }
+  let i = 0;
+  for (const e of f.e) {
+    i++;
+    const a = N[e.f], b = N[e.t];
+    const g = el('g', { class: 'edge ' + (e.k || '') }, edgeLayer);
+    let d, lx, ly;
+    if (e.loop) {
+      const [, hh] = half(a), x = a.x, y = a.y - hh;
+      d = `M${x - 30},${y} C${x - 40},${y - 70} ${x + 40},${y - 70} ${x + 30},${y}`;
+      lx = x; ly = y - 66;
+    } else {
+      const pts = [[a.x, a.y], ...(e.via || []), [b.x, b.y]];
+      const p0 = clip(a, pts[1][0], pts[1][1]);
+      const pn = clip(b, pts[pts.length - 2][0], pts[pts.length - 2][1]);
+      const all = [p0, ...(e.via || []), pn];
+      d = 'M' + all.map((p) => p.join(',')).join(' L');
+      const mid = Math.floor((all.length - 1) / 2);
+      const [q0, q1] = [all[mid], all[mid + 1]];
+      lx = (q0[0] + q1[0]) / 2; ly = (q0[1] + q1[1]) / 2;
+      if (q0[1] === q1[1]) ly -= 8; else lx += 8;
+    }
+    if (e.lp) [lx, ly] = e.lp;
+    el('path', { d, 'marker-end': `url(#${e.k === 'err' ? 'ae' : 'a'})` }, g);
+    el('path', { class: 'hit', d }, g);
+    if (e.l) {
+      const lines = e.l.split('\n');
+      const vertical = !e.lp && !e.loop && !(e.via || []).length && Math.abs(a.x - b.x) < 5;
+      const anchor = vertical ? 'start' : 'middle';
+      const t = textLines(g, lines, lx, ly - (lines.length - 1) * 15 + (vertical ? 4 : 0), anchor);
+      t.setAttribute('class', '');
+    }
+    steps.push({ g, info: { l: e.l.replace(/\n/g, ' ') || `${a.l || a.id} → kết thúc`, from: a.l || '', to: b.l || '' }, n: i });
+  }
+  return [f.w, f.h];
+}
+
+/* ------------------------------------------------------------------ */
+/* Điều khiển                                                           */
+/* ------------------------------------------------------------------ */
+const $ = (id) => document.getElementById(id);
+let cur = -1, timer = null, flow = null;
+
+function render(f) {
+  flow = f; stop(); steps = []; cur = -1;
+  svg.innerHTML = ''; svg.classList.remove('play');
+  defs();
+  let [w, h] = f.type === 'seq' ? drawSeq(f) : drawGraph(f);
+  const bb = svg.getBBox(); w = Math.max(w, Math.ceil(bb.x + bb.width + 16));
+  svg.setAttribute('width', w); svg.setAttribute('height', h); svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  el('rect', { x: 0, y: 0, width: w, height: h, fill: '#fff' }, svg).parentNode.insertBefore(svg.lastChild, svg.firstChild.nextSibling);
+  $('ftitle').textContent = f.name; $('frefs').textContent = f.sub + ' · ' + f.refs; $('fintro').textContent = f.intro;
+  document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b.dataset.id === f.id));
+  steps.forEach((s, i) => s.g.addEventListener('click', () => { stop(); go(i); }));
+  $('legend').style.display = f.type === 'seq' ? '' : 'none';
+  $('detail').textContent = 'Bấm "Chạy" hoặc bấm vào một mũi tên để xem giải thích bước đó.';
+  updatePos();
+}
+function go(i) {
+  cur = Math.max(-1, Math.min(i, steps.length - 1));
+  svg.classList.toggle('play', cur >= 0);
+  steps.forEach((s, j) => {
+    const cls = j < cur ? 'done' : j === cur ? 'cur' : 'future';
+    for (const g of [s.g, ...(s.frag || [])]) {
+      g.classList.remove('done', 'cur', 'future');
+      if (cur >= 0) g.classList.add(j <= cur && g !== s.g ? 'done' : g === s.g ? cls : cls);
+    }
+  });
+  if (cur >= 0) {
+    const s = steps[cur], m = s.info;
+    const who = m.f ? `${P[m.f].n} → ${P[m.t].n}` : m.ref ? 'Tham chiếu' : 'Chuyển trạng thái';
+    $('detail').innerHTML = `<b>Bước ${cur + 1}/${steps.length} · ${who}</b><br>${esc(m.l)}` + (m.s ? `<br><small>Spec: ${esc(m.s)}</small>` : '');
+    const bb = s.g.getBBox(), st = svg.parentNode;
+    if (bb.x < st.scrollLeft || bb.x + bb.width > st.scrollLeft + st.clientWidth) st.scrollLeft = bb.x - 40;
+  }
+  updatePos();
+}
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+function updatePos() {
+  $('pos').textContent = cur >= 0 ? `${cur + 1} / ${steps.length}` : `${steps.length} bước`;
+  $('bPrev').disabled = cur <= 0; $('bNext').disabled = cur >= steps.length - 1;
+  $('bPlay').textContent = timer ? '❚❚ Dừng' : '▶ Chạy';
+}
+function stop() { clearInterval(timer); timer = null; updatePos(); }
+function play() {
+  if (timer) return stop();
+  if (cur >= steps.length - 1) go(-1);
+  go(cur + 1);
+  timer = setInterval(() => { if (cur >= steps.length - 1) stop(); else go(cur + 1); }, +$('speed').value);
+  updatePos();
+}
+$('bPlay').onclick = play;
+$('bNext').onclick = () => { stop(); go(cur + 1); };
+$('bPrev').onclick = () => { stop(); go(cur - 1); };
+$('bAll').onclick = () => { stop(); go(-1); };
+$('speed').oninput = () => { if (timer) { stop(); play(); } };
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') $('bNext').click();
+  else if (e.key === 'ArrowLeft') $('bPrev').click();
+  else if (e.key === ' ') { e.preventDefault(); play(); }
+});
+
+const nav = $('nav'); let lastGrp = '';
+for (const f of FLOWS) {
+  if (f.grp !== lastGrp) { const d = document.createElement('div'); d.className = 'grp'; d.textContent = f.grp; nav.appendChild(d); lastGrp = f.grp; }
+  const b = document.createElement('button'); b.dataset.id = f.id;
+  b.innerHTML = `${esc(f.name)}<small>${esc(f.sub)}</small>`;
+  b.onclick = () => { location.hash = f.id; };
+  nav.appendChild(b);
+}
+if (new URLSearchParams(location.search).get('static')) document.body.classList.add('static');
+const pick = () => render(FLOWS.find((f) => '#' + f.id === location.hash) || FLOWS[0]);
+window.addEventListener('hashchange', pick);
+pick();
+window.FLOWS = FLOWS;
+</script>
+</body>
+</html>
