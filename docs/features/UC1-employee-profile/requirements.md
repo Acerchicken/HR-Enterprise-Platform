@@ -199,8 +199,8 @@ luật, quá trình công tác trước khi có hệ thống.
 
 ### FR-1.13 Thông tin tự tính (C)
 
-- **AC-1.13.1** "Quá trình công tác" liệt kê các lần đổi phòng ban, chức danh, quản lý trực tiếp, lấy từ audit nhóm
-  trường tổ chức (AC-1.4.3) cộng các dòng HR nhập cho giai đoạn trước khi có hệ thống.
+- **AC-1.13.1** "Quá trình công tác" liệt kê các giai đoạn phòng ban, chức danh, quản lý trực tiếp, đọc từ bảng quá trình
+  công tác của UC2 (FR-2.8, có ngày hiệu lực, lý do, "Sắp hiệu lực") cộng các dòng HR nhập cho giai đoạn trước khi có hệ thống.
 - **AC-1.13.2** Giả sử ngày vào làm 1/3/2016. Khi xem "Các mốc trong công ty" ngày 14/11/2026. Thì thấy thâm niên 10
   năm 8 tháng, các mốc 5 năm (1/3/2021, 1/3/2026) và số ngày phép năm được cộng theo thâm niên (UC3 AC-3.1.3).
 - **AC-1.13.3** "Ngày nghỉ dài" liệt kê các đơn nghỉ từ 14 ngày làm việc trở lên đã duyệt hoặc hoàn tất (UC3) và các

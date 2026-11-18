@@ -83,7 +83,7 @@ LLM API (trợ lý, tuần 12) và hệ thống Payroll (ngoài phạm vi versio
 | Use case | Hệ thống phải cho phép | Yêu cầu chức năng (FR) |
 |---|---|---|
 | UC1 Hồ sơ nhân viên | Xem hồ sơ theo mức, trang hồ sơ chia nhóm, nhân viên đề xuất cập nhật và tải file, HR xác nhận, nhật ký thay đổi, HR quản lý hồ sơ và trường nhạy cảm, chống spam | FR-1.1 → FR-1.14 |
-| UC2 Thông tin tổ chức | Danh bạ, cây đơn vị (Công ty, Trung tâm, Phòng, Nhóm), quản lý trực tiếp, quản lý đơn vị, chức danh, điều chuyển, quá trình công tác, trưởng/phó đơn vị | FR-2.1 → FR-2.9 |
+| UC2 Thông tin tổ chức | Danh bạ, cây đơn vị (Công ty, Trung tâm, Phòng, Nhóm), quản lý trực tiếp, quản lý đơn vị, chức danh, điều chuyển, quá trình công tác, trưởng/phó đơn vị | FR-2.1 → FR-2.10 |
 | UC3 Tạo đơn nghỉ | Xem số dư, tạo, hủy đơn, tạo đơn hộ | FR-3.1 → FR-3.7 |
 | UC4 Duyệt đơn | Duyệt, từ chối, duyệt thay, HR duyệt thêm theo loại phép, HR hoàn tất, email thông báo | FR-4.1 → FR-4.8 |
 | UC5 Kho tài liệu | Đăng tài liệu theo phạm vi xem, phiên bản | FR-5.1 → FR-5.3 |
@@ -169,7 +169,7 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-1.10 | Tải file lên hồ sơ (CV, bằng cấp, giấy tờ, ảnh đại diện) | S | Chỉ PDF, DOCX, JPG, PNG ≤ 10 MiB, kiểm theo nội dung; tối đa 50 file, 200 MiB mỗi người; tải xuống qua API | Đã có (#87); bucket staging chờ TV3 |
 | FR-1.11 | Nhật ký thay đổi hồ sơ cho chủ hồ sơ và HR | S | Mỗi thao tác đúng một bản ghi, không có giá trị hay tên file gốc | Đã có (#86, #87) |
 | FR-1.12 | HR quản lý hợp đồng, lương theo thời gian, bảo hiểm, phụ cấp, khen thưởng kỷ luật | C | Hợp đồng không trùng khoảng ngày; nhân viên chỉ xem | Đã có (#89) |
-| FR-1.13 | Thông tin tự tính: quá trình công tác, các mốc thâm niên, ngày nghỉ dài | C | Lấy từ audit, `hireDate`, đơn nghỉ | Đã có (#90) |
+| FR-1.13 | Thông tin tự tính: quá trình công tác, các mốc thâm niên, ngày nghỉ dài | C | Quá trình công tác đọc từ bảng quá trình công tác (FR-2.8); thâm niên từ `hireDate`; ngày nghỉ dài từ đơn nghỉ | Đã có (#90; quá trình công tác đổi nguồn ở `feat/employee-transfer`) |
 | FR-1.14 | Giới hạn tần suất và hạn mức cho thao tác hồ sơ | M | 30 lệnh ghi/phút, 10 URL tải lên/giờ, 100 lượt xem nhạy cảm/giờ; vượt trả 429 | Đã có (#85), trừ cảnh báo dashboard (TV3) |
 
 ### 4.2 UC2 – Thông tin tổ chức (FR-2.x)
@@ -183,11 +183,11 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-2.3 | Xem quản lý trực tiếp và nhân viên trực thuộc của một người | M | Danh sách cấp dưới đúng với dữ liệu | Đã có |
 | FR-2.4 | HR, ADMIN tạo và sửa đơn vị (Công ty, Trung tâm, Phòng, Nhóm) theo luật loại cha, loại con (ADR-14) | S | Đổi đơn vị cha không tạo vòng; Trung tâm thuộc Công ty, Phòng thuộc Công ty hoặc Trung tâm, Nhóm thuộc Phòng | Một phần: API có, chưa có loại đơn vị |
 | FR-2.5 | Mỗi nhân viên có đúng một quản lý trực tiếp, trừ CEO | M | Tạo/sửa nhân viên thiếu quản lý (không phải CEO) bị từ chối (issue #22) | Đã có (tuần 10) |
-| FR-2.6 | HR quản lý danh mục chức danh, cấp bậc; ngừng dùng thay vì xóa | S | Chức danh đang dùng không xóa được (409) | Một phần: chỉ có danh sách |
-| FR-2.7 | HR điều chuyển nhân viên (phòng ban, chức danh, quản lý) có ngày hiệu lực, kể cả ngày tương lai | S | Áp dụng đúng ngày; kiểm như FR-2.5; đơn nghỉ đang chờ sang quản lý mới | Chưa có, kế hoạch tuần 13 |
-| FR-2.8 | Quá trình công tác của từng nhân viên (phòng ban, chức danh, quản lý theo thời gian) | S | Mỗi lần tuyển, điều chuyển là một dòng, chỉ thêm; chủ hồ sơ, quản lý, HR xem | Chưa có, kế hoạch tuần 13 |
-| FR-2.9 | Trưởng và phó cho mọi cấp đơn vị (Tổng Giám đốc và tối đa 5 Phó TGĐ; Giám đốc và tối đa 3 Phó GĐ trung tâm; Trưởng và tối đa 3 Phó phòng; Trưởng nhóm), có "Quyền trưởng" và kiêm nhiệm | S | Người thuộc đơn vị đó hoặc đơn vị cha; không tự cho quyền duyệt (quyền theo quản lý trực tiếp, BR-05) | Chưa có, kế hoạch tuần 13 |
-| FR-2.10 | Ngừng hoạt động đơn vị thay cho xóa (giải thể, sáp nhập) | C | Không ngừng được khi còn nhân viên đang làm việc hoặc đơn vị con đang hoạt động; đơn vị đã ngừng vẫn hiện trong quá trình công tác | Chưa có |
+| FR-2.6 | HR quản lý danh mục chức danh, cấp bậc; ngừng dùng thay vì xóa | S | Chức danh đang dùng không xóa được (409) | Đã có (`feat/department-admin-ui`) |
+| FR-2.7 | HR điều chuyển nhân viên (phòng ban, chức danh, quản lý) có ngày hiệu lực, kể cả ngày tương lai | S | Áp dụng đúng ngày; kiểm như FR-2.5; đơn nghỉ đang chờ sang quản lý mới | Đã có (`feat/employee-transfer`); email cho quản lý mới làm cùng dịch vụ thông báo |
+| FR-2.8 | Quá trình công tác của từng nhân viên (phòng ban, chức danh, quản lý theo thời gian) | S | Mỗi lần tuyển, điều chuyển là một dòng, chỉ thêm; chủ hồ sơ, quản lý (trực tiếp và gián tiếp), HR xem | Đã có (`feat/employee-transfer`) |
+| FR-2.9 | Trưởng và phó cho mọi cấp đơn vị (Tổng Giám đốc và tối đa 5 Phó TGĐ; Giám đốc và tối đa 3 Phó GĐ trung tâm; Trưởng và tối đa 3 Phó phòng; Trưởng nhóm), có "Quyền trưởng" và kiêm nhiệm | S | Người thuộc đơn vị đó hoặc đơn vị cha; không tự cho quyền duyệt (quyền theo quản lý trực tiếp, BR-05) | Đã có (`feat/department-admin-ui`); duyệt thay (AC-2.9.3) làm cùng UC4 |
+| FR-2.10 | Ngừng hoạt động đơn vị thay cho xóa (giải thể, sáp nhập) | C | Không ngừng được khi còn nhân viên đang làm việc hoặc đơn vị con đang hoạt động; đơn vị đã ngừng vẫn hiện trong quá trình công tác | Đã có (`feat/department-admin-ui`) |
 
 ### 4.3 UC3 – Tạo đơn nghỉ (FR-3.x)
 

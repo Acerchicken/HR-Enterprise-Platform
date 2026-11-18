@@ -8,7 +8,7 @@
 | Yêu cầu (SRS) | FR-2.1 → FR-2.10 |
 | Quy tắc | Issue #21 (xem toàn bộ cây, không tra theo mã), issue #22 (một quản lý trừ CEO), ADR-10, ADR-14 (loại đơn vị) |
 | Mức ưu tiên | M (FR-2.4, FR-2.6 → FR-2.9 là S; FR-2.10 là C) |
-| Trạng thái | Đã có; tạo, sửa phòng ban mới có API, chưa có giao diện |
+| Trạng thái | Đã có đủ FR-2.1–FR-2.10 (PR #107–#110); còn email cho quản lý mới (AC-2.7.3), thông báo HR khi điều chuyển `FAILED` (AC-2.7.8), duyệt thay (AC-2.9.3) |
 | Phiên bản | 1.3 – 18/11/2026 (sơ đồ luồng `flows/`, bản vẽ điều chuyển có cấp dưới, nghỉ việc, ngừng đơn vị; hợp đồng API mục 9.2; thiết kế dữ liệu mục 13). 1.2 – 15/11/2026 (ADR-14: loại đơn vị Công ty, Trung tâm, Phòng, Nhóm; trưởng, phó mọi cấp; quyền trưởng, kiêm nhiệm; ngừng hoạt động đơn vị). 1.1 – 14/11/2026 (chức danh, điều chuyển, quá trình công tác, trưởng/phó phòng) |
 
 ## 1. Mô tả ngắn
@@ -77,7 +77,7 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 | 1 | HR mở hồ sơ nhân viên, bấm "Điều chuyển"; chọn phòng ban, chức danh, quản lý mới (điền sẵn trưởng phòng mới), ngày hiệu lực, lý do | Gửi `POST /employees/{id}/transfers` |
 | 2 | | Kiểm FR-2.5 với quản lý mới; ngày hiệu lực không trước ngày vào làm, không lùi quá 30 ngày; không có điều chuyển chưa hiệu lực khác của cùng người; nếu A còn cấp dưới thì mỗi cấp dưới phải có lựa chọn giữ A hoặc quản lý mới (AC-2.7.6), áp dụng cùng ngày hiệu lực |
 | 3 | | Hiệu lực hôm nay hoặc quá khứ: trong một giao dịch đóng dòng công tác cũ, mở dòng mới, đổi `department_id`, `position_id`, `manager_id`, ghi audit `TRANSFER`, event `EmployeeTransferred` |
-| 4 | | Hiệu lực tương lai: lưu dòng "Sắp hiệu lực"; job chạy 00:05 giờ Việt Nam áp dụng như bước 3 (chạy lại không áp dụng hai lần) |
+| 4 | | Hiệu lực tương lai: lưu dòng "Sắp hiệu lực"; job trong worker (5 phút một lần, sau 00:00 giờ Việt Nam ngày hiệu lực) áp dụng như bước 3 (chạy lại không áp dụng hai lần) |
 | 5 | Thấy quá trình công tác cập nhật | Đơn nghỉ `SUBMITTED` của người này tự sang quản lý mới vì quyền duyệt tính theo quản lý hiện tại (BR-05); worker gửi email chung cho quản lý mới |
 
 ### 4.5 HR gán trưởng, phó đơn vị (FR-2.9)

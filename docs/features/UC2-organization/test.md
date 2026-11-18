@@ -54,7 +54,7 @@ thuật toán chặn vòng; e2e kiểm cây, quy tắc một quản lý; ca SEC 
 
 ## 4. Dữ liệu và tài khoản
 
-Seed tạo 25 phòng ban, gốc `BOD`, một CEO. Test tạo phòng ban, nhân viên dùng mã riêng để không trùng seed.
+Seed tạo 28 đơn vị (gốc Công ty mã `HQ`, 6 Trung tâm, các Phòng, 3 Nhóm), một CEO, mỗi nhân viên một dòng "Tuyển mới" trong quá trình công tác. Test tạo phòng ban, nhân viên dùng mã riêng để không trùng seed.
 
 ## 5. Cách chạy
 
@@ -73,6 +73,6 @@ npm run test:e2e
 ## 7. Ca còn thiếu (TV4)
 
 - Cơ bản & phân quyền: AC-2.1.1 (theo mã, email), AC-2.1.2, AC-2.1.3, AC-2.1.4, AC-2.4.3; AC-2.4.6, AC-2.4.7 (đối chiếu sau PR #84).
-- Đồng bộ dữ liệu khi có tính năng mới: cập nhật mã gốc seed từ `BOD` sang `HQ` và phân loại đơn vị (`ADR-14`) khi merge `feat/org-unit-types`; chốt giờ chạy job điều chuyển tương lai (`00:05` giờ Việt Nam) cho AC-2.7.2.
+- Dữ liệu test đã theo seed mới (gốc `HQ`, loại đơn vị ADR-14). Job điều chuyển chạy 5 phút một lần, nên điều chuyển hiệu lực ngày D được áp dụng trong khoảng 00:00–00:05 ngày D (giờ Việt Nam), trước mốc 00:15 của AC-2.7.2.
 - Các ca biên nghiệp vụ trước đây còn thiếu (nghỉ việc gỡ vai trò, ngừng đơn vị có trưởng kiêm nhiệm, bảo vệ chức danh `CEO`)
   đã có test e2e ở `feat/department-admin-ui`.

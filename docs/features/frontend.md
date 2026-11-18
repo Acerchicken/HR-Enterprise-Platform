@@ -48,7 +48,7 @@ Từ trên xuống:
 | Đơn nghỉ của tôi | `/leave` | Mọi người có hồ sơ | UC3 |
 | Việc cần duyệt | `/approvals` (mục 2.4) | Quản lý, người duyệt thay, HR | UC1, UC4 |
 | Danh bạ | `/directory` | Mọi người | UC2 |
-| Sơ đồ tổ chức | `/org` | Mọi người | UC2 |
+| Sơ đồ tổ chức | `/org` (HR, ADMIN: thêm, sửa đơn vị; HR: `/org/positions` chức danh) | Mọi người | UC2 |
 | Tra cứu tài liệu | `/documents`: một trang gồm ô tìm tài liệu (UC6 FR-6.2), khung hỏi trợ lý AI (UC6 FR-6.3) và danh sách tài liệu (UC5) | Mọi người | UC5, UC6 |
 | Quản lý nhân viên | `/employees/new`, danh bạ ở chế độ HR | HR | UC1 |
 | Đăng tài liệu | `/documents/manage` | HR | UC5 |

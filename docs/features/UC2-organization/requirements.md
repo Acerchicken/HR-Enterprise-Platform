@@ -40,7 +40,7 @@
 
 - **AC-2.3.1** Khi xem một nhân viên. Thì thấy quản lý trực tiếp và danh sách cấp dưới trực tiếp đúng với dữ liệu.
 
-### FR-2.4 Quản lý phòng ban (S, có API, chưa có giao diện)
+### FR-2.4 Quản lý đơn vị (S)
 
 - **AC-2.4.1** Khi HR hoặc ADMIN tạo phòng ban hợp lệ. Thì trả 201, có audit `CREATE` với `entityType = department`.
 - **AC-2.4.2** Khi đổi phòng ban cha thành chính nó hoặc một phòng ban con của nó. Thì trả 400.
@@ -61,7 +61,7 @@
 - **AC-2.5.2** Khi gán quản lý tạo thành vòng (A quản lý B, B quản lý A). Thì trả 400.
 - **AC-2.5.3** Khi gán quản lý đã `TERMINATED`, gán quản lý cho CEO, hoặc bỏ quản lý của nhân viên không phải CEO. Thì trả 400.
 
-### FR-2.6 Danh mục chức danh, cấp bậc (S, chưa có; hiện chỉ có `GET /positions`)
+### FR-2.6 Danh mục chức danh, cấp bậc (S)
 
 - **AC-2.6.1** Khi HR tạo chức danh có mã (duy nhất, không sửa sau khi tạo), tên, cấp bậc 1–10. Thì trả 201, có
   audit. Vai trò khác thì trả 403.
@@ -75,7 +75,7 @@
 - **AC-2.7.1** Khi HR điều chuyển nhân viên A sang phòng ban, chức danh, quản lý mới, hiệu lực hôm nay. Thì hồ sơ A
   đổi ngay; quá trình công tác có dòng cũ đóng ở hôm qua và dòng mới mở từ hôm nay; có audit `TRANSFER`.
 - **AC-2.7.2** Khi hiệu lực là ngày 1 tháng sau. Thì hồ sơ A chưa đổi; quá trình công tác có dòng "Sắp hiệu lực";
-  job chạy lúc 00:05 ngày đó (giờ Việt Nam) áp dụng điều chuyển; kiểm thử chấp nhận áp dụng xong trước 00:15. HR hủy được
+  job trong worker (5 phút một lần) áp dụng điều chuyển ngay sau 00:00 ngày đó (giờ Việt Nam); kiểm thử chấp nhận áp dụng xong trước 00:15. HR hủy được
   điều chuyển chưa hiệu lực.
 - **AC-2.7.3** *(một phần: email cho quản lý mới làm cùng dịch vụ thông báo)* Giả sử A có đơn nghỉ `SUBMITTED`. Khi điều chuyển có hiệu lực và A đổi quản lý. Thì đơn chuyển sang
   danh sách chờ của quản lý mới, quản lý cũ không duyệt được nữa (UC4 AC-4.2.6); quản lý mới nhận email chung.
@@ -90,16 +90,15 @@
 - **AC-2.7.7** Khi đã có điều chuyển, HR gửi `departmentId`, `positionId` hoặc `managerId` qua `PATCH /employees/{id}`
   (UC1 luồng 4.5). Thì trả 400, chỉ sang "Điều chuyển". Sửa nhầm thì làm điều chuyển lý do `CORRECTION`. Nhờ vậy mọi thay đổi
   tổ chức đều có dòng quá trình công tác và ngày hiệu lực.
-- **AC-2.7.8** Khi job 00:05 áp dụng điều chuyển tương lai. Thì kiểm lại FR-2.5 tại lúc áp dụng (quản lý mới còn làm
+- **AC-2.7.8** Khi job áp dụng điều chuyển tương lai. Thì kiểm lại FR-2.5 tại lúc áp dụng (quản lý mới còn làm
   việc, không tạo vòng, đơn vị đích còn hoạt động); sai thì không áp dụng, dòng chuyển `FAILED`, HR nhận thông báo. Người được
   điều chuyển đã nghỉ việc thì điều chuyển đã bị hủy từ trước (UC1 AC-1.7.3).
 
 ### FR-2.8 Quá trình công tác (S)
 
-> **Liên quan UC1 (rà 18/11):** mục "Quá trình công tác" của UC1 đã có (#90) nhưng **dựng tạm từ audit** nhóm trường tổ
-> chức (`UPDATE` có `{ from, to }`) cộng các dòng HR nhập tay, nên chưa có ngày hiệu lực khác ngày sửa, chưa có "Sắp hiệu lực",
-> lý do chỉ suy ra (điều chuyển, đổi chức danh, đổi quản lý). Khi làm FR-2.7, FR-2.8 thì lịch sử bổ nhiệm của UC2 là nguồn
-> chính và `ProfileChangeService.computed('career-history')` đọc từ đó; audit chỉ còn để tra cứu.
+> **Liên quan UC1:** mục "Quá trình công tác" của UC1 (#90) trước đây dựng tạm từ audit. Từ `feat/employee-transfer`,
+> `ProfileChangeService.computed('career-history')` đọc bảng `employee.employment_assignment` (cộng các dòng HR nhập tay);
+> audit chỉ còn để tra cứu.
 
 - **AC-2.8.1** Khi mở mục "Quá trình công tác" (UC1). Thì thấy các dòng: phòng ban, chức danh, quản lý trực tiếp,
   từ ngày, đến ngày, lý do (tuyển mới, điều chuyển, thăng chức, đổi quản lý), mới nhất trước.
@@ -107,7 +106,7 @@
 - **AC-2.8.3** Khi HR tạo nhân viên. Thì có dòng đầu tiên mở từ ngày vào làm, lý do "Tuyển mới". Dòng lịch sử
   không sửa, không xóa; sai thì HR thêm điều chỉnh có ghi lý do.
 
-### FR-2.9 Trưởng và phó đơn vị mọi cấp (S, chưa có; ADR-14)
+### FR-2.9 Trưởng và phó đơn vị mọi cấp (S; ADR-14)
 
 | Loại đơn vị | Trưởng | Phó (tối đa) |
 |---|---|---|
@@ -143,7 +142,7 @@ vị là **vai trò của đơn vị**, quản lý trực tiếp là **quan hệ
 tiếp các thành viên) nhưng không bắt buộc, vì phòng lớn có nhóm do trưởng nhóm quản lý, và Giám đốc trung tâm có thể báo cáo
 Phó Tổng Giám đốc. Quyền duyệt đơn nghỉ luôn theo quản lý trực tiếp (BR-05), không theo chức danh trưởng, phó.
 
-### FR-2.10 Ngừng hoạt động đơn vị (C, chưa có; ADR-14)
+### FR-2.10 Ngừng hoạt động đơn vị (C; ADR-14)
 
 - **AC-2.10.1** Giả sử đơn vị X còn nhân viên đang làm việc (người có phòng ban là X) hoặc còn đơn vị con đang hoạt
   động. Khi HR ngừng hoạt động X. Thì trả 409 và nói rõ còn bao nhiêu người, bao nhiêu đơn vị con. Trưởng, phó kiêm nhiệm từ
