@@ -111,7 +111,7 @@ flowchart LR
 | Worker | Nhận event, gửi email; sau này trích text tài liệu | Thêm instance khi queue dồn |
 | Database quan hệ | Dữ liệu giao dịch, audit, outbox | Tăng tier; replica đọc khi cần |
 | Message queue | Chuyển event từ outbox sang worker | Dịch vụ managed |
-| Object storage | File tài liệu chính sách | Dịch vụ managed |
+| Object storage | File tài liệu chính sách; file hồ sơ nhân viên ở bucket riêng (quyền đọc, thời hạn giữ khác) | Dịch vụ managed |
 | Identity provider | Đăng nhập OIDC, nhóm người dùng | Dịch vụ managed |
 | Secret manager | Mật khẩu database, khóa mã hóa trường nhạy cảm | Dịch vụ managed |
 | Logging & metrics | Log tập trung, dashboard, cảnh báo | Dịch vụ managed |
@@ -259,6 +259,7 @@ flowchart TB
   ar & ecs -.-> sm[Secrets Manager + KMS]
   ar & ecs -.-> cw[CloudWatch]
   ar -- file tài liệu --> s3doc[(S3 – tài liệu)]
+  ar -- file hồ sơ --> s3prof[(S3 – hồ sơ, lifecycle 30 ngày)]
 ```
 
 Dự toán theo bản đề xuất mới nhất của ADR-12: ~57 USD/tháng nếu chạy 24/7, dưới trần 100 USD; giảm thêm bằng cách tắt NAT và
@@ -283,6 +284,9 @@ worker ngoài giờ demo. Con số chốt khi ADR-12 được merge.
 | Dữ liệu nhạy cảm | AES-256-GCM (`FieldCrypto`), audit `VIEW_SENSITIVE` | Khóa từ Secrets Manager/KMS |
 | TLS | – (local) | TLS tới database (`DB_SSL`, 🟡), HTTPS ở CloudFront/App Runner |
 | Image | User `node` không phải root (API) | Quét Trivy, web chạy non-root (🟡) |
+| Chống lạm dụng | Giới hạn tần suất theo người dùng (100 request/phút, tìm kiếm 20/phút, ghi hồ sơ 30/phút và 300/ngày, xem nhạy cảm 100/giờ, tải file); body tối đa 64 KiB | Cảnh báo dashboard từ log `rate_limit_abuse`, `sensitive_scrape_suspected` (TV3, AC-1.14.5) |
+| Header bảo mật | API: CSP, `nosniff`, chặn iframe, HSTS khi production; web (nginx): CSP, `nosniff`, chặn iframe | Kiểm CSP của web với domain API, Cognito trên staging |
+| File hồ sơ | Bucket riêng `PROFILE_STORAGE_BUCKET`, kiểm loại theo nội dung, tải xuống qua API, tên file gốc không vào log | Bucket staging: chặn public, SSE-KMS, lifecycle theo tag, CORS cho PUT (TV3, `infra/profile-files`) |
 | Log | Log console, traceId trong mọi response lỗi | CloudWatch, dashboard, cảnh báo |
 
 ## 11. Năng lực và chi phí
@@ -291,7 +295,7 @@ worker ngoài giờ demo. Con số chốt khi ADR-12 được merge.
 |---|---|---|
 | Lưu lượng | 50 request/giây thiết kế, 10 thực tế | App Runner 0,5 vCPU × 2 dư sức (kiểm bằng load test tuần 11) |
 | Database | ~25.000 đơn/năm, ~1,25 triệu dòng audit/năm | `db.t4g.micro`, 20 GB |
-| File | ~2 GB tài liệu | S3 tier chuẩn |
+| File | ~2 GB tài liệu; file hồ sơ tối đa 200 MiB mỗi người (thực tế vài MB) | S3 tier chuẩn |
 | Chi phí staging | ~57 USD/tháng (đề xuất) | Trần < 100 USD; AWS Budgets cảnh báo |
 
 ## 12. Chưa quyết định

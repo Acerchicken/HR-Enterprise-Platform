@@ -7,6 +7,7 @@
 | Phiên bản | Ngày | Người viết | Nội dung |
 |---|---|---|---|
 | 1.0 | 13/11/2026 | TV1 Duong | Bản đầu: 7 schema, 17 bảng, theo 4 migration tới `Documents` (tuần 10) |
+| 1.1 | 18/11/2026 | TV1 Duong | UC1: thêm `iam.rate_limit_counter`, `employee.profile_item`, `employee.profile_change_request`, `employee.profile_file`, cột `employee.avatar_file_id` (3 migration, #85 → #87); đọc, ghi chéo schema trong code (mục 9) |
 
 ## 1. Tổng quan
 
@@ -17,9 +18,9 @@
 
 | Schema | Module sở hữu (`backend/src/modules/`) | Bảng | Tạo ở migration |
 |---|---|---|---|
-| `iam` | `identity` | `user_account`, `role_assignment` | InitSchemas |
+| `iam` | `identity`; `common/rate-limit` | `user_account`, `role_assignment`, `rate_limit_counter` | InitSchemas, RateLimitCounter |
 | `org` | `organization` | `department`, `position` | InitSchemas |
-| `employee` | `employee` | `employee`, `employee_sensitive` | InitSchemas |
+| `employee` | `employee` | `employee`, `employee_sensitive`, `profile_item`, `profile_change_request`, `profile_file` | InitSchemas, ProfileChangeRequests, ProfileFiles |
 | `leave` | `leave` | `leave_type`, `leave_balance`, `leave_request`, `leave_request_history`, `holiday`, `outbox` | InitSchemas, LeaveWorkflow, LeaveOutbox |
 | `notification` | `worker` (notification worker) | `processed_event` | LeaveOutbox |
 | `audit` | `audit` | `audit_log` | InitSchemas |
@@ -63,6 +64,11 @@ erDiagram
   employee_employee }o..|| org_position : "position_id (ref)"
   employee_employee ||--o{ employee_employee : "manager_id"
   employee_employee ||--o| employee_employee_sensitive : "1-1"
+  employee_employee ||--o{ employee_profile_item : "dòng các mục"
+  employee_employee ||--o{ employee_profile_change_request : "yêu cầu cập nhật"
+  employee_employee ||--o{ employee_profile_file : "file hồ sơ"
+  employee_profile_item ||--o{ employee_profile_change_request : "item_id"
+  employee_profile_item ||--o{ employee_profile_file : "item_id"
 
   leave_leave_type ||--o{ leave_leave_balance : ""
   leave_leave_type ||--o{ leave_leave_request : ""
@@ -121,6 +127,20 @@ erDiagram
 | `role` | varchar(20) | PK (2/2), CHECK `EMPLOYEE`, `MANAGER`, `HR`, `ADMIN` | Một tài khoản có nhiều vai trò, mỗi vai trò một dòng |
 | `scope_department_id` | uuid | ref → `org.department.id` | Dự phòng cho vai trò giới hạn theo phòng ban; **hiện code chưa dùng** |
 
+### `iam.rate_limit_counter`
+
+Bộ đếm giới hạn tần suất theo **ngày** (NFR-5.21, UC1 FR-1.14). Giới hạn theo phút, giờ đếm trong bộ nhớ từng instance; giới
+hạn ngày cần đúng khi App Runner chạy nhiều instance nên đếm ở đây (ADR-07 không dùng Redis). Không có dữ liệu nghiệp vụ;
+`RateLimitService` thỉnh thoảng xóa cửa sổ cũ hơn 2 ngày.
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| `key` | varchar(200) | PK (1/2) | `<userId>:<nhóm>:day`, ví dụ `…:profile-write:day` |
+| `window_start` | timestamptz | PK (2/2) | Đầu ngày (UTC) của cửa sổ |
+| `count` | integer | NN, mặc định 0 | Số lượt trong cửa sổ; tăng bằng `INSERT … ON CONFLICT DO UPDATE` |
+
+Index: `ix_rate_limit_counter_window (window_start)` để dọn cửa sổ cũ.
+
 ## 5. Schema `org` – cơ cấu tổ chức
 
 ```mermaid
@@ -178,6 +198,12 @@ Index: `ix_department_parent (parent_id)` để lấy cây tổ chức và phòn
 erDiagram
   employee ||--o{ employee : "manager_id"
   employee ||--o| employee_sensitive : "employee_id"
+  employee ||--o{ profile_item : "employee_id"
+  employee ||--o{ profile_change_request : "employee_id"
+  employee ||--o{ profile_file : "employee_id"
+  profile_item ||--o{ profile_change_request : "item_id"
+  profile_item ||--o{ profile_file : "item_id"
+  profile_file |o--o| employee : "avatar_file_id"
   employee {
     uuid id PK
     varchar employee_code UK
@@ -191,6 +217,7 @@ erDiagram
     uuid manager_id FK "quản lý trực tiếp"
     date hire_date
     varchar status "ACTIVE | ON_LEAVE | TERMINATED"
+    uuid avatar_file_id FK "ảnh đại diện đã duyệt"
     int version
     timestamptz created_at
     timestamptz updated_at
@@ -202,6 +229,49 @@ erDiagram
     text salary_enc "AES-256-GCM"
     timestamptz updated_at
   }
+  profile_item {
+    uuid id PK
+    uuid employee_id FK
+    varchar section "mã mục"
+    jsonb data "trường thường"
+    text sensitive_data "JSON mã hóa AES-256-GCM"
+    uuid created_by
+    uuid updated_by
+    uuid change_request_id
+    int version
+    timestamptz deleted_at "xóa mềm"
+  }
+  profile_change_request {
+    uuid id PK
+    uuid employee_id FK
+    varchar section
+    varchar action "CREATE | UPDATE | DELETE"
+    uuid item_id FK
+    int base_version
+    jsonb proposed
+    text proposed_sensitive "mã hóa"
+    uuid_array file_ids
+    varchar status "PENDING | APPROVED | REJECTED | CANCELLED"
+    uuid submitted_by
+    uuid reviewed_by
+    varchar reject_reason
+    varchar idempotency_key
+  }
+  profile_file {
+    uuid id PK
+    uuid employee_id FK
+    varchar section
+    uuid item_id FK
+    varchar storage_key UK
+    varchar original_name
+    varchar content_type
+    int size_bytes
+    char sha256
+    varchar status "PENDING | PENDING_REVIEW | READY | REJECTED | DELETED"
+    uuid uploaded_by
+    bool uploaded_by_hr
+    uuid change_request_id
+  }
 ```
 
 ### `employee.employee`
@@ -212,15 +282,16 @@ erDiagram
 | `employee_code` | varchar(20) | NN, UQ | Mã nhân viên |
 | `full_name` | varchar(150) | NN | Họ tên |
 | `work_email` | varchar(150) | NN, UQ | Email công ty |
-| `phone` | varchar(20) | | Nhân viên tự sửa được |
+| `phone` | varchar(20) | | Nhân viên đề xuất qua yêu cầu cập nhật, HR duyệt mới ghi (FR-1.9) |
 | `date_of_birth` | date | | |
-| `address` | varchar(255) | | Nhân viên tự sửa được |
+| `address` | varchar(255) | | Như `phone` |
 | `department_id` | uuid | NN, ref → `org.department.id` | Phòng ban; kiểm tra qua `OrganizationService` |
 | `position_id` | uuid | NN, ref → `org.position.id` | Chức danh |
 | `manager_id` | uuid | FK → `employee.employee.id`, CHECK `manager_id <> id` | Quản lý trực tiếp; là cơ sở suy ra role MANAGER và người duyệt đơn nghỉ |
 | `hire_date` | date | NN | Ngày vào làm |
-| `status` | varchar(20) | NN, mặc định `ACTIVE`, CHECK `ACTIVE`, `ON_LEAVE`, `TERMINATED` | Trạng thái làm việc |
-| `version` | integer | NN, mặc định 1 | Optimistic locking |
+| `status` | varchar(20) | NN, mặc định `ACTIVE`, CHECK `ACTIVE`, `ON_LEAVE`, `TERMINATED` | Trạng thái làm việc. Tài khoản gắn hồ sơ `TERMINATED` bị API từ chối (403) |
+| `avatar_file_id` | uuid | FK → `employee.profile_file.id` | Ảnh đại diện đã được HR duyệt; NULL thì giao diện hiện chữ cái đầu |
+| `version` | integer | NN, mặc định 1 | Optimistic locking. `PATCH` bắt buộc gửi `version`; đổi chỉ trường nhạy cảm cũng tăng |
 | `created_at`, `updated_at` | timestamptz | NN, mặc định `now()` | |
 
 Index:
@@ -240,8 +311,88 @@ Tách khỏi `employee` để query danh bạ không bao giờ đọc nhầm tr�
 | `employee_id` | uuid | PK, FK → `employee.employee.id` `ON DELETE CASCADE` | Quan hệ 1-1 với hồ sơ |
 | `national_id_enc` | text | | Số CCCD đã mã hóa |
 | `bank_account_enc` | text | | Số tài khoản ngân hàng đã mã hóa |
-| `salary_enc` | text | | Lương đã mã hóa |
+| `salary_enc` | text | | Lương **đang hiệu lực** đã mã hóa. Từ #89 lịch sử lương nằm ở `profile_item` mục `salary`; cột này được đồng bộ theo mức có ngày hiệu lực muộn nhất không sau hôm nay |
 | `updated_at` | timestamptz | NN, mặc định `now()` | |
+
+### `employee.profile_item`
+
+Một bảng chung cho **dòng của mọi mục hồ sơ** (UC1 spec 13.1), thay vì một bảng cho mỗi mục: thêm mục mới chỉ cần khai báo ở
+`profile-schema.ts`, không cần migration. Trường của từng mục được kiểm ở API theo mô tả mục (kiểu, bắt buộc, độ dài, ai nhập).
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| `id` | uuid | PK | |
+| `employee_id` | uuid | NN, FK → `employee.employee.id` | |
+| `section` | varchar(40) | NN | Mã mục: `emergency-contacts`, `relatives`, `qualifications`, `bank-account`, `contracts`, `salary`, `insurance-salary`, `tax`, `social-insurance`, `health-insurance`, `allowances`, `rewards-discipline`, `career-history` |
+| `data` | jsonb | NN, mặc định `{}` | Trường thường của dòng |
+| `sensitive_data` | text | | JSON các trường nhạy cảm của dòng (mã số thuế người phụ thuộc, mức lương, phụ cấp…), mã hóa AES-256-GCM |
+| `created_by`, `updated_by` | uuid | | Nhân viên đề xuất, HR duyệt hoặc HR ghi thẳng |
+| `change_request_id` | uuid | | Yêu cầu cập nhật đã tạo hoặc sửa dòng (NULL khi HR ghi thẳng) |
+| `version` | integer | NN, mặc định 1 | Optimistic locking riêng từng dòng (AC-1.6.4) |
+| `created_at`, `updated_at` | timestamptz | NN | |
+| `deleted_at` | timestamptz | | Xóa mềm |
+
+Index: `ix_profile_item_section (employee_id, section) WHERE deleted_at IS NULL`.
+
+Số tài khoản ngân hàng không nằm trong `sensitive_data` của mục `bank-account` mà vẫn ở `employee_sensitive.bank_account_enc`
+(dữ liệu có từ trước); dòng chỉ giữ ngân hàng, chi nhánh, chủ tài khoản.
+
+### `employee.profile_change_request`
+
+Yêu cầu cập nhật hồ sơ (FR-1.9): nhân viên đề xuất, HR duyệt hoặc từ chối. Duyệt dùng chung hàm ghi với HR sửa thẳng.
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| `id` | uuid | PK | |
+| `employee_id` | uuid | NN, FK → `employee.employee.id` | Chủ hồ sơ |
+| `section` | varchar(40) | NN | Mã mục, `personal` là trường chính (điện thoại, địa chỉ), `cv`, `avatar` là mục chỉ gồm file |
+| `action` | varchar(10) | NN, CHECK `CREATE`, `UPDATE`, `DELETE` | |
+| `item_id` | uuid | FK → `employee.profile_item.id` | Dòng bị sửa, xóa; NULL với trường chính, mục một dòng chưa có, dòng mới |
+| `base_version` | integer | | `version` của hồ sơ hoặc dòng lúc gửi; duyệt khi đã lệch thì 409 (E19) |
+| `proposed` | jsonb | NN | Giá trị đề xuất (không có trường nhạy cảm) |
+| `proposed_sensitive` | text | | JSON trường nhạy cảm đề xuất, mã hóa |
+| `file_ids` | uuid[] | NN, mặc định `{}` | File đính kèm (hoặc file cần xóa với thao tác `DELETE` ở mục chỉ gồm file) |
+| `status` | varchar(10) | NN, CHECK `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED` | |
+| `submitted_by`, `submitted_at` | uuid, timestamptz | NN | |
+| `reviewed_by`, `reviewed_at` | uuid, timestamptz | | HR duyệt, từ chối |
+| `reject_reason` | varchar(500) | | Chỉ chủ hồ sơ và HR thấy; **không** vào audit |
+| `acknowledged_at` | timestamptz | | Nhân viên đã đóng thông báo bị từ chối |
+| `idempotency_key` | varchar(100) | NN, UQ `(submitted_by, idempotency_key)` | Gửi lại cùng khóa trả yêu cầu cũ (AC-1.9.12) |
+
+Index:
+
+- `uq_profile_change_pending_place (employee_id, section, item_id) WHERE status = 'PENDING' AND item_id IS NOT NULL` và
+  `uq_profile_change_pending_main (employee_id, section) WHERE status = 'PENDING' AND item_id IS NULL AND action = 'UPDATE'`:
+  mỗi chỗ chỉ một yêu cầu đang chờ (AC-1.9.7).
+- `ix_profile_change_status (status, submitted_at)` cho danh sách của HR (cũ nhất trước); `ix_profile_change_employee
+  (employee_id, status)`.
+
+### `employee.profile_file`
+
+File hồ sơ (FR-1.10): CV, bằng cấp, giấy tờ người phụ thuộc, hợp đồng, quyết định, ảnh đại diện. Object nằm ở bucket riêng
+`PROFILE_STORAGE_BUCKET`, khóa `profiles/{employeeId}/{fileId}` (ngẫu nhiên, không chứa tên người); file không đi qua API khi
+tải lên (presigned PUT 10 phút) và luôn đi qua API khi tải xuống (ADR-13).
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| `id` | uuid | PK | |
+| `employee_id` | uuid | NN, FK → `employee.employee.id` | |
+| `section` | varchar(40) | NN | `cv`, `avatar`, `qualifications`, `relatives`, `contracts`, `rewards-discipline` |
+| `item_id` | uuid | FK → `employee.profile_item.id` | Dòng gắn file (bằng cấp, người phụ thuộc, hợp đồng…) |
+| `storage_key` | varchar(200) | NN, UQ | Khóa object |
+| `original_name` | varchar(255) | NN | Chỉ hiện cho chủ hồ sơ và HR; không vào log, audit |
+| `content_type` | varchar(100) | NN | PDF, DOCX, JPEG, PNG; ảnh đại diện sau xử lý luôn là JPEG |
+| `size_bytes` | integer | NN, CHECK `> 0` | Tối đa 10 MiB, ảnh đại diện 2 MiB |
+| `sha256` | char(64) | NN | Tính lại từ object khi xác nhận |
+| `status` | varchar(20) | NN, CHECK `PENDING`, `PENDING_REVIEW`, `READY`, `REJECTED`, `DELETED` | `PENDING` chờ PUT; `PENDING_REVIEW` nhân viên tải, chờ HR duyệt yêu cầu kèm file; `READY` đang dùng; `DELETED` HR vẫn tải được 30 ngày |
+| `uploaded_by` | uuid | NN | |
+| `uploaded_by_hr` | boolean | NN, mặc định false | File HR tải lên: `READY` ngay, nhân viên không đề xuất xóa được |
+| `change_request_id` | uuid | | Yêu cầu cập nhật kèm file |
+| `created_at`, `deleted_at` | timestamptz | | |
+
+Index: `ix_profile_file_employee (employee_id, section, status)`; `uq_profile_file_ready_sha (employee_id, section, sha256)
+WHERE status = 'READY'` (cùng nội dung không lưu hai lần, AC-1.10.4). Hạn mức 50 file `READY`, 200 MiB mỗi người đếm từ bảng
+này.
 
 ## 7. Schema `leave` – nghỉ phép và outbox
 
@@ -536,9 +687,22 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `leave.leave_request_history.actor_id` | `employee.employee.id` | |
 | `notification.processed_event.event_id` | `leave.outbox.id` | Dạng chuỗi |
 | `audit.audit_log.actor_id` | `employee.employee.id` | |
-| `audit.audit_log.entity_id` | Bảng theo `entity_type` | Đa hình |
+| `audit.audit_log.entity_id` | Bảng theo `entity_type` | Đa hình. Mọi thao tác trên mục, yêu cầu, file hồ sơ ghi `entity_type = employee`, `entity_id` là hồ sơ; mục, mã dòng, mã yêu cầu, mã file nằm trong `changed_fields` |
+| `employee.profile_item.created_by`, `updated_by`; `profile_change_request.submitted_by`, `reviewed_by`; `profile_file.uploaded_by` | `employee.employee.id` | Cùng schema nhưng không khai báo FK (người làm có thể là HR không có hồ sơ) |
+| `leave.outbox.aggregate_id` (event `Profile*`, `BankAccountChanged`) | `employee.profile_change_request.id` | Xem mục 9 bên dưới và hợp đồng event |
+| `iam.rate_limit_counter.key` | `iam.user_account.id` | Ghép trong chuỗi khóa |
 | `document.document.created_by`, `document_version.uploaded_by` | `employee.employee.id` | |
 | `document.document_scope.value` (khi `kind = DEPARTMENT`) | `org.department.id` | Dạng chuỗi |
+
+**Đọc, ghi chéo schema bằng SQL trực tiếp** (ngoại lệ có chủ đích với CONVENTIONS mục 1, ghi lại để khi tách service biết phải
+đổi gì):
+
+| Code | Đọc/ghi | Bảng | Lý do |
+|---|---|---|---|
+| `OrganizationService.assertActiveEmployee` | Đọc | `employee.employee.status` | Kiểm trưởng đơn vị đang làm việc (AC-2.4.7); Employee đã phụ thuộc Organization nên không gọi ngược service |
+| `ProfileChangeService.computed` (`long-leaves`) | Đọc | `leave.leave_request`, `leave.leave_type` | Ngày nghỉ dài (AC-1.13.3); Leave phụ thuộc Employee nên không gọi ngược |
+| `ProfileChangeService` (outbox) | Ghi | `leave.outbox` | Event email của yêu cầu cập nhật hồ sơ dùng chung outbox và publisher hiện có. **Nợ kỹ thuật:** quy tắc 3 của [hợp đồng event](event-contract.md#6-quy-tắc-khi-đổi-hợp-đồng) yêu cầu `employee.outbox` riêng |
+| Worker `handleProfile` | Đọc | `iam.user_account`, `iam.role_assignment` | Lấy email HR để báo có yêu cầu mới |
 
 ## 10. Ràng buộc nghiệp vụ ở database
 
@@ -551,6 +715,10 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `manager_id <> id` | `employee.employee` | Không tự làm quản lý của mình |
 | Trigger `trg_audit_append_only` | `audit.audit_log` | Không sửa, không xóa log |
 | UQ `(document_id, version_no)` | `document.document_version` | Không có hai file cùng số phiên bản |
+| UQ một phần `uq_profile_change_pending_place`, `uq_profile_change_pending_main` | `employee.profile_change_request` | Mỗi trường hoặc dòng chỉ một yêu cầu đang chờ |
+| UQ `(submitted_by, idempotency_key)` | `employee.profile_change_request` | Gửi trùng không tạo hai yêu cầu |
+| UQ một phần `(employee_id, section, sha256) WHERE status = 'READY'` | `employee.profile_file` | Không lưu hai file cùng nội dung trong một mục |
+| `size_bytes > 0`, CHECK `status` | `employee.profile_file` | Trạng thái file hợp lệ |
 
 ## 11. Lịch sử migration
 
@@ -560,6 +728,9 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `1730200000000-LeaveWorkflow` | 8 | Bảng `leave.holiday` + dữ liệu lễ 2026; cột `leave_request.half_day`; `approver_id` cho phép NULL |
 | `1730400000000-LeaveOutbox` | 8 | Bảng `leave.outbox` + index một phần; schema `notification`, bảng `processed_event` |
 | `1731300000000-Documents` | 10 | Schema `document`: `document`, `document_scope`, `document_version` |
+| `1731700000000-RateLimitCounter` | 11 | Bảng `iam.rate_limit_counter` (#85) |
+| `1731800000000-ProfileChangeRequests` | 11 | `employee.profile_item`, `employee.profile_change_request` (#86) |
+| `1731900000000-ProfileFiles` | 11 | `employee.profile_file`, cột `employee.avatar_file_id` (#87) |
 
 Lệnh: `npm run migration:run` (dev, ts-node), `npm run migration:run:prod` (bản build, dùng trên staging),
 `npm run migration:revert` (lùi một migration). Dữ liệu mẫu: `npm run seed`.

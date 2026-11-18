@@ -61,6 +61,21 @@ cùng một quyết định (bấm hai lần, retry) trả kết quả cũ và k
 | `LeaveCancelled` | Nhân viên tự hủy đơn đang chờ | `POST /leave-requests/{id}/cancel` | `SUBMITTED` → `CANCELLED` | Nhân viên | Quản lý trực tiếp |
 | `LeaveCompleted` | HR xác nhận hoàn tất | `POST /leave-requests/{id}/complete` | `APPROVED` → `COMPLETED` | Nhân viên HR | Nhân viên |
 
+### Event của yêu cầu cập nhật hồ sơ (UC1, từ #86)
+
+Thuộc aggregate **yêu cầu cập nhật hồ sơ** (`employee.profile_change_request`). Hiện ghi chung vào `leave.outbox` và đi qua
+cùng publisher, routing key `leave.<Event>` (**nợ kỹ thuật** so với quy tắc 3 mục 6; chuyển sang `employee.outbox` khi làm
+ADR-15). Email chỉ là thông báo chung, không chứa giá trị hồ sơ, lý do từ chối hay số tài khoản.
+
+| Event (`type`) | Phát khi | API gây ra | Email gửi tới |
+|---|---|---|---|
+| `ProfileChangeSubmitted` | Nhân viên gửi yêu cầu | `POST /employees/{id}/change-requests` | Mọi tài khoản có role HR (`iam.role_assignment`), **gộp tối đa 1 email mỗi giờ** (worker ghi mốc `ProfileHrDigest` vào `processed_event`) |
+| `ProfileChangeDecided` | HR duyệt hoặc từ chối | `POST /change-requests/{id}/approve`, `/reject` | Chủ hồ sơ |
+| `BankAccountChanged` | HR duyệt yêu cầu đổi tài khoản ngân hàng | `POST /change-requests/{id}/approve` | Chủ hồ sơ (cảnh báo nếu không phải họ yêu cầu) |
+
+Payload (`ProfileEventPayload` trong `employee/profile-events.ts`): `requestId`, `employeeId`, `section`, `status`,
+`occurredAt`. Worker nhận dạng bằng `isProfileEvent(type)`.
+
 Ánh xạ hành động → event: `EVENT_OF_ACTION` trong `leave-events.ts`; người nhận: `recipientOf()`. Nhân viên không có quản lý
 trực tiếp (CEO) thì event loại "gửi quản lý" được đánh dấu đã xử lý mà không gửi email.
 
