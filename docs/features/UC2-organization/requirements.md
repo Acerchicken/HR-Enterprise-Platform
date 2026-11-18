@@ -103,7 +103,7 @@
 
 - **AC-2.8.1** Khi mở mục "Quá trình công tác" (UC1). Thì thấy các dòng: phòng ban, chức danh, quản lý trực tiếp,
   từ ngày, đến ngày, lý do (tuyển mới, điều chuyển, thăng chức, đổi quản lý), mới nhất trước.
-- **AC-2.8.2** Chủ hồ sơ, quản lý trực tiếp hiện tại và HR xem được; người khác không thấy mục này (UC1 mức QL).
+- **AC-2.8.2** Chủ hồ sơ, quản lý trực tiếp hoặc gián tiếp hiện tại (UC1 AC-1.1.4) và HR xem được; người khác không thấy mục này (UC1 mức QL).
 - **AC-2.8.3** Khi HR tạo nhân viên. Thì có dòng đầu tiên mở từ ngày vào làm, lý do "Tuyển mới". Dòng lịch sử
   không sửa, không xóa; sai thì HR thêm điều chỉnh có ghi lý do.
 

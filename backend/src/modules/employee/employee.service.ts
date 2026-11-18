@@ -29,7 +29,7 @@ import {
   ProfileSummary,
   UpdateEmployeeDto,
 } from './employee.dto';
-import { canReveal, canSeeLevel, findSection, relationTo, visibleSections } from './profile-sections';
+import { canReveal, canSeeLevel, findSection, resolveRelation, visibleSections } from './profile-sections';
 
 export const FIELD_CRYPTO = Symbol('FIELD_CRYPTO');
 
@@ -155,7 +155,9 @@ export class EmployeeService {
 
   async profile(id: string, actor: AuthUser, includeSensitive: boolean, meta: RequestMeta = {}): Promise<EmployeeProfile> {
     const e = await this.getOrThrow(id);
-    const level = viewLevel(actor, e);
+    let level = viewLevel(actor, e);
+    // Quản lý gián tiếp (chuỗi quản lý phía trên) xem như quản lý trực tiếp, chốt 18/11/2026.
+    if (level === 'PUBLIC' && (await resolveRelation(this.repo, actor, e)) === 'MANAGER') level = 'PERSONAL';
     const [entry] = await this.toDirectory([e]);
     const profile: EmployeeProfile = { ...entry, visibility: level };
 
@@ -203,7 +205,7 @@ export class EmployeeService {
   /** Phần trang hồ sơ mặc định hiện, cộng danh sách mục người xem được thấy (AC-1.8.1, 1.8.4, 1.8.7). */
   async summary(id: string, viewer: AuthUser): Promise<ProfileSummary> {
     const e = await this.getOrThrow(id);
-    const relation = relationTo(viewer, e);
+    const relation = await resolveRelation(this.repo, viewer, e);
     const [entry] = await this.toDirectory([e]);
     // Nhãn "Chờ HR xác nhận" chỉ cho chủ hồ sơ và HR (AC-1.9.2).
     const pending =
@@ -250,7 +252,7 @@ export class EmployeeService {
    */
   async section(id: string, code: string, viewer: AuthUser, reveal: boolean, meta: RequestMeta = {}): Promise<ProfileSectionData> {
     const e = await this.getOrThrow(id);
-    const relation = relationTo(viewer, e);
+    const relation = await resolveRelation(this.repo, viewer, e);
     const def = findSection(code);
     if (!def || !def.available || !canSeeLevel(relation, def.level)) {
       throw new NotFoundException('Không tìm thấy mục hồ sơ');

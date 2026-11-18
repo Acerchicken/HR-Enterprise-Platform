@@ -164,6 +164,22 @@ describe('HRHelper API (e2e)', () => {
       await http.get(`/api/v1/employees/${employeeId}/profile/personal?reveal=true`).set(EMPLOYEE).expect(403);
     });
 
+    it('quản lý gián tiếp (quản lý của quản lý) xem mức QL như quản lý trực tiếp, không xem mức CN (chốt 18/11)', async () => {
+      const mgr = (await http.get(`/api/v1/employees/${managerId}`).set(HR).expect(200)).body;
+      expect(mgr.managerId).toBeTruthy();
+      const skip = (await http.get(`/api/v1/employees/${mgr.managerId}`).set(HR).expect(200)).body;
+      const SKIP = as(skip.workEmail);
+      const s = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(SKIP).expect(200)).body;
+      expect(s.relation).toBe('MANAGER');
+      expect(s.sections.map((x: any) => x.code)).toContain('career-history');
+      expect((await http.get(`/api/v1/employees/${employeeId}/profile/personal`).set(SKIP).expect(200)).body).toHaveProperty('dateOfBirth');
+      expect((await http.get(`/api/v1/employees/${employeeId}`).set(SKIP).expect(200)).body.visibility).toBe('PERSONAL');
+      await http.get(`/api/v1/employees/${employeeId}/profile/salary`).set(SKIP).expect(404);
+      // Chiều ngược lại (cấp dưới xem cấp trên) và người ngoài nhánh vẫn chỉ mức danh bạ.
+      expect((await http.get(`/api/v1/employees/${mgr.managerId}/summary`).set(EMPLOYEE).expect(200)).body.relation).toBe('OTHER');
+      expect((await http.get(`/api/v1/employees/${strangerId}/summary`).set(MANAGER).expect(200)).body.relation).not.toBe('MANAGER');
+    });
+
     it('chủ hồ sơ bấm mắt xem lương của mình: có giá trị và audit VIEW_SENSITIVE (AC-1.3.5)', async () => {
       const masked = (await http.get(`/api/v1/employees/${employeeId}/profile/salary`).set(EMPLOYEE).expect(200)).body;
       expect(masked.salary.value).toBeNull();

@@ -196,7 +196,7 @@ xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /em
 ## 5. Luồng thay thế
 
 - **A1 (từ 4.1 bước 1):** người dùng mở hồ sơ của người khác qua danh bạ. Hệ thống trả mức danh bạ, hoặc mức QL nếu người gọi
-  là quản lý trực tiếp, hoặc toàn bộ nếu là HR. `sections` chỉ liệt kê mục người gọi được xem.
+  là quản lý trực tiếp hoặc gián tiếp (AC-1.1.4), hoặc toàn bộ nếu là HR. `sections` chỉ liệt kê mục người gọi được xem.
 - **A2 (từ 4.5 bước 3):** client không gửi `version`. Hệ thống từ chối (E9), không ghi đè.
 - **A3 (từ 4.4 bước 4):** chức danh là CEO. Cho phép không có quản lý; chỉ được có một CEO đang làm việc.
 - **A4 (từ 4.5 bước 3), HR chuyển nhân viên sang `TERMINATED`:** nếu người đó còn cấp dưới đang làm việc, hệ thống từ chối
@@ -450,10 +450,10 @@ HR duyệt yêu cầu).
 
 **Theo người xem:**
 
-- Mức danh bạ (người không phải HR, không phải quản lý trực tiếp): chỉ đầu trang (ảnh, mã, họ tên, chức danh, quản lý trực
+- Mức danh bạ (người không phải HR, không phải quản lý trực tiếp hay gián tiếp): chỉ đầu trang (ảnh, mã, họ tên, chức danh, quản lý trực
   tiếp, sơ đồ tổ chức) cộng số điện thoại và email công ty, hiện ngay dưới đầu trang. Không có địa chỉ, ngày sinh; không có các
   hàng lương, hệ số, diện đối tượng và các nhóm bên dưới.
-- Quản lý trực tiếp: thêm các mục mức QL.
+- Quản lý trực tiếp và gián tiếp (mọi cấp phía trên trong chuỗi quản lý, AC-1.1.4): thêm các mục mức QL.
 - Chủ hồ sơ: mọi mục của mình; nút "Sửa", "Thêm", "Tải lên" ở mục NV đều kết thúc bằng "Gửi yêu cầu".
 - HR: mọi mục, nút "Sửa hồ sơ", "Thêm" ở mọi mục (ghi thẳng), "Hiện dòng đã xóa"; danh sách yêu cầu chờ của hồ sơ đó.
 - Số dư phép không nằm trên trang hồ sơ; xem ở trang "Đơn nghỉ" (UC3).

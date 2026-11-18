@@ -29,11 +29,14 @@
 
 ### FR-1.1 Xem hồ sơ theo mức (M, đã có)
 
-- **AC-1.1.1** Giả sử B không phải quản lý trực tiếp của A, không phải HR. Khi B mở hồ sơ A. Thì B thấy mã nhân viên, họ tên,
+- **AC-1.1.1** Giả sử B không phải quản lý (trực tiếp hay gián tiếp) của A, không phải HR. Khi B mở hồ sơ A. Thì B thấy mã nhân viên, họ tên,
   ảnh, chức danh, phòng ban, quản lý trực tiếp, **số điện thoại và email công ty**; không thấy địa chỉ, ngày sinh, ngày vào làm,
   trạng thái hay bất kỳ mục nào bên dưới (spec 9.1).
 - **AC-1.1.2** Giả sử M là quản lý trực tiếp của A. Khi M mở hồ sơ A. Thì M thấy thêm ngày sinh, địa chỉ, ngày vào làm,
   trạng thái; không thấy CCCD, số tài khoản, lương.
+- **AC-1.1.4** Giả sử M là quản lý gián tiếp của A (quản lý của quản lý trực tiếp, đi lên bao nhiêu cấp cũng được). Khi M mở
+  hồ sơ A. Thì M thấy như quản lý trực tiếp (mức QL, AC-1.1.2). Quyền duyệt đơn nghỉ vẫn chỉ của quản lý trực tiếp (BR-05).
+  Cấp dưới mở hồ sơ cấp trên chỉ thấy mức danh bạ. Chốt 18/11/2026 (Duong chọn trên thẻ quyết định).
 - **AC-1.1.3** Giả sử người dùng có vai trò ADMIN. Khi mở hồ sơ người khác. Thì chỉ thấy mức danh bạ.
 
 ### FR-1.2 Nhân viên sửa liên hệ qua yêu cầu (M)
