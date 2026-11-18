@@ -101,8 +101,9 @@ bước: bấm "Chạy", hoặc dùng phím ← → để lùi, tiến; bấm v�
 ![Trạng thái yêu cầu cập nhật](flows/uc1-g2.png)
 
 Sơ đồ vẽ theo spec (hành vi đúng), không theo code; phần code chưa đạt xem mục 12. Sửa luồng ở mục 4 → 7 thì sửa biến `FLOWS`
-trong `flows.html` rồi xuất lại ảnh: `node docs/features/UC1-employee-profile/flows/render.js` (cần Playwright, như
-`mockups/render.js`).
+trong `flows.html` rồi xuất lại ảnh: trên Windows chạy
+`powershell -ExecutionPolicy Bypass -File docs/features/UC1-employee-profile/flows/render.ps1` (dùng Edge, không cần cài gì);
+máy có Playwright chạy `node docs/features/UC1-employee-profile/flows/render.js`.
 
 ### 4.1 Nhân viên xem hồ sơ và đề xuất sửa liên hệ (FR-1.1, FR-1.2, FR-1.8)
 
