@@ -79,6 +79,32 @@ Mục nào chưa làm vẫn hiện trên trang với tiêu đề màu đỏ, đ�
 
 ## 4. Luồng chính
 
+**Sơ đồ luồng:** mở [flows/flows.html](flows/flows.html) bằng trình duyệt (tải file về hoặc mở từ repo đã clone) để xem từng
+bước: bấm "Chạy", hoặc dùng phím ← → để lùi, tiến; bấm vào mũi tên để xem bước đó ứng với bước nào, mã lỗi nào trong spec.
+Ảnh tĩnh của từng sơ đồ:
+
+| Sơ đồ | Luồng trong spec | Ảnh |
+|---|---|---|
+| Xem hồ sơ, tải theo nhu cầu | 4.1, A1 | [uc1-f1.png](flows/uc1-f1.png) |
+| Gửi yêu cầu cập nhật | 4.2, A6, A7 | [uc1-f2.png](flows/uc1-f2.png) |
+| Tải file lên hồ sơ | 4.3, A8 | [uc1-f3.png](flows/uc1-f3.png) |
+| HR duyệt, từ chối yêu cầu | 4.7, A5, A10 | [uc1-f4.png](flows/uc1-f4.png) |
+| HR xem nhạy cảm, sửa hồ sơ | 4.5, A2, A4, A9 | [uc1-f5.png](flows/uc1-f5.png) |
+| HR tạo hồ sơ | 4.4, A3 | [uc1-f6.png](flows/uc1-f6.png) |
+| Xem lịch sử thay đổi | 4.6 | [uc1-f7.png](flows/uc1-f7.png) |
+| Ai thấy gì (mức xem) | mục 2, A1 | [uc1-g1.png](flows/uc1-g1.png) |
+| Trạng thái yêu cầu cập nhật | 4.2, 4.7, E19 → E21 | [uc1-g2.png](flows/uc1-g2.png) |
+| Trạng thái file hồ sơ | 4.3, 4.7, E12, E13 | [uc1-g3.png](flows/uc1-g3.png) |
+
+![Luồng gửi yêu cầu cập nhật và HR duyệt](flows/uc1-f2.png)
+
+![Trạng thái yêu cầu cập nhật](flows/uc1-g2.png)
+
+Sơ đồ vẽ theo spec (hành vi đúng), không theo code; phần code chưa đạt xem mục 12. Sửa luồng ở mục 4 → 7 thì sửa biến `FLOWS`
+trong `flows.html` rồi xuất lại ảnh: trên Windows chạy
+`powershell -ExecutionPolicy Bypass -File docs/features/UC1-employee-profile/flows/render.ps1` (dùng Edge, không cần cài gì);
+máy có Playwright chạy `node docs/features/UC1-employee-profile/flows/render.js`.
+
 ### 4.1 Nhân viên xem hồ sơ và đề xuất sửa liên hệ (FR-1.1, FR-1.2, FR-1.8)
 
 | Bước | Tác nhân | Hệ thống |
