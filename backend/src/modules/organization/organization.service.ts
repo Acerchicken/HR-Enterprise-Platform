@@ -254,7 +254,7 @@ export class OrganizationService {
    * AC-2.9.8 (UC1 AC-1.7.3): người nghỉ việc được gỡ khỏi mọi vai trò trưởng, phó trong cùng giao dịch, có audit.
    * Trả các vai trò đã gỡ. Không chặn việc nghỉ việc.
    */
-  async removeRolesOf(employeeId: string, actor: AuthUser, m: EntityManager): Promise<{ departmentId: string; role: 'HEAD' | 'DEPUTY' }[]> {
+  async removeRolesOf(employeeId: string, actor: AuthUser | null, m: EntityManager): Promise<{ departmentId: string; role: 'HEAD' | 'DEPUTY' }[]> {
     const heads: { id: string }[] = await m.query(`SELECT id FROM org.department WHERE head_employee_id = $1`, [employeeId]);
     const deputies: { department_id: string }[] = await m.query(
       `SELECT department_id FROM org.department_deputy WHERE employee_id = $1`,
@@ -272,10 +272,65 @@ export class OrganizationService {
         r.role === 'HEAD'
           ? { headEmployeeId: null, reason: 'EMPLOYEE_TERMINATED' }
           : { deputies: { added: [], removed: [employeeId] }, reason: 'EMPLOYEE_TERMINATED' };
-      await this.audit.record({ actorId: actor.employeeId, action: 'UPDATE', entityType: 'department', entityId: r.departmentId, changedFields }, m);
+      await this.audit.record({ actorId: actor?.employeeId ?? null, action: 'UPDATE', entityType: 'department', entityId: r.departmentId, changedFields }, m);
     }
     this.deptCache.clear();
     return removed;
+  }
+
+  /**
+   * AC-2.7.5: khi người đang làm trưởng đơn vị chuyển sang `newDepartmentId` mà không còn thuộc đơn vị đó hoặc đơn vị cha của nó,
+   * HR phải chọn trưởng mới (hoặc để trống có chủ ý). Trả các đơn vị cần chọn.
+   */
+  async headRolesBrokenByMove(employeeId: string, newDepartmentId: string): Promise<{ departmentId: string; name: string }[]> {
+    const all = await this.listDepartments();
+    return all
+      .filter((d) => d.headEmployeeId === employeeId && !this.chain(all, d.id).includes(newDepartmentId))
+      .map((d) => ({ departmentId: d.id, name: d.name }));
+  }
+
+  /**
+   * Áp dụng vai trò khi một người đổi đơn vị (trong giao dịch điều chuyển): trưởng ở đơn vị không còn hợp lệ đổi theo
+   * `headChanges` (thiếu thì lỗi); phó không còn hợp lệ được gỡ tự động. Có audit. Gọi sau khi đã đổi department_id của người đó.
+   */
+  async applyMove(
+    employeeId: string,
+    newDepartmentId: string,
+    headChanges: { departmentId: string; employeeId: string | null }[],
+    actor: AuthUser | null,
+    m: EntityManager,
+  ): Promise<void> {
+    const all: Department[] = await m.getRepository(Department).find();
+    const broken = all.filter((d) => d.headEmployeeId === employeeId && !this.chain(all, d.id).includes(newDepartmentId));
+    for (const d of broken) {
+      const choice = headChanges.find((h) => h.departmentId === d.id);
+      if (!choice) throw new BadRequestException(`Hãy chọn ${UNIT_LABEL[d.unitType].head.toLowerCase()} mới cho "${d.name}" hoặc để trống`);
+      if (choice.employeeId) {
+        const deputies = await this.deputyIdsWith(m, d.id);
+        await this.assertRoleHolders(this.chain(all, d.id), d.unitType, choice.employeeId, deputies.filter((x) => x !== choice.employeeId), [choice.employeeId], m);
+        await m.query(`DELETE FROM org.department_deputy WHERE department_id = $1 AND employee_id = $2`, [d.id, choice.employeeId]);
+      }
+      await m.query(`UPDATE org.department SET head_employee_id = $1, head_acting = false WHERE id = $2`, [choice.employeeId, d.id]);
+      await this.audit.record(
+        { actorId: actor?.employeeId ?? null, action: 'UPDATE', entityType: 'department', entityId: d.id, changedFields: { headEmployeeId: choice.employeeId, reason: 'HEAD_TRANSFERRED' } },
+        m,
+      );
+    }
+    const deputyOf: { department_id: string }[] = await m.query(`SELECT department_id FROM org.department_deputy WHERE employee_id = $1`, [employeeId]);
+    for (const r of deputyOf) {
+      if (this.chain(all, r.department_id).includes(newDepartmentId)) continue;
+      await m.query(`DELETE FROM org.department_deputy WHERE department_id = $1 AND employee_id = $2`, [r.department_id, employeeId]);
+      await this.audit.record(
+        { actorId: actor?.employeeId ?? null, action: 'UPDATE', entityType: 'department', entityId: r.department_id, changedFields: { deputies: { added: [], removed: [employeeId] }, reason: 'DEPUTY_TRANSFERRED' } },
+        m,
+      );
+    }
+    this.deptCache.clear();
+  }
+
+  private async deputyIdsWith(m: EntityManager, departmentId: string): Promise<string[]> {
+    const rows: { employee_id: string }[] = await m.query(`SELECT employee_id FROM org.department_deputy WHERE department_id = $1`, [departmentId]);
+    return rows.map((r) => r.employee_id);
   }
 
   /** Các đơn vị người này đang làm trưởng, phó (hộp xác nhận nghỉ việc, AC-2.9.8). */
@@ -360,7 +415,14 @@ export class OrganizationService {
    * AC-2.4.7, AC-2.9.1 (E8): trưởng, phó là nhân viên đang làm việc thuộc đơn vị hoặc một đơn vị cha (`allowedUnits`);
    * phó không trùng trưởng, không quá số tối đa theo loại. Chỉ kiểm tư cách của `newcomers` (người mới được gán).
    */
-  private async assertRoleHolders(allowedUnits: string[], unitType: UnitType, head: string | null, deputies: string[], newcomers: string[]) {
+  private async assertRoleHolders(
+    allowedUnits: string[],
+    unitType: UnitType,
+    head: string | null,
+    deputies: string[],
+    newcomers: string[],
+    m: EntityManager = this.departments.manager,
+  ) {
     const max = UNIT_LABEL[unitType].maxDeputies;
     if (deputies.length > max) {
       throw new BadRequestException(
@@ -370,7 +432,7 @@ export class OrganizationService {
     if (head && deputies.includes(head)) throw new BadRequestException('Một người không vừa là trưởng vừa là phó của cùng đơn vị');
     const ids = [...new Set(newcomers)];
     if (!ids.length) return;
-    const rows: { id: string; full_name: string; status: string; department_id: string }[] = await this.departments.manager.query(
+    const rows: { id: string; full_name: string; status: string; department_id: string }[] = await m.query(
       `SELECT id, full_name, status, department_id FROM employee.employee WHERE id = ANY($1::uuid[])`,
       [ids],
     );

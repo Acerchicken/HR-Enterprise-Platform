@@ -323,3 +323,43 @@ export interface LeaveRequest {
   /** Có ở API xem chi tiết: người gọi được duyệt/từ chối đơn này. */
   canDecide?: boolean;
 }
+
+// ----- Điều chuyển (UC2 FR-2.7) -----
+
+export type TransferReason = 'TRANSFER' | 'PROMOTION' | 'MANAGER_CHANGE' | 'CORRECTION';
+export const TRANSFER_REASON_LABEL: Record<TransferReason, string> = {
+  TRANSFER: 'Điều chuyển',
+  PROMOTION: 'Thăng chức',
+  MANAGER_CHANGE: 'Đổi quản lý',
+  CORRECTION: 'Điều chỉnh (sửa nhầm)',
+};
+
+export interface Transfer {
+  id: string;
+  employeeId: string;
+  status: 'SCHEDULED' | 'ACTIVE' | 'CLOSED' | 'CANCELLED' | 'FAILED';
+  reason: TransferReason;
+  effectiveDate: string;
+  departmentId: string;
+  departmentName: string | null;
+  positionId: string;
+  positionTitle: string | null;
+  managerId: string | null;
+  managerName: string | null;
+  note: string | null;
+  failureReason: string | null;
+  reports: { employeeId: string; fullName: string | null; managerId: string | null; status: string }[];
+  createdAt: string;
+}
+
+export interface TerminationImpact {
+  activeReports: number;
+  headRoles: { departmentId: string; name: string; role: 'HEAD' | 'DEPUTY' }[];
+  scheduledTransfers: number;
+  pendingAsNewManager: { transferId: string; employeeName: string; effectiveDate: string }[];
+}
+
+/** Hôm nay theo giờ Việt Nam (khớp job điều chuyển phía server). */
+export function vnToday(): string {
+  return new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+}

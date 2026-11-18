@@ -135,3 +135,12 @@ input[aria-invalid='true'], select[aria-invalid='true'] { border-color: var(--da
 tr.editing { background: var(--primary-soft); }
 .row-actions { display: flex; gap: 6px; }
 input.switch { width: 18px; height: 18px; accent-color: var(--primary); }
+.dialog.wide { width: 760px; }
+.dialog-head h2 { display: inline-flex; align-items: center; gap: 8px; }
+.note.warn { background: #fffaeb; border-color: #fedf89; color: #93370d; }
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.badge.ok { background: #ecfdf3; color: var(--ok); }
+.badge.bad { background: #fef3f2; color: var(--danger); }
+button.danger-fill { background: var(--danger); border-color: var(--danger); color: #fff; }
+.badge.upcoming { background: #fffaeb; color: var(--warn); }
+.org-box { display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 8px; margin-bottom: 12px; }

@@ -70,41 +70,41 @@
 - **AC-2.6.3** Chức danh `CEO` là chức danh hệ thống (FR-2.5 dựa vào nó). Khi HR ngừng dùng, xóa, hoặc đổi cấp bậc
   của `CEO`. Thì trả 400. Đổi tên hiển thị (ví dụ "Tổng Giám đốc") vẫn được, có audit.
 
-### FR-2.7 Điều chuyển có ngày hiệu lực (S, chưa có)
+### FR-2.7 Điều chuyển có ngày hiệu lực (S)
 
-- **AC-2.7.1** *(chưa có)* Khi HR điều chuyển nhân viên A sang phòng ban, chức danh, quản lý mới, hiệu lực hôm nay. Thì hồ sơ A
+- **AC-2.7.1** Khi HR điều chuyển nhân viên A sang phòng ban, chức danh, quản lý mới, hiệu lực hôm nay. Thì hồ sơ A
   đổi ngay; quá trình công tác có dòng cũ đóng ở hôm qua và dòng mới mở từ hôm nay; có audit `TRANSFER`.
-- **AC-2.7.2** *(chưa có)* Khi hiệu lực là ngày 1 tháng sau. Thì hồ sơ A chưa đổi; quá trình công tác có dòng "Sắp hiệu lực";
+- **AC-2.7.2** Khi hiệu lực là ngày 1 tháng sau. Thì hồ sơ A chưa đổi; quá trình công tác có dòng "Sắp hiệu lực";
   job chạy lúc 00:05 ngày đó (giờ Việt Nam) áp dụng điều chuyển; kiểm thử chấp nhận áp dụng xong trước 00:15. HR hủy được
   điều chuyển chưa hiệu lực.
-- **AC-2.7.3** *(chưa có)* Giả sử A có đơn nghỉ `SUBMITTED`. Khi điều chuyển có hiệu lực và A đổi quản lý. Thì đơn chuyển sang
+- **AC-2.7.3** *(một phần: email cho quản lý mới làm cùng dịch vụ thông báo)* Giả sử A có đơn nghỉ `SUBMITTED`. Khi điều chuyển có hiệu lực và A đổi quản lý. Thì đơn chuyển sang
   danh sách chờ của quản lý mới, quản lý cũ không duyệt được nữa (UC4 AC-4.2.6); quản lý mới nhận email chung.
-- **AC-2.7.4** *(chưa có)* Khi điều chuyển vi phạm FR-2.5 (quản lý đã nghỉ việc, tạo vòng, bỏ quản lý của người không phải
+- **AC-2.7.4** Khi điều chuyển vi phạm FR-2.5 (quản lý đã nghỉ việc, tạo vòng, bỏ quản lý của người không phải
   CEO) hoặc hiệu lực trước ngày vào làm. Thì trả 400. Hiệu lực ở quá khứ chỉ cho tối đa 30 ngày (ghi lại điều chuyển làm muộn).
-- **AC-2.7.5** *(chưa có)* Giả sử A đang là trưởng phòng X. Khi điều chuyển A sang phòng khác. Thì phải chọn trưởng phòng mới
+- **AC-2.7.5** Giả sử A đang là trưởng phòng X. Khi điều chuyển A sang phòng khác. Thì phải chọn trưởng phòng mới
   cho X hoặc để trống có chủ ý; không để X trỏ tới người không còn trong phòng.
-- **AC-2.7.6** *(chưa có)* Giả sử A còn cấp dưới trực tiếp đang làm việc. Khi HR điều chuyển A. Thì form liệt kê từng cấp dưới
+- **AC-2.7.6** Giả sử A còn cấp dưới trực tiếp đang làm việc. Khi HR điều chuyển A. Thì form liệt kê từng cấp dưới
   và HR phải chọn cho mỗi người (chọn hàng loạt được): **giữ A làm quản lý** hoặc **chuyển sang quản lý khác** (điền sẵn trưởng
   đơn vị cũ của A). Không chọn thì trả 400. Các thay đổi quản lý của cấp dưới có cùng ngày hiệu lực, mỗi người một dòng quá
   trình công tác lý do `MANAGER_CHANGE`; đơn nghỉ đang chờ đi theo quản lý mới (AC-2.7.3).
-- **AC-2.7.7** *(chưa có)* Khi đã có điều chuyển, HR gửi `departmentId`, `positionId` hoặc `managerId` qua `PATCH /employees/{id}`
+- **AC-2.7.7** Khi đã có điều chuyển, HR gửi `departmentId`, `positionId` hoặc `managerId` qua `PATCH /employees/{id}`
   (UC1 luồng 4.5). Thì trả 400, chỉ sang "Điều chuyển". Sửa nhầm thì làm điều chuyển lý do `CORRECTION`. Nhờ vậy mọi thay đổi
   tổ chức đều có dòng quá trình công tác và ngày hiệu lực.
-- **AC-2.7.8** *(chưa có)* Khi job 00:05 áp dụng điều chuyển tương lai. Thì kiểm lại FR-2.5 tại lúc áp dụng (quản lý mới còn làm
+- **AC-2.7.8** Khi job 00:05 áp dụng điều chuyển tương lai. Thì kiểm lại FR-2.5 tại lúc áp dụng (quản lý mới còn làm
   việc, không tạo vòng, đơn vị đích còn hoạt động); sai thì không áp dụng, dòng chuyển `FAILED`, HR nhận thông báo. Người được
   điều chuyển đã nghỉ việc thì điều chuyển đã bị hủy từ trước (UC1 AC-1.7.3).
 
-### FR-2.8 Quá trình công tác (S, chưa có)
+### FR-2.8 Quá trình công tác (S)
 
 > **Liên quan UC1 (rà 18/11):** mục "Quá trình công tác" của UC1 đã có (#90) nhưng **dựng tạm từ audit** nhóm trường tổ
 > chức (`UPDATE` có `{ from, to }`) cộng các dòng HR nhập tay, nên chưa có ngày hiệu lực khác ngày sửa, chưa có "Sắp hiệu lực",
 > lý do chỉ suy ra (điều chuyển, đổi chức danh, đổi quản lý). Khi làm FR-2.7, FR-2.8 thì lịch sử bổ nhiệm của UC2 là nguồn
 > chính và `ProfileChangeService.computed('career-history')` đọc từ đó; audit chỉ còn để tra cứu.
 
-- **AC-2.8.1** *(chưa có)* Khi mở mục "Quá trình công tác" (UC1). Thì thấy các dòng: phòng ban, chức danh, quản lý trực tiếp,
+- **AC-2.8.1** Khi mở mục "Quá trình công tác" (UC1). Thì thấy các dòng: phòng ban, chức danh, quản lý trực tiếp,
   từ ngày, đến ngày, lý do (tuyển mới, điều chuyển, thăng chức, đổi quản lý), mới nhất trước.
-- **AC-2.8.2** *(chưa có)* Chủ hồ sơ, quản lý trực tiếp hiện tại và HR xem được; người khác không thấy mục này (UC1 mức QL).
-- **AC-2.8.3** *(chưa có)* Khi HR tạo nhân viên. Thì có dòng đầu tiên mở từ ngày vào làm, lý do "Tuyển mới". Dòng lịch sử
+- **AC-2.8.2** Chủ hồ sơ, quản lý trực tiếp hiện tại và HR xem được; người khác không thấy mục này (UC1 mức QL).
+- **AC-2.8.3** Khi HR tạo nhân viên. Thì có dòng đầu tiên mở từ ngày vào làm, lý do "Tuyển mới". Dòng lịch sử
   không sửa, không xóa; sai thì HR thêm điều chỉnh có ghi lý do.
 
 ### FR-2.9 Trưởng và phó đơn vị mọi cấp (S, chưa có; ADR-14)
@@ -151,7 +151,7 @@ Phó Tổng Giám đốc. Quyền duyệt đơn nghỉ luôn theo quản lý tr�
   trong cùng giao dịch, có audit.
 - **AC-2.10.2** Khi HR ngừng hoạt động đơn vị X đã trống. Thì X không còn trong cây, danh bạ, danh sách chọn khi
   tạo, điều chuyển nhân viên; quá trình công tác cũ vẫn hiện tên X; có audit. Không xóa hẳn đơn vị.
-- **AC-2.10.3** *(chưa có)* Sáp nhập phòng A vào phòng B: HR điều chuyển hết người của A sang B (FR-2.7, cùng ngày hiệu lực) rồi
+- **AC-2.10.3** Sáp nhập phòng A vào phòng B: HR điều chuyển hết người của A sang B (FR-2.7, cùng ngày hiệu lực) rồi
   ngừng hoạt động A. Không có thao tác "sáp nhập" riêng.
 
 ## 3. Yêu cầu phi chức năng liên quan
@@ -170,5 +170,5 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 | Sơ đồ luồng, bản vẽ, hợp đồng API, thiết kế dữ liệu | – | TV1 | `docs/uc2-design` | 11 |
 | Loại đơn vị, luật cha con, seed mới, lọc danh bạ gồm đơn vị con | AC-2.2.3, AC-2.4.8, AC-2.4.9, AC-2.1.5 | TV1 | `feat/org-unit-types` | Code xong, chờ merge |
 | Trưởng, phó mọi cấp; chức danh; ngừng hoạt động đơn vị; giao diện quản lý đơn vị | AC-2.4.5, AC-2.4.7, AC-2.6.x, AC-2.9.x, AC-2.10.x | TV1 | `feat/department-admin-ui` | Code xong, chờ merge |
-| Quá trình công tác, điều chuyển có ngày hiệu lực, hộp xác nhận nghỉ việc | AC-2.7.x, AC-2.8.x, UC1 AC-1.7.3 | TV1 | `feat/employee-transfer` | 12 |
+| Quá trình công tác, điều chuyển có ngày hiệu lực, hộp xác nhận nghỉ việc | AC-2.7.x, AC-2.8.x, UC1 AC-1.7.3 | TV1 | `feat/employee-transfer` | Code xong, chờ merge |
 | Ca kiểm thử cho các AC mới | AC-2.x | TV4 | theo từng PR code | 11–12 |

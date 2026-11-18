@@ -193,10 +193,6 @@ Index: `ix_department_parent (parent_id)` để lấy cây tổ chức và phòn
 
 Index: `ix_department_deputy_employee (employee_id)` để gỡ vai trò khi nghỉ việc (AC-2.9.8).
 
-> **Đã quyết, chưa có migration ([ADR-14](adr/ADR-14-org-unit-types.md)):** bảng mới `employee.employment_assignment` (quá trình công
-> tác, điều chuyển). Thiết kế: [UC2 spec mục 13](../features/UC2-organization/spec.md#13-thiết-kế-đề-xuất-cho-phần-chưa-có).
-> Khi migration merge thì cập nhật bảng trên và sơ đồ.
-
 ### `org.position`
 
 | Cột | Kiểu | Ràng buộc | Mô tả |
@@ -220,6 +216,8 @@ erDiagram
   profile_item ||--o{ profile_change_request : "item_id"
   profile_item ||--o{ profile_file : "item_id"
   profile_file |o--o| employee : "avatar_file_id"
+  employee ||--o{ employment_assignment : "employee_id"
+  employment_assignment |o--o{ employment_assignment : "parent_id"
   employee {
     uuid id PK
     varchar employee_code UK
@@ -409,6 +407,34 @@ tải lên (presigned PUT 10 phút) và luôn đi qua API khi tải xuống (ADR
 Index: `ix_profile_file_employee (employee_id, section, status)`; `uq_profile_file_ready_sha (employee_id, section, sha256)
 WHERE status = 'READY'` (cùng nội dung không lưu hai lần, AC-1.10.4). Hạn mức 50 file `READY`, 200 MiB mỗi người đếm từ bảng
 này.
+
+### `employee.employment_assignment`
+
+Quá trình công tác và điều chuyển có ngày hiệu lực (UC2 FR-2.7, FR-2.8). Chỉ thêm dòng; dòng cũ chỉ đổi `status`,
+`effective_to`. Cột `department_id`, `position_id`, `manager_id` của `employee.employee` vẫn là giá trị hiện tại.
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| `id` | uuid | PK, mặc định `gen_random_uuid()` | |
+| `employee_id` | uuid | NN, FK → `employee.employee.id` | Người được điều chuyển |
+| `department_id` | uuid | NN, ref → `org.department.id` | Đơn vị |
+| `position_id` | uuid | NN, ref → `org.position.id` | Chức danh |
+| `manager_id` | uuid | ref → `employee.employee.id` | Quản lý trực tiếp; `NULL` chỉ với CEO |
+| `effective_from` | date | NN | Ngày hiệu lực (giờ Việt Nam) |
+| `effective_to` | date | CHECK `>= effective_from - 1` | Ngày cuối; `NULL` khi đang hiệu lực. Điều chuyển hai lần cùng ngày để lại dòng độ dài 0, không hiện |
+| `reason` | varchar(20) | NN, CHECK `HIRE`, `TRANSFER`, `PROMOTION`, `MANAGER_CHANGE`, `CORRECTION` | Lý do |
+| `note` | varchar(500) | | Ghi chú của HR |
+| `status` | varchar(10) | NN, CHECK `SCHEDULED`, `ACTIVE`, `CLOSED`, `CANCELLED`, `FAILED` | |
+| `failure_reason` | varchar(300) | | Lý do job không áp dụng được (AC-2.7.8) |
+| `parent_id` | uuid | FK → `employee.employment_assignment.id` | Dòng đổi quản lý của cấp dưới đi theo điều chuyển này (AC-2.7.6) |
+| `head_changes` | jsonb | | `[{departmentId, employeeId \| null}]`: trưởng mới cho đơn vị người này rời đi (AC-2.7.5) |
+| `created_by` | uuid | ref → `employee.employee.id` | HR tạo |
+| `created_at` | timestamptz | NN, mặc định `now()` | |
+| `applied_at` | timestamptz | | Lúc áp dụng |
+
+Index: `ux_assignment_active (employee_id) WHERE status = 'ACTIVE'` và `ux_assignment_scheduled (employee_id) WHERE status =
+'SCHEDULED'` (mỗi người một dòng đang hiệu lực, một điều chuyển chờ); `ix_assignment_due (status, effective_from)` cho job;
+`ix_assignment_employee (employee_id, effective_from DESC)` cho quá trình công tác.
 
 ## 7. Schema `leave` – nghỉ phép và outbox
 
@@ -749,6 +775,7 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `1731900000000-ProfileFiles` | 11 | `employee.profile_file`, cột `employee.avatar_file_id` (#87) |
 | `1732000000000-OrgUnitTypes` | 11 | `org.department`: `unit_type`, `status`, CHECK, index một Công ty; điền loại cho dữ liệu cũ (`feat/org-unit-types`) |
 | `1732100000000-OrgUnitRoles` | 11 | `org.department.head_acting`, `org.department_deputy`, `org.position.active`, `is_system` (`feat/department-admin-ui`) |
+| `1732200000000-EmploymentAssignment` | 11 | `employee.employment_assignment`; mỗi nhân viên đang có một dòng `HIRE` (`feat/employee-transfer`) |
 
 Lệnh: `npm run migration:run` (dev, ts-node), `npm run migration:run:prod` (bản build, dùng trên staging),
 `npm run migration:revert` (lùi một migration). Dữ liệu mẫu: `npm run seed`.

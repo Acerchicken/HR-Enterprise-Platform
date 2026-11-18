@@ -267,6 +267,13 @@ async function main() {
         cols.map((c) => batch.map((e) => e[c])),
       );
     }
+    // Quá trình công tác (UC2 FR-2.8): một dòng "Tuyển mới" cho mỗi người (người đã nghỉ: đã đóng).
+    await m.query(`INSERT INTO employee.employment_assignment
+        (employee_id, department_id, position_id, manager_id, effective_from, effective_to, reason, status, applied_at)
+      SELECT id, department_id, position_id, manager_id, hire_date,
+             CASE WHEN status = 'TERMINATED' THEN GREATEST(hire_date, current_date - 30) END,
+             'HIRE', CASE WHEN status = 'TERMINATED' THEN 'CLOSED' ELSE 'ACTIVE' END, now()
+        FROM employee.employee`);
 
     // ---- Trường nhạy cảm (mã hóa) ----
     const sens = employees.map((e) => {
