@@ -87,9 +87,16 @@ Thuộc aggregate **tài khoản** (`iam.user_account`, `aggregate_id` là id t�
 |---|---|---|---|
 | `RoleGranted` | ADMIN cấp HR, ADMIN; lệnh `grant-admin` | `POST /admin/role-assignments` | `accountId`, `email`, `role`, `occurredAt` |
 | `RoleRevoked` | ADMIN thu hồi | `DELETE /admin/role-assignments/{userId}/{role}` | như trên |
+| `EmployeeCreated` | HR tạo hồ sơ (tài khoản `PENDING`) | `POST /employees` | `employeeId`, `accountId`, `email`, `fullName`, `occurredAt` |
+| `AccountInviteRequested` | HR gửi (lại) lời mời | `POST /employees/{id}/account/invite` | như trên, thêm `previousStatus` (`NONE`, `INVITED`, `FAILED`) |
+| `EmployeeTerminated` | Hồ sơ chuyển sang `TERMINATED` | `PATCH /employees/{id}` | `employeeId`, `accountId`, `email`, `occurredAt` |
+| `EmployeeReinstated` | Hồ sơ từ `TERMINATED` về trạng thái khác | `PATCH /employees/{id}` | như trên |
+| `EmployeeEmailChanged` | HR đổi email công ty của người đã có tài khoản | `PATCH /employees/{id}` | như trên, thêm `oldEmail` |
 
-Tới khi có `identity-sync` (nhánh `feat/uc8-account-lifecycle`), worker ghi log rồi bỏ qua các event này, không đánh dấu
-`processed_event`.
+Hồ sơ chưa có tài khoản thì nghỉ việc, khôi phục, đổi email không phát event. Worker chuyển các event này sang `IdentitySync`
+(`worker/identity-sync.ts`): gọi IdP qua driver `IDP_ADMIN_DRIVER`, cập nhật `idp_status`, rồi đánh dấu `processed_event`. Mọi
+thao tác trên IdP idempotent (tạo khi đã có thì chỉ gắn, khóa người không còn thì bỏ qua) nên giao hai lần không sinh hai tài khoản,
+hai thư mời (AC-8.3.4). Lỗi IdP: thử lại trong worker, hết lượt thì ném lỗi, message vào DLQ (UC8 E6).
 
 Ánh xạ hành động → event: `EVENT_OF_ACTION` trong `leave-events.ts`; người nhận: `recipientOf()`. Nhân viên không có quản lý
 trực tiếp (CEO) thì event loại "gửi quản lý" được đánh dấu đã xử lý mà không gửi email.

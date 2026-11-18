@@ -104,6 +104,10 @@ erDiagram
     varchar email UK
     uuid employee_id "ref employee.employee"
     timestamptz last_login_at
+    varchar idp_status "PENDING | INVITED | ACTIVE | DISABLED | FAILED"
+    timestamptz invited_at
+    timestamptz idp_synced_at
+    varchar idp_error
     timestamptz created_at
   }
   role_assignment {
@@ -122,7 +126,13 @@ erDiagram
 | `email` | varchar(150) | NN, UQ | Email đăng nhập, dùng để ghép với hồ sơ nhân viên |
 | `employee_id` | uuid | ref → `employee.employee.id` | Hồ sơ nhân viên của tài khoản; NULL với tài khoản kỹ thuật/admin không có hồ sơ |
 | `last_login_at` | timestamptz | | Lần đăng nhập gần nhất |
+| `idp_status` | varchar(10) | NN, mặc định `ACTIVE`, CHECK `PENDING`, `INVITED`, `ACTIVE`, `DISABLED`, `FAILED` | Trạng thái tài khoản trên IdP (UC8 FR-8.6). `PENDING` khi hồ sơ vừa tạo hoặc HR vừa bấm gửi lời mời; worker `identity-sync` chuyển sang `INVITED`, `ACTIVE` (email đã có trên IdP), `DISABLED` (nghỉ việc) hoặc `FAILED`. Đăng nhập lần đầu chuyển `PENDING`, `INVITED`, `FAILED` thành `ACTIVE`. Dòng có trước UC8 là `ACTIVE`. "Chưa có tài khoản" (`NONE`) không lưu: là khi hồ sơ chưa có dòng |
+| `invited_at` | timestamptz | | Lần gửi thư mời gần nhất |
+| `idp_synced_at` | timestamptz | | Lần đồng bộ IdP thành công gần nhất |
+| `idp_error` | varchar(40) | | Mã lỗi lần đồng bộ hỏng gần nhất (`IDP_UNAVAILABLE`, `IDP_REJECTED`, `IDP_USER_NOT_FOUND`), không chứa thông báo gốc của IdP. Xóa khi đồng bộ thành công hoặc HR gửi lại lời mời |
 | `created_at` | timestamptz | NN, mặc định `now()` | |
+
+Index `ix_user_account_idp_status (idp_status)`. Migration `AccountLifecycle`.
 
 ### `iam.role_assignment`
 
@@ -139,8 +149,6 @@ Index `ix_role_assignment_role (role)` cho trang Phân quyền. API chỉ ghi `H
 `MANAGER` nếu có (hai vai trò này luôn suy ra, ADR-18). Thu hồi xóa dòng; lịch sử ở audit `ROLE_GRANT`, `ROLE_REVOKE`. Migration
 `RoleAssignmentAudit`.
 
-**Kế hoạch tuần 11** ([UC8 spec mục 13](../features/UC8-authentication/spec.md#13-thiết-kế-đề-xuất-cho-phần-chưa-có)):
-`user_account` thêm `idp_status`, `invited_at`, `idp_synced_at`, `idp_error` (migration `AccountLifecycle`).
 
 ### `iam.rate_limit_counter`
 
@@ -747,7 +755,7 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 
 | Cột | Trỏ tới | Ghi chú |
 |---|---|---|
-| `iam.user_account.employee_id` | `employee.employee.id` | Ghép theo email khi đăng nhập |
+| `iam.user_account.employee_id` | `employee.employee.id` | Ghép theo email khi đăng nhập. Module Employee ghi thẳng `iam.user_account` bằng SQL trong giao dịch lưu hồ sơ (`employee/account-events.ts`: tạo dòng `PENDING` khi tạo hồ sơ, đổi `email` khi đổi email công ty) vì Identity đã phụ thuộc Employee |
 | `iam.role_assignment.scope_department_id` | `org.department.id` | Chưa dùng |
 | `org.department.head_employee_id` | `employee.employee.id` | Kiểm đang làm việc, thuộc đơn vị hoặc đơn vị cha (`assertRoleHolders`) |
 | `org.department_deputy.employee_id`, `created_by` | `employee.employee.id` | Như trưởng đơn vị; nghỉ việc, điều chuyển thì gỡ |

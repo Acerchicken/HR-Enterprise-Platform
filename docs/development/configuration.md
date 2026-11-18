@@ -84,6 +84,23 @@ Dùng cho outbox publisher (trong API) và notification worker. Chi tiết: [h�
 | `SMTP_PORT` | `1025` | | Staging | Worker | Kết nối không TLS (`secure: false`) |
 | `SMTP_FROM` | `no-reply@hr.local` | | Staging | Worker | Địa chỉ người gửi |
 
+### Đồng bộ tài khoản sang IdP (UC8 FR-8.3, 8.4, 8.6, 8.7)
+
+Worker `identity-sync` (trong tiến trình worker) tạo, mời, khóa, mở tài khoản và đổi nhóm trên IdP theo event trong outbox.
+
+| Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
+|---|---|---|---|---|---|
+| `IDP_ADMIN_DRIVER` | `none` | `cognito` | Không | Worker | `keycloak`, `cognito` hoặc `none`. `none`: không gọi IdP, tài khoản coi như đã có (dùng với `AUTH_MODE=dev` và test). docker-compose đặt `keycloak` |
+| `KEYCLOAK_ADMIN_URL` | `OIDC_ISSUER` bỏ `/realms/<realm>` | (không dùng) | Không | Worker | Gốc Admin REST API. Trong docker-compose là `http://keycloak:8080` |
+| `KEYCLOAK_REALM` | Lấy từ `OIDC_ISSUER`, nếu không có thì `hr` | (không dùng) | Không | Worker | Realm chứa tài khoản nhân viên |
+| `KEYCLOAK_ADMIN_CLIENT_ID` | `hr-api-admin` | (không dùng) | Không | Worker | Client có service account, chỉ có `manage-users`, `view-users`, `view-realm` của `realm-management` |
+| `KEYCLOAK_ADMIN_CLIENT_SECRET` | (không có) | (không dùng) | **Có** khi `keycloak` | Worker | Local là `dev-only-hr-api-admin-secret` (khớp `keycloak/realm-hr.json`) |
+| `COGNITO_USER_POOL_ID` | (không có) | Id user pool | **Có** khi `cognito` | Worker | Quyền `cognito-idp:Admin*` lấy từ IAM role của worker; region lấy từ `AWS_REGION` |
+| `IDP_SYNC_ATTEMPTS` | `5` | `5` | Không | Worker | Số lần thử khi IdP lỗi tạm thời (mạng, 5xx, 429). Hết lượt thì tài khoản `FAILED`, message vào DLQ |
+| `IDP_SYNC_RETRY_DELAY_MS` | `1000` | `1000` | Không | Worker | Thời gian chờ lần đầu, nhân đôi mỗi lần |
+
+Web: `VITE_IDLE_TIMEOUT_MINUTES` (mặc định `30`) là số phút không thao tác thì tự đăng xuất, cảnh báo trước 1 phút (AC-8.1.6).
+
 ### Giới hạn tần suất (NFR-5.21, UC1 FR-1.14)
 
 | Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |

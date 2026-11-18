@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './auth/auth';
+import { IdleGuard } from './auth/idle';
 import { Layout } from './components/Layout';
 import { ShellProvider } from './components/shell';
 import { RolesPage } from './pages/admin/RolesPage';
@@ -32,6 +33,7 @@ export function App() {
   return (
     <ShellProvider>
       <AppRoutes />
+      <IdleGuard />
     </ShellProvider>
   );
 }

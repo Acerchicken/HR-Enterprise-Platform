@@ -29,7 +29,7 @@ function setup() {
     contactOf: jest.fn(async (id: string) => ({ email: `${id}@hr.local`, fullName: id })),
     namesOf: jest.fn(async () => new Map([['emp', 'Trần Thị Nhân']])),
   };
-  const worker = new NotificationWorker(loadConfig({}), ds as any, employees as any);
+  const worker = new NotificationWorker(loadConfig({}), ds as any, employees as any, { handle: jest.fn() } as any);
   const sendMail = jest.fn(async () => ({}));
   (worker as any).mailer = { sendMail };
   return { worker, sendMail };
