@@ -312,6 +312,12 @@ export class EmployeeService {
       const lookups = await this.org.lookups();
       if (dto.departmentId && !lookups.department.has(dto.departmentId)) throw new BadRequestException('Phòng ban không tồn tại');
       if (dto.positionId && !lookups.position.has(dto.positionId)) throw new BadRequestException('Chức danh không tồn tại');
+      // AC-2.6.2, AC-2.10.2: chỉ chặn khi đổi sang đơn vị ngừng hoạt động, chức danh ngừng dùng; người đang giữ không bị đổi.
+      assertSelectable(
+        lookups,
+        dto.departmentId && dto.departmentId !== e.departmentId ? dto.departmentId : undefined,
+        dto.positionId && dto.positionId !== e.positionId ? dto.positionId : undefined,
+      );
       if (dto.managerId) await this.assertNoManagerCycle(m, id, dto.managerId);
       if (dto.positionId !== undefined || dto.managerId !== undefined) {
         await this.assertManagerRule(m, lookups, {
@@ -353,6 +359,8 @@ export class EmployeeService {
       }
       if (Object.keys(changes).length) {
         await repo.save({ ...e, ...changes });
+        // AC-2.9.8, UC1 AC-1.7.3: người nghỉ việc được gỡ khỏi vai trò trưởng, phó trong cùng giao dịch (có audit).
+        if (changes.status === 'TERMINATED') await this.org.removeRolesOf(id, actor, m);
       } else {
         // AC-1.6.3: chỉ đổi trường nhạy cảm vẫn tăng version, để người đang mở form cũ nhận 409.
         await repo.increment({ id }, 'version', 1);
@@ -374,6 +382,7 @@ export class EmployeeService {
     const lookups = await this.org.lookups();
     if (!lookups.department.has(dto.departmentId)) throw new BadRequestException('Phòng ban không tồn tại');
     if (!lookups.position.has(dto.positionId)) throw new BadRequestException('Chức danh không tồn tại');
+    assertSelectable(lookups, dto.departmentId, dto.positionId);
     if (dto.managerId) await this.getOrThrow(dto.managerId);
 
     const { nationalId, bankAccount, salary, ...plain } = dto;
@@ -477,4 +486,16 @@ export class EmployeeService {
       managerName: e.managerId ? (managerName.get(e.managerId) ?? null) : null,
     }));
   }
+}
+
+/** Đơn vị phải đang hoạt động, chức danh phải đang dùng khi chọn mới (AC-2.6.2, AC-2.10.2). */
+function assertSelectable(
+  lookups: { department: Map<string, { status: string }>; position: Map<string, { active: boolean }> },
+  departmentId?: string,
+  positionId?: string,
+) {
+  if (departmentId && lookups.department.get(departmentId)?.status !== 'ACTIVE') {
+    throw new BadRequestException('Đơn vị đã ngừng hoạt động');
+  }
+  if (positionId && lookups.position.get(positionId)?.active === false) throw new BadRequestException('Chức danh đã ngừng dùng');
 }

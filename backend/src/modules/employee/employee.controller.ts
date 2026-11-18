@@ -4,7 +4,7 @@ import { Request } from 'express';
 import { RateLimit } from '../../common/rate-limit/rate-limit.interceptor';
 import { RateLimitService } from '../../common/rate-limit/rate-limit.service';
 import { CurrentUser, Roles } from '../identity/auth.decorators';
-import { AuthUser } from '../identity/roles';
+import { AuthUser, hasRole } from '../identity/roles';
 import { OrganizationService } from '../organization/organization.service';
 import {
   BankAccountSection,
@@ -53,7 +53,9 @@ export class EmployeeController {
     // NFR-5.21: tìm kiếm có giới hạn riêng 20 lượt/phút (ô tìm đồng nghiệp gọi API này).
     if (q.q) await this.limiter.consume(user.userId, 'search');
     // AC-2.1.5: lọc theo đơn vị mặc định gồm cả đơn vị con cháu.
-    const dept = q.dept && q.includeChildren !== false ? await this.org.descendantIds(q.dept) : q.dept;
+    let dept: string | string[] | undefined = q.dept;
+    if (q.dept && q.includeAncestors && hasRole(user, 'HR', 'ADMIN')) dept = await this.org.ancestorIds(q.dept);
+    else if (q.dept && q.includeChildren !== false) dept = await this.org.descendantIds(q.dept);
     return this.employees.directory({ q: q.q, dept, page: q.page, size: q.size });
   }
 

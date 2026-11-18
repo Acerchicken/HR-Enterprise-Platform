@@ -33,6 +33,12 @@ export class DirectoryQuery extends PageQuery {
   @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
   @IsBoolean()
   includeChildren?: boolean;
+
+  @ApiPropertyOptional({ description: 'HR, ADMIN: đơn vị và các đơn vị cha (danh sách chọn trưởng, phó kiêm nhiệm, AC-2.9.1)' })
+  @IsOptional()
+  @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
+  @IsBoolean()
+  includeAncestors?: boolean;
 }
 
 /** Trang nhân viên của một đơn vị: mặc định chỉ đơn vị đó (spec §9.2). */

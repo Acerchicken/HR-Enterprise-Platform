@@ -61,7 +61,10 @@ const DEPARTMENTS: [string, string, string, string | null, SeedUnitType][] = [
 // [code, title, level, lương cơ bản (triệu VND)]
 const POSITIONS: [string, string, number, number][] = [
   ['CEO', 'Tổng Giám đốc', 10, 150],
+  ['VP', 'Phó Tổng Giám đốc', 9, 110],
   ['DIR', 'Giám đốc trung tâm', 8, 80],
+  ['DDIR', 'Phó Giám đốc trung tâm', 7, 65],
+  ['DHEAD', 'Phó phòng', 6, 45],
   ['HEAD', 'Trưởng phòng', 7, 55],
   ['LEAD', 'Trưởng nhóm', 6, 40],
   ['SR', 'Chuyên viên cao cấp', 5, 30],
@@ -148,7 +151,8 @@ async function main() {
     const posId = new Map<string, string>();
     for (const [code] of POSITIONS) posId.set(code, randomUUID());
     await m.query(
-      `INSERT INTO org.position (id, code, title, level) SELECT * FROM unnest($1::uuid[], $2::text[], $3::text[], $4::int[])`,
+      `INSERT INTO org.position (id, code, title, level, is_system)
+       SELECT *, code = 'CEO' FROM unnest($1::uuid[], $2::text[], $3::text[], $4::int[]) AS p(id, code, title, level)`,
       [POSITIONS.map(([c]) => posId.get(c)), POSITIONS.map(([c]) => c), POSITIONS.map(([, t]) => t), POSITIONS.map(([, , l]) => l)],
     );
     const baseSalary = new Map(POSITIONS.map(([c, , , s]) => [c, s]));
@@ -202,6 +206,13 @@ async function main() {
       headOf.set(code, make(code, HEAD_POSITION[type], headOf.get(parent)!.id));
     }
 
+    // Phó đơn vị (FR-2.9): 2 Phó Tổng Giám đốc, Phó Giám đốc ở các Trung tâm lớn, Phó phòng ở vài Phòng. Phó báo cáo trưởng đơn vị.
+    const DEPUTIES: [string, string][] = [
+      ['HQ', 'VP'], ['HQ', 'VP'], ['ENG', 'DDIR'], ['SAL', 'DDIR'], ['ENG-WEB', 'DHEAD'], ['SAL-N', 'DHEAD'], ['MKT', 'DHEAD'],
+    ];
+    const deputyRows = DEPUTIES.map(([code, pos]) => ({ code, e: make(code, pos, headOf.get(code)!.id) }));
+    for (const d of deputyRows) d.e.status = 'ACTIVE';
+
     // Tài khoản demo đặt ở vị trí cố định để dễ thử phân quyền.
     const demoManager = make('ENG-WEB', 'LEAD', headOf.get('ENG-WEB')!.id, DEMO_ACCOUNTS.manager, 'Nguyễn Văn Quản');
     make('ENG-WEB', 'STAFF', demoManager.id, DEMO_ACCOUNTS.employee, 'Trần Thị Nhân');
@@ -240,6 +251,9 @@ async function main() {
     // Trưởng phòng gắn với phòng ban (head_employee_id).
     for (const [code, head] of headOf) {
       await m.query('UPDATE org.department SET head_employee_id = $1 WHERE id = $2', [head.id, deptId.get(code)]);
+    }
+    for (const d of deputyRows) {
+      await m.query('INSERT INTO org.department_deputy (department_id, employee_id) VALUES ($1, $2)', [deptId.get(d.code), d.e.id]);
     }
 
     // Insert theo thứ tự (quản lý trước nhân viên) vì manager_id có FK tự tham chiếu.

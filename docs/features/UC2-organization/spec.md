@@ -302,14 +302,14 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 |---|---|---|
 | Danh bạ, cây, thành viên, cấp dưới | Đã có | – |
 | Quy tắc một quản lý, CEO | Đã có (PR #60, tuần 10) | – |
-| Tạo, sửa phòng ban | Có API, chưa có giao diện | Làm giao diện nếu còn thời gian (mức S) |
+| Tạo, sửa đơn vị | Có API và giao diện (form "Thêm, sửa đơn vị" trên Sơ đồ tổ chức) | – |
 | Ý nghĩa `headEmployeeId` và quan hệ với quản lý trực tiếp | Đã chốt 14/11 (FR-2.9, soạn thay TV2, chờ TV2 rà) | – |
-| Trưởng, phó đơn vị (FR-2.9) | Chưa có: có cột `head_employee_id`, chưa có phó, chưa có quyền trưởng, chưa kiểm thuộc đơn vị | TV1, tuần 13 |
-| Danh mục chức danh (FR-2.6) | Chỉ có `GET /positions` và seed | TV1, tuần 13 |
+| Trưởng, phó đơn vị (FR-2.9) | Đã có (`feat/department-admin-ui`): phó mọi cấp, quyền trưởng, kiêm nhiệm từ đơn vị cha, gỡ vai trò khi nghỉ việc | Duyệt thay đưa phó lên đầu (AC-2.9.3) làm cùng UC4 |
+| Danh mục chức danh (FR-2.6) | Đã có: thêm, sửa, ngừng dùng; `CEO` là chức danh hệ thống; trang `/org/positions` | – |
 | Điều chuyển, quá trình công tác (FR-2.7, FR-2.8) | Chưa có: sửa hồ sơ ghi đè phòng ban, quản lý, không giữ lịch sử | TV1, `feat/employee-transfer` tuần 13 |
 | Gán quản lý đã nghỉ việc | Đã chặn (400, PR #60) | – |
-| Chặn gốc thứ hai (E7), kiểm `headEmployeeId` (E8) | Đã có (#84) | Kiểm trưởng thuộc đơn vị: `feat/department-admin-ui` |
-| Giải thể, sáp nhập đơn vị | Đã đưa vào FR-2.10 (ADR-14, mức C): ngừng hoạt động thay cho xóa | TV1, `feat/department-admin-ui` |
+| Chặn gốc thứ hai (E7), kiểm trưởng, phó (E8) | Đã có (#84, `feat/department-admin-ui`) | – |
+| Giải thể, sáp nhập đơn vị | Đã có ngừng hoạt động (E13 trả `details`), kích hoạt lại | Sáp nhập cần điều chuyển (nhánh 3) |
 | Loại đơn vị, luật cha con (ADR-14) | Đã có (`feat/org-unit-types`): migration, luật cha con, cây có loại, trưởng, số người; chi tiết có `path`; lọc danh bạ gồm đơn vị con; seed Công ty, Trung tâm, Nhóm | – |
 | Audit phòng ban | Đã có | `changedFields` ghi giá trị mới (tên, mã, văn phòng, cha, trưởng đơn vị); không có dữ liệu cá nhân |
 
