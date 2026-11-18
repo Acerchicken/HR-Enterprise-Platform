@@ -195,6 +195,14 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 
 ![Duyệt đơn trên điện thoại](mockups/uc4-mobile.png)
 
+**Đề nghị hủy trong tab "Đơn nghỉ" (A7, 13.4; thêm 18/11/2026)**
+
+![Xác nhận hoặc bác đề nghị hủy](mockups/uc4-cancel-request.png)
+
+**HR quản lý lịch nghỉ lễ và tính lại đơn `/leave/holidays` (A9, FR-4.9, 13.6; thêm 18/11/2026)**
+
+![Lịch nghỉ lễ và đơn bị ảnh hưởng](mockups/uc4-holidays.png)
+
 ### 9.2 Sơ đồ luồng
 
 Bấm "Chạy" để xem từng bước: [`flows/flows.html`](flows/flows.html). Ảnh PNG nằm cùng thư mục, xuất lại bằng `flows/render.js`

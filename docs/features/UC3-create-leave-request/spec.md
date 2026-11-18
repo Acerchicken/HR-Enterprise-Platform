@@ -173,6 +173,20 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 |---|---|
 | ![Đăng ký nghỉ trên điện thoại](mockups/uc3-new-mobile.png) | ![Xác nhận hủy đơn](mockups/uc3-detail-mobile.png) |
 
+**Bản vẽ thêm 18/11/2026 (thiết kế mục 13)**
+
+Đề nghị hủy đơn đã duyệt (A6, AC-3.6.6):
+
+![Đề nghị hủy đơn đã duyệt](mockups/uc3-cancel-request.png)
+
+HR xem, chỉnh số dư nhân viên `/leave/balances` (FR-3.8):
+
+![Số dư nhân viên](mockups/uc3-balances.png)
+
+| Nghỉ theo sự kiện, có ngày sự kiện (AC-3.1.4, AC-3.2.6) |
+|---|
+| ![Đăng ký nghỉ cưới](mockups/uc3-event-mobile.png) |
+
 ### 9.2 Sơ đồ luồng
 
 Bấm "Chạy" để xem từng bước: [`flows/flows.html`](flows/flows.html). Ảnh PNG nằm cùng thư mục, xuất lại bằng `flows/render.js`
