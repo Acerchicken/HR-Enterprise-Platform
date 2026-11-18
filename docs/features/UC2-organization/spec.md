@@ -272,7 +272,7 @@ Không có `DELETE /positions`: chỉ ngừng dùng (E11 giữ cho trường h�
 
 | API | Ai gọi | Vào | Ra | Lỗi |
 |---|---|---|---|---|
-| `POST /employees/{id}/transfers` | HR | `{effectiveDate, departmentId, positionId, managerId, reason: TRANSFER\|PROMOTION\|MANAGER_CHANGE\|CORRECTION, note?, newHeadForOldUnit?: {departmentId, employeeId \| null}, reports?: [{employeeId, managerId}]}`; `reports` bắt buộc đủ mọi cấp dưới đang làm việc khi có (giữ = `managerId` là chính người này) | 201 `{id, status: ACTIVE\|SCHEDULED, effectiveDate, …, reports[]}` | 400 (E9, `fields`), 409 (E10) |
+| `POST /employees/{id}/transfers` | HR | `{effectiveDate, departmentId, positionId, managerId, reason: TRANSFER\|PROMOTION\|MANAGER_CHANGE\|CORRECTION, note?, newHeads?: [{departmentId, employeeId \| null}], reports?: [{employeeId, managerId}]}`; `newHeads` bắt buộc cho mỗi đơn vị người này đang làm trưởng mà sẽ không còn thuộc (`null` = để trống có chủ ý, AC-2.7.5); `reports` bắt buộc đủ mọi cấp dưới đang làm việc khi có (giữ = `managerId` là chính người này) | 201 `{id, status: ACTIVE\|SCHEDULED, effectiveDate, …, reports[]}` | 400 (E9, `fields`), 409 (E10) |
 | `GET /employees/{id}/transfers` | HR | – | Các điều chuyển (mọi trạng thái), mới nhất trước | 403 |
 | `DELETE /employees/{id}/transfers/{transferId}` | HR | – | 204; chỉ khi `SCHEDULED` (kéo theo dòng của cấp dưới) | 409 nếu đã `ACTIVE`, `FAILED` |
 | `GET /employees/{id}/profile/career-history` | Mức QL (UC1) | – | `[{from, to, departmentName, unitType, positionTitle, managerName, reason, status}]` mới nhất trước; đọc từ bảng quá trình công tác | 404 (UC1 E7) |
@@ -306,10 +306,10 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Ý nghĩa `headEmployeeId` và quan hệ với quản lý trực tiếp | Đã chốt 14/11 (FR-2.9, soạn thay TV2, chờ TV2 rà) | – |
 | Trưởng, phó đơn vị (FR-2.9) | Đã có (`feat/department-admin-ui`): phó mọi cấp, quyền trưởng, kiêm nhiệm từ đơn vị cha, gỡ vai trò khi nghỉ việc | Duyệt thay đưa phó lên đầu (AC-2.9.3) làm cùng UC4 |
 | Danh mục chức danh (FR-2.6) | Đã có: thêm, sửa, ngừng dùng; `CEO` là chức danh hệ thống; trang `/org/positions` | – |
-| Điều chuyển, quá trình công tác (FR-2.7, FR-2.8) | Chưa có: sửa hồ sơ ghi đè phòng ban, quản lý, không giữ lịch sử | TV1, `feat/employee-transfer` tuần 13 |
+| Điều chuyển, quá trình công tác (FR-2.7, FR-2.8) | Đã có (`feat/employee-transfer`): bảng `employment_assignment`, hiệu lực hôm nay áp dụng ngay, tương lai thành "Sắp hiệu lực" và job worker áp dụng (5 phút một lần, `SKIP LOCKED`); chọn quản lý cho từng cấp dưới, chọn trưởng mới cho đơn vị cũ; `PATCH` không đổi được tổ chức (AC-2.7.7); hộp xác nhận nghỉ việc (UC1 AC-1.7.3); "Quá trình công tác" đọc từ bảng mới | Email cho quản lý mới (AC-2.7.3) và thông báo HR khi `FAILED` (AC-2.7.8) làm cùng dịch vụ thông báo (ADR-15); event `EmployeeTransferred`, `TransferFailed` chưa phát |
 | Gán quản lý đã nghỉ việc | Đã chặn (400, PR #60) | – |
 | Chặn gốc thứ hai (E7), kiểm trưởng, phó (E8) | Đã có (#84, `feat/department-admin-ui`) | – |
-| Giải thể, sáp nhập đơn vị | Đã có ngừng hoạt động (E13 trả `details`), kích hoạt lại | Sáp nhập cần điều chuyển (nhánh 3) |
+| Giải thể, sáp nhập đơn vị | Đã có ngừng hoạt động (E13 trả `details`), kích hoạt lại; sáp nhập = điều chuyển hết người rồi ngừng hoạt động | – |
 | Loại đơn vị, luật cha con (ADR-14) | Đã có (`feat/org-unit-types`): migration, luật cha con, cây có loại, trưởng, số người; chi tiết có `path`; lọc danh bạ gồm đơn vị con; seed Công ty, Trung tâm, Nhóm | – |
 | Audit phòng ban | Đã có | `changedFields` ghi giá trị mới (tên, mã, văn phòng, cha, trưởng đơn vị); không có dữ liệu cá nhân |
 

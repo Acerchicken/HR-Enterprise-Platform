@@ -19,7 +19,7 @@ import { FIELD_CRYPTO, RequestMeta } from './employee.service';
 import { ChangeAction, ProfileChangeRequest, ProfileFile, ProfileItem } from './profile-change.entity';
 import { FileView, fileView, ProfileFileService } from './profile-file.service';
 import { ProfileEventType } from './profile-events';
-import { careerTimeline, OrgChange, onLeavePeriods, seniority } from './profile-computed';
+import { onLeavePeriods, seniority } from './profile-computed';
 import { CONTRACT_LABEL, FieldSpec, SECTION_SCHEMAS, SectionSchema, validateSection } from './profile-schema';
 import { canSeeLevel, findSection, relationTo } from './profile-sections';
 
@@ -786,26 +786,29 @@ export class ProfileChangeService {
       return { ...base, rows };
     }
 
-    // career-history
+    // career-history (UC2 FR-2.8): nguồn chính là bảng quá trình công tác; audit chỉ còn để tra cứu.
     const lookups = await this.org.lookups();
-    const auto = careerTimeline(
-      e.hireDate,
-      { departmentId: e.departmentId, positionId: e.positionId, managerId: e.managerId },
-      changesOf(['departmentId', 'positionId', 'managerId']).map((a) => ({ at: a.at, changes: a.cf as OrgChange['changes'] })),
-    );
-    const managerIds = [...new Set(auto.map((p) => p.managerId).filter((x): x is string => !!x))];
-    const names = managerIds.length
-      ? new Map((await this.employees.find({ where: { id: In(managerIds) }, select: { id: true, fullName: true } })).map((m) => [m.id, m.fullName]))
-      : new Map<string, string>();
+    const rows: { department_id: string; position_id: string; manager_id: string | null; from: string; to: string | null; reason: string; status: string; manager_name: string | null }[] =
+      await this.items.query(
+        `SELECT a.department_id, a.position_id, a.manager_id, to_char(a.effective_from, 'YYYY-MM-DD') AS "from",
+                to_char(a.effective_to, 'YYYY-MM-DD') AS "to", a.reason, a.status, m.full_name AS manager_name
+           FROM employee.employment_assignment a LEFT JOIN employee.employee m ON m.id = a.manager_id
+          WHERE a.employee_id = $1 AND a.status IN ('ACTIVE', 'CLOSED', 'SCHEDULED')
+            AND (a.effective_to IS NULL OR a.effective_to >= a.effective_from)
+          ORDER BY a.effective_from DESC, a.created_at DESC`,
+        [employeeId],
+      );
     const manual = await this.items.find({ where: { employeeId, section: 'career-history', deletedAt: IsNull() } });
     const periods = [
-      ...auto.map((p) => ({
+      ...rows.map((p) => ({
         from: p.from,
         to: p.to,
-        department: p.departmentId ? (lookups.department.get(p.departmentId)?.name ?? null) : null,
-        position: p.positionId ? (lookups.position.get(p.positionId)?.title ?? null) : null,
-        manager: p.managerId ? (names.get(p.managerId) ?? null) : null,
-        reason: p.reason,
+        department: lookups.department.get(p.department_id)?.name ?? null,
+        unitType: lookups.department.get(p.department_id)?.unitType ?? null,
+        position: lookups.position.get(p.position_id)?.title ?? null,
+        manager: p.manager_name,
+        reason: CAREER_REASON[p.reason] ?? p.reason,
+        upcoming: p.status === 'SCHEDULED',
         source: 'AUTO' as const,
       })),
       ...manual.map((m) => ({
@@ -815,6 +818,8 @@ export class ProfileChangeService {
         position: (m.data.position as string) ?? null,
         manager: (m.data.manager as string | undefined) ?? null,
         reason: String(m.data.reason ?? ''),
+        unitType: null,
+        upcoming: false,
         source: 'HR' as const,
       })),
     ].sort((a, b) => b.from.localeCompare(a.from));
@@ -954,3 +959,12 @@ const HISTORY_ACTIONS = [
 const HISTORY_META = new Set(['section', 'requestId', 'itemId', 'action', 'fields']);
 
 export type { FieldSpec };
+
+/** Lý do trong quá trình công tác (AC-2.8.1). */
+const CAREER_REASON: Record<string, string> = {
+  HIRE: 'Tuyển mới',
+  TRANSFER: 'Điều chuyển',
+  PROMOTION: 'Thăng chức',
+  MANAGER_CHANGE: 'Đổi quản lý',
+  CORRECTION: 'Điều chỉnh',
+};

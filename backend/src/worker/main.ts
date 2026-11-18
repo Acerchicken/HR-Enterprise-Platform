@@ -1,13 +1,15 @@
 /**
- * Notification worker:  npm run start:worker (dev) · node dist/worker/main.js (Docker)
+ * Worker (email thông báo, job áp dụng điều chuyển):  npm run start:worker (dev) · node dist/worker/main.js (Docker)
  */
 import { NestFactory } from '@nestjs/core';
 import { NotificationWorker } from './notification-worker';
+import { TransferJob } from './transfer-job';
 import { WorkerModule } from './worker.module';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(WorkerModule);
   app.enableShutdownHooks();
+  app.get(TransferJob).start();
   await app.get(NotificationWorker).start();
 }
 bootstrap().catch((e) => {

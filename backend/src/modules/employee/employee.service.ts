@@ -12,6 +12,7 @@ import { FieldCrypto } from '../../common/field-crypto';
 import { Page } from '../../common/pagination';
 import { AuditService } from '../audit/audit.service';
 import { AuthUser } from '../identity/roles';
+import { pendingAsNewManager, vnToday } from './transfer-rules';
 import { OrganizationService } from '../organization/organization.service';
 import { forbiddenFields, viewLevel } from './employee-access';
 import { auditFields } from './employee-audit';
@@ -309,6 +310,14 @@ export class EmployeeService {
         throw new ConflictException('Hồ sơ đã được người khác cập nhật, hãy tải lại');
       }
 
+      // AC-2.7.7: đổi đơn vị, chức danh, quản lý chỉ qua "Điều chuyển" để luôn có dòng quá trình công tác và ngày hiệu lực.
+      const orgChanged = (['departmentId', 'positionId', 'managerId'] as const).filter((k) => dto[k] !== undefined && dto[k] !== e[k]);
+      if (orgChanged.length) {
+        throw new BadRequestException({
+          message: 'Đổi đơn vị, chức danh hoặc quản lý trực tiếp bằng "Điều chuyển" (có ngày hiệu lực); sửa nhầm thì chọn lý do "Điều chỉnh"',
+          fields: Object.fromEntries(orgChanged.map((k) => [k, 'Dùng "Điều chuyển"'])),
+        });
+      }
       const lookups = await this.org.lookups();
       if (dto.departmentId && !lookups.department.has(dto.departmentId)) throw new BadRequestException('Phòng ban không tồn tại');
       if (dto.positionId && !lookups.position.has(dto.positionId)) throw new BadRequestException('Chức danh không tồn tại');
@@ -332,6 +341,13 @@ export class EmployeeService {
         if (reports > 0) {
           throw new BadRequestException(
             `Nhân viên còn ${reports} cấp dưới đang làm việc. Hãy chuyển họ sang quản lý khác trước khi cho nghỉ việc`,
+          );
+        }
+        // UC1 AC-1.7.3: là quản lý mới trong điều chuyển chưa hiệu lực của người khác thì HR phải sửa các điều chuyển đó trước.
+        const pending = await pendingAsNewManager(m, id);
+        if (pending.length) {
+          throw new BadRequestException(
+            `Nhân viên là quản lý mới trong ${pending.length} điều chuyển chưa hiệu lực (${pending.map((p) => `${p.employeeName} từ ${p.effectiveDate}`).join(', ')}). Hãy hủy hoặc sửa các điều chuyển đó trước`,
           );
         }
       }
@@ -360,7 +376,15 @@ export class EmployeeService {
       if (Object.keys(changes).length) {
         await repo.save({ ...e, ...changes });
         // AC-2.9.8, UC1 AC-1.7.3: người nghỉ việc được gỡ khỏi vai trò trưởng, phó trong cùng giao dịch (có audit).
-        if (changes.status === 'TERMINATED') await this.org.removeRolesOf(id, actor, m);
+        if (changes.status === 'TERMINATED') {
+          await this.org.removeRolesOf(id, actor, m);
+          // UC1 AC-1.7.3: hủy điều chuyển chưa hiệu lực của người nghỉ; đóng giai đoạn công tác hiện tại.
+          await m.query(`UPDATE employee.employment_assignment SET status = 'CANCELLED' WHERE employee_id = $1 AND status = 'SCHEDULED'`, [id]);
+          await m.query(
+            `UPDATE employee.employment_assignment SET status = 'CLOSED', effective_to = GREATEST(effective_from, $2::date) WHERE employee_id = $1 AND status = 'ACTIVE'`,
+            [id, vnToday()],
+          );
+        }
       } else {
         // AC-1.6.3: chỉ đổi trường nhạy cảm vẫn tăng version, để người đang mở form cũ nhận 409.
         await repo.increment({ id }, 'version', 1);
@@ -391,6 +415,12 @@ export class EmployeeService {
       await this.assertManagerRule(m, lookups, { positionId: dto.positionId, managerId: dto.managerId ?? null });
       const saved = await m.getRepository(Employee).save(
         m.getRepository(Employee).create({ ...plain, workEmail: dto.workEmail.toLowerCase(), managerId: dto.managerId ?? null }),
+      );
+      // AC-2.8.3: dòng đầu tiên của quá trình công tác, mở từ ngày vào làm.
+      await m.query(
+        `INSERT INTO employee.employment_assignment (employee_id, department_id, position_id, manager_id, effective_from, reason, status, created_by, applied_at)
+         VALUES ($1, $2, $3, $4, $5, 'HIRE', 'ACTIVE', $6, now())`,
+        [saved.id, saved.departmentId, saved.positionId, saved.managerId, saved.hireDate, actor.employeeId],
       );
       if (sensitiveGiven.length) {
         const sRepo = m.getRepository(EmployeeSensitive);
@@ -426,7 +456,7 @@ export class EmployeeService {
    * Issue #22 (FR-2.5): chỉ có một CEO và CEO không có quản lý; mọi nhân viên khác phải có đúng một quản lý trực tiếp
    * đang làm việc.
    */
-  private async assertManagerRule(
+  async assertManagerRule(
     m: EntityManager,
     lookups: Awaited<ReturnType<OrganizationService['lookups']>>,
     target: { employeeId?: string; positionId: string; managerId: string | null },
@@ -448,7 +478,7 @@ export class EmployeeService {
   }
 
   /** Mỗi nhân viên có đúng 1 quản lý trực tiếp, và chuỗi quản lý không được tạo vòng. */
-  private async assertNoManagerCycle(m: EntityManager, employeeId: string, managerId: string) {
+  async assertNoManagerCycle(m: EntityManager, employeeId: string, managerId: string) {
     if (managerId === employeeId) throw new BadRequestException('Nhân viên không thể tự quản lý mình');
     const rows: { id: string }[] = await m.query(
       `WITH RECURSIVE chain AS (

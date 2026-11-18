@@ -228,6 +228,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/employees/{id}/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EmployeeController_listTransfers"];
+        put?: never;
+        post: operations["EmployeeController_createTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/transfers/{transferId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["EmployeeController_cancelTransfer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/termination-impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EmployeeController_terminationImpact"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/employees/{id}/change-requests": {
         parameters: {
             query?: never;
@@ -972,6 +1020,34 @@ export interface components {
             /** @description Lương tháng (VND) */
             salary?: string;
         };
+        HeadChangeDto: {
+            departmentId: string;
+            /** @description null: để trống có chủ ý */
+            employeeId: Record<string, never> | null;
+        };
+        ReportChoiceDto: {
+            employeeId: string;
+            /** @description Quản lý mới của cấp dưới; giữ nguyên thì là chính người được điều chuyển */
+            managerId: string;
+        };
+        CreateTransferDto: {
+            /**
+             * @description Hôm nay hoặc tương lai; quá khứ tối đa 30 ngày (AC-2.7.4)
+             * @example 2026-12-01
+             */
+            effectiveDate: string;
+            departmentId: string;
+            positionId: string;
+            /** @description Chỉ CEO được để trống */
+            managerId: Record<string, never> | null;
+            /** @enum {string} */
+            reason: "TRANSFER" | "PROMOTION" | "MANAGER_CHANGE" | "CORRECTION";
+            note?: string;
+            /** @description AC-2.7.5: trưởng mới cho đơn vị người này đang làm trưởng */
+            newHeads?: components["schemas"]["HeadChangeDto"][];
+            /** @description AC-2.7.6: bắt buộc đủ mọi cấp dưới đang làm việc */
+            reports?: components["schemas"]["ReportChoiceDto"][];
+        };
         SubmitChangeDto: {
             /** @example emergency-contacts */
             section: string;
@@ -1483,6 +1559,87 @@ export interface operations {
                 /** @description Kèm nhân viên của đơn vị con cháu (mặc định false) */
                 includeChildren?: boolean;
             };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_listTransfers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_createTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransferDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_cancelTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                transferId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_terminationImpact: {
+        parameters: {
+            query?: never;
             header?: never;
             path: {
                 id: string;

@@ -388,6 +388,72 @@ paths:
           description: ""
       tags: *a3
       security: *a4
+  /api/v1/employees/{id}/transfers:
+    post:
+      operationId: EmployeeController_createTransfer
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransferDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a3
+      security: *a4
+    get:
+      operationId: EmployeeController_listTransfers
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/employees/{id}/transfers/{transferId}:
+    delete:
+      operationId: EmployeeController_cancelTransfer
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: transferId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "204":
+          description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/employees/{id}/termination-impact:
+    get:
+      operationId: EmployeeController_terminationImpact
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+      security: *a4
   /api/v1/employees/{id}/change-requests:
     post:
       operationId: ProfileChangeController_submit
@@ -1576,6 +1642,70 @@ components:
           description: Lương tháng (VND)
       required:
         - version
+    HeadChangeDto:
+      type: object
+      properties:
+        departmentId:
+          type: string
+        employeeId:
+          type: object
+          nullable: true
+          description: "null: để trống có chủ ý"
+      required:
+        - departmentId
+        - employeeId
+    ReportChoiceDto:
+      type: object
+      properties:
+        employeeId:
+          type: string
+        managerId:
+          type: string
+          description: Quản lý mới của cấp dưới; giữ nguyên thì là chính người được điều
+            chuyển
+      required:
+        - employeeId
+        - managerId
+    CreateTransferDto:
+      type: object
+      properties:
+        effectiveDate:
+          type: string
+          example: 2026-12-01
+          description: Hôm nay hoặc tương lai; quá khứ tối đa 30 ngày (AC-2.7.4)
+        departmentId:
+          type: string
+        positionId:
+          type: string
+        managerId:
+          type: object
+          nullable: true
+          description: Chỉ CEO được để trống
+        reason:
+          type: string
+          enum:
+            - TRANSFER
+            - PROMOTION
+            - MANAGER_CHANGE
+            - CORRECTION
+        note:
+          type: string
+        newHeads:
+          description: "AC-2.7.5: trưởng mới cho đơn vị người này đang làm trưởng"
+          type: array
+          items:
+            $ref: "#/components/schemas/HeadChangeDto"
+        reports:
+          description: "AC-2.7.6: bắt buộc đủ mọi cấp dưới đang làm việc"
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportChoiceDto"
+      required:
+        - effectiveDate
+        - departmentId
+        - positionId
+        - managerId
+        - reason
     SubmitChangeDto:
       type: object
       properties:

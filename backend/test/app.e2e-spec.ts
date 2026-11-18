@@ -33,6 +33,17 @@ describe('HRHelper API (e2e)', () => {
   let managerId: string;
   let strangerId: string;
 
+  /** Điều chuyển hiệu lực hôm nay (UC2 FR-2.7), giữ nguyên cấp dưới nếu có. */
+  const transfer = async (id: string, change: { departmentId?: string; positionId?: string; managerId?: string | null }, extra: object = {}) => {
+    const e = (await http.get(`/api/v1/employees/${id}`).set(HR)).body;
+    const reports = (await http.get(`/api/v1/employees/${id}/direct-reports`).set(HR)).body.map((r: any) => ({ employeeId: r.id, managerId: id }));
+    const { vnToday } = await import('../src/modules/employee/transfer-rules');
+    return http
+      .post(`/api/v1/employees/${id}/transfers`)
+      .set(HR)
+      .send({ effectiveDate: vnToday(), departmentId: e.departmentId, positionId: e.positionId, managerId: e.managerId, reason: 'CORRECTION', reports, ...change, ...extra });
+  };
+
   beforeAll(async () => {
     const mod = await Test.createTestingModule({ imports: [AppModule] }).overrideProvider(ProfileStorage).useValue(bucket).compile();
     app = mod.createNestApplication();
@@ -256,8 +267,9 @@ describe('HRHelper API (e2e)', () => {
   });
 
   it('HR không gán được quản lý tạo vòng lặp', async () => {
-    const v1 = await versionOf(managerId);
-    await http.patch(`/api/v1/employees/${managerId}`).set(HR).send({ managerId: employeeId, version: v1 }).expect(400);
+    const res = await transfer(managerId, { managerId: employeeId });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/vòng/);
   });
 
   it('HR cập nhật lương: audit chỉ ghi tên trường, không ghi giá trị', async () => {
@@ -422,6 +434,7 @@ describe('HRHelper API (e2e)', () => {
       const ds = app.get(DataSource);
       await ds.query('DELETE FROM employee.employee_sensitive WHERE employee_id = $1', [res.body.id]);
       await ds.query('DELETE FROM iam.user_account WHERE employee_id = $1', [res.body.id]).catch(() => undefined);
+      await ds.query('DELETE FROM employee.employment_assignment WHERE employee_id = $1', [res.body.id]);
       await ds.query('DELETE FROM employee.employee WHERE id = $1', [res.body.id]);
     });
 
@@ -506,12 +519,9 @@ describe('HRHelper API (e2e)', () => {
     });
 
     it('gán quản lý đã nghỉ việc → 400; gán quản lý cho CEO → 400; bỏ quản lý của nhân viên → 400', async () => {
-      const v3 = await versionOf(employeeId);
-      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ managerId: terminatedId, version: v3 }).expect(400);
-      const v4 = await versionOf(ceo.id);
-      await http.patch(`/api/v1/employees/${ceo.id}`).set(HR).send({ managerId: managerId, version: v4 }).expect(400);
-      const v5 = await versionOf(employeeId);
-      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ managerId: null, version: v5 }).expect(400);
+      expect((await transfer(employeeId, { managerId: terminatedId })).body.message).toMatch(/nghỉ việc/);
+      expect((await transfer(ceo.id, { managerId })).body.message).toMatch(/CEO không có quản lý/);
+      expect((await transfer(employeeId, { managerId: null })).body.message).toMatch(/quản lý trực tiếp/);
     });
 
     it('HR duyệt đơn của CEO; quản lý khác không duyệt được; HR thấy đơn CEO trong danh sách chờ duyệt', async () => {
@@ -686,13 +696,11 @@ describe('HRHelper API (e2e)', () => {
       await http.get(`/api/v1/documents/${d.id}`).set(EMPLOYEE).expect(200);
 
       const other = depts.find((x: any) => x.id !== me.departmentId && x.parentId !== me.departmentId && x.code !== 'HQ');
-      const before = (await http.get(`/api/v1/employees/${me.id}`).set(HR)).body;
-      await http.patch(`/api/v1/employees/${me.id}`).set(HR).send({ departmentId: other.id, version: before.version }).expect(200);
+      expect((await transfer(me.id, { departmentId: other.id })).status).toBe(201);
       try {
         await http.get(`/api/v1/documents/${d.id}`).set(EMPLOYEE).expect(404);
       } finally {
-        const now = (await http.get(`/api/v1/employees/${me.id}`).set(HR)).body;
-        await http.patch(`/api/v1/employees/${me.id}`).set(HR).send({ departmentId: me.departmentId, version: now.version }).expect(200);
+        expect((await transfer(me.id, { departmentId: me.departmentId })).status).toBe(201);
       }
     });
 
@@ -798,6 +806,7 @@ describe('HRHelper API (e2e)', () => {
         await http.get('/api/v1/me').set(as(email)).expect(403);
       } finally {
         await ds.query('DELETE FROM iam.user_account WHERE employee_id = $1', [created.id]);
+        await ds.query('DELETE FROM employee.employment_assignment WHERE employee_id = $1', [created.id]);
         await ds.query('DELETE FROM employee.employee WHERE id = $1', [created.id]);
       }
     });
@@ -1211,20 +1220,19 @@ describe('HRHelper API (e2e)', () => {
       await http.get(`/api/v1/employees/${employeeId}/profile/milestones`).set(ADMIN).expect(404);
     });
 
-    it('quá trình công tác: lần đổi chức danh tự vào dòng thời gian; HR thêm giai đoạn trước hệ thống (AC-1.13.1)', async () => {
+    it('quá trình công tác: điều chuyển tự vào dòng thời gian; HR thêm giai đoạn trước hệ thống (AC-1.13.1, AC-2.8.1)', async () => {
       const me = (await http.get(`/api/v1/employees/${employeeId}`).set(HR)).body;
       const positions = (await http.get('/api/v1/positions').set(HR)).body;
-      const other = positions.find((p: any) => p.id !== me.positionId && p.code !== 'CEO');
-      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ positionId: other.id, version: me.version }).expect(200);
-      const v = await versionOf(employeeId);
-      await http.patch(`/api/v1/employees/${employeeId}`).set(HR).send({ positionId: me.positionId, version: v }).expect(200);
+      const other = positions.find((p: any) => p.id !== me.positionId && p.code !== 'CEO' && p.active);
+      expect((await transfer(employeeId, { positionId: other.id })).status).toBe(201);
+      expect((await transfer(employeeId, { positionId: me.positionId })).status).toBe(201);
       await http
         .post(`/api/v1/employees/${employeeId}/profile/career-history`)
         .set(HR)
         .send({ data: { from: '2010-01-01', to: '2015-12-31', department: 'Chi nhánh cũ', position: 'Nhân viên', reason: 'Trước khi có hệ thống' } })
         .expect(204);
       const c = (await http.get(`/api/v1/employees/${employeeId}/profile/career-history`).set(MANAGER).expect(200)).body;
-      // Đổi rồi đổi lại trong ngày được gộp: giai đoạn hiện tại vẫn là chức danh cũ.
+      // Đổi rồi đổi lại trong ngày: giai đoạn rỗng không hiện; giai đoạn hiện tại vẫn là chức danh cũ.
       expect(c.periods[0]).toMatchObject({ source: 'AUTO', to: null, position: positions.find((p: any) => p.id === me.positionId).title });
       expect(c.periods.some((p: any) => p.source === 'HR' && p.department === 'Chi nhánh cũ')).toBe(true);
       const raw = (await http.get(`/api/v1/employees/${employeeId}/profile/career-history?raw=true`).set(HR).expect(200)).body;
@@ -1366,6 +1374,143 @@ describe('HRHelper API (e2e)', () => {
       expect((await detail(unit.id)).head).toBeNull();
       const logs = (await http.get(`/api/v1/audit-logs?entity=department&entityId=${unit.id}`).set(HR)).body.items;
       expect(logs.some((l: any) => l.changedFields?.reason === 'EMPLOYEE_TERMINATED')).toBe(true);
+    });
+  });
+
+  describe('UC2 điều chuyển và quá trình công tác (FR-2.7, FR-2.8; UC1 AC-1.7.3)', () => {
+    let today: string;
+    let plus: (n: number) => string;
+    let leg: any;
+    let mkt: any;
+    let staffPos: any;
+    let seq = 0;
+    const base = Math.floor(Math.random() * 9000);
+    const mk = async (name: string, departmentId: string, managerId: string) => {
+      const n = String((base + ++seq) % 10000).padStart(4, '0');
+      return (
+        await http
+          .post('/api/v1/employees')
+          .set(HR)
+          .send({ employeeCode: `E7${n}`, fullName: name, workEmail: `tr-${n}-${Date.now() % 1000}@hr.local`, departmentId, positionId: staffPos.id, managerId, hireDate: '2026-10-01' })
+          .expect(201)
+      ).body;
+    };
+    const body = (e: any, change: object) => ({ effectiveDate: today, departmentId: e.departmentId, positionId: e.positionId, managerId: e.managerId, reason: 'TRANSFER', ...change });
+    const post = (id: string, b: object) => http.post(`/api/v1/employees/${id}/transfers`).set(HR).send(b);
+    const job = async (day: string) => {
+      const { TransferService } = await import('../src/modules/employee/transfer.service');
+      return app.get(TransferService).applyDue(day);
+    };
+
+    beforeAll(async () => {
+      const { vnToday, addDays } = await import('../src/modules/employee/transfer-rules');
+      today = vnToday();
+      plus = (n) => addDays(today, n);
+      const units = (await http.get('/api/v1/departments').set(HR)).body;
+      leg = units.find((d: any) => d.code === 'LEG');
+      mkt = units.find((d: any) => d.code === 'MKT');
+      staffPos = (await http.get('/api/v1/positions?active=true').set(HR)).body.find((p: any) => p.code === 'STAFF');
+    });
+
+    it('tạo nhân viên có dòng "Tuyển mới"; sửa phòng ban qua PATCH bị chặn (AC-2.8.3, AC-2.7.7)', async () => {
+      const a = await mk('Tuyển Mới Thử', leg.id, leg.headEmployeeId);
+      const c = (await http.get(`/api/v1/employees/${a.id}/profile/career-history`).set(HR).expect(200)).body;
+      expect(c.periods[0]).toMatchObject({ from: '2026-10-01', to: null, reason: 'Tuyển mới', department: leg.name, source: 'AUTO' });
+      const res = await http.patch(`/api/v1/employees/${a.id}`).set(HR).send({ departmentId: mkt.id, version: a.version }).expect(400);
+      expect(res.body.fields).toHaveProperty('departmentId');
+      await http.post(`/api/v1/employees/${a.id}/transfers`).set(MANAGER).send(body(a, { departmentId: mkt.id })).expect(403);
+    });
+
+    it('hiệu lực hôm nay đổi ngay; quá 30 ngày hoặc trước ngày vào làm thì 400 (AC-2.7.1, AC-2.7.4)', async () => {
+      const a = await mk('Điều Chuyển Ngay', leg.id, leg.headEmployeeId);
+      await post(a.id, body(a, { departmentId: mkt.id, effectiveDate: plus(-31) })).expect(400);
+      await post(a.id, body(a, { departmentId: mkt.id, effectiveDate: '2026-09-01' })).expect(400);
+      const t = (await post(a.id, body(a, { departmentId: mkt.id, managerId: mkt.headEmployeeId })).expect(201)).body;
+      expect(t).toMatchObject({ status: 'ACTIVE', departmentName: mkt.name });
+      expect((await http.get(`/api/v1/employees/${a.id}`).set(HR)).body).toMatchObject({ departmentId: mkt.id, managerId: mkt.headEmployeeId });
+      const c = (await http.get(`/api/v1/employees/${a.id}/profile/career-history`).set(HR)).body.periods;
+      expect(c[0]).toMatchObject({ from: today, to: null, reason: 'Điều chuyển', department: mkt.name });
+      expect(c[1]).toMatchObject({ reason: 'Tuyển mới', to: plus(-1) });
+      const logs = (await http.get(`/api/v1/audit-logs?entity=employee&entityId=${a.id}`).set(HR)).body.items;
+      expect(logs.some((l: any) => l.action === 'TRANSFER')).toBe(true);
+    });
+
+    it('hiệu lực tương lai: "Sắp hiệu lực", hủy được, một người chỉ một điều chuyển chờ; job áp dụng khi tới ngày (AC-2.7.2)', async () => {
+      const a = await mk('Chuyển Sau', leg.id, leg.headEmployeeId);
+      const t = (await post(a.id, body(a, { departmentId: mkt.id, managerId: mkt.headEmployeeId, effectiveDate: plus(10) })).expect(201)).body;
+      expect(t.status).toBe('SCHEDULED');
+      expect((await http.get(`/api/v1/employees/${a.id}`).set(HR)).body.departmentId).toBe(leg.id);
+      const c = (await http.get(`/api/v1/employees/${a.id}/profile/career-history`).set(HR)).body.periods;
+      expect(c[0]).toMatchObject({ upcoming: true, from: plus(10) });
+      await post(a.id, body(a, { departmentId: mkt.id, effectiveDate: plus(12) })).expect(409);
+      await http.delete(`/api/v1/employees/${a.id}/transfers/${t.id}`).set(HR).expect(204);
+      await http.delete(`/api/v1/employees/${a.id}/transfers/${t.id}`).set(HR).expect(409);
+
+      const t2 = (await post(a.id, body(a, { departmentId: mkt.id, managerId: mkt.headEmployeeId, effectiveDate: plus(5) })).expect(201)).body;
+      expect((await job(plus(4))).applied).toBe(0);
+      const r = await job(plus(5));
+      expect(r.applied).toBeGreaterThanOrEqual(1);
+      expect((await http.get(`/api/v1/employees/${a.id}`).set(HR)).body.departmentId).toBe(mkt.id);
+      const list = (await http.get(`/api/v1/employees/${a.id}/transfers`).set(HR).expect(200)).body;
+      expect(list.find((x: any) => x.id === t2.id).status).toBe('ACTIVE');
+      expect(list.find((x: any) => x.id === t.id).status).toBe('CANCELLED');
+    });
+
+    it('job kiểm lại quy tắc: đơn vị đích đã ngừng hoạt động thì FAILED (AC-2.7.8)', async () => {
+      const team = (
+        await http.post('/api/v1/departments').set(HR).send({ code: `T-${Math.floor(Math.random() * 1e6)}`, name: 'Nhóm sắp đóng', office: 'Hà Nội', unitType: 'TEAM', parentId: leg.id }).expect(201)
+      ).body;
+      const a = await mk('Chuyển Lỗi', leg.id, leg.headEmployeeId);
+      const t = (await post(a.id, body(a, { departmentId: team.id, effectiveDate: plus(3) })).expect(201)).body;
+      await http.patch(`/api/v1/departments/${team.id}`).set(HR).send({ status: 'INACTIVE' }).expect(200);
+      expect((await job(plus(3))).failed).toBeGreaterThanOrEqual(1);
+      const list = (await http.get(`/api/v1/employees/${a.id}/transfers`).set(HR)).body;
+      expect(list.find((x: any) => x.id === t.id)).toMatchObject({ status: 'FAILED' });
+      expect(list.find((x: any) => x.id === t.id).failureReason).toMatch(/ngừng hoạt động/);
+      expect((await http.get(`/api/v1/employees/${a.id}`).set(HR)).body.departmentId).toBe(leg.id);
+    });
+
+    it('cấp dưới: phải chọn cho từng người; đổi quản lý cùng ngày hiệu lực (AC-2.7.6); trưởng đơn vị cũ phải chọn người thay (AC-2.7.5)', async () => {
+      const a = await mk('Quản Lý Đi', leg.id, leg.headEmployeeId);
+      const b = await mk('Cấp Dưới Ở Lại', leg.id, a.id);
+      const team = (
+        await http
+          .post('/api/v1/departments')
+          .set(HR)
+          .send({ code: `T-${Math.floor(Math.random() * 1e6)}`, name: 'Nhóm của A', office: 'Hà Nội', unitType: 'TEAM', parentId: leg.id, headEmployeeId: a.id })
+          .expect(201)
+      ).body;
+      const base = body(a, { departmentId: mkt.id, managerId: mkt.headEmployeeId });
+      const r1 = await post(a.id, base).expect(400);
+      expect(r1.body.fields).toHaveProperty('reports');
+      expect(r1.body.fields).toHaveProperty('newHeads');
+      const ok = { ...base, reports: [{ employeeId: b.id, managerId: leg.headEmployeeId }], newHeads: [{ departmentId: team.id, employeeId: null }] };
+      const t = (await post(a.id, ok).expect(201)).body;
+      expect(t.reports).toEqual([expect.objectContaining({ employeeId: b.id, managerId: leg.headEmployeeId, status: 'ACTIVE' })]);
+      expect((await http.get(`/api/v1/employees/${b.id}`).set(HR)).body.managerId).toBe(leg.headEmployeeId);
+      expect((await http.get(`/api/v1/departments/${team.id}`).set(HR)).body.headEmployeeId).toBeNull();
+      const c = (await http.get(`/api/v1/employees/${b.id}/profile/career-history`).set(HR)).body.periods;
+      expect(c[0]).toMatchObject({ reason: 'Đổi quản lý', from: today });
+    });
+
+    it('nghỉ việc: là quản lý mới trong điều chuyển chờ thì 400; hộp xác nhận nêu trước; hủy điều chuyển chờ của người nghỉ (UC1 AC-1.7.3)', async () => {
+      const c = await mk('Quản Lý Tương Lai', leg.id, leg.headEmployeeId);
+      const d = await mk('Người Được Chuyển', leg.id, leg.headEmployeeId);
+      const t = (await post(d.id, body(d, { managerId: c.id, reason: 'MANAGER_CHANGE', effectiveDate: plus(7) })).expect(201)).body;
+      const impact = (await http.get(`/api/v1/employees/${c.id}/termination-impact`).set(HR).expect(200)).body;
+      expect(impact).toMatchObject({ activeReports: 0, scheduledTransfers: 0 });
+      expect(impact.pendingAsNewManager).toEqual([expect.objectContaining({ transferId: t.id, employeeName: d.fullName })]);
+      await http.get(`/api/v1/employees/${c.id}/termination-impact`).set(MANAGER).expect(403);
+      const cv = (await http.get(`/api/v1/employees/${c.id}`).set(HR)).body.version;
+      const res = await http.patch(`/api/v1/employees/${c.id}`).set(HR).send({ status: 'TERMINATED', version: cv }).expect(400);
+      expect(res.body.message).toMatch(/điều chuyển chưa hiệu lực/);
+      // D nghỉ việc: điều chuyển chờ của D bị hủy.
+      const dv = (await http.get(`/api/v1/employees/${d.id}`).set(HR)).body.version;
+      expect((await http.get(`/api/v1/employees/${d.id}/termination-impact`).set(HR)).body.scheduledTransfers).toBe(1);
+      await http.patch(`/api/v1/employees/${d.id}`).set(HR).send({ status: 'TERMINATED', version: dv }).expect(200);
+      const list = (await http.get(`/api/v1/employees/${d.id}/transfers`).set(HR)).body;
+      expect(list.find((x: any) => x.id === t.id).status).toBe('CANCELLED');
+      await http.patch(`/api/v1/employees/${c.id}`).set(HR).send({ status: 'TERMINATED', version: cv }).expect(200);
     });
   });
 
