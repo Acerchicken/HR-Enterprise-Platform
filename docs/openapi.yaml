@@ -158,6 +158,13 @@ paths:
           description: Lọc theo phòng ban
           schema:
             type: string
+        - name: includeChildren
+          required: false
+          in: query
+          description: "Khi lọc theo đơn vị: kèm nhân viên của đơn vị con cháu (mặc định
+            true, AC-2.1.5)"
+          schema:
+            type: boolean
       responses:
         "200":
           description: ""
@@ -323,6 +330,12 @@ paths:
           in: path
           schema:
             type: string
+        - name: includeChildren
+          required: false
+          in: query
+          description: Kèm nhân viên của đơn vị con cháu (mặc định false)
+          schema:
+            type: boolean
       responses:
         "200":
           description: ""
@@ -1130,6 +1143,15 @@ components:
     CreateDepartmentDto:
       type: object
       properties:
+        unitType:
+          type: string
+          enum: &a13
+            - COMPANY
+            - CENTER
+            - DEPARTMENT
+            - TEAM
+          example: DEPARTMENT
+          description: "ADR-14: Công ty, Trung tâm, Phòng, Nhóm"
         code:
           type: string
           example: ENG-PLT
@@ -1144,12 +1166,16 @@ components:
         headEmployeeId:
           type: object
       required:
+        - unitType
         - code
         - name
         - office
     UpdateDepartmentDto:
       type: object
       properties:
+        unitType:
+          type: string
+          enum: *a13
         name:
           type: string
         office:
@@ -1597,7 +1623,7 @@ components:
           example: Quy chế làm việc
         type:
           type: string
-          enum: &a13
+          enum: &a14
             - POLICY
             - PROCESS
             - GUIDE
@@ -1639,7 +1665,7 @@ components:
           type: string
         type:
           type: string
-          enum: *a13
+          enum: *a14
         scope:
           $ref: "#/components/schemas/DocumentScopeDto"
       required:

@@ -24,7 +24,11 @@ Không có biến riêng. Dùng `DB_*` và `OIDC_*` như UC1.
 
 ## 4. Các bước
 
-- Seed tạo 25 phòng ban, một gốc "Ban Giám đốc" (mã `BOD`) và CEO. Staging chạy seed một lần qua Deploy Staging (`run_seed`).
+- Seed tạo 28 đơn vị (ADR-14): gốc Công ty (mã `HQ`) có CEO, 6 Trung tâm, các Phòng (Marketing, Pháp chế thẳng dưới Công
+  ty), 3 Nhóm dưới Web Engineering. Staging chạy seed một lần qua Deploy Staging (`run_seed`).
+- Migration `OrgUnitTypes` điền loại cho dữ liệu cũ: gốc thành Công ty, đơn vị con trực tiếp của gốc có đơn vị con thành
+  Trung tâm, còn lại thành Phòng. Tên cũ ("Ban Giám đốc", "Khối…") giữ nguyên; muốn đúng tên mới thì chạy lại seed
+  (`npm run seed -- --reset`, xóa dữ liệu).
 - Cache nằm trong từng instance và được xóa khi tạo, sửa phòng ban trên chính instance đó. Có nhiều instance thì instance khác
   có thể trả danh sách cũ tối đa 10 phút.
 

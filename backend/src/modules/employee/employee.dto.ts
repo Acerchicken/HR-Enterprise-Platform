@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsDateString,
   IsEmail,
   IsIn,
@@ -26,6 +27,21 @@ export class DirectoryQuery extends PageQuery {
   @IsOptional()
   @IsUUID()
   dept?: string;
+
+  @ApiPropertyOptional({ description: 'Khi lọc theo đơn vị: kèm nhân viên của đơn vị con cháu (mặc định true, AC-2.1.5)' })
+  @IsOptional()
+  @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
+  @IsBoolean()
+  includeChildren?: boolean;
+}
+
+/** Trang nhân viên của một đơn vị: mặc định chỉ đơn vị đó (spec §9.2). */
+export class MembersQuery extends PageQuery {
+  @ApiPropertyOptional({ description: 'Kèm nhân viên của đơn vị con cháu (mặc định false)' })
+  @IsOptional()
+  @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
+  @IsBoolean()
+  includeChildren?: boolean;
 }
 
 export class ProfileQuery {

@@ -117,13 +117,14 @@ export class EmployeeService {
 
   // ---------- Danh bạ ----------
 
-  async directory(params: { q?: string; dept?: string; managerId?: string; page: number; size: number }): Promise<Page<DirectoryEntry>> {
+  async directory(params: { q?: string; dept?: string | string[]; managerId?: string; page: number; size: number }): Promise<Page<DirectoryEntry>> {
     const qb = this.repo
       .createQueryBuilder('e')
       .where("e.status <> 'TERMINATED'")
       .orderBy('e.full_name', 'ASC')
       .addOrderBy('e.id', 'ASC');
-    if (params.dept) qb.andWhere('e.department_id = :dept', { dept: params.dept });
+    if (Array.isArray(params.dept)) qb.andWhere('e.department_id IN (:...depts)', { depts: params.dept });
+    else if (params.dept) qb.andWhere('e.department_id = :dept', { dept: params.dept });
     if (params.managerId) qb.andWhere('e.manager_id = :mid', { mid: params.managerId });
     if (params.q) {
       const term = `%${params.q.toLowerCase().replace(/[%_\\]/g, (c) => '\\' + c)}%`;

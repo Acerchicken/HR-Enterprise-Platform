@@ -25,14 +25,14 @@
 - **AC-2.1.1** Khi tìm theo một phần tên, email hoặc mã. Thì trả các nhân viên khớp, có phân trang.
 - **AC-2.1.2** Giả sử nhân viên X đã `TERMINATED`. Khi tìm đúng tên X. Thì X không có trong kết quả.
 - **AC-2.1.3** Khi lọc theo `dept` (UUID phòng ban). Thì chỉ trả nhân viên thuộc phòng ban đó.
-- **AC-2.1.5** *(chưa có)* Khi lọc theo một Trung tâm hoặc Phòng có đơn vị con. Thì mặc định trả cả nhân viên của các đơn vị con
+- **AC-2.1.5** Khi lọc theo một Trung tâm hoặc Phòng có đơn vị con. Thì mặc định trả cả nhân viên của các đơn vị con
   (như phạm vi tài liệu UC5); `includeChildren=false` thì chỉ đơn vị đó.
 - **AC-2.1.4** Khi gửi `size` lớn hơn 100. Thì trả 400.
 
 ### FR-2.2 Cây tổ chức (M, đã có)
 
 - **AC-2.2.1** Khi mở cây tổ chức. Thì cây có đúng một gốc và chứa mọi phòng ban, không cần nhập mã phòng ban (issue #21).
-- **AC-2.2.3** *(chưa có)* Khi mở cây tổ chức. Thì gốc là đơn vị loại Công ty; mỗi đơn vị hiện loại (Trung tâm, Phòng, Nhóm) và
+- **AC-2.2.3** Khi mở cây tổ chức. Thì gốc là đơn vị loại Công ty; mỗi đơn vị hiện loại (Trung tâm, Phòng, Nhóm) và
   trưởng đơn vị với đúng tên vai trò theo loại (ADR-14); đơn vị đã ngừng hoạt động không hiện.
 - **AC-2.2.2** Khi mở thành viên một phòng ban. Thì chỉ thấy trường danh bạ của từng người.
 
@@ -50,10 +50,10 @@
 - **AC-2.4.6** Khi tạo phòng ban không có `parentId`, hoặc sửa `parentId` thành `null`. Thì trả 400; cây giữ
   đúng một gốc.
 - **AC-2.4.7** Khi `headEmployeeId` không phải nhân viên đang làm việc. Thì trả 400.
-- **AC-2.4.8** *(chưa có)* Khi tạo hoặc sửa đơn vị sai luật loại cha, loại con (ADR-14): Trung tâm không thuộc Công ty; Phòng
+- **AC-2.4.8** Khi tạo hoặc sửa đơn vị sai luật loại cha, loại con (ADR-14): Trung tâm không thuộc Công ty; Phòng
   không thuộc Công ty hoặc Trung tâm; Nhóm không thuộc Phòng; tạo đơn vị Công ty thứ hai. Thì trả 400. Đổi loại một đơn vị
   làm đơn vị con của nó sai luật cũng trả 400.
-- **AC-2.4.9** *(chưa có)* Khi tạo Phòng Pháp chế thẳng dưới Công ty (không qua Trung tâm). Thì trả 201.
+- **AC-2.4.9** Khi tạo Phòng Pháp chế thẳng dưới Công ty (không qua Trung tâm). Thì trả 201.
 
 ### FR-2.5 Một quản lý trực tiếp, trừ CEO (M, đã có, PR #60)
 
@@ -168,7 +168,7 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 | Rà lại quy tắc trưởng, phó đơn vị (FR-2.9) và ADR-14 | – | TV2 | `docs/org-integrity-rules` | Xong (#96) |
 | Chặn gốc thứ hai, kiểm `headEmployeeId` đang làm việc | AC-2.4.6, AC-2.4.7 (một phần) | TV1 | `fix/employee-org-integrity` | Xong (#84) |
 | Sơ đồ luồng, bản vẽ, hợp đồng API, thiết kế dữ liệu | – | TV1 | `docs/uc2-design` | 11 |
-| Loại đơn vị, luật cha con, seed mới, lọc danh bạ gồm đơn vị con | AC-2.2.3, AC-2.4.8, AC-2.4.9, AC-2.1.5 | TV1 | `feat/org-unit-types` | 11 |
+| Loại đơn vị, luật cha con, seed mới, lọc danh bạ gồm đơn vị con | AC-2.2.3, AC-2.4.8, AC-2.4.9, AC-2.1.5 | TV1 | `feat/org-unit-types` | Code xong, chờ merge |
 | Trưởng, phó mọi cấp; chức danh; ngừng hoạt động đơn vị; giao diện quản lý đơn vị | AC-2.4.5, AC-2.4.7, AC-2.6.x, AC-2.9.x, AC-2.10.x | TV1 | `feat/department-admin-ui` | 11–12 |
 | Quá trình công tác, điều chuyển có ngày hiệu lực, hộp xác nhận nghỉ việc | AC-2.7.x, AC-2.8.x, UC1 AC-1.7.3 | TV1 | `feat/employee-transfer` | 12 |
 | Ca kiểm thử cho các AC mới | AC-2.x | TV4 | theo từng PR code | 11–12 |

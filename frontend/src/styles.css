@@ -55,6 +55,10 @@ button.link.active { font-weight: 600; }
 .toolbar select { flex: 1; }
 .pager { display: flex; gap: 12px; align-items: center; justify-content: flex-end; margin-top: 12px; }
 .badge { font-size: 11px; padding: 2px 6px; border-radius: 10px; background: #eef2ff; color: #3730a3; margin-left: 6px; }
+.badge.unit-company { background: #1e3a8a; color: #fff; }
+.badge.unit-center { background: #dbeafe; color: #1e40af; }
+.badge.unit-department { background: #eef2ff; color: #3730a3; }
+.badge.unit-team { background: #f1f5f9; color: #475569; }
 .role-hr { background: #ecfdf3; color: var(--ok); }
 .role-admin { background: #fef3f2; color: var(--danger); }
 .role-manager { background: #fffaeb; color: #b54708; }

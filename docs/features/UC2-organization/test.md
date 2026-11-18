@@ -23,16 +23,18 @@ thuật toán chặn vòng; e2e kiểm cây, quy tắc một quản lý; ca SEC 
 | AC-2.1.2 | – | Cần thêm | Chưa |
 | AC-2.1.3 | – | Cần thêm | Chưa |
 | AC-2.1.4 | – | Cần thêm (`size = 101`) | Chưa |
-| AC-2.2.1 | "cây tổ chức có 1 gốc (Ban Giám đốc) và đủ 25 phòng ban" | – | Có |
+| AC-2.2.1, AC-2.2.3 | "cây tổ chức có 1 gốc loại Công ty, mỗi đơn vị có loại, trưởng, số người" | – | Có |
+| AC-2.1.5 | "lọc danh bạ theo đơn vị mặc định gồm đơn vị con" | – | Có |
+| AC-2.4.8, AC-2.4.9 | "luật loại cha, loại con"; unit test `organization.service.spec.ts` | – | Có |
+| AC-2.9.4 (đường dẫn, trưởng) | "chi tiết đơn vị có đường dẫn từ gốc và trưởng" | – | Một phần (chưa có phó) |
 | AC-2.2.2, AC-2.3.1 | "thành viên phòng ban và nhân viên trực thuộc" | – | Có |
 | AC-2.4.1, AC-2.4.4 | "nhân viên không tạo được phòng ban; HR tạo được", "tạo, sửa phòng ban: HR và ADMIN…" | SEC-05 → SEC-16 | Có |
 | AC-2.4.2 | "tạo, sửa phòng ban: … không tạo được vòng lặp" | – | Có |
 | AC-2.4.3 | – | Cần thêm | Chưa |
 | AC-2.4.5 | – | – | Chưa có giao diện |
-| AC-2.4.6, AC-2.4.7 | – | – | Chưa đạt (API chấp nhận gốc thứ hai, `headEmployeeId` bất kỳ) |
+| AC-2.4.6, AC-2.4.7 | "cây tổ chức chỉ một gốc; trưởng đơn vị phải đang làm việc" | – | Có (AC-2.4.7 phần kiểm thuộc đơn vị chờ nhánh 2) |
 | AC-2.5.1 | "tạo nhân viên không phải CEO mà thiếu quản lý → 400; tạo CEO thứ hai → 400" | – | Có |
 | AC-2.5.2 | "HR không gán được quản lý tạo vòng lặp" | – | Có |
-| AC-2.2.3, AC-2.4.8, AC-2.4.9 | – | Cần thêm (TV4, khi có loại đơn vị, ADR-14) | Chưa có tính năng |
 | AC-2.6.x → AC-2.10.x | – | Cần thêm (TV4, khi có tính năng) | Chưa có tính năng |
 | AC-2.5.3 | "gán quản lý đã nghỉ việc → 400; gán quản lý cho CEO → 400; bỏ quản lý của nhân viên → 400" | – | Có |
 

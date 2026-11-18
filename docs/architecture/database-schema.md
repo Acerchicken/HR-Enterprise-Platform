@@ -172,14 +172,16 @@ erDiagram
 | `code` | varchar(20) | NN, UQ | Mã phòng ban, ví dụ `ENG` |
 | `name` | varchar(150) | NN | Tên phòng ban |
 | `office` | varchar(50) | NN | Văn phòng (HN, HCM…) |
-| `parent_id` | uuid | FK → `org.department.id` | Phòng ban cha; NULL là gốc cây. Service chặn tạo vòng |
-| `head_employee_id` | uuid | ref → `employee.employee.id` | Trưởng phòng |
+| `unit_type` | varchar(12) | NN, CHECK `COMPANY`/`CENTER`/`DEPARTMENT`/`TEAM` | Loại đơn vị ([ADR-14](adr/ADR-14-org-unit-types.md)). Luật loại cha, loại con kiểm ở service (`unit-rules.ts`) |
+| `status` | varchar(10) | NN, mặc định `ACTIVE`, CHECK `ACTIVE`/`INACTIVE` | Đơn vị ngừng hoạt động ẩn khỏi cây (FR-2.10) |
+| `parent_id` | uuid | FK → `org.department.id` | Đơn vị cha; NULL là gốc cây. Service chặn tạo vòng |
+| `head_employee_id` | uuid | ref → `employee.employee.id` | Trưởng đơn vị |
 | `created_at`, `updated_at` | timestamptz | NN, mặc định `now()` | |
 
-Index: `ix_department_parent (parent_id)` để lấy cây tổ chức và phòng ban con.
+Index: `ix_department_parent (parent_id)` để lấy cây tổ chức và phòng ban con; `ux_department_company` (unique, chỉ dòng
+`unit_type = 'COMPANY'`) bảo đảm đúng một Công ty. CHECK `ck_department_company_root`: Công ty khi và chỉ khi `parent_id` NULL.
 
-> **Đã quyết, chưa có migration ([ADR-14](adr/ADR-14-org-unit-types.md)):** bảng này là cây **đơn vị** có loại. Sẽ thêm
-> `unit_type` (`COMPANY`, `CENTER`, `DEPARTMENT`, `TEAM`), `status` (`ACTIVE`, `INACTIVE`), `head_acting` và bảng
+> **Đã quyết, chưa có migration ([ADR-14](adr/ADR-14-org-unit-types.md)):** sẽ thêm `head_acting` và bảng
 > `org.department_deputy`; `org.position` thêm `active`, `is_system`; bảng mới `employee.employment_assignment` (quá trình công
 > tác, điều chuyển). Thiết kế: [UC2 spec mục 13](../features/UC2-organization/spec.md#13-thiết-kế-đề-xuất-cho-phần-chưa-có).
 > Khi migration merge thì cập nhật bảng trên và sơ đồ.
@@ -732,6 +734,7 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `1731700000000-RateLimitCounter` | 11 | Bảng `iam.rate_limit_counter` (#85) |
 | `1731800000000-ProfileChangeRequests` | 11 | `employee.profile_item`, `employee.profile_change_request` (#86) |
 | `1731900000000-ProfileFiles` | 11 | `employee.profile_file`, cột `employee.avatar_file_id` (#87) |
+| `1732000000000-OrgUnitTypes` | 11 | `org.department`: `unit_type`, `status`, CHECK, index một Công ty; điền loại cho dữ liệu cũ (`feat/org-unit-types`) |
 
 Lệnh: `npm run migration:run` (dev, ts-node), `npm run migration:run:prod` (bản build, dùng trên staging),
 `npm run migration:revert` (lùi một migration). Dữ liệu mẫu: `npm run seed`.

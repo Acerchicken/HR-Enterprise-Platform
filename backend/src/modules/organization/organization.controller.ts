@@ -23,7 +23,7 @@ export class OrganizationController {
 
   @Get('departments/:id')
   get(@Param('id', ParseUUIDPipe) id: string) {
-    return this.org.getDepartment(id);
+    return this.org.detail(id);
   }
 
   @Post('departments')
