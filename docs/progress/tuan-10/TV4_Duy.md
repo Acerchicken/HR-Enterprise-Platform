@@ -84,4 +84,11 @@ _Góp ý ghi trực tiếp trên PR._
 
 ## Việc đã làm
 
-_Điền T2 (16/11), 9:00._
+> Điền ngày 16/11 từ lịch sử PR trên GitHub (9/11 – 15/11, cùng #80 → #93 merge ngày 15–16/11 vì làm ngay sau đó). Thành viên bổ sung nếu có việc không nằm trên GitHub, kèm link.
+
+| Việc | PR | Ghi chú |
+|---|---|---|
+| `docs/test-cases-week10` (ca DOC, SRCH, EMP, AUD, CEO) | – | Không làm |
+| Biên bản kiểm thử tuần 10 | #91 | Mở 15/11; Request changes: không có ca nào chạy thật, thiếu commit, thiếu "Phạm vi chưa kiểm" |
+| Review `feat/profile-layout` | #80 | Một comment đề nghị duyệt, không kèm kết quả chạy |
+| Review `feat/hr-employee-form`, `feat/document-search` | – | Không có review trên GitHub |

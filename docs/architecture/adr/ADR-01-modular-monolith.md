@@ -12,7 +12,8 @@
 
 ## Lịch sử thay đổi
 
-- Không có.
+- 15/11/2026: điều kiện xem lại được kích hoạt một phần: tách Notification và Search thành service riêng theo
+  [ADR-15](ADR-15-service-extraction.md). Phần lõi vẫn là modular monolith, lựa chọn B không đổi.
 
 ## Nội dung quyết định
 

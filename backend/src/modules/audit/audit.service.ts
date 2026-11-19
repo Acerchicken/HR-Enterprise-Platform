@@ -58,4 +58,32 @@ export class AuditService {
       .getManyAndCount();
     return { items, page: q.page, size: q.size, total };
   }
+
+  /**
+   * Nhật ký của một đối tượng (UC1 FR-1.11): lọc thêm theo `changedFields.section` và danh sách thao tác. Mới nhất trước.
+   */
+  async history(q: {
+    entityType: string;
+    entityId: string;
+    actions?: string[];
+    section?: string;
+    actorId?: string;
+    from?: Date;
+    to?: Date;
+    page: number;
+    size: number;
+  }): Promise<Page<AuditLog>> {
+    const qb = this.repo
+      .createQueryBuilder('a')
+      .where('a.entity_type = :et AND a.entity_id = :eid', { et: q.entityType, eid: q.entityId })
+      .orderBy('a.at', 'DESC')
+      .addOrderBy('a.id', 'DESC');
+    if (q.actions?.length) qb.andWhere('a.action IN (:...actions)', { actions: q.actions });
+    if (q.section) qb.andWhere(`a.changed_fields ->> 'section' = :section`, { section: q.section });
+    if (q.actorId) qb.andWhere('a.actor_id = :actor', { actor: q.actorId });
+    if (q.from) qb.andWhere('a.at >= :from', { from: q.from });
+    if (q.to) qb.andWhere('a.at < :to', { to: q.to });
+    const [items, total] = await qb.skip((q.page - 1) * q.size).take(q.size).getManyAndCount();
+    return { items, page: q.page, size: q.size, total };
+  }
 }

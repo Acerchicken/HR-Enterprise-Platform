@@ -93,11 +93,27 @@ export interface paths {
         };
         get: operations["OrganizationController_positions"];
         put?: never;
-        post?: never;
+        post: operations["OrganizationController_createPosition"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/positions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["OrganizationController_updatePosition"];
         trace?: never;
     };
     "/api/v1/me": {
@@ -148,6 +164,38 @@ export interface paths {
         patch: operations["EmployeeController_update"];
         trace?: never;
     };
+    "/api/v1/employees/{id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EmployeeController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/profile/{section}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EmployeeController_section"];
+        put?: never;
+        post: operations["ProfileChangeController_hrCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/employees/{id}/direct-reports": {
         parameters: {
             query?: never;
@@ -175,6 +223,294 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EmployeeController_listTransfers"];
+        put?: never;
+        post: operations["EmployeeController_createTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/transfers/{transferId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["EmployeeController_cancelTransfer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/termination-impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EmployeeController_terminationImpact"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/change-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProfileChangeController_submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/change-requests/{requestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ProfileChangeController_cancel"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/change-requests/{requestId}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProfileChangeController_acknowledge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/change-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileChangeController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/change-requests/{requestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileChangeController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/change-requests/{requestId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProfileChangeController_approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/change-requests/{requestId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProfileChangeController_reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/profile/{section}/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ProfileChangeController_hrDelete"];
+        options?: never;
+        head?: never;
+        patch: operations["ProfileChangeController_hrUpdate"];
+        trace?: never;
+    };
+    "/api/v1/contracts/expiring": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileChangeController_expiring"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileChangeController_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileFileController_list"];
+        put?: never;
+        post: operations["ProfileFileController_requestUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/files/{fileId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProfileFileController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/files/{fileId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileFileController_download"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileFileController_avatar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/files/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ProfileFileController_remove"];
         options?: never;
         head?: never;
         patch?: never;
@@ -356,11 +692,177 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocumentController_list"];
+        put?: never;
+        post: operations["DocumentController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/manage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocumentController_manageList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/manage/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocumentController_manageGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocumentController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["DocumentController_update"];
+        trace?: never;
+    };
+    "/api/v1/documents/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocumentController_downloadLatest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/{id}/versions/{versionId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocumentController_download"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/{id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DocumentController_addVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/{id}/versions/{versionId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DocumentController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/{id}/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DocumentController_hide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DocumentController_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         CreateDepartmentDto: {
+            /**
+             * @description ADR-14: Công ty, Trung tâm, Phòng, Nhóm
+             * @example DEPARTMENT
+             * @enum {string}
+             */
+            unitType: "COMPANY" | "CENTER" | "DEPARTMENT" | "TEAM";
             /** @example ENG-PLT */
             code: string;
             /** @example Platform Engineering */
@@ -369,12 +871,49 @@ export interface components {
             office: string;
             parentId?: Record<string, never>;
             headEmployeeId?: Record<string, never>;
+            /** @description FR-2.9: trưởng là "Quyền trưởng" */
+            headActing?: boolean;
+            /** @description Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung tâm 3, Phòng 3, Nhóm 0 */
+            deputyEmployeeIds?: string[];
         };
         UpdateDepartmentDto: {
+            /** @enum {string} */
+            unitType?: "COMPANY" | "CENTER" | "DEPARTMENT" | "TEAM";
             name?: string;
             office?: string;
             parentId?: Record<string, never> | null;
             headEmployeeId?: Record<string, never> | null;
+            /** @description FR-2.9: trưởng là "Quyền trưởng" */
+            headActing?: boolean;
+            /** @description Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung tâm 3, Phòng 3, Nhóm 0 */
+            deputyEmployeeIds?: string[];
+            /**
+             * @description INACTIVE: ngừng hoạt động (FR-2.10), chỉ khi đơn vị đã trống
+             * @enum {string}
+             */
+            status?: "ACTIVE" | "INACTIVE";
+        };
+        CreatePositionDto: {
+            /** @example PM */
+            code: string;
+            /** @example Quản lý dự án */
+            title: string;
+            level: number;
+        };
+        UpdatePositionDto: {
+            title?: string;
+            level?: number;
+            active?: boolean;
+        };
+        MeEmployee: {
+            id: string;
+            employeeCode: string;
+            fullName: string;
+        };
+        MeResponse: {
+            email: string;
+            roles: string[];
+            employee: components["schemas"]["MeEmployee"] | null;
         };
         CreateEmployeeDto: {
             /** @example E02001 */
@@ -395,14 +934,81 @@ export interface components {
             /** @description Lương tháng (VND) */
             salary?: string;
         };
+        SectionSummary: {
+            /** @example personal */
+            code: string;
+            /** @enum {string} */
+            group: "personal" | "work" | "finance" | "benefits" | "other";
+            title: string;
+            /** @description false: mục chưa làm, giao diện hiện tiêu đề đỏ "Chưa có" và không gọi API */
+            available: boolean;
+            /** @description Số yêu cầu cập nhật đang chờ HR (luôn 0 cho tới khi có FR-1.9) */
+            pendingRequests: number;
+        };
+        ProfileSummary: {
+            id: string;
+            employeeCode: string;
+            fullName: string;
+            positionTitle: Record<string, never> | null;
+            departmentId: string;
+            departmentName: Record<string, never> | null;
+            managerId: Record<string, never> | null;
+            managerName: Record<string, never> | null;
+            phone: Record<string, never> | null;
+            workEmail: string;
+            /** @enum {string} */
+            relation: "HR" | "OWNER" | "MANAGER" | "OTHER";
+            /** @description HR: hiện nút "Sửa hồ sơ" */
+            canEdit: boolean;
+            /** @description Có ảnh đại diện đã duyệt: tải ở GET /employees/{id}/avatar */
+            hasAvatar: boolean;
+            /** @description Loại hợp đồng đang hiệu lực (hàng "Diện đối tượng", mức QL). null: chưa có dữ liệu. Không có trường này ở mức danh bạ */
+            contractType?: Record<string, never> | null;
+            /** @description Mục người xem được thấy, theo thứ tự trên trang */
+            sections: components["schemas"]["SectionSummary"][];
+        };
+        MaskedField: {
+            hasValue: boolean;
+            value: Record<string, never> | null;
+        };
+        PersonalSection: {
+            /** @example personal */
+            section: string;
+            /** @enum {string} */
+            relation: "HR" | "OWNER" | "MANAGER" | "OTHER";
+            version: number;
+            phone: Record<string, never> | null;
+            workEmail: string;
+            address: Record<string, never> | null;
+            dateOfBirth: Record<string, never> | null;
+            hireDate: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "ON_LEAVE" | "TERMINATED";
+            /** @description CCCD, chỉ HR */
+            nationalId?: components["schemas"]["MaskedField"];
+        };
+        SalarySection: {
+            /** @example salary */
+            section: string;
+            salary: components["schemas"]["MaskedField"];
+        };
+        BankAccountSection: {
+            /** @example bank-account */
+            section: string;
+            bankAccount: components["schemas"]["MaskedField"];
+        };
         UpdateEmployeeDto: {
-            /** @description Version hiện tại (optimistic locking). Lệch → 409. */
-            version?: number;
+            /** @description Version hiện tại (optimistic locking). Bắt buộc (E9); lệch → 409. */
+            version: number;
             /** @example 0912 345 678 */
             phone?: string;
             address?: string;
             fullName?: string;
             dateOfBirth?: string;
+            /** @description Email công ty (AC-1.4.4). Đổi cùng lúc với tài khoản ở identity provider */
+            workEmail?: string;
+            /** @description Ngày vào làm (sửa sai sót, AC-1.4.4) */
+            hireDate?: string;
             departmentId?: string;
             positionId?: string;
             managerId?: Record<string, never> | null;
@@ -413,6 +1019,69 @@ export interface components {
             bankAccount?: string;
             /** @description Lương tháng (VND) */
             salary?: string;
+        };
+        HeadChangeDto: {
+            departmentId: string;
+            /** @description null: để trống có chủ ý */
+            employeeId: Record<string, never> | null;
+        };
+        ReportChoiceDto: {
+            employeeId: string;
+            /** @description Quản lý mới của cấp dưới; giữ nguyên thì là chính người được điều chuyển */
+            managerId: string;
+        };
+        CreateTransferDto: {
+            /**
+             * @description Hôm nay hoặc tương lai; quá khứ tối đa 30 ngày (AC-2.7.4)
+             * @example 2026-12-01
+             */
+            effectiveDate: string;
+            departmentId: string;
+            positionId: string;
+            /** @description Chỉ CEO được để trống */
+            managerId: Record<string, never> | null;
+            /** @enum {string} */
+            reason: "TRANSFER" | "PROMOTION" | "MANAGER_CHANGE" | "CORRECTION";
+            note?: string;
+            /** @description AC-2.7.5: trưởng mới cho đơn vị người này đang làm trưởng */
+            newHeads?: components["schemas"]["HeadChangeDto"][];
+            /** @description AC-2.7.6: bắt buộc đủ mọi cấp dưới đang làm việc */
+            reports?: components["schemas"]["ReportChoiceDto"][];
+        };
+        SubmitChangeDto: {
+            /** @example emergency-contacts */
+            section: string;
+            /** @enum {string} */
+            action: "CREATE" | "UPDATE" | "DELETE";
+            itemId?: Record<string, never> | null;
+            /** @description version của dòng lúc mở form (sửa, xóa) */
+            baseVersion?: number;
+            /** @description Giá trị đề xuất theo mô tả trường của mục (fields trong GET mục) */
+            proposed?: Record<string, never>;
+            /** @description File đã tải lên gắn vào yêu cầu (luồng 4.3) */
+            fileIds?: string[];
+        };
+        RejectDto: {
+            reason: string;
+        };
+        HrItemDto: {
+            /** @description version của dòng (bắt buộc khi sửa, xóa) */
+            version?: number;
+            data?: Record<string, never>;
+        };
+        UploadRequestDto: {
+            /** @example cv */
+            section: string;
+            /** @description Dòng gắn file (bằng cấp, người phụ thuộc); null khi đính kèm dòng mới */
+            itemId?: Record<string, never> | null;
+            /** @example cv.pdf */
+            fileName: string;
+            /** @example application/pdf */
+            contentType: string;
+            /** @example 102400 */
+            size: number;
+            /** @description SHA-256 hex do trình duyệt tính */
+            sha256: string;
         };
         CreateLeaveRequestDto: {
             /**
@@ -436,6 +1105,41 @@ export interface components {
             version: number;
             /** @description Ghi chú, ví dụ lý do từ chối */
             comment?: string;
+        };
+        DocumentScopeDto: {
+            /** @default false */
+            all: boolean;
+            departmentIds?: string[];
+            roles?: ("EMPLOYEE" | "MANAGER" | "HR" | "ADMIN")[];
+        };
+        CreateDocumentDto: {
+            /** @example quy-che-lam-viec.pdf */
+            fileName: string;
+            /** @example application/pdf */
+            contentType: string;
+            /** @example 4194304 */
+            sizeBytes: number;
+            /** @example Quy chế làm việc */
+            title: string;
+            /** @enum {string} */
+            type: "POLICY" | "PROCESS" | "GUIDE" | "FORM" | "NOTICE";
+            scope: components["schemas"]["DocumentScopeDto"];
+        };
+        FileSpecDto: {
+            /** @example quy-che-lam-viec.pdf */
+            fileName: string;
+            /** @example application/pdf */
+            contentType: string;
+            /** @example 4194304 */
+            sizeBytes: number;
+        };
+        UpdateDocumentDto: {
+            /** @description Version hiện tại của tài liệu (optimistic locking). Lệch → 409. */
+            version: number;
+            title?: string;
+            /** @enum {string} */
+            type?: "POLICY" | "PROCESS" | "GUIDE" | "FORM" | "NOTICE";
+            scope?: components["schemas"]["DocumentScopeDto"];
         };
     };
     responses: never;
@@ -585,12 +1289,59 @@ export interface operations {
     };
     OrganizationController_positions: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description true: chỉ chức danh đang dùng (danh sách chọn) */
+                active?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OrganizationController_createPosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePositionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OrganizationController_updatePosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePositionDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -613,7 +1364,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
+                };
             };
         };
     };
@@ -624,6 +1377,10 @@ export interface operations {
                 q?: string;
                 /** @description Lọc theo phòng ban */
                 dept?: string;
+                /** @description Khi lọc theo đơn vị: kèm nhân viên của đơn vị con cháu (mặc định true, AC-2.1.5) */
+                includeChildren?: boolean;
+                /** @description HR, ADMIN: đơn vị và các đơn vị cha (danh sách chọn trưởng, phó kiêm nhiệm, AC-2.9.1) */
+                includeAncestors?: boolean;
             };
             header?: never;
             path?: never;
@@ -705,6 +1462,78 @@ export interface operations {
             };
         };
     };
+    EmployeeController_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSummary"];
+                };
+            };
+        };
+    };
+    EmployeeController_section: {
+        parameters: {
+            query?: {
+                /** @description true: giải mã giá trị nhạy cảm của mục (bấm mắt); mỗi lần gọi ghi audit VIEW_SENSITIVE */
+                reveal?: string;
+                /** @description Quá trình công tác: true trả các dòng HR nhập tay thay cho dòng thời gian tự tính */
+                raw?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+                section: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalSection"] | components["schemas"]["SalarySection"] | components["schemas"]["BankAccountSection"];
+                };
+            };
+        };
+    };
+    ProfileChangeController_hrCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                section: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HrItemDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     EmployeeController_directReports: {
         parameters: {
             query?: never;
@@ -726,6 +1555,28 @@ export interface operations {
     };
     EmployeeController_members: {
         parameters: {
+            query?: {
+                /** @description Kèm nhân viên của đơn vị con cháu (mặc định false) */
+                includeChildren?: boolean;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_listTransfers: {
+        parameters: {
             query?: never;
             header?: never;
             path: {
@@ -736,6 +1587,433 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_createTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransferDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_cancelTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                transferId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_terminationImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileChangeController_submit: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitChangeDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileChangeController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileChangeController_acknowledge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileChangeController_list: {
+        parameters: {
+            query?: {
+                status?: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+                section?: string;
+                departmentId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileChangeController_detail: {
+        parameters: {
+            query?: {
+                /** @description true: HR xem giá trị nhạy cảm của đề xuất (ghi audit VIEW_SENSITIVE) */
+                reveal?: string;
+            };
+            header?: never;
+            path: {
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileChangeController_approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileChangeController_reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileChangeController_hrDelete: {
+        parameters: {
+            query?: {
+                /** @description version của dòng (bắt buộc khi sửa, xóa) */
+                version?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+                section: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileChangeController_hrUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                section: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HrItemDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileChangeController_expiring: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileChangeController_history: {
+        parameters: {
+            query?: {
+                section?: string;
+                actorId?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileFileController_list: {
+        parameters: {
+            query: {
+                section: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileFileController_requestUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileFileController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileFileController_download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileFileController_avatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileFileController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -979,6 +2257,246 @@ export interface operations {
                 "application/json": components["schemas"]["LeaveDecisionDto"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_list: {
+        parameters: {
+            query?: {
+                type?: "POLICY" | "PROCESS" | "GUIDE" | "FORM" | "NOTICE";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDocumentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_manageList: {
+        parameters: {
+            query?: {
+                type?: "POLICY" | "PROCESS" | "GUIDE" | "FORM" | "NOTICE";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_manageGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDocumentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_downloadLatest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                versionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_addVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileSpecDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                versionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_hide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentController_restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {

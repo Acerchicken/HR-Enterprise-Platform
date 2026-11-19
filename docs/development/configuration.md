@@ -85,11 +85,19 @@ Dùng cho outbox publisher (trong API) và notification worker. Chi tiết: [h�
 | `SMTP_PORT` | `1025` | | Staging | Worker | Kết nối không TLS (`secure: false`) |
 | `SMTP_FROM` | `no-reply@hr.local` | | Staging | Worker | Địa chỉ người gửi |
 
+### Giới hạn tần suất (NFR-5.21, UC1 FR-1.14)
+
+| Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
+|---|---|---|---|---|---|
+| `RATE_LIMIT_ENABLED` | `true` | `true` | Không | API | `false` tắt hẳn giới hạn (chỉ dùng khi debug local) |
+| `RATE_LIMIT_OVERRIDES` | (không có) | Để trống | Không | API | JSON đổi ngưỡng từng nhóm, ví dụ `{"global":{"minute":1000}}` khi load test. Nhóm và ngưỡng mặc định ở `backend/src/common/rate-limit/rate-limit-rules.ts`: `global` 100/phút, `search` 20/phút, `profile-write` 30/phút và 300/ngày, `profile-upload` 10/giờ và 30/ngày, `avatar-upload` 5/ngày, `profile-download` 60/giờ, `sensitive-view` 100/giờ. Giới hạn ngày đếm trong bảng `iam.rate_limit_counter` |
+
 ### Kho tài liệu (object storage)
 
 | Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
 |---|---|---|---|---|---|
 | `STORAGE_BUCKET` | (không có) | **Chưa đặt** | Để dùng UC5 | API | Tên bucket. Để trống thì API tài liệu trả **503** `Kho tài liệu chưa được cấu hình` |
+| `PROFILE_STORAGE_BUCKET` | (không có) | **Chưa đặt** (TV3: `hr-profile-files-staging`) | Để dùng file hồ sơ (UC1 FR-1.10) | API | Bucket riêng cho file hồ sơ, dùng chung endpoint và khóa với `STORAGE_*`. Chặn public, SSE-KMS, lifecycle xóa object có tag `deleted=true` sau 30 ngày. Để trống thì thao tác file hồ sơ trả **503**, xem và sửa hồ sơ vẫn chạy |
 | `STORAGE_REGION` | `AWS_REGION`, nếu không có thì `ap-southeast-1` | | Không | API | Region bucket |
 | `STORAGE_ENDPOINT` | (không có) | Để trống | Không | API | Chỉ dùng với MinIO hoặc S3 tương thích, ví dụ `http://localhost:9000`. Trên AWS để trống |
 | `STORAGE_PUBLIC_ENDPOINT` | Bằng `STORAGE_ENDPOINT` | Để trống | Không | API | Địa chỉ trình duyệt dùng khi upload bằng presigned URL. Cần khi API chạy trong Docker (`minio:9000` khác `localhost:9000`) |
