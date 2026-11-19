@@ -13,6 +13,8 @@ export class ApiError extends Error {
     public fields?: Record<string, string>,
     /** 429: số giây phải chờ (header Retry-After), để khóa nút gửi (frontend.md mục 6). */
     public retryAfter?: number,
+    /** Số liệu kèm lỗi, ví dụ 409 ngừng hoạt động đơn vị: {members, activeChildren} (UC2 E13). */
+    public details?: Record<string, unknown>,
   ) {
     super(message);
   }
@@ -29,7 +31,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     const msg = Array.isArray(body?.message) ? body.message.join('; ') : (body?.message ?? res.statusText);
     const retry = Number(res.headers.get('Retry-After')) || undefined;
-    throw new ApiError(res.status, body?.code ?? 'HTTP_ERROR', msg, body?.traceId, body?.fields, retry);
+    throw new ApiError(res.status, body?.code ?? 'HTTP_ERROR', msg, body?.traceId, body?.fields, retry, body?.details);
   }
   return body as T;
 }
@@ -208,23 +210,69 @@ export interface Page<T> {
   total: number;
 }
 
+export type UnitType = 'COMPANY' | 'CENTER' | 'DEPARTMENT' | 'TEAM';
+
+/** Tên loại đơn vị, vai trò trưởng, phó và số phó tối đa theo loại (ADR-14, khớp backend unit-rules.ts). */
+export const UNIT_LABEL: Record<UnitType, { name: string; head: string; deputy: string | null; maxDeputies: number }> = {
+  COMPANY: { name: 'Công ty', head: 'Tổng Giám đốc', deputy: 'Phó Tổng Giám đốc', maxDeputies: 5 },
+  CENTER: { name: 'Trung tâm', head: 'Giám đốc trung tâm', deputy: 'Phó Giám đốc trung tâm', maxDeputies: 3 },
+  DEPARTMENT: { name: 'Phòng', head: 'Trưởng phòng', deputy: 'Phó phòng', maxDeputies: 3 },
+  TEAM: { name: 'Nhóm', head: 'Trưởng nhóm', deputy: null, maxDeputies: 0 },
+};
+
+/** Loại cha hợp lệ (ADR-14). */
+export const ALLOWED_PARENT: Record<UnitType, UnitType[]> = {
+  COMPANY: [],
+  CENTER: ['COMPANY'],
+  DEPARTMENT: ['COMPANY', 'CENTER'],
+  TEAM: ['DEPARTMENT'],
+};
+
+/** "Trưởng phòng" hoặc "Quyền Trưởng phòng" (FR-2.9). */
+export function headLabel(type: UnitType, acting: boolean): string {
+  return acting ? `Quyền ${UNIT_LABEL[type].head}` : UNIT_LABEL[type].head;
+}
+
 export interface Department {
   id: string;
   code: string;
   name: string;
   office: string;
+  unitType: UnitType;
+  status: 'ACTIVE' | 'INACTIVE';
   parentId: string | null;
   headEmployeeId: string | null;
+  headActing: boolean;
 }
 
 export interface Position {
   id: string;
   code: string;
   title: string;
+  level: number;
+  active: boolean;
+  /** Chức danh hệ thống (CEO): chỉ đổi được tên (AC-2.6.3). */
+  system: boolean;
+  holderCount: number;
 }
 
-export interface DepartmentNode extends Department {
+export interface UnitHead {
+  id: string;
+  fullName: string;
+  acting: boolean;
+}
+
+export interface DepartmentNode extends Omit<Department, 'status' | 'headActing'> {
+  head: UnitHead | null;
+  memberCount: number;
   children: DepartmentNode[];
+}
+
+export interface DepartmentDetail extends Omit<DepartmentNode, 'children'> {
+  status: 'ACTIVE' | 'INACTIVE';
+  headActing: boolean;
+  deputies: { id: string; fullName: string; positionTitle: string | null }[];
+  path: { id: string; name: string; unitType: UnitType; headEmployeeId: string | null }[];
 }
 
 export interface LeaveBalance {
@@ -274,4 +322,44 @@ export interface LeaveRequest {
   history?: LeaveHistory[];
   /** Có ở API xem chi tiết: người gọi được duyệt/từ chối đơn này. */
   canDecide?: boolean;
+}
+
+// ----- Điều chuyển (UC2 FR-2.7) -----
+
+export type TransferReason = 'TRANSFER' | 'PROMOTION' | 'MANAGER_CHANGE' | 'CORRECTION';
+export const TRANSFER_REASON_LABEL: Record<TransferReason, string> = {
+  TRANSFER: 'Điều chuyển',
+  PROMOTION: 'Thăng chức',
+  MANAGER_CHANGE: 'Đổi quản lý',
+  CORRECTION: 'Điều chỉnh (sửa nhầm)',
+};
+
+export interface Transfer {
+  id: string;
+  employeeId: string;
+  status: 'SCHEDULED' | 'ACTIVE' | 'CLOSED' | 'CANCELLED' | 'FAILED';
+  reason: TransferReason;
+  effectiveDate: string;
+  departmentId: string;
+  departmentName: string | null;
+  positionId: string;
+  positionTitle: string | null;
+  managerId: string | null;
+  managerName: string | null;
+  note: string | null;
+  failureReason: string | null;
+  reports: { employeeId: string; fullName: string | null; managerId: string | null; status: string }[];
+  createdAt: string;
+}
+
+export interface TerminationImpact {
+  activeReports: number;
+  headRoles: { departmentId: string; name: string; role: 'HEAD' | 'DEPUTY' }[];
+  scheduledTransfers: number;
+  pendingAsNewManager: { transferId: string; employeeName: string; effectiveDate: string }[];
+}
+
+/** Hôm nay theo giờ Việt Nam (khớp job điều chuyển phía server). */
+export function vnToday(): string {
+  return new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
 }

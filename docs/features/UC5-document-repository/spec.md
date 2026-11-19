@@ -135,23 +135,23 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 
 **Trang "Tra cứu tài liệu" `/documents`: danh sách (A1) cùng ô tìm và khung trợ lý của UC6**
 
-![Trang tra cứu tài liệu](../mockups/uc56-documents.png)
+![Trang tra cứu tài liệu](mockups/uc56-documents.png)
 
 **Chi tiết `/documents/{id}` với các phiên bản (A1, FR-5.3)**
 
-![Chi tiết tài liệu](../mockups/uc5-detail.png)
+![Chi tiết tài liệu](mockups/uc5-detail.png)
 
 **HR quản lý tài liệu `/documents/manage` (A3, A4, A5)**
 
-![Quản lý tài liệu](../mockups/uc5-manage.png)
+![Quản lý tài liệu](mockups/uc5-manage.png)
 
 **HR đăng tài liệu: phạm vi, file, tiến độ tải lên (luồng chính)**
 
-![Hộp đăng tài liệu](../mockups/uc5-upload.png)
+![Hộp đăng tài liệu](mockups/uc5-upload.png)
 
 **Trên điện thoại: tài liệu và trợ lý là hai tab**
 
-![Tra cứu tài liệu trên điện thoại](../mockups/uc56-mobile.png)
+![Tra cứu tài liệu trên điện thoại](mockups/uc56-mobile.png)
 
 ## 10. Yêu cầu phi chức năng liên quan
 

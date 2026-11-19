@@ -1,16 +1,16 @@
-import { Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiExtraModels, ApiOkResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { Request } from 'express';
-import { PageQuery } from '../../common/pagination';
 import { RateLimit } from '../../common/rate-limit/rate-limit.interceptor';
 import { RateLimitService } from '../../common/rate-limit/rate-limit.service';
 import { CurrentUser, Roles } from '../identity/auth.decorators';
-import { AuthUser } from '../identity/roles';
+import { AuthUser, hasRole } from '../identity/roles';
 import { OrganizationService } from '../organization/organization.service';
 import {
   BankAccountSection,
   CreateEmployeeDto,
   DirectoryQuery,
+  MembersQuery,
   MeResponse,
   PersonalSection,
   ProfileQuery,
@@ -21,6 +21,8 @@ import {
 } from './employee.dto';
 import { EmployeeService, RequestMeta } from './employee.service';
 import { ProfileChangeService } from './profile-change.service';
+import { CreateTransferDto } from './transfer.dto';
+import { TransferService } from './transfer.service';
 import { SECTION_SCHEMAS } from './profile-schema';
 
 const COMPUTED = new Set(['career-history', 'milestones', 'long-leaves']);
@@ -34,6 +36,7 @@ export class EmployeeController {
     private readonly employees: EmployeeService,
     private readonly org: OrganizationService,
     private readonly changes: ProfileChangeService,
+    private readonly transfers: TransferService,
     private readonly limiter: RateLimitService,
   ) {}
 
@@ -52,7 +55,11 @@ export class EmployeeController {
   async directory(@Query() q: DirectoryQuery, @CurrentUser() user: AuthUser) {
     // NFR-5.21: tìm kiếm có giới hạn riêng 20 lượt/phút (ô tìm đồng nghiệp gọi API này).
     if (q.q) await this.limiter.consume(user.userId, 'search');
-    return this.employees.directory(q);
+    // AC-2.1.5: lọc theo đơn vị mặc định gồm cả đơn vị con cháu.
+    let dept: string | string[] | undefined = q.dept;
+    if (q.dept && q.includeAncestors && hasRole(user, 'HR', 'ADMIN')) dept = await this.org.ancestorIds(q.dept);
+    else if (q.dept && q.includeChildren !== false) dept = await this.org.descendantIds(q.dept);
+    return this.employees.directory({ q: q.q, dept, page: q.page, size: q.size });
   }
 
   @Post('employees')
@@ -131,10 +138,44 @@ export class EmployeeController {
   }
 
   @Get('departments/:id/members')
-  async members(@Param('id', ParseUUIDPipe) id: string, @Query() q: PageQuery) {
+  async members(@Param('id', ParseUUIDPipe) id: string, @Query() q: MembersQuery) {
     await this.org.getDepartment(id).catch(() => {
       throw new NotFoundException('Không tìm thấy phòng ban');
     });
-    return this.employees.directory({ dept: id, page: q.page, size: q.size });
+    const dept = q.includeChildren ? await this.org.descendantIds(id) : id;
+    return this.employees.directory({ dept, page: q.page, size: q.size });
+  }
+
+  // ---------- Điều chuyển (UC2 FR-2.7) ----------
+
+  @Post('employees/:id/transfers')
+  @Roles('HR')
+  @RateLimit('profile-write')
+  createTransfer(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CreateTransferDto, @CurrentUser() user: AuthUser) {
+    return this.transfers.create(id, dto, user);
+  }
+
+  @Get('employees/:id/transfers')
+  @Roles('HR')
+  listTransfers(@Param('id', ParseUUIDPipe) id: string) {
+    return this.transfers.list(id);
+  }
+
+  @Delete('employees/:id/transfers/:transferId')
+  @Roles('HR')
+  @HttpCode(204)
+  async cancelTransfer(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('transferId', ParseUUIDPipe) transferId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    await this.transfers.cancel(id, transferId, user);
+  }
+
+  /** Hộp xác nhận nghỉ việc (UC1 AC-1.7.3, UC2 AC-2.9.8). */
+  @Get('employees/:id/termination-impact')
+  @Roles('HR')
+  terminationImpact(@Param('id', ParseUUIDPipe) id: string) {
+    return this.transfers.terminationImpact(id);
   }
 }

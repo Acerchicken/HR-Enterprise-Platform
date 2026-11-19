@@ -13,6 +13,7 @@ import { LeaveListPage } from './pages/leave/LeaveListPage';
 import { NewLeavePage } from './pages/leave/NewLeavePage';
 import { LoginPage } from './pages/LoginPage';
 import { OrgPage } from './pages/OrgPage';
+import { PositionsPage } from './pages/org/PositionsPage';
 import { ProfileState } from './profile/navigation';
 import { ProfilePanel } from './profile/ProfilePanel';
 
@@ -55,6 +56,7 @@ function AppRoutes() {
           <Route path="employees/:id" element={<HomePage />} />
           <Route path="employees/:id/:section" element={<HomePage />} />
           <Route path="org" element={<OrgPage />} />
+          <Route path="org/positions" element={<PositionsPage />} />
           <Route path="leave" element={<LeaveListPage key="mine" mode="mine" />} />
           <Route path="leave/new" element={<NewLeavePage />} />
           <Route path="leave/approvals" element={<LeaveListPage key="approvals" mode="approvals" />} />

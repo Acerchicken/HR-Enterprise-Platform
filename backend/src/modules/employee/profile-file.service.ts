@@ -22,7 +22,7 @@ import { Employee } from './employee.entity';
 import { RequestMeta } from './employee.service';
 import { ProfileFile } from './profile-change.entity';
 import { checkDeclared, checkQuota, FILE_SECTIONS, matchesContent, ORPHAN_HOURS, SHA256 } from './profile-file-rules';
-import { relationTo } from './profile-sections';
+import { resolveRelation } from './profile-sections';
 
 /** Bucket riêng cho file hồ sơ (`PROFILE_STORAGE_BUCKET`). */
 @Injectable()
@@ -85,7 +85,7 @@ export class ProfileFileService implements OnApplicationBootstrap, OnApplication
   private async target(employeeId: string, viewer: AuthUser) {
     const e = await this.employees.findOneBy({ id: employeeId });
     if (!e) throw new NotFoundException('Không tìm thấy nhân viên');
-    return { e, relation: relationTo(viewer, e) };
+    return { e, relation: await resolveRelation(this.employees, viewer, e) };
   }
 
   /** Bước 2–5 luồng 4.3: kiểm khai báo, hạn mức, trùng nội dung; tạo bản ghi `PENDING` và URL PUT. */

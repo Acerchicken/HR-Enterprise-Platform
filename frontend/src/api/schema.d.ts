@@ -93,11 +93,27 @@ export interface paths {
         };
         get: operations["OrganizationController_positions"];
         put?: never;
-        post?: never;
+        post: operations["OrganizationController_createPosition"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/positions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["OrganizationController_updatePosition"];
         trace?: never;
     };
     "/api/v1/me": {
@@ -204,6 +220,54 @@ export interface paths {
             cookie?: never;
         };
         get: operations["EmployeeController_members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EmployeeController_listTransfers"];
+        put?: never;
+        post: operations["EmployeeController_createTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/transfers/{transferId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["EmployeeController_cancelTransfer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/termination-impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EmployeeController_terminationImpact"];
         put?: never;
         post?: never;
         delete?: never;
@@ -793,6 +857,12 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         CreateDepartmentDto: {
+            /**
+             * @description ADR-14: Công ty, Trung tâm, Phòng, Nhóm
+             * @example DEPARTMENT
+             * @enum {string}
+             */
+            unitType: "COMPANY" | "CENTER" | "DEPARTMENT" | "TEAM";
             /** @example ENG-PLT */
             code: string;
             /** @example Platform Engineering */
@@ -801,12 +871,39 @@ export interface components {
             office: string;
             parentId?: Record<string, never>;
             headEmployeeId?: Record<string, never>;
+            /** @description FR-2.9: trưởng là "Quyền trưởng" */
+            headActing?: boolean;
+            /** @description Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung tâm 3, Phòng 3, Nhóm 0 */
+            deputyEmployeeIds?: string[];
         };
         UpdateDepartmentDto: {
+            /** @enum {string} */
+            unitType?: "COMPANY" | "CENTER" | "DEPARTMENT" | "TEAM";
             name?: string;
             office?: string;
             parentId?: Record<string, never> | null;
             headEmployeeId?: Record<string, never> | null;
+            /** @description FR-2.9: trưởng là "Quyền trưởng" */
+            headActing?: boolean;
+            /** @description Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung tâm 3, Phòng 3, Nhóm 0 */
+            deputyEmployeeIds?: string[];
+            /**
+             * @description INACTIVE: ngừng hoạt động (FR-2.10), chỉ khi đơn vị đã trống
+             * @enum {string}
+             */
+            status?: "ACTIVE" | "INACTIVE";
+        };
+        CreatePositionDto: {
+            /** @example PM */
+            code: string;
+            /** @example Quản lý dự án */
+            title: string;
+            level: number;
+        };
+        UpdatePositionDto: {
+            title?: string;
+            level?: number;
+            active?: boolean;
         };
         MeEmployee: {
             id: string;
@@ -922,6 +1019,34 @@ export interface components {
             bankAccount?: string;
             /** @description Lương tháng (VND) */
             salary?: string;
+        };
+        HeadChangeDto: {
+            departmentId: string;
+            /** @description null: để trống có chủ ý */
+            employeeId: Record<string, never> | null;
+        };
+        ReportChoiceDto: {
+            employeeId: string;
+            /** @description Quản lý mới của cấp dưới; giữ nguyên thì là chính người được điều chuyển */
+            managerId: string;
+        };
+        CreateTransferDto: {
+            /**
+             * @description Hôm nay hoặc tương lai; quá khứ tối đa 30 ngày (AC-2.7.4)
+             * @example 2026-12-01
+             */
+            effectiveDate: string;
+            departmentId: string;
+            positionId: string;
+            /** @description Chỉ CEO được để trống */
+            managerId: Record<string, never> | null;
+            /** @enum {string} */
+            reason: "TRANSFER" | "PROMOTION" | "MANAGER_CHANGE" | "CORRECTION";
+            note?: string;
+            /** @description AC-2.7.5: trưởng mới cho đơn vị người này đang làm trưởng */
+            newHeads?: components["schemas"]["HeadChangeDto"][];
+            /** @description AC-2.7.6: bắt buộc đủ mọi cấp dưới đang làm việc */
+            reports?: components["schemas"]["ReportChoiceDto"][];
         };
         SubmitChangeDto: {
             /** @example emergency-contacts */
@@ -1164,12 +1289,59 @@ export interface operations {
     };
     OrganizationController_positions: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description true: chỉ chức danh đang dùng (danh sách chọn) */
+                active?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OrganizationController_createPosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePositionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OrganizationController_updatePosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePositionDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -1205,6 +1377,10 @@ export interface operations {
                 q?: string;
                 /** @description Lọc theo phòng ban */
                 dept?: string;
+                /** @description Khi lọc theo đơn vị: kèm nhân viên của đơn vị con cháu (mặc định true, AC-2.1.5) */
+                includeChildren?: boolean;
+                /** @description HR, ADMIN: đơn vị và các đơn vị cha (danh sách chọn trưởng, phó kiêm nhiệm, AC-2.9.1) */
+                includeAncestors?: boolean;
             };
             header?: never;
             path?: never;
@@ -1378,6 +1554,90 @@ export interface operations {
         };
     };
     EmployeeController_members: {
+        parameters: {
+            query?: {
+                /** @description Kèm nhân viên của đơn vị con cháu (mặc định false) */
+                includeChildren?: boolean;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_listTransfers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_createTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransferDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_cancelTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                transferId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_terminationImpact: {
         parameters: {
             query?: never;
             header?: never;

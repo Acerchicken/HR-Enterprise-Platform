@@ -26,6 +26,7 @@ Mọi lỗi (trừ lỗi mạng) trả cùng một dạng JSON:
 | `code` | string | Có | Mã lỗi máy đọc, suy ra từ HTTP status ([mục 2](#2-bảng-mã-lỗi)). Frontend rẽ nhánh theo `code`, không theo `message` |
 | `message` | string hoặc string[] | Có | Câu tiếng Việt cho người dùng. Lỗi validation là **mảng** các câu |
 | `fields` | object `{ tênTrường: lỗi }` | Chỉ lỗi validation | Lỗi đầu tiên của mỗi trường, để form hiện lỗi đúng ô. Trường lồng nhau viết `cha.con` |
+| `details` | object | Chỉ vài lỗi nghiệp vụ | Số liệu để giao diện nói rõ lý do, ví dụ UC2 E13 ngừng hoạt động đơn vị: `{ members, activeChildren, scheduledTransfers }` |
 | `traceId` | string | Có | Trùng header `X-Trace-Id` của response và log server. Gửi kèm khi báo lỗi để tra log |
 
 Client có thể gửi header `X-Trace-Id` (tối đa 64 ký tự) để tự đặt mã; không gửi thì server sinh uuid.

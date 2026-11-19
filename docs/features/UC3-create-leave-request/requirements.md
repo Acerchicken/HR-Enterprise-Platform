@@ -20,7 +20,8 @@
 - **AC-3.1.1** Khi nhân viên xem số dư. Thì mỗi loại phép có được hưởng, đã dùng, đang chờ, còn lại; còn lại = được hưởng −
   đã dùng − đang chờ.
 - **AC-3.1.2** Giả sử nhân viên vừa tạo đơn 2 ngày. Khi xem lại số dư. Thì đang chờ tăng 2, còn lại giảm 2.
-- **AC-3.1.3** *(chưa đạt)* Giả sử nhân viên vào làm 1/7/2026. Khi xem số dư phép năm 2026. Thì được hưởng 6 ngày (12 × 6/12,
+- **AC-3.1.3** *(rà 18/11: UC1 "Các mốc trong công ty" đã hiện số ngày phép cộng theo thâm niên bằng `seniority()` trong
+  `profile-computed.ts`; khi làm AC này, số dư phép phải dùng cùng hàm để hai nơi không lệch)* *(chưa đạt)* Giả sử nhân viên vào làm 1/7/2026. Khi xem số dư phép năm 2026. Thì được hưởng 6 ngày (12 × 6/12,
   Điều 113 BLLĐ). Người có 10 năm thâm niên được hưởng 14 ngày.
 - **AC-3.1.4** *(chưa đạt)* Nghỉ cưới, nghỉ tang tính theo từng lần (3 ngày/lần), không trừ vào số dư năm.
 

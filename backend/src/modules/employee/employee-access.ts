@@ -4,7 +4,8 @@ import { UpdateEmployeeDto, ViewLevel } from './employee.dto';
 /**
  * Quy tắc phân quyền trên hồ sơ (NFR Security tuần 5), viết thành hàm thuần để test:
  * - HR: xem đầy đủ, trường nhạy cảm chỉ trả khi yêu cầu (và ghi audit).
- * - Chính mình, quản lý trực tiếp: xem thông tin cá nhân (ngày sinh, địa chỉ, ngày vào làm).
+ * - Chính mình, quản lý trực tiếp: xem thông tin cá nhân (ngày sinh, địa chỉ, ngày vào làm). Quản lý gián tiếp cần database
+ *   nên `EmployeeService.profile` nâng thêm bằng `resolveRelation`.
  * - Người khác, kể cả ADMIN: chỉ thông tin danh bạ.
  */
 export function viewLevel(actor: AuthUser, target: { id: string; managerId: string | null }): ViewLevel {
