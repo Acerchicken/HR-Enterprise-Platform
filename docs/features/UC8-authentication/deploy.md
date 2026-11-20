@@ -32,17 +32,21 @@
 
 | Môi trường | Tài nguyên | File |
 |---|---|---|
-| Local | Realm `hr`: `passwordPolicy`, `failureFactor: 5`, `resetPasswordAllowed: true`, `ssoSessionMaxLifespan: 36000`, Conditional OTP cho role `hr`, `admin`, SMTP Mailpit, client `hr-api-admin`, event `LOGIN`, `LOGIN_ERROR` | `keycloak/realm-hr.json` |
+| Local | Realm `hr`: bỏ realm role `manager` (ADR-18), `passwordPolicy`, `failureFactor: 5`, `resetPasswordAllowed: true`, `ssoSessionMaxLifespan: 36000`, Conditional OTP cho role `hr`, `admin`, SMTP Mailpit, client `hr-api-admin`, event `LOGIN`, `LOGIN_ERROR` | `keycloak/realm-hr.json` |
 | Local | Queue `identity-sync` | `docker-compose.yml` (RabbitMQ) |
 | Staging | User pool: `user_pool_tier = "ESSENTIALS"`, `allow_admin_create_user_only = true`, `require_uppercase = true`, `mfa_configuration = "ON"` + `software_token_mfa_configuration`, `account_recovery_setting` (`verified_email`), `email_configuration` qua SES, `temporary_password_validity_days = 7` | `infra/staging/cognito.tf` |
 | Staging | App client: `callback_urls` thêm `/callback` (localhost và CloudFront), `explicit_auth_flows = ["ALLOW_REFRESH_TOKEN_AUTH"]`, token 15 phút / refresh 10 giờ (`token_validity_units`) | `infra/staging/cognito.tf` |
 | Staging | Managed Login (domain `managed_login_version = 2`, branding logo HRHelper) | `infra/staging/cognito.tf` |
-| Staging | SQS `identity-sync` + DLQ (5 lần), subscription SNS `hr-events` lọc `employee.created`, `employee.terminated`, `employee.reinstated`, `account.invite_requested` | `infra/staging/sqs_worker.tf` |
-| Staging | IAM worker: `cognito-idp:AdminCreateUser`, `AdminAddUserToGroup`, `AdminDisableUser`, `AdminEnableUser`, `AdminUserGlobalSignOut`, `AdminGetUser` trên ARN user pool | `infra/staging/sqs_worker.tf` |
+| Staging | SQS `identity-sync` + DLQ (5 lần), subscription SNS `hr-events` lọc `event_type` `EmployeeCreated`, `EmployeeTerminated`, `EmployeeReinstated`, `EmployeeEmailChanged`, `AccountInviteRequested`, `RoleGranted`, `RoleRevoked` (spec mục 9.2) | `infra/staging/sqs_worker.tf` |
+| Staging | IAM worker: `cognito-idp:AdminCreateUser`, `AdminUpdateUserAttributes`, `AdminAddUserToGroup`, `AdminRemoveUserFromGroup`, `AdminDisableUser`, `AdminEnableUser`, `AdminUserGlobalSignOut`, `AdminGetUser` trên ARN user pool | `infra/staging/sqs_worker.tf` |
 | Staging | Lambda Post-authentication → SNS `hr-events` (nhánh `infra/idp-auth-events`) | đề xuất `infra/staging/cognito_triggers.tf` |
 
 ## 4. Các bước
 
+- **Migration:** `AccountLifecycle`, `RoleAssignmentAudit` chạy tự động khi API khởi động; dòng `user_account` có sẵn thành
+  `ACTIVE`. Sau khi bỏ đọc vai trò từ token, ai đang có quyền HR, ADMIN chỉ nhờ nhóm trên IdP sẽ mất quyền: trước khi deploy
+  `feat/uc8-roles-from-db`, đối chiếu nhóm `hr`, `admin` trên IdP với `iam.role_assignment` và thêm dòng còn thiếu (seed đã có 4
+  tài khoản demo).
 - **Local:** `docker compose up -d --build` import lại realm. Realm đã có thì xóa volume Keycloak hoặc import bằng tay, vì Keycloak
   không ghi đè realm đã tồn tại. Đăng nhập `hr@hr.local` lần đầu sẽ phải quét mã QR TOTP; mở Mailpit (8025) để xem thư mời và thư
   đặt lại mật khẩu.
@@ -56,7 +60,8 @@
 2. Đăng nhập `hr@hr.local`: bị hỏi mã TOTP.
 3. "Quên mật khẩu" với một email demo: nhận được thư (Mailpit hoặc hộp thư đã xác minh trên SES).
 4. HR tạo nhân viên thử: trong 1 phút có thư mời; cho nghỉ việc: đăng nhập lại bị từ chối.
-5. `aws cognito-idp describe-user-pool-client`: `ExplicitAuthFlows` chỉ có `ALLOW_REFRESH_TOKEN_AUTH`.
+5. ADMIN cấp `HR` cho một người trên trang Phân quyền: người đó vào được trang HR ngay; trong 1 phút có trong nhóm `hr` trên IdP.
+6. `aws cognito-idp describe-user-pool-client`: `ExplicitAuthFlows` chỉ có `ALLOW_REFRESH_TOKEN_AUTH`.
 
 ## 6. Rollback và sự cố
 
