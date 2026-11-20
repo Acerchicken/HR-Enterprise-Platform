@@ -57,10 +57,10 @@ stateDiagram-v2
   PENDING_HR --> CANCELLED: nhân viên hủy (UC3)
   SUBMITTED --> REJECTED: quản lý trực tiếp từ chối
   SUBMITTED --> CANCELLED: nhân viên hủy (UC3)
-  SUBMITTED --> CANCELLED: HR hủy sau khi xác minh thực tế, từ startDate trở đi (BR-07)
-  PENDING_HR --> CANCELLED: HR hủy sau khi xác minh thực tế, từ startDate trở đi (BR-07)
   APPROVED --> CANCELLED: quản lý trực tiếp/HR xác nhận yêu cầu trước startDate (BR-08)
   APPROVED --> COMPLETED: HR hoàn tất
+  APPROVED --> CANCELLED: hệ thống hủy khi nghỉ việc, đơn bắt đầu sau ngày nghỉ việc (UC3 AC-3.1.7)
+  SUBMITTED --> CANCELLED: hệ thống hủy khi nghỉ việc (UC3 AC-3.1.7)
   REJECTED --> [*]
   CANCELLED --> [*]
   COMPLETED --> [*]
@@ -102,9 +102,10 @@ stateDiagram-v2
      audit `LEAVE_HR_REJECT` (không chứa `comment`, BR-14), email cho nhân viên và quản lý.
   6. Trong lúc `PENDING_HR`, nhân viên vẫn tự hủy được (UC3 A1, BR-07); đơn vẫn giữ lịch (BR-02).
 - **A7, hủy đơn đã duyệt (BR-08):** Chủ đơn đề nghị hủy trước ngày bắt đầu. Quản lý trực tiếp hiện tại hoặc HR xác nhận
-  qua `POST /leave-requests/{id}/cancel`, gửi `version` và lý do bắt buộc. Hệ thống chuyển `APPROVED` → `CANCELLED`, trả
+  qua `POST /leave-requests/{id}/cancel-request/approve` (bác: `…/cancel-request/reject`, 13.4), gửi `version`; lý do là của
+  đề nghị chủ đơn đã gửi. Hệ thống chuyển `APPROVED` → `CANCELLED`, trả
   `pending` theo từng năm, không cộng `used`, ghi người đề nghị/người xử lý/lý do vào lịch sử (không đưa lý do tự do vào
-  audit), gửi email chung. Nhân viên tự gọi endpoint này trên đơn `APPROVED` nhận 403/409 theo quyền và trạng thái.
+  audit), gửi email chung. Nhân viên gọi `…/cancel` trên đơn `APPROVED` nhận 409 (UC3 AC-3.6.2).
 - **A8, nhắc đơn chờ (BR-17):** Sau một ngày làm việc đầy đủ, nếu `SUBMITTED` thì nhắc người duyệt đang có quyền; nếu
   `PENDING_HR` thì nhắc nhóm HR. Chỉ nhắc một lần cho mỗi giai đoạn, dùng email chung; không tự duyệt/hủy.
 - **A9, HR sửa lịch lễ (FR-4.9, BR-19):** HR thêm hoặc xóa ngày lễ, ngày nghỉ bù; hệ thống báo số đơn bị ảnh hưởng, không tự
@@ -127,7 +128,7 @@ stateDiagram-v2
 | E14 | HR hoàn tất trong chính ngày kết thúc hoặc trước `endDate` theo giờ Việt Nam | 409 `CONFLICT` (BR-10) |
 | E15 | Quản lý/HR hủy đơn `APPROVED` từ ngày bắt đầu trở đi theo luồng hủy trước ngày nghỉ | 409 `CONFLICT`; HR dùng quy trình xác minh/điều chỉnh thực tế |
 | E11 | HR duyệt thêm đơn của chính mình | 403 `FORBIDDEN` |
-| E12 | HR từ chối ở bước duyệt thêm mà không có lý do | 400 `VALIDATION_ERROR`, `fields: ["comment"]` |
+| E12 | Từ chối (quản lý, HR duyệt thêm) hoặc bác đề nghị hủy mà không có lý do | 400 `BAD_REQUEST`, `fields: ["comment"]` |
 | E13 | Hoàn tất đơn `PENDING_HR`; quản lý gọi `hr-approve` | 409 `CONFLICT`; 403 `FORBIDDEN` |
 | E16 | Xác nhận, bác đề nghị hủy khi không có quyền: không phải quản lý trực tiếp hiện tại, người duyệt thay hoặc HR; quản lý xử lý đơn có `requiresHrApproval`; chủ đơn tự xác nhận | 403 `FORBIDDEN` |
 | E17 | Xác nhận, bác khi đơn không có đề nghị hủy, không còn `APPROVED`, hoặc đã tới `startDate` | 409 `CONFLICT` |
@@ -152,7 +153,7 @@ stateDiagram-v2
 | `version` | Có | Version hiện tại của đơn (optimistic locking) |
 | `comment` | Không | Tối đa 500 ký tự; ghi vào lịch sử |
 | `status` (lọc danh sách HR) | Không | Một trong 6 trạng thái; mặc định `APPROVED` |
-| `comment` khi `hr-reject` | Có | 1–500 ký tự |
+| `comment` khi `reject`, `hr-reject`, `cancel-request/reject` | Có | 1–500 ký tự (cùng quy tắc từ chối của UC1 FR-1.9 và giao diện AC-0.6.3) |
 
 ## 9. Giao diện và API
 
@@ -292,7 +293,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
   với `manager_id` = quản lý trực tiếp hiện tại của chủ đơn. State machine cho `DELEGATE` quyền như `DIRECT_MANAGER`.
 - **Danh sách chờ duyệt:** `GET /leave-requests/pending-approval` gộp thêm cấp dưới của các quản lý đang giao cho người gọi;
   mỗi đơn có cờ `viaDelegation` để giao diện ghi "duyệt thay cho …".
-- **Giao diện:** `/leave/delegations` cho HR: bảng phân công, nút tạo (chọn quản lý, người thay, khoảng ngày), nút kết thúc.
+- **Giao diện:** `/approvals/delegations` cho HR (mục 9): bảng phân công, nút tạo (chọn quản lý, người thay, khoảng ngày), nút kết thúc.
 
 ### 13.2 Riêng tư đơn nghỉ (BR-14, BR-15)
 

@@ -231,12 +231,13 @@ tuyến; email chỉ là câu báo chung (BR-15).
 | `LeaveManagerApproved` | Quản lý duyệt đơn cần HR duyệt thêm | `POST …/approve` | Chủ đơn; nhóm HR | `feat/leave-hr-approval` |
 | `LeaveHrApproved`, `LeaveHrRejected` | HR duyệt thêm, từ chối | `POST …/hr-approve`, `…/hr-reject` | Chủ đơn (từ chối: thêm quản lý) | `feat/leave-hr-approval` |
 | `LeaveCancelRequested` | Chủ đơn đề nghị hủy đơn đã duyệt | `POST …/cancel-request` | Người có quyền xác nhận (quản lý trực tiếp, người duyệt thay; HR nếu đơn đã qua HR hoặc của CEO) | `feat/leave-cancel-rules` |
-| `LeaveCancelled` (thêm trường `reason`: `OWNER`, `CANCEL_REQUEST_APPROVED`, `SYSTEM`) | Như hiện nay, cộng xác nhận đề nghị hủy và hệ thống hủy khi nghỉ việc | `POST …/cancel`, `…/cancel-request/approve`, event `EmployeeTerminated` | Chủ đơn, quản lý trực tiếp; nhóm HR nếu đơn đã qua HR | `feat/leave-cancel-rules` |
+| `LeaveCancelled` (thêm trường `reason`: `OWNER`, `CANCEL_REQUEST_APPROVED`, `SYSTEM`) | Như hiện nay, cộng xác nhận đề nghị hủy và hệ thống hủy khi nghỉ việc | `POST …/cancel`, `…/cancel-request/approve`, job nghỉ việc của Leave | Chủ đơn, quản lý trực tiếp; nhóm HR nếu đơn đã qua HR | `feat/leave-cancel-rules` |
 | `LeaveCancelRequestRejected` | Người duyệt bác đề nghị hủy | `POST …/cancel-request/reject` | Chủ đơn | `feat/leave-cancel-rules` |
 | `LeaveReminder` (`stage`: `SUBMITTED`, `PENDING_HR`) | Đơn chờ quá một ngày làm việc đầy đủ | Job nhắc đơn | Người duyệt đang có quyền hoặc nhóm HR | `feat/leave-reminders` |
 | `LeaveRecalculated` | HR tính lại số ngày sau khi sửa lịch lễ | `POST …/recalculate` | Chủ đơn | `feat/leave-holidays` |
-| `EmployeeTerminated` (`employeeId`, `effectiveDate`) | HR cho nhân viên nghỉ việc | `PATCH /employees/{id}` | Không gửi email; worker gọi xử lý nghỉ việc của module Leave | `feat/leave-balance-rules` |
 
-`EmployeeTerminated` tạm ghi `leave.outbox` như event hồ sơ (nợ kỹ thuật ở mục 2), chuyển `employee.outbox` khi làm ADR-15.
+Kiểm chéo 21/11: bỏ dòng `EmployeeTerminated (employeeId, effectiveDate)` đã ghi ở đây vì trùng tên với event của UC8 (mục 3,
+payload `employeeId`, `accountId`, `email`, chỉ phát khi hồ sơ có tài khoản). Module Leave xử lý nghỉ việc bằng job quét hồ sơ
+`TERMINATED` ([UC3 spec 13.2](../features/UC3-create-leave-request/spec.md#132-cấp-và-tính-phép-năm-br-01-ac-313-ac-315-ac-317)), không cần event.
 Audit đi kèm: `LEAVE_CANCEL_REQUEST`, `LEAVE_CANCEL_APPROVED`, `LEAVE_CANCEL_REQUEST_REJECT`, `LEAVE_RECALCULATE`,
 `LEAVE_BALANCE_ADJUST`, `LEAVE_BALANCE_OVERDRAWN`, `HOLIDAY_CREATE`, `HOLIDAY_DELETE`.

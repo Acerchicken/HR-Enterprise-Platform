@@ -501,7 +501,7 @@ Quyết định 14/11/2026 (rà soát trước khi làm UC1):
 | "Các mốc" hiện số ngày phép cộng theo thâm niên nhưng số dư phép (UC3 AC-3.1.3) chưa cộng | TV1 khi làm UC3 | Hai nơi phải dùng cùng một hàm tính |
 | Event email hồ sơ ghi chung `leave.outbox` | – | Nợ kỹ thuật, chuyển `employee.outbox` theo ADR-15 |
 | Hạn 2 ngày làm việc (AC-1.9.13) đếm bằng `workdaysBetween`: chỉ bỏ T7, CN, theo ngày UTC, chưa bỏ ngày lễ | TV1, nhánh `feat/leave-holidays` (UC4 spec 13.6) | Dùng dịch vụ lịch chung đọc `leave.holiday`, giờ Việt Nam (kiểm chéo UC3 spec mục 14) |
-| Nghỉ việc chưa xử lý đơn nghỉ của người nghỉ | TV1, nhánh `feat/leave-balance-rules` | Hộp xác nhận nêu số đơn; worker hủy đơn chờ, đơn tương lai (UC3 AC-3.1.7) |
+| Nghỉ việc chưa xử lý đơn nghỉ của người nghỉ | TV1, nhánh `feat/leave-balance-rules` | Hộp xác nhận nêu số đơn; job của Leave hủy đơn chờ, đơn tương lai (UC3 AC-3.1.7, spec 13.2) |
 | Quét mã độc file tải lên | – | Không làm trong MVP, rủi ro chấp nhận (mục 7) |
 
 ## 13. Thiết kế đề xuất

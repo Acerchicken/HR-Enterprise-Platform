@@ -43,6 +43,7 @@ là hàm thuần nên kiểm kỹ bằng unit test; luồng có số dư, lịch
 | AC-3.6.6, AC-3.6.7 | – | Cần thêm (TV4) | Chưa có tính năng (nhánh `feat/leave-cancel-rules`) |
 | AC-3.7.1 → AC-3.7.4 | – | – | Chưa có tính năng |
 | AC-3.1.7 | – | Cần thêm (TV4): nghỉ việc khi có đơn chờ, đơn đã duyệt tương lai | Chưa có tính năng |
+| AC-3.1.8 | – | Cần thêm (TV4): chuyển phép sang năm sau, trừ phần chuyển trước, đơn năm trước bị từ chối sau 01/01 | Chưa có tính năng |
 | AC-3.8.1 → AC-3.8.4 | – | Cần thêm (TV4) | Chưa có tính năng |
 
 ## 4. Dữ liệu và tài khoản
