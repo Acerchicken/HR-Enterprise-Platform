@@ -47,6 +47,7 @@
 | AC-8.6.x | e2e `UC8 FR-8.3, FR-8.6` | Xem trạng thái, gửi lại | Có |
 | AC-8.7.1 → 8.7.7 | e2e `UC8 FR-8.7` trong `app.e2e-spec.ts` (5 ca); unit `role-access.spec.ts` | ADMIN cấp HR rồi người đó đăng nhập lại bị hỏi TOTP (cần `identity-sync`) | Có; đồng bộ nhóm: unit `identity-sync.spec.ts`; TOTP chờ `infra/idp-mfa` |
 | AC-8.7.8 | e2e lọc theo vai trò, tìm theo email | Trang Phân quyền | Có |
+| AC-8.7.9 | e2e `Nghỉ việc thu hồi HR, ADMIN…` (2 ca) | Cho nghỉ việc ADMIN duy nhất: hộp xác nhận khóa nút | Có |
 
 ## 4. Dữ liệu và tài khoản
 

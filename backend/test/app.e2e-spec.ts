@@ -450,6 +450,51 @@ describe('HRHelper API (e2e)', () => {
     });
   });
 
+  describe('Nghỉ việc thu hồi HR, ADMIN; không cho nghỉ việc ADMIN cuối cùng (ADR-18, UC8 AC-8.7.4)', () => {
+    const db = () => app.get(require('typeorm').DataSource);
+    const patch = async (id: string, body: object) => {
+      const version = await versionOf(id);
+      return http.patch(`/api/v1/employees/${id}`).set(HR).send({ ...body, version });
+    };
+
+    it('ADMIN cuối cùng: hộp xác nhận báo trước, lưu bị 409, không đổi gì', async () => {
+      const adminEmployee = (await http.get('/api/v1/me').set(ADMIN)).body.employee.id;
+      const impact = (await http.get(`/api/v1/employees/${adminEmployee}/termination-impact`).set(HR).expect(200)).body;
+      expect(impact).toMatchObject({ lastAdmin: true, grantedRoles: ['ADMIN'] });
+      const res = await patch(adminEmployee, { status: 'TERMINATED' });
+      expect(res.status).toBe(409);
+      expect(res.body.message).toContain('ADMIN cuối cùng');
+      expect((await http.get('/api/v1/me').set(ADMIN).expect(200)).body.roles).toContain('ADMIN');
+    });
+
+    it('HR nghỉ việc mất HR, có audit và event; khôi phục không tự có lại HR', async () => {
+      const dept = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code !== 'HQ');
+      const pos = (await http.get('/api/v1/positions').set(HR)).body.find((p: any) => p.code !== 'CEO');
+      const code = `E7${String(Date.now() % 10000).padStart(4, '0')}`;
+      const id = (
+        await http
+          .post('/api/v1/employees')
+          .set(HR)
+          .send({ employeeCode: code, fullName: 'Nhân Sự Thử', workEmail: `term-${code.toLowerCase()}@hr.local`, departmentId: dept.id, positionId: pos.id, managerId, hireDate: '2026-11-18' })
+          .expect(201)
+      ).body.id;
+      await http.post('/api/v1/admin/role-assignments').set(ADMIN).send({ employeeId: id, role: 'HR', reason: 'Kiểm thử nghỉ việc' }).expect(201);
+      expect((await http.get(`/api/v1/employees/${id}/termination-impact`).set(HR)).body).toMatchObject({ lastAdmin: false, grantedRoles: ['HR'] });
+      expect((await patch(id, { status: 'TERMINATED' })).status).toBe(200);
+      const [acc] = await db().query(`SELECT id FROM iam.user_account WHERE employee_id = $1`, [id]);
+      expect(await db().query(`SELECT 1 FROM iam.role_assignment WHERE user_id = $1`, [acc.id])).toHaveLength(0);
+      const [audit] = await db().query(
+        `SELECT changed_fields FROM audit.audit_log WHERE action = 'ROLE_REVOKE' AND entity_id = $1 ORDER BY id DESC LIMIT 1`,
+        [acc.id],
+      );
+      expect(audit.changed_fields).toMatchObject({ role: 'HR', reason: 'Nghỉ việc' });
+      const events = (await db().query(`SELECT event_type FROM leave.outbox WHERE aggregate_id = $1 ORDER BY id`, [acc.id])).map((r: any) => r.event_type);
+      expect(events.slice(-2)).toEqual(['RoleRevoked', 'EmployeeTerminated']);
+      expect((await patch(id, { status: 'ACTIVE' })).status).toBe(200);
+      expect(await db().query(`SELECT 1 FROM iam.role_assignment WHERE user_id = $1`, [acc.id])).toHaveLength(0);
+    });
+  });
+
   it('cây tổ chức có 1 gốc loại Công ty, mỗi đơn vị có loại, trưởng, số người (AC-2.2.1, AC-2.2.3)', async () => {
     const tree = (await http.get('/api/v1/departments/tree').set(EMPLOYEE).expect(200)).body;
     expect(tree).toHaveLength(1);

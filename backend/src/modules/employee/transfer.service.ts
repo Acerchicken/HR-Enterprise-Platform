@@ -189,7 +189,24 @@ export class TransferService {
       this.rows.count({ where: { employeeId, status: 'SCHEDULED' } }),
       pendingAsNewManager(this.rows.manager, employeeId),
     ]);
-    return { activeReports, headRoles, scheduledTransfers, pendingAsNewManager: pending };
+    const roles: { role: 'HR' | 'ADMIN'; others: number }[] = await this.rows.manager.query(
+      `SELECT r.role,
+              (SELECT count(*)::int FROM iam.role_assignment o
+                 JOIN iam.user_account oa ON oa.id = o.user_id
+                 LEFT JOIN employee.employee oe ON oe.id = oa.employee_id
+                WHERE o.role = 'ADMIN' AND o.user_id <> r.user_id AND coalesce(oe.status, '') <> 'TERMINATED') AS others
+         FROM iam.role_assignment r JOIN iam.user_account a ON a.id = r.user_id
+        WHERE a.employee_id = $1 AND r.role IN ('HR', 'ADMIN') ORDER BY r.role DESC`,
+      [employeeId],
+    );
+    return {
+      activeReports,
+      headRoles,
+      scheduledTransfers,
+      pendingAsNewManager: pending,
+      grantedRoles: roles.map((r) => r.role),
+      lastAdmin: roles.some((r) => r.role === 'ADMIN' && r.others === 0),
+    };
   }
 
   // ---------- Nội bộ ----------

@@ -384,6 +384,8 @@ export interface TerminationImpact {
   headRoles: { departmentId: string; name: string; role: 'HEAD' | 'DEPUTY' }[];
   scheduledTransfers: number;
   pendingAsNewManager: { transferId: string; employeeName: string; effectiveDate: string }[];
+  grantedRoles: ('HR' | 'ADMIN')[];
+  lastAdmin: boolean;
 }
 
 /** Hôm nay theo giờ Việt Nam (khớp job điều chuyển phía server). */
