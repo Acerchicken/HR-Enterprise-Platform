@@ -199,7 +199,15 @@ export class TransferService {
         WHERE a.employee_id = $1 AND r.role IN ('HR', 'ADMIN') ORDER BY r.role DESC`,
       [employeeId],
     );
+    // Đọc chéo schema leave bằng SQL (database-schema.md mục 9): Leave phụ thuộc Employee nên Employee không gọi service Leave.
+    const [leave] = await this.rows.manager.query(
+      `SELECT count(*) FILTER (WHERE status IN ('SUBMITTED', 'PENDING_HR'))::int AS pending,
+              count(*) FILTER (WHERE status = 'APPROVED' AND start_date > $2)::int AS approved_future
+         FROM leave.leave_request WHERE employee_id = $1`,
+      [employeeId, vnToday()],
+    );
     return {
+      leave: { pending: leave.pending, approvedFuture: leave.approved_future },
       activeReports,
       headRoles,
       scheduledTransfers,
