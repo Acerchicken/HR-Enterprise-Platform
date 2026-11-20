@@ -13,6 +13,7 @@ import { ComingSoonPage, HomePage } from './pages/HomePage';
 import { LeaveDetailPage } from './pages/leave/LeaveDetailPage';
 import { LeaveListPage } from './pages/leave/LeaveListPage';
 import { NewLeavePage } from './pages/leave/NewLeavePage';
+import { DelegationsPage, HolidaysPage, LeaveBalancesPage } from './pages/leave/LeaveHrPages';
 import { LoginPage } from './pages/LoginPage';
 import { OrgPage } from './pages/OrgPage';
 import { PositionsPage } from './pages/org/PositionsPage';
@@ -60,13 +61,17 @@ function AppRoutes() {
           <Route path="employees/:id/:section" element={<HomePage />} />
           <Route path="org" element={<OrgPage />} />
           <Route path="org/positions" element={<PositionsPage />} />
-          <Route path="leave" element={<LeaveListPage key="mine" mode="mine" />} />
+          <Route path="leave" element={<LeaveListPage />} />
           <Route path="leave/new" element={<NewLeavePage />} />
-          <Route path="leave/approvals" element={<LeaveListPage key="approvals" mode="approvals" />} />
-          <Route path="leave/hr" element={<LeaveListPage key="hr" mode="hr" />} />
+          {/* Link cũ chuyển sang trang "Việc cần duyệt" (AC-0.6.4). */}
+          <Route path="leave/approvals" element={<Navigate to="/approvals?type=leave" replace />} />
+          <Route path="leave/hr" element={<Navigate to="/approvals?type=leave-complete" replace />} />
+          <Route path="leave/balances" element={<LeaveBalancesPage />} />
+          <Route path="leave/holidays" element={<HolidaysPage />} />
           <Route path="leave/:id" element={<LeaveDetailPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
-          <Route path="approvals/profile/:id" element={<ApprovalsPage />} />
+          <Route path="approvals/delegations" element={<DelegationsPage />} />
+          <Route path="approvals/:type/:id" element={<ApprovalsPage />} />
           <Route path="contracts/expiring" element={<ExpiringContractsPage />} />
           <Route path="admin/roles" element={<RolesPage />} />
           <Route path="coming-soon" element={<ComingSoonPage />} />

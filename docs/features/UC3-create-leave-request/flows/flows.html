@@ -245,9 +245,9 @@ const FLOWS = [
   intro: 'Mọi việc tính số dư nằm trong module Leave. Module Employee không gọi ngược; job của Leave tự quét hồ sơ đã nghỉ việc.',
   type: 'seq', p: ['H', 'A', 'D', 'J', 'O'],
   m: [
-    { frag: 'loop', c: 'job 00:10 giờ Việt Nam mỗi ngày', m: [
+    { frag: 'loop', c: 'LeaveJob: một lần mỗi ngày giờ Việt Nam', m: [
       { f: 'J', t: 'D', l: 'Mỗi người chưa nghỉ việc: tính entitled ANNUAL năm nay theo 13.2 (bắt được sửa hireDate, mốc thâm niên)' },
-      { f: 'J', t: 'D', l: 'Ngày 01/01: tạo dòng năm mới; không chuyển số dư năm cũ' },
+      { f: 'J', t: 'D', l: 'Lần chạy đầu năm: tạo dòng năm mới, carried_in = phần được hưởng năm trước chưa dùng (AC-3.1.8)' },
     ] },
     { f: 'H', t: 'A', l: 'PATCH /employees/{id} status = TERMINATED (UC1 AC-1.7.3)', s: 'AC-3.1.7' },
     { f: 'A', t: 'D', l: 'Giao dịch của module Employee: hồ sơ TERMINATED, đóng giai đoạn công tác (effective_to)' },

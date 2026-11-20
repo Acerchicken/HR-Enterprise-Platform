@@ -55,6 +55,9 @@ export function TerminateDialog({ employeeId, name, onClose, onConfirm }: { empl
                   </li>
                 ))}
                 {d.scheduledTransfers > 0 && <li>Hủy {d.scheduledTransfers} điều chuyển chưa hiệu lực</li>}
+                {(d.leave.pending > 0 || d.leave.approvedFuture > 0) && (
+                  <li>Hủy {d.leave.pending} đơn nghỉ đang chờ và {d.leave.approvedFuture} đơn đã duyệt chưa bắt đầu, trả lại số ngày; đơn đang diễn ra giữ để HR xử lý (UC3 AC-3.1.7)</li>
+                )}
                 <li>Đóng giai đoạn công tác hiện tại</li>
               </ul>
               <p className="note warn">Không đổi quản lý trực tiếp của ai.{d.headRoles.some((r) => r.role === 'HEAD') ? ' Nhớ gán trưởng mới cho đơn vị sau khi lưu.' : ''}</p>

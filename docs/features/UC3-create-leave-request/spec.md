@@ -8,7 +8,7 @@
 | Yêu cầu (SRS) | FR-3.1 → FR-3.7 |
 | Quy tắc | [BR-01 → BR-04, BR-07 → BR-08, BR-11 → BR-19](../../business/leave-rules.md), [loại phép, ngày lễ](../../business/leave-types-holidays.md), ADR-03 |
 | Mức ưu tiên | M (FR-3.7 là S) |
-| Trạng thái | Đã có; tạo đơn hộ (FR-3.7) kế hoạch tuần 11 |
+| Trạng thái | Đã có toàn bộ FR-3.1 → FR-3.8 (`feat/leave-uc3-uc4`, 21/11/2026) |
 | Phiên bản | 1.1 – 18/11/2026 (sơ đồ luồng `flows/`, hợp đồng API mục 9.3, thiết kế 13.2 → 13.6, kiểm chéo với UC1, UC2, UC8 mục 14). 1.0 – 13/11/2026 |
 
 ## 1. Mô tả ngắn
@@ -238,22 +238,22 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 ## 12. Hiện trạng và việc còn lại
 
+Code lại toàn bộ UC3, UC4 trong một PR `feat/leave-uc3-uc4` (21/11/2026) theo mục 13 (thay cho bảy nhánh ở 13.6), sau kiểm chéo
+lần 2 (mục 15). Unit test: `leave-rules.spec.ts`, `leave-state-machine.spec.ts`, `leave-access.spec.ts`, `leave-events.spec.ts`,
+`notification-worker.spec.ts`; e2e: khối "UC3, UC4 nghỉ phép" trong `app.e2e-spec.ts`.
+
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
 | Số dư, tạo đơn, ngày lễ, nửa ngày, trùng lịch, idempotency, hủy | Đã có | – |
-| Tạo đơn hộ (FR-3.7, BR-12) | Chưa có | TV1, nhánh `feat/leave-delegation`, mức 3 tuần 11 |
-| Email chỉ chứa thông báo chung (BR-15) | Chưa có: email còn tên, loại phép, ngày | TV1 sửa `buildEmail` và payload event |
-| Ẩn lý do nghỉ ốm với quản lý (BR-14) | Chưa có | TV1 sửa response chi tiết, danh sách, lịch sử |
+| Phép năm theo tỉ lệ, tháng lẻ, thâm niên, mức nền, chuyển phép (BR-01, AC-3.1.3, AC-3.1.8, FR-3.8) | Đã có | TV2 xác nhận đề xuất (a), (b) ở 13.2 |
+| Nghỉ theo sự kiện, `eventDate`, hạn mức nghỉ ốm `DEFAULT`/`MANUAL` (AC-3.1.4, AC-3.1.6, AC-3.2.6) | Đã có | Thai sản sinh đôi: HR kiểm giấy tờ ở bước HR duyệt |
+| Đơn qua hai năm (A5, AC-3.2.4) | Đã có | Lịch lễ 2027 chưa nạp: HR nhập ở `/leave/holidays` |
+| Tạo đơn hộ (FR-3.7, BR-12) | Đã có | – |
+| Tự hủy trước `startDate`, đề nghị hủy đơn đã duyệt (BR-07, BR-08) | Đã có | HR điều chỉnh đơn đã bắt đầu: ngoài MVP (13.5) |
+| Email chung, ẩn lý do nghỉ ốm (BR-14, BR-15) | Đã có | – |
+| Nghỉ việc hủy đơn (AC-3.1.7), lịch lễ thay đổi (AC-3.4.3), 403 khi chưa gắn hồ sơ (E9) | Đã có | – |
 | Lưu trữ 5 năm, legal hold (BR-13) | Chưa có | Thiết kế sau MVP; ghi trong SRS mục 8 |
-| Phép năm theo tỉ lệ, tháng lẻ và thâm niên (BR-01) | Code chưa đúng: seed có cộng thâm niên nhưng chưa tính tỷ lệ cho người vào làm trong năm; nhân viên mới không được cấp đúng số dư, khi tạo đơn số dư tự tạo bằng `max_days_per_year` | TV1 cấp/cập nhật số dư khi tạo nhân viên và đầu năm; kiểm thử AC-3.1.3 theo cách tính đã chốt |
-| Thời gian thử việc (BR-01, AC-3.1.5) | Chưa có kiểm tra chính sách thử việc có tiếp tục làm sau thời gian thử việc | TV1 tính từ `hireDate` khi nhân viên tiếp tục làm việc; cho dùng số dư đã phát sinh trong MVP |
-| Nghỉ theo sự kiện không trừ phép năm (BR-01, AC-3.1.4) | Code chưa đúng: tạo đơn loại sự kiện có thể tự tạo số dư phép theo `max_days_per_year` | TV1 tách số dư phép năm khỏi giới hạn theo từng sự kiện |
-| Hạn mức nghỉ ốm (BR-18, AC-3.1.6) | Code không có lịch sử đóng BHXH/nhóm điều kiện lao động; không thể suy hạn mức đúng từ `hireDate` | HR quản lý hạn mức từ hồ sơ BHXH đã xác minh cho tới khi có dữ liệu tích hợp |
-| Đơn qua hai năm (A5) | Code chưa đúng: trả 400, bắt tách hai đơn | TV1 |
-| Hủy đơn chờ sau ngày bắt đầu (BR-07, A7) | Code chưa phân biệt tự hủy trước/sau `startDate` | TV1 chặn tự hủy muộn; HR xác minh và điều chỉnh |
-| Hủy đơn đã duyệt theo đề nghị (BR-08, A6) | Chưa có luồng hủy của quản lý/HR; nhân viên tự hủy `APPROVED` phải tiếp tục bị chặn | TV1 triển khai theo UC3 AC-3.6.2 → AC-3.6.4 và UC4 |
-| Cập nhật lịch lễ ảnh hưởng đơn đang chờ/đã duyệt (BR-19, AC-3.4.3) | Chưa có xử lý điều chỉnh lịch được ghi audit/lịch sử | TV1 thêm luồng điều chỉnh có kiểm soát; không tự thay số dư |
-| Tài khoản chưa gắn hồ sơ (E9) | Code trả 404 thay vì 403 | TV1 |
+| Bản vẽ `uc3-balances.png` chưa có cột "Chuyển từ năm trước" | Giao diện đã có cột | Vẽ lại khi rảnh |
 
 ## 13. Thiết kế đề xuất cho phần chưa có
 
@@ -306,8 +306,8 @@ không phải 1,08).
 | Lúc | Việc |
 |---|---|
 | Đọc số dư, tạo đơn | `ensureBalances(nv, năm)`: chưa có dòng `ANNUAL` thì tạo theo công thức; dòng `SICK`, `UNPAID` chưa có thì tạo theo mặc định của loại phép (`source = DEFAULT`) |
-| Job 00:10 hằng ngày (worker) | Tính lại `ANNUAL` năm hiện tại cho người chưa nghỉ việc. Bắt được việc sửa `hireDate` (UC1 AC-1.4.4) và mốc thâm niên |
-| Job 00:10 ngày 01/01 | Tạo dòng năm mới cho mọi người đang làm việc, đặt `carried_in` theo công thức chuyển phép bên dưới |
+| Job hằng ngày (worker `LeaveJob` chạy 5 phút một lần, việc này một lần mỗi ngày giờ Việt Nam, đánh dấu ngày trong `notification.processed_event`) | Tính lại `ANNUAL` năm hiện tại cho người chưa nghỉ việc. Bắt được việc sửa `hireDate` (UC1 AC-1.4.4) và mốc thâm niên |
+| Lần chạy đầu tiên của năm (cùng job) | Tạo dòng năm mới cho mọi người đang làm việc, đặt `carried_in` theo công thức chuyển phép bên dưới |
 | Số dư năm trước đổi (đơn năm trước bị từ chối, hủy, tính lại; job hằng ngày) | Tính lại `carried_in` của năm hiện tại trong cùng transaction |
 | Job 5 phút (worker) quét hồ sơ `TERMINATED` còn đơn chưa xử lý | Hủy đơn chờ, hủy đơn đã duyệt bắt đầu sau ngày nghỉ việc (AC-3.1.7), rồi tính lại `ANNUAL` tới tháng nghỉ việc. Ngày nghỉ việc là `effective_to` của giai đoạn công tác vừa đóng (UC2 FR-2.8). Không dùng event `EmployeeTerminated`: event đó là của UC8 (payload `accountId`, chỉ phát khi hồ sơ có tài khoản, worker `identity-sync` xử lý) |
 

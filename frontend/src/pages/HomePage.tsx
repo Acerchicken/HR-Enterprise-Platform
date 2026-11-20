@@ -2,6 +2,7 @@ import {
   CalendarClock,
   CalendarDays,
   CalendarPlus,
+  CalendarRange,
   ClipboardCheck,
   FileSearch,
   History,
@@ -9,6 +10,7 @@ import {
   List,
   LucideIcon,
   Network,
+  Scale,
   ShieldCheck,
   Upload,
   UserPlus,
@@ -39,7 +41,7 @@ const COMMON: Tile[] = [
   { title: 'Hồ sơ của tôi', desc: 'Thông tin cá nhân, công việc, giấy tờ', icon: UserRound, to: 'profile', who: ['employee'] },
   { title: 'Đăng ký nghỉ', desc: 'Tạo đơn nghỉ phép, nghỉ ốm, nghỉ việc riêng', icon: CalendarPlus, to: '/leave/new', who: ['employee'] },
   { title: 'Đơn nghỉ của tôi', desc: 'Trạng thái các đơn đã gửi', icon: List, to: '/leave', who: ['employee'] },
-  { title: 'Việc cần duyệt', desc: 'Đơn nghỉ của nhân viên cấp dưới', icon: ClipboardCheck, to: '/leave/approvals', who: ['MANAGER'] },
+  { title: 'Việc cần duyệt', desc: 'Đơn nghỉ, đề nghị hủy của cấp dưới', icon: ClipboardCheck, to: '/approvals?type=leave', who: ['MANAGER'] },
   { title: 'Danh bạ', desc: 'Tra cứu đồng nghiệp', icon: Users, to: '/directory' },
   { title: 'Sơ đồ tổ chức', desc: 'Phòng ban và quản lý', icon: Network, to: '/org' },
   { title: 'Tra cứu tài liệu', desc: 'Tìm quy chế, chính sách; hỏi trợ lý AI', icon: FileSearch, to: '/coming-soon', ready: false },
@@ -47,8 +49,10 @@ const COMMON: Tile[] = [
 
 /** Nhóm "Chức năng HR" (bản vẽ 10.2); ADMIN không có HR thấy nhóm này với tên "Quản trị". Trang "Việc cần duyệt" có tab (frontend.md 2.4) làm ở tuần 12; tạm dẫn tới trang cũ. */
 const HR_TILES: Tile[] = [
-  { title: 'Việc cần duyệt', desc: 'Yêu cầu cập nhật hồ sơ, đơn nghỉ', icon: Inbox, to: '/approvals?type=profile', who: ['HR'] },
-  { title: 'Hoàn tất đơn nghỉ', desc: 'Đơn đã duyệt chờ HR hoàn tất', icon: CalendarDays, to: '/leave/hr', who: ['HR'] },
+  { title: 'Việc cần duyệt', desc: 'Đơn nghỉ, yêu cầu cập nhật hồ sơ', icon: Inbox, to: '/approvals?type=leave', who: ['HR'] },
+  { title: 'Hoàn tất đơn nghỉ', desc: 'Đơn đã duyệt chờ HR hoàn tất', icon: CalendarDays, to: '/approvals?type=leave-complete', who: ['HR'] },
+  { title: 'Số dư phép', desc: 'Mức phép năm, hạn mức nghỉ ốm', icon: Scale, to: '/leave/balances', who: ['HR'] },
+  { title: 'Lịch nghỉ lễ', desc: 'Ngày lễ, nghỉ bù; tính lại đơn', icon: CalendarRange, to: '/leave/holidays', who: ['HR'] },
   { title: 'Quản lý nhân viên', desc: 'Thêm, sửa hồ sơ, nghỉ việc', icon: UserPlus, to: '/employees/new', who: ['HR'] },
   { title: 'Hợp đồng sắp hết hạn', desc: 'Hết hạn trong 30 ngày tới', icon: CalendarClock, to: '/contracts/expiring', who: ['HR'] },
   { title: 'Đăng tài liệu', desc: 'Quy chế, biểu mẫu, phạm vi xem', icon: Upload, to: '/coming-soon', who: ['HR'], ready: false },
@@ -73,7 +77,7 @@ export function HomePage() {
   if (!me) return <Skeleton lines={4} />;
   const canSee = (t: Tile) =>
     !t.who || t.who.some((w) => (w === 'employee' ? hasEmployee : me.roles.includes(w)));
-  const common = COMMON.filter(canSee).filter((t) => !(t.to === '/leave/approvals' && me.roles.includes('HR')));
+  const common = COMMON.filter(canSee).filter((t) => !(t.to === '/approvals?type=leave' && me.roles.includes('HR')));
   const hr = HR_TILES.filter(canSee);
   const annual = balance.data?.find((b) => b.leaveType === 'ANNUAL');
 

@@ -8,7 +8,7 @@
 | Yêu cầu (SRS) | FR-4.1 → FR-4.9 |
 | Quy tắc | [BR-05 → BR-11, BR-14 → BR-19](../../business/leave-rules.md), ADR-03, ADR-09, ADR-10 |
 | Mức ưu tiên | M (FR-4.3, FR-4.4 là S) |
-| Trạng thái | Đã có luồng duyệt, hoàn tất; FR-4.3, FR-4.8, FR-4.9 và các quy tắc 13.4 → 13.6 kế hoạch tuần 12 (sau UC8) |
+| Trạng thái | Đã có toàn bộ FR-4.1 → FR-4.9 (`feat/leave-uc3-uc4`, 21/11/2026) |
 | Phiên bản | 1.3 – 18/11/2026 (sơ đồ luồng `flows/`, hợp đồng API 9.3, thiết kế 13.4 → 13.7: xác nhận đề nghị hủy, nhắc đơn chờ, lịch lễ, quyền xử lý). 1.2 – 17/11/2026 (chốt hạn hoàn tất, hủy sau duyệt, nhắc đơn chờ; BR-08, BR-10, BR-17) |
 
 ## 1. Mô tả ngắn
@@ -262,18 +262,15 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
-| Danh sách chờ, duyệt, từ chối, hoàn tất, lịch sử, email | Đã có | – |
-| HR duyệt đơn của CEO | Đã có (PR #60) | – |
-| Người duyệt thay (FR-4.3, BR-06) | Chưa có | TV1, nhánh `feat/leave-delegation`, mức 3 tuần 10 |
-| Ẩn lý do nghỉ ốm với quản lý (BR-14) | Chưa có | TV1 |
-| Email chỉ báo chung, không chi tiết (BR-15) | Chưa có: email, payload outbox có loại phép, ngày, số ngày, ghi chú | TV1, `feat/leave-privacy` |
-| Audit không chứa ghi chú tự do (BR-14) | Code chưa đúng: audit duyệt, từ chối có `comment` | TV1, `feat/leave-privacy` |
-| Email "có đơn mới" của CEO gửi tới HR (E8) | Code chưa có: worker bỏ qua vì CEO không có quản lý | TV1, `feat/leave-privacy` (cùng chỗ sửa worker) |
-| Chỉ hoàn tất sau ngày kết thúc (A2 bước 4, E10/E14, BR-10) | Code chưa có: hoàn tất được bất kỳ lúc nào | TV1 chặn hoàn tất đến ngày kế tiếp `endDate` theo giờ Việt Nam; kiểm giấy tờ |
-| Hủy đơn đã duyệt trước ngày bắt đầu (A7, BR-08) | Chưa có luồng quản lý/HR xác nhận hủy; nhân viên tự hủy `APPROVED` tiếp tục bị chặn | TV1 triển khai theo UC3 AC-3.6.2 → AC-3.6.4 |
-| Hủy đơn chờ từ ngày bắt đầu trở đi (BR-07, UC3 A7) | Chưa phân biệt hủy tự phục vụ trước/sau `startDate` | TV1 chặn tự hủy muộn; HR xác minh thực tế nghỉ và điều chỉnh có audit |
-| HR duyệt thêm theo loại phép (FR-4.8, BR-16, A6) | Chưa có: chưa có trạng thái `PENDING_HR`, cấu hình loại phép, API `pending-hr`, `hr-approve`, `hr-reject` | TV1, nhánh `feat/leave-hr-approval`, tuần 12. Xem 13.3 |
-| Nhắc đơn chờ quá một ngày làm việc (BR-17, AC-4.6.6) | Chưa có | TV1 gửi một email chung cho người đang có quyền duyệt/nhóm HR theo từng giai đoạn chờ |
+| Danh sách chờ, duyệt, từ chối (bắt buộc lý do), hoàn tất sau `endDate`, lịch sử có `action` | Đã có | – |
+| HR duyệt đơn của CEO; email "có đơn" của CEO tới nhóm HR (E8) | Đã có | – |
+| Người duyệt thay (FR-4.3, BR-06), trang `/approvals/delegations` | Đã có | Danh sách chọn người thay chưa đưa phó đơn vị lên đầu (UC2 AC-2.9.3) |
+| HR duyệt thêm theo loại phép (FR-4.8, BR-16) | Đã có | Chưa có màn HR đổi cấu hình loại phép (`LEAVE_TYPE_UPDATE`); đổi bằng migration |
+| Xác nhận, bác đề nghị hủy (BR-08, 13.4) | Đã có | – |
+| Nhắc đơn chờ (BR-17), nhãn "Quá hạn" | Đã có (`LeaveJob`) | – |
+| Lịch lễ, tính lại đơn (FR-4.9, BR-19) | Đã có | UC1 hạn 2 ngày làm việc (AC-1.9.13) vẫn dùng `workdaysBetween` chưa bỏ ngày lễ |
+| Email chung, payload tối thiểu, audit không chứa ghi chú (BR-14, BR-15) | Đã có | – |
+| Trang "Việc cần duyệt" gộp đơn nghỉ, hoàn tất; link cũ `/leave/approvals`, `/leave/hr` chuyển tiếp (AC-0.6.4) | Đã có | – |
 | Đo MT-2 (thời gian gửi → quyết định) | Chưa có báo cáo | Truy vấn trên `leave_request_history` khi có dữ liệu staging |
 
 ## 13. Thiết kế đề xuất cho phần chưa có

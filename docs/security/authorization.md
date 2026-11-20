@@ -79,15 +79,16 @@ Không có `@Roles` nghĩa là mọi người đã đăng nhập; điều kiện
 ```ts
 // employee-access.ts (đã có)
 export function viewLevel(actor: AuthUser, target: { id: string; managerId: string | null }): ViewLevel
-// leave-access.ts (đề xuất, gom điều kiện đang nằm trong LeaveService)
-export function canDecide(actor: AuthUser, req: { ownerId: string; ownerManagerId: string | null; ownerIsCeo: boolean }): boolean
+// leave-access.ts (đã có): service đọc facts (quản lý hiện tại của chủ đơn, CEO, người duyệt thay hôm nay) rồi hỏi hàm thuần
+export function relation(actor: AuthUser, f: RequestFacts): Set<'OWNER' | 'DIRECT_MANAGER' | 'DELEGATE' | 'HR'>
+export function allowed(action: LeaveAction | 'recalculate', rel: Set<Relation>, f: RequestFacts): boolean
 ```
 
 | Module | File | Trạng thái |
 |---|---|---|
 | Employee | `employee-access.ts` | Đã có |
 | Document | `document-rules.ts` (`canView`) | Đã có, đổi tên hoặc tách `document-access.ts` khi sửa |
-| Leave | Điều kiện trong `LeaveService` | Gom về `leave-access.ts` |
+| Leave | `leave-access.ts` (`relation`, `allowed`, `canSeeReason`, `canCreateFor`) | Đã có (`feat/leave-uc3-uc4`) |
 | Organization | `@Roles('HR','ADMIN')` ở controller | Đủ cho version 1 |
 | Audit | `@Roles('HR','ADMIN')` | Đủ |
 
@@ -114,6 +115,6 @@ nhưng không được làm 403; không được biết bản ghi tồn tại 40
 | `IdentityService` bỏ đọc vai trò từ token; bỏ `manager` ở `keycloak/realm-hr.json` và `infra/staging/cognito.tf` | ADR-18 nghiệm thu 1, 2 | TV1 | `feat/uc8-roles-from-db` (xong) | 11 |
 | API và màn hình cấp, thu hồi vai trò; audit; event `RoleGranted`, `RoleRevoked` | ADR-18 nghiệm thu 3; NFR-5.10; UC8 FR-8.7 | TV1 | `feat/uc8-role-admin` | 11 |
 | Đồng bộ nhóm sang IdP trong `identity-sync` | UC8 AC-8.7.1 | TV1 | `feat/uc8-account-lifecycle` | 11 |
-| Gom điều kiện duyệt đơn về `leave-access.ts` | – | TV1 | cùng PR sửa UC4 | 11 |
+| Gom điều kiện duyệt đơn về `leave-access.ts` | UC4 13.7 | TV1 | `feat/leave-uc3-uc4` (xong) | 12 |
 | Cập nhật ma trận: `direct-reports`, `members` mức danh bạ; cột 403/404 | ADR-18 mục 4, 5 | TV1 | PR này | 11 |
 | Ca kiểm thử: token có nhóm `hr` nhưng database không; tự cấp vai trò; thu hồi ADMIN cuối | ADR-18 nghiệm thu | TV4 | `docs/security-test-cases-week11` | 11 |
