@@ -33,7 +33,7 @@ qua email. Gửi lại do mạng lỗi không tạo đơn thứ hai.
     - `ANNUAL`: mức chuẩn 12 ngày/năm ở điều kiện bình thường; mức 14/16 ngày cho nhóm công việc/điều kiện tương ứng.
       Cứ đủ 5 năm làm việc cho cùng người sử dụng lao động cộng 1 ngày. Chưa đủ 12 tháng trong năm thì tính theo tỷ lệ
       tháng làm việc thực tế và quy tắc tháng lẻ ở BR-01. Số dư lưu 2 chữ số thập phân, không làm tròn giảm; hệ thống cấp
-      số dư từ `hireDate` (UC1).
+      số dư từ `hireDate` (UC1). Phép năm chưa dùng được chuyển sang năm sau, dùng tới hết 31/12 năm sau (BR-01, 13.2).
     - Nghỉ theo sự kiện (`MARRIAGE`, `CHILD_MARRIAGE`, `BEREAVEMENT`, `MATERNITY`, `PATERNITY`): theo từng sự kiện và
       giới hạn trong danh mục loại phép, không trừ vào số dư phép năm.
     - `SICK`: hạn mức do HR nhập/cập nhật từ dữ liệu BHXH và nhóm điều kiện lao động đã xác minh; không suy từ `hireDate`.
@@ -212,7 +212,7 @@ Bảng dưới là hợp đồng để code theo. Lỗi theo dạng chung `{code
 | API | Ai gọi | Vào | Ra | Lỗi |
 |---|---|---|---|---|
 | `GET /leave-types` | Mọi người | – | Thêm `quotaKind` (`ACCRUED`, `YEARLY`, `PER_EVENT`), `maxDaysPerEvent`, `requiresEventDate`, `requiresDocument`, `hrApproval`, `hrApprovalMinDays` | – |
-| `GET /leave-balances/me?year=` | Có hồ sơ | – | `[{leaveType, year, entitled, used, pending, available, source: AUTO\|DEFAULT\|MANUAL}]`; chỉ loại `ACCRUED`, `YEARLY`. Số có 2 chữ số thập phân | E9 |
+| `GET /leave-balances/me?year=` | Có hồ sơ | – | `[{leaveType, year, entitled, carriedIn, used, pending, available, source: AUTO\|DEFAULT\|MANUAL}]`; `carriedIn` khác 0 chỉ với `ANNUAL`, hết hạn 31/12 của `year`; chỉ loại `ACCRUED`, `YEARLY`. Số có 2 chữ số thập phân | E9 |
 | `GET /leave-balances?employeeId=&year=` | HR; quản lý trực tiếp hiện tại (chỉ cấp dưới trực tiếp, để tạo đơn hộ) | – | Như trên + `baseDays` (chỉ HR), `note` (chỉ HR) | 403 |
 | `PUT /leave-balances/{employeeId}/{leaveType}/{year}` | HR | `{version, baseDays?, entitled?, note}`: `baseDays` (12, 14, 16) chỉ cho `ANNUAL`; `entitled` chỉ cho loại `YEARLY`; `note` 1–200 ký tự, bắt buộc | 200 dòng số dư mới | 400 (`fields`), 403, 409 (`version` cũ; `entitled` < `used + pending`) |
 | `POST /leave-requests` | Có hồ sơ | Thêm `eventDate` (`YYYY-MM-DD`; bắt buộc với loại `PER_EVENT`, cấm với loại khác); thêm `employeeId` (tạo đơn hộ, 13.1) | 201 đơn + `allocations: [{year, days}]` | E1 → E5, E10, E12, E13 |
@@ -274,9 +274,11 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 ### 13.2 Cấp và tính phép năm (BR-01, AC-3.1.3, AC-3.1.5, AC-3.1.7)
 
-> Thiết kế 18/11/2026, theo các quy tắc PR #96 đã chốt. Ba điểm dưới đây là **đề xuất** trong review #96, TV2 xác nhận hoặc sửa
-> trong #96: (a) tháng lẻ tính theo **lịch làm việc** từ `hireDate` hoặc ngày nghỉ việc, không theo chấm công (ADR-05);
-> (b) đủ mốc 5 năm trong năm nào thì **cả năm đó** được cộng; (c) phép năm **không chuyển** sang năm sau trong MVP.
+> Thiết kế 18/11/2026, theo các quy tắc PR #96 đã chốt. (a), (b) là **đề xuất**, TV2 xác nhận hoặc sửa; (c) Duong **chốt 21/11**:
+> (a) tháng lẻ tính theo **lịch làm việc** từ `hireDate` hoặc ngày nghỉ việc, không theo chấm công (ADR-05), trừ các ngày
+> nghỉ không lương (`UNPAID`) đã duyệt trong tháng đó vì BR-01 chỉ đếm ngày làm việc và ngày nghỉ hưởng lương;
+> (b) đủ mốc 5 năm trong năm nào thì **cả năm đó** được cộng; (c) phép năm chưa dùng **được chuyển** sang năm sau, dùng tới
+> hết năm sau (mục "Chuyển phép" bên dưới).
 
 Phép năm (`quotaKind = ACCRUED`) luôn do hệ thống tính, HR không sửa trực tiếp `entitled`. HR chỉ đặt mức nền `baseDays`
 (12, 14, 16) cho người thuộc nhóm điều kiện lao động tương ứng (FR-3.8):
@@ -287,7 +289,8 @@ entitled(nv, năm) =
   cộng    = seniority(hireDate, năm-12-31).annualLeaveBonus      // cùng hàm UC1 (profile-computed.ts)
   từ      = max(hireDate, năm-01-01);  đến = min(ngày nghỉ việc ?? năm-12-31, năm-12-31)
   tháng   = số tháng m trong [từ, đến] mà
-            (tháng đủ) hoặc (ngày làm việc của nv trong m ÷ ngày làm việc của m ≥ 0,5)   // bỏ T7, CN, ngày lễ
+            (tháng đủ) hoặc ((ngày làm việc của nv trong m − ngày UNPAID đã duyệt trong m)
+                             ÷ ngày làm việc của m ≥ 0,5)                       // bỏ T7, CN, ngày lễ
   nếu tháng = 12: nền + cộng
   ngược lại:      làm tròn lên 2 chữ số ((nền + cộng) / 12 × tháng)   // BR-01: không làm tròn giảm
 ```
@@ -304,12 +307,30 @@ không phải 1,08).
 |---|---|
 | Đọc số dư, tạo đơn | `ensureBalances(nv, năm)`: chưa có dòng `ANNUAL` thì tạo theo công thức; dòng `SICK`, `UNPAID` chưa có thì tạo theo mặc định của loại phép (`source = DEFAULT`) |
 | Job 00:10 hằng ngày (worker) | Tính lại `ANNUAL` năm hiện tại cho người chưa nghỉ việc. Bắt được việc sửa `hireDate` (UC1 AC-1.4.4) và mốc thâm niên |
-| Job 00:10 ngày 01/01 | Tạo dòng năm mới cho mọi người đang làm việc. Không chuyển số dư năm cũ (đề xuất (c)) |
+| Job 00:10 ngày 01/01 | Tạo dòng năm mới cho mọi người đang làm việc, đặt `carried_in` theo công thức chuyển phép bên dưới |
+| Số dư năm trước đổi (đơn năm trước bị từ chối, hủy, tính lại; job hằng ngày) | Tính lại `carried_in` của năm hiện tại trong cùng transaction |
 | Event `EmployeeTerminated` (worker) | Hủy đơn chờ, hủy đơn đã duyệt bắt đầu sau ngày nghỉ việc (AC-3.1.7), rồi tính lại `ANNUAL` tới tháng nghỉ việc |
 
 Tính lại mà `entitled` mới nhỏ hơn `used + pending` (người nghỉ việc đã dùng quá số được hưởng) thì đặt `entitled = used + pending`
 để giữ CHECK của bảng, ghi audit `LEAVE_BALANCE_OVERDRAWN` kèm số tính được, và HR xử lý ngoài hệ thống (lương nằm ngoài
 phạm vi, ADR-05).
+
+**Chuyển phép** (BR-01, AC-3.1.8, chốt 21/11/2026). Chỉ loại `ANNUAL`. Mỗi dòng số dư có thêm `carried_in` là số ngày
+chuyển từ năm trước; đơn trừ phần chuyển sang trước:
+
+```text
+khả dụng(N)       = entitled(N) + carried_in(N) − used(N) − pending(N)
+carried_in(N + 1) = max(0, entitled(N) − max(0, used(N) + pending(N) − carried_in(N)))
+```
+
+Nghĩa là chỉ phần được hưởng **của chính năm N** còn lại mới được chuyển; phần `carried_in(N)` không dùng hết thì hết hạn
+31/12 năm N, không chuyển lần hai. `pending` của năm N (đơn chờ có ngày trong năm N, xem 13.4) vẫn tính là đã giữ chỗ; khi
+đơn đó bị từ chối hoặc hủy sau 01/01 thì `carried_in(N + 1)` tăng lại. Ví dụ: năm 2026 được 12, dùng 9, không có chuyển
+sang: 2027 có `carried_in` 3, được 12, khả dụng 15. Năm 2027 dùng 5: 3 ngày chuyển sang dùng trước, 2 ngày trừ vào phần 2027,
+nên 2028 có `carried_in` 10. Năm 2027 chỉ dùng 2: 1 ngày chuyển sang hết hạn, 2028 có `carried_in` 12.
+
+Nếu tính lại làm `carried_in` mới nhỏ hơn số đã dùng (năm trước bị tính lại giảm) thì xử lý như trường hợp `entitled` giảm ở
+trên: giữ CHECK bằng cách không giảm dưới `used + pending − entitled`, ghi audit `LEAVE_BALANCE_OVERDRAWN`.
 
 ### 13.3 Loại phép theo cách tính số dư (BR-01, BR-18, AC-3.1.4, AC-3.1.6)
 
@@ -348,7 +369,7 @@ Mỗi nhánh code thêm migration của phần mình (không sửa migration cũ
 | Bảng | Thay đổi | Nhánh |
 |---|---|---|
 | `leave.leave_type` | `quota_kind varchar(10) NOT NULL` (CHECK `ACCRUED`, `YEARLY`, `PER_EVENT`); `max_days_per_event numeric(5,1) NULL`; `max_months_per_event smallint NULL`; `requires_event_date boolean`, `requires_document boolean`; `hr_approval`, `hr_approval_min_days` (UC4 13.3). Seed thêm `CHILD_MARRIAGE`, `BEREAVEMENT`, `MATERNITY`, `PATERNITY` | `feat/leave-balance-rules` (cột HR duyệt ở `feat/leave-hr-approval`) |
-| `leave.leave_balance` | `entitled`, `used`, `pending` đổi sang `numeric(5,2)`; thêm `base_days numeric(5,2) NULL`, `source varchar(8) NOT NULL DEFAULT 'AUTO'` (CHECK `AUTO`, `DEFAULT`, `MANUAL`), `note varchar(200)`, `version int NOT NULL DEFAULT 1`, `updated_by uuid`, `updated_at timestamptz`. Xóa các dòng của loại `PER_EVENT` mà `used = 0 AND pending = 0` | `feat/leave-balance-rules` |
+| `leave.leave_balance` | `entitled`, `used`, `pending` đổi sang `numeric(5,2)`; thêm `base_days numeric(5,2) NULL`, `source varchar(8) NOT NULL DEFAULT 'AUTO'` (CHECK `AUTO`, `DEFAULT`, `MANUAL`), `note varchar(200)`, `carried_in numeric(5,2) NOT NULL DEFAULT 0` (CHECK `>= 0`; CHECK số dư thành `used + pending <= entitled + carried_in`), `version int NOT NULL DEFAULT 1`, `updated_by uuid`, `updated_at timestamptz`. Xóa các dòng của loại `PER_EVENT` mà `used = 0 AND pending = 0` | `feat/leave-balance-rules` |
 | `leave.leave_request_allocation` (mới) | `request_id uuid FK`, `year smallint`, `days numeric(5,1) CHECK > 0`, PK `(request_id, year)`. Migration điền một dòng cho mỗi đơn cũ của loại có số dư | `feat/leave-balance-rules` |
 | `leave.leave_request` | `event_date date NULL`, unique index có điều kiện `ux_leave_request_event (employee_id, leave_type_id, event_date) WHERE event_date IS NOT NULL AND status IN ('SUBMITTED','PENDING_HR','APPROVED','COMPLETED')` | `feat/leave-balance-rules` |
 | | `created_by uuid` (13.1) | `feat/leave-delegation` |

@@ -29,6 +29,11 @@
   đơn `APPROVED` đang diễn ra. Khi HR cho A nghỉ việc. Thì hộp xác nhận nêu trước số đơn bị ảnh hưởng; sau khi xác nhận, hai
   đơn đầu thành `CANCELLED` (lịch sử `SYSTEM_CANCEL`), `pending` được trả theo từng năm, đơn đang diễn ra giữ nguyên để HR xử
   lý; phép năm được tính lại tới tháng nghỉ việc. Dùng quá số được hưởng thì có audit `LEAVE_BALANCE_OVERDRAWN` (spec 13.2).
+- **AC-3.1.8** *(mới, chốt 21/11)* Giả sử năm 2026 A được 12 ngày phép năm, đã dùng 9. Khi xem số dư năm 2027. Thì có
+  chuyển từ năm trước 3 ngày (hết hạn 31/12/2027), được hưởng 12, khả dụng 15. Giả sử năm 2027 A dùng 5 ngày. Thì 3 ngày
+  chuyển sang bị trừ trước, năm 2028 có chuyển từ năm trước 10 ngày; phần chuyển sang chưa dùng không được chuyển lần hai
+  (BR-01, spec 13.2). Giả sử một đơn phép năm có ngày trong 2026 bị từ chối sau 01/01/2027. Thì chuyển sang 2027 tăng đúng số
+  ngày được trả.
 
 ### FR-3.2 Tạo đơn (M, đã có)
 
