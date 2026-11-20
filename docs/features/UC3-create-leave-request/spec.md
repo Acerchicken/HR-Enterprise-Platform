@@ -245,7 +245,7 @@ lần 2 (mục 15). Unit test: `leave-rules.spec.ts`, `leave-state-machine.spec.
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
 | Số dư, tạo đơn, ngày lễ, nửa ngày, trùng lịch, idempotency, hủy | Đã có | – |
-| Phép năm theo tỉ lệ, tháng lẻ, thâm niên, mức nền, chuyển phép (BR-01, AC-3.1.3, AC-3.1.8, FR-3.8) | Đã có | TV2 xác nhận đề xuất (a), (b) ở 13.2 |
+| Phép năm theo tỉ lệ, tháng lẻ, thâm niên, mức nền, chuyển phép (BR-01, AC-3.1.3, AC-3.1.8, FR-3.8) | Đã có | – |
 | Nghỉ theo sự kiện, `eventDate`, hạn mức nghỉ ốm `DEFAULT`/`MANUAL` (AC-3.1.4, AC-3.1.6, AC-3.2.6) | Đã có | Thai sản sinh đôi: HR kiểm giấy tờ ở bước HR duyệt |
 | Đơn qua hai năm (A5, AC-3.2.4) | Đã có | Lịch lễ 2027 chưa nạp: HR nhập ở `/leave/holidays` |
 | Tạo đơn hộ (FR-3.7, BR-12) | Đã có | – |
@@ -257,7 +257,7 @@ lần 2 (mục 15). Unit test: `leave-rules.spec.ts`, `leave-state-machine.spec.
 
 ## 13. Thiết kế đề xuất cho phần chưa có
 
-> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/leave-delegation`; khác đề xuất thì sửa mục này trong cùng PR.
+> Đã code trong PR #120 (`feat/leave-uc3-uc4`, 21/11/2026). Đổi thiết kế thì sửa mục này cùng PR code.
 
 ### 13.1 Tạo đơn hộ (FR-3.7, BR-12)
 
@@ -274,7 +274,7 @@ lần 2 (mục 15). Unit test: `leave-rules.spec.ts`, `leave-state-machine.spec.
 
 ### 13.2 Cấp và tính phép năm (BR-01, AC-3.1.3, AC-3.1.5, AC-3.1.7)
 
-> Thiết kế 18/11/2026, theo các quy tắc PR #96 đã chốt. (a), (b) là **đề xuất**, TV2 xác nhận hoặc sửa; (c) Duong **chốt 21/11**:
+> Thiết kế 18/11/2026, theo các quy tắc PR #96 đã chốt. (a), (b), (c) Duong **chốt 21/11** (không chờ TV2):
 > (a) tháng lẻ tính theo **lịch làm việc** từ `hireDate` hoặc ngày nghỉ việc, không theo chấm công (ADR-05), trừ các ngày
 > nghỉ không lương (`UNPAID`) đã duyệt trong tháng đó vì BR-01 chỉ đếm ngày làm việc và ngày nghỉ hưởng lương;
 > (b) đủ mốc 5 năm trong năm nào thì **cả năm đó** được cộng; (c) phép năm chưa dùng **được chuyển** sang năm sau, dùng tới
@@ -356,7 +356,7 @@ số dư, không thì 400 và không ghi gì. Hủy, từ chối, hoàn tất, t
 
 | Trạng thái | Trước `startDate` | Từ `startDate` trở đi |
 |---|---|---|
-| `SUBMITTED`, `PENDING_HR` | Chủ đơn tự hủy (`POST …/cancel`) | Chủ đơn nhận 409. Đơn vẫn đi tiếp luồng duyệt: nếu nhân viên không nghỉ thì người duyệt từ chối và `pending` được trả. HR điều chỉnh từng phần nằm ngoài MVP (**đề xuất** trong review #96, điểm 11) |
+| `SUBMITTED`, `PENDING_HR` | Chủ đơn tự hủy (`POST …/cancel`) | Chủ đơn nhận 409. Đơn vẫn đi tiếp luồng duyệt: nếu nhân viên không nghỉ thì người duyệt từ chối và `pending` được trả. HR điều chỉnh từng phần nằm ngoài MVP (review #96 điểm 11, Duong **chốt 21/11**) |
 | `APPROVED` | Chủ đơn gửi đề nghị (`POST …/cancel-request`); người có quyền xác nhận hoặc bác ([UC4 13.4](../UC4-approve-leave-request/spec.md#134-xác-nhận-hoặc-bác-đề-nghị-hủy-br-08)) | Không hủy qua hệ thống; HR hoàn tất theo số ngày thực tế đã đăng ký |
 
 Đề nghị hủy chỉ có một tại một thời điểm. Chủ đơn không rút lại đề nghị (đơn giản cho MVP); người duyệt bác thì chủ đơn gửi lại
@@ -437,4 +437,4 @@ Không lệch: vai trò `MANAGER` suy từ cấp dưới trực tiếp (ADR-10, 
 lại cho mốc "hôm nay" theo giờ Việt Nam; thâm niên dùng `seniority()` của UC1.
 
 Đề xuất (a), (b) ở 13.2 và hai điểm ở 13.5 (đơn chờ tới `startDate` vẫn đi tiếp luồng duyệt; đơn đã qua HR thì chỉ HR xác
-nhận hủy) vẫn là đề xuất chờ TV2 xác nhận. Code làm theo đề xuất; đổi thì sửa hàm tương ứng.
+nhận hủy) Duong chốt ngày 21/11/2026, không chờ TV2; code đã làm theo.

@@ -56,7 +56,7 @@ export function allowed(action: LeaveAction | 'recalculate', rel: Set<Relation>,
     case 'cancelRequestApprove':
     case 'cancelRequestReject':
       if (rel.has('OWNER')) return false;
-      // Đơn đã qua HR duyệt thêm hoặc của CEO: chỉ HR (đề xuất UC4 13.4, chờ TV2 xác nhận).
+      // Đơn đã qua HR duyệt thêm hoặc của CEO: chỉ HR (UC4 13.4, Duong chốt 21/11).
       if (f.requiresHrApproval || f.ownerIsCeo) return rel.has('HR');
       return rel.has('DIRECT_MANAGER') || rel.has('DELEGATE') || rel.has('HR');
     case 'systemCancel':

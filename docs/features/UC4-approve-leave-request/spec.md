@@ -366,7 +366,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 ### 13.7 Quyền xử lý đơn (ADR-18)
 
-Gom vào `leave-access.ts` (đề xuất ở [authorization.md](../../security/authorization.md)), một hàm `relation(actor, request)`
+Gom vào `leave-access.ts` (đã có, [authorization.md](../../security/authorization.md)), một hàm `relation(actor, request)`
 trả về tập quan hệ: `OWNER`, `DIRECT_MANAGER`, `DELEGATE`, `HR`. Mỗi endpoint kiểm theo bảng:
 
 | Thao tác | Được khi |

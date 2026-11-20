@@ -120,7 +120,7 @@ export interface AnnualInput {
   /** Số ngày cộng theo thâm niên tính ở 31/12 của năm (UC1 `seniority()`, đề xuất (b)). */
   seniorityBonus: number;
   holidays: ReadonlySet<string>;
-  /** Ngày nghỉ không lương đã duyệt, hoàn tất (từng ngày làm việc; nửa ngày tính 0,5), đề xuất (a). */
+  /** Ngày nghỉ không lương đã duyệt, hoàn tất (từng ngày làm việc; nửa ngày tính 0,5), 13.2 (a). */
   unpaidDays: ReadonlyMap<string, number>;
 }
 

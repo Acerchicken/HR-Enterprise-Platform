@@ -103,7 +103,7 @@ describe('leave rules', () => {
     it('nghỉ việc giữa năm tính tới tháng nghỉ', () => {
       expect(annualEntitlement({ ...base, terminationDate: '2026-03-31' })).toBe(3);
     });
-    it('đề xuất (a): ngày không lương đã duyệt trừ khỏi tháng', () => {
+    it('13.2 (a): ngày không lương đã duyệt trừ khỏi tháng', () => {
       const unpaid = new Map<string, number>();
       for (let d = 5; d <= 30; d++) unpaid.set(`2026-10-${String(d).padStart(2, '0')}`, 1);
       expect(annualEntitlement({ ...base, unpaidDays: unpaid })).toBe(11);

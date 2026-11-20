@@ -264,7 +264,7 @@ export class LeaveService {
       m,
     );
 
-    // Ngày nghỉ không lương đã duyệt làm giảm tháng được tính phép năm (đề xuất (a), 13.2).
+    // Ngày nghỉ không lương đã duyệt làm giảm tháng được tính phép năm (13.2 (a), chốt 21/11).
     const approvedNow = to === 'APPROVED' && from !== 'APPROVED';
     const unapproved = from === 'APPROVED' && to === 'CANCELLED';
     if (type.code === 'UNPAID' && (approvedNow || unapproved)) {
