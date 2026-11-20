@@ -1,7 +1,7 @@
 # UC4 – Duyệt đơn nghỉ: kiểm thử
 
 > Tiêu chí: [requirements.md](requirements.md). Cách chạy chung, tài khoản mẫu: [README](../README.md#kiểm-thử).
-> Ca kiểm thử nghiệp vụ: [leave-test-cases.md](../../business/leave-test-cases.md) (TC-11 → TC-16, TC-20 → TC-22).
+> Ca kiểm thử nghiệp vụ: [leave-test-cases.md](../../business/leave-test-cases.md) (TC-11 → TC-16, TC-20 → TC-22, TC-26 → TC-33).
 
 ## 1. Chiến lược
 
@@ -29,18 +29,18 @@ email kiểm tay ở Mailpit.
 | AC-4.2.3 | "chỉ quản lý trực tiếp duyệt/từ chối…" | TC-12 | Có |
 | AC-4.2.4 | – | TC-13 | Có ca tay |
 | AC-4.2.5 | – | TC-14, TC-16 | Có ca tay |
-| AC-4.2.6 | – | Cần thêm | Chưa |
-| AC-4.3.1 → AC-4.3.4 | – | – | Chưa có tính năng |
+| AC-4.2.6 | – | TC-26 | Có ca tay (đổi quản lý trực tiếp khi đơn đang chờ → chuyển người duyệt) |
+| AC-4.3.1 → AC-4.3.4 | – | TC-32, TC-33 | Có ca tay (chờ nhánh `feat/leave-delegation`) |
 | AC-4.4.1, AC-4.4.2 | "HR duyệt đơn của CEO…", "HR không duyệt được đơn của nhân viên khác CEO…" | – | Có |
 | AC-4.5.1, AC-4.5.2 | "tạo → … HR hoàn tất", "HR hoàn tất đơn chưa duyệt → 409 (TC-21…)" | TC-20 → TC-22 | Có |
-| AC-4.5.3 | – | – | Chưa đạt (hoàn tất được trước ngày kết thúc) |
+| AC-4.5.3 | – | TC-27 | Có ca tay (chặn hoàn tất trước ngày kết thúc nghỉ) |
 | AC-4.6.1, AC-4.6.2 | Unit `notification-worker.spec.ts` | Kiểm Mailpit | Có |
 | AC-4.6.3 | – | – | Chưa đạt (BR-15) |
 | AC-4.6.5 | – | – | Chưa đạt (CEO tạo đơn, HR không nhận email) |
 | AC-4.6.4 | Unit `messaging.spec.ts` | Tắt RabbitMQ rồi duyệt đơn | Có unit |
 | AC-4.7.1, AC-4.7.2 | "người ngoài không xem được đơn của nhân viên" | SEC-57, SEC-58 | Có |
-| AC-4.7.3, AC-4.7.4 | – | – | Chưa đạt (BR-14) |
-| AC-4.8.1 → AC-4.8.8 | – | Cần thêm (TV4) | Chưa có tính năng |
+| AC-4.7.3, AC-4.7.4 | – | TC-28 | Có ca tay (che lý do nghỉ ốm với QL; HR bấm mắt xem có audit) |
+| AC-4.8.1 → AC-4.8.8 | – | TC-29 → TC-31 | Có ca tay (HR duyệt cấp 2 đơn không lương > 3 ngày / thai sản; chặn tự duyệt) |
 
 ## 4. Dữ liệu và tài khoản
 
@@ -65,10 +65,14 @@ kiểm email đến Mailpit.
 
 ## 7. Ca còn thiếu (TV4)
 
-- AC-4.2.6: đổi quản lý trực tiếp khi đơn đang chờ.
+- AC-4.2.6 (`TC-26`): đổi quản lý trực tiếp khi đơn đang chờ.
 - e2e cho AC-4.2.4 (duyệt hai lần) và AC-4.2.5 (version cũ).
-- AC-4.8.x (HR duyệt thêm): mỗi tiêu chí một ca; thêm ca MT-2 tính thời gian tới quyết định cuối cùng (sau HR).
-- AC-4.3.x, AC-4.6.3, AC-4.7.3 khi `feat/leave-delegation`, `feat/leave-privacy` xong.
+- AC-4.8.x (`TC-29` → `TC-31`): HR duyệt thêm cấp 2 (`BR-16`), chặn HR tự duyệt đơn của chính mình (`AC-4.8.5`), từ chối ở cấp HR trả lại số dư; thêm ca `MT-2` tính thời gian tới quyết định cuối cùng (sau HR).
+- Biên giao diện duyệt đơn (theo bản vẽ `#81`):
+  - Từ chối đơn khi để trống ghi chú hoặc quá 500 ký tự → chặn gửi request và báo lỗi dưới ô (`AC-0.6.3`).
+  - Cảnh báo trùng ngày trong nhóm trên panel chi tiết của quản lý chỉ hiện tên và ngày nghỉ, không lộ loại nghỉ/lý do.
+  - Tab *Hoàn tất đơn nghỉ*: đơn chưa qua ngày kết thúc khóa nút `Hoàn tất` (`AC-4.5.3`).
+- AC-4.3.x (`TC-32`, `TC-33`), AC-4.6.3, AC-4.7.3 (`TC-28`) khi `feat/leave-delegation`, `feat/leave-privacy` xong.
 
 **Lưu ý:** unit test "nội dung email có thời gian, số ngày và ghi chú" trong `leave-events.spec.ts` đang kiểm đúng điều BR-15
 cấm. Nhánh `feat/leave-privacy` phải đổi test này thành "email không có loại phép, ngày, lý do".

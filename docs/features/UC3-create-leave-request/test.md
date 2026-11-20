@@ -1,7 +1,7 @@
 # UC3 – Tạo đơn nghỉ: kiểm thử
 
 > Tiêu chí: [requirements.md](requirements.md). Cách chạy chung, tài khoản mẫu: [README](../README.md#kiểm-thử).
-> Ca kiểm thử nghiệp vụ: [leave-test-cases.md](../../business/leave-test-cases.md) (TC-01 → TC-10, TC-17 → TC-19).
+> Ca kiểm thử nghiệp vụ: [leave-test-cases.md](../../business/leave-test-cases.md) (TC-01 → TC-10, TC-17 → TC-19, TC-23 → TC-25).
 
 ## 1. Chiến lược
 
@@ -22,16 +22,16 @@ là hàm thuần nên kiểm kỹ bằng unit test; luồng có số dư, lịch
 | Tiêu chí | Test tự động (e2e, tên test) | Ca tay | Trạng thái |
 |---|---|---|---|
 | AC-3.1.1, AC-3.1.2 | "số dư phép của tôi", "tạo → quản lý duyệt → HR hoàn tất; số dư, lịch sử và audit đúng" | TC-01 | Có |
-| AC-3.1.3, AC-3.1.4 | – | – | Chưa đạt (chưa tính tỉ lệ; nghỉ cưới đang trừ như số dư năm) |
+| AC-3.1.3, AC-3.1.4 | – | TC-24 | Có ca tay (tính tỉ lệ phép theo tháng vào làm/thâm niên; nghỉ sự kiện không trừ số dư năm) |
 | AC-3.2.1 | "tạo → quản lý duyệt → HR hoàn tất…" | TC-01 | Có (email kiểm tay ở Mailpit) |
 | AC-3.2.2, AC-3.2.3 | "không đủ số dư, dữ liệu sai hoặc thiếu Idempotency-Key → 400 (BR-01)" | TC-03, TC-10 | Có |
-| AC-3.2.4, AC-3.2.5 | – | – | Chưa đạt (đơn qua năm bị 400; chưa gắn hồ sơ trả 404) |
+| AC-3.2.4, AC-3.2.5 | – | TC-25 | Có ca tay (đơn vắt qua năm 29/12–4/1 trừ đúng hai năm; chưa gắn hồ sơ trả 404) |
 | AC-3.3.1 | "trùng lịch với đơn đang chờ → 409 (TC-04, BR-02)" | TC-04 | Có |
 | AC-3.3.2, AC-3.3.3 | "trùng lịch bị chặn; hai nửa ngày khác buổi thì được…" | TC-08, TC-09 | Có |
 | AC-3.4.1, AC-3.4.2 | "ngày lễ không trừ phép: 29/4–4/5/2026 tính 2 ngày…" | TC-05 → TC-07 | Có |
 | AC-3.5.1 | – | TC-02 | Có ca tay |
 | AC-3.5.2 | "không đủ số dư, dữ liệu sai hoặc thiếu Idempotency-Key → 400" | – | Có |
-| AC-3.5.3 | – | Cần thêm | Chưa |
+| AC-3.5.3 | – | TC-23 | Có ca tay (cùng `Idempotency-Key`, khác payload → `409`) |
 | AC-3.6.1 | "trùng lịch bị chặn; … hủy trả lại số dư" | TC-17 | Có |
 | AC-3.6.2, AC-3.6.3 | "chỉ quản lý trực tiếp duyệt/từ chối, chỉ HR hoàn tất, chỉ chủ đơn hủy (TC-22…)" | TC-18, TC-19, SEC-35 → SEC-44 | Có |
 | AC-3.7.1 → AC-3.7.4 | – | – | Chưa có tính năng |
@@ -60,7 +60,12 @@ Email: mở Mailpit http://localhost:8025 sau khi tạo đơn.
 ## 7. Ca còn thiếu (TV4)
 
 - Hai request tạo đơn song song với cùng số dư.
-- e2e cho AC-3.5.1 (gửi lại cùng key trả đúng đơn cũ, số dư không đổi) và AC-3.5.3 (cùng key, đơn khác → 409).
-- AC-3.1.3, AC-3.1.4, AC-3.2.4, AC-3.2.5 khi `fix/leave-balance-rules` xong. Ca mẫu: nhân viên vào làm 1/7 được 6 ngày;
+- e2e cho AC-3.5.1 (gửi lại cùng key trả đúng đơn cũ, số dư không đổi) và AC-3.5.3 (`TC-23`: cùng key, đơn khác → 409).
+- AC-3.1.3, AC-3.1.4 (`TC-24`), AC-3.2.4, AC-3.2.5 (`TC-25`) khi `fix/leave-balance-rules` xong. Ca mẫu: nhân viên vào làm 1/7 được 6 ngày;
   10 năm thâm niên được 14 ngày; đơn 29/12 – 4/1 trừ đúng hai năm.
+- Biên giao diện form đăng ký nghỉ (theo bản vẽ `#81`):
+  - Khoảng ngày chọn rơi hoàn toàn vào cuối tuần/ngày lễ (`0` ngày làm việc) → báo lỗi và khóa nút gửi.
+  - Chọn `Buổi sáng`/`Buổi chiều` lúc `Từ ngày = Đến ngày`, sau đó đổi `Đến ngày` sang ngày khác → tự reset về `Cả ngày` hoặc chặn gửi.
+  - Chọn *"Nghỉ theo sự kiện"* → chọn đúng loại sự kiện (Cưới 3 ngày, Con cưới 1 ngày, Tang 3 ngày) và kiểm tra không trừ số dư phép năm.
+  - Đơn nghỉ không lương > 3 ngày làm việc → hiển thị thông báo cần HR duyệt cấp 2 (`BR-16`).
 - AC-3.7.x khi `feat/leave-delegation` xong.
