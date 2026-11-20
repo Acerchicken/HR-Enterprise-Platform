@@ -226,15 +226,15 @@ Xem [`test.md`](test.md). Cách triển khai: [`deploy.md`](deploy.md).
 
 ## 12. Hiện trạng và việc còn lại
 
-| Nội dung | Trạng thái (18/11/2026, `dev` 60ac59f) | Việc còn lại |
+| Nội dung | Trạng thái (18/11/2026, tính cả `feat/uc8-account-lifecycle`) | Việc còn lại |
 |---|---|---|
-| Đăng nhập, đăng xuất OIDC Code + PKCE | Đã có: `frontend/src/auth/auth.tsx`, `CallbackPage`, `token-verifier.ts` (Keycloak, Cognito) | Lỗi ở `/callback` chưa có màn hình (E1); `callback_urls` của Cognito (TV3) |
+| Đăng nhập, đăng xuất OIDC Code + PKCE | Đã có: `frontend/src/auth/auth.tsx`, `CallbackPage` (lỗi E1 có màn hình "Đăng nhập không thành công", nút "Thử lại"), `token-verifier.ts` (Keycloak, Cognito) | `callback_urls` của Cognito (TV3) |
 | Gắn tài khoản theo `sub`, email | Đã có, chặn `TERMINATED` | Kiểm `email_verified` (`fix/auth-email-verified`) |
 | Vai trò | Chỉ từ database (`feat/uc8-roles-from-db`): `HR`, `ADMIN` ở `iam.role_assignment`, `EMPLOYEE`, `MANAGER` suy ra; token không còn claim vai trò; bỏ `manager` ở realm Keycloak và Cognito | – |
-| Cấp, thu hồi vai trò | Đã có (`feat/uc8-role-admin`): API, trang `/admin/roles` (ô "Phân quyền" ở trang chủ của ADMIN), audit, event; lệnh `npm run grant-admin -- <email>` cho ADMIN đầu tiên | Đồng bộ nhóm sang IdP (`identity-sync`, `feat/uc8-account-lifecycle`) |
-| Tạo, khóa, mở tài khoản trên IdP; trạng thái; gửi lại lời mời | Chưa có | `feat/uc8-account-lifecycle` |
-| Tự đăng xuất khi không thao tác | Chưa có (Keycloak chỉ hết phiên SSO sau 30 phút) | `feat/uc8-account-lifecycle` |
-| Quên mật khẩu, MFA, cấu hình IdP staging | Chưa có | TV3 `infra/idp-hardening`, `infra/idp-mfa` |
+| Cấp, thu hồi vai trò | Đã có (`feat/uc8-role-admin`): API, trang `/admin/roles` (ô "Phân quyền" ở trang chủ của ADMIN), audit, event; lệnh `npm run grant-admin -- <email>` cho ADMIN đầu tiên. Nhóm trên IdP đồng bộ theo (`feat/uc8-account-lifecycle`) | – |
+| Tạo, khóa, mở tài khoản trên IdP; trạng thái; gửi lại lời mời | Đã có (`feat/uc8-account-lifecycle`): event khi tạo, nghỉ việc, khôi phục, đổi email; `IdentitySync` trong worker; driver `keycloak` (đã chạy thử với Keycloak 26.0.7 thật), `cognito` (chưa chạy với pool thật), `none`; API, dòng "Tài khoản đăng nhập" trong hồ sơ; realm local có client `hr-api-admin`, SMTP Mailpit | Staging: hàng đợi, IAM, SES, biến môi trường của worker (TV3 `infra/idp-account-lifecycle`) |
+| Tự đăng xuất khi không thao tác | Đã có: `frontend/src/auth/idle.tsx` (`VITE_IDLE_TIMEOUT_MINUTES`, cảnh báo 1 phút, đồng bộ các tab) | – |
+| Quên mật khẩu, MFA, cấu hình IdP staging | Local đã bật "Quên mật khẩu" và SMTP (thư vào Mailpit); chưa kiểm AC-8.2.x; MFA chưa có | TV3 `infra/idp-hardening`, `infra/idp-mfa` |
 
 Ai làm, tuần nào: mục 4 của [`requirements.md`](requirements.md).
 
@@ -246,7 +246,7 @@ Ba nhánh code theo thứ tự, mỗi nhánh một PR, mỗi PR sửa `database-
 |---|---|---|
 | `feat/uc8-roles-from-db` | `IdentityService.resolve` bỏ đọc nhóm trong token; bỏ realm role `manager` ở `keycloak/realm-hr.json`; test token có `hr` nhưng database không | AC-8.1.10 |
 | `feat/uc8-role-admin` | Migration `role_assignment`; API 9.2 "Vai trò"; audit; event `RoleGranted`, `RoleRevoked`; trang `/admin/roles`; lệnh `npm run grant-admin` | AC-8.7.x |
-| `feat/uc8-account-lifecycle` | Migration `user_account`; event khi tạo, nghỉ việc, khôi phục, đổi email; `identity-sync` trong worker; driver `keycloak`, `cognito`, `none`; API 9.2 "Tài khoản"; dòng tài khoản trong hồ sơ; tự đăng xuất; màn hình lỗi `/callback`; realm Keycloak local (client `hr-api-admin`, SMTP Mailpit, quên mật khẩu, OTP cho `hr`, `admin`) | AC-8.1.6, 8.1.11, AC-8.3.x, 8.4.2, 8.4.3, AC-8.6.x, AC-8.2.x (L), AC-8.5.1, 8.5.2 (L) |
+| `feat/uc8-account-lifecycle` | Migration `user_account`; event khi tạo, nghỉ việc, khôi phục, đổi email; `identity-sync` trong worker; driver `keycloak`, `cognito`, `none`; API 9.2 "Tài khoản"; dòng tài khoản trong hồ sơ; tự đăng xuất; màn hình lỗi `/callback`; realm Keycloak local (client `hr-api-admin`, SMTP Mailpit, bật quên mật khẩu). OTP cho `hr`, `admin` để lại cho TV3 `infra/idp-mfa` theo bảng việc ở `requirements.md` mục 4 | AC-8.1.6, 8.1.11, AC-8.3.x, 8.4.2, 8.4.3, AC-8.6.x |
 
 Phần staging (SNS → SQS `identity-sync`, IAM `cognito-idp:Admin*`, SES, MFA của Cognito) là của TV3, `infra/idp-account-lifecycle`.
 
@@ -283,9 +283,11 @@ Driver chọn bằng `IDP_ADMIN_DRIVER=keycloak|cognito|none` (`none` cho `AUTH_
   `POST /admin/realms/hr/users` với `requiredActions: ["UPDATE_PASSWORD"]`, `PUT …/execute-actions-email`, `PUT …/users/{id}`
   (`enabled`, `email`), `POST …/users/{id}/logout`, `PUT|DELETE …/users/{id}/role-mappings/realm`.
 
-**Worker:** `NotificationWorker.handle` chuyển các event ở bảng 9.2 sang `IdentitySyncHandler` (cùng bảng `processed_event` để
-không xử lý hai lần). Lỗi mạng, 5xx thì thử lại theo hàng đợi (tối đa 5 lần); lần cuối ghi `FAILED`, `idp_error`, audit
-`ACCOUNT_SYNC_FAILED` rồi để message vào DLQ. Lỗi 4xx của IdP (ví dụ email không hợp lệ) ghi `FAILED` ngay.
+**Worker:** `NotificationWorker.handle` chuyển các event ở bảng 9.2 sang `IdentitySync` (`backend/src/worker/identity-sync.ts`,
+cùng bảng `processed_event` để không xử lý hai lần). Lỗi mạng, 5xx, 429 thì thử lại ngay trong worker (`IDP_SYNC_ATTEMPTS`,
+mặc định 5 lần, chờ nhân đôi từ `IDP_SYNC_RETRY_DELAY_MS`); hết lượt, hoặc lỗi 4xx của IdP (ví dụ email không hợp lệ) thì ghi
+`idp_error`, audit `ACCOUNT_SYNC_FAILED` rồi ném lỗi để message vào DLQ. Trạng thái thành `FAILED` chỉ với `EmployeeCreated`,
+`AccountInviteRequested` (chưa có tài khoản dùng được); event khác giữ trạng thái, chỉ ghi `idp_error`.
 
 **Web:**
 

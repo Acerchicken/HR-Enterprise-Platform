@@ -41,6 +41,11 @@ export class IdentityService {
       account.subject = token.subject;
       await this.accounts.update(account.id, { subject: token.subject, lastLoginAt: new Date() });
     }
+    // UC8 AC-8.3.5: đăng nhập được nghĩa là tài khoản trên IdP đã kích hoạt (sơ đồ g1: INVITED → ACTIVE).
+    if (account.idpStatus === 'INVITED' || account.idpStatus === 'PENDING' || account.idpStatus === 'FAILED') {
+      account.idpStatus = 'ACTIVE';
+      await this.accounts.update(account.id, { idpStatus: 'ACTIVE', idpError: null, lastLoginAt: new Date() });
+    }
 
     const roles = new Set<Role>();
     for (const ra of await this.roleRepo.findBy({ userId: account.id })) {

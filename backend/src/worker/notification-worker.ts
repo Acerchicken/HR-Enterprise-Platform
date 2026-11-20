@@ -15,6 +15,7 @@ import {
   ProfileEventType,
 } from '../modules/employee/profile-events';
 import { isIdentityEvent } from '../modules/identity/identity-events';
+import { IdentitySync } from './identity-sync';
 
 /**
  * Worker nhận event nghỉ phép từ queue (RabbitMQ khi local, SQS trên AWS) và gửi email (local: Mailpit).
@@ -32,6 +33,7 @@ export class NotificationWorker implements OnApplicationShutdown {
     @Inject(APP_CONFIG) private readonly cfg: AppConfig,
     @InjectDataSource() private readonly ds: DataSource,
     private readonly employees: EmployeeService,
+    private readonly identity: IdentitySync,
   ) {
     this.mailer = createTransport({ host: cfg.smtp.host, port: cfg.smtp.port, secure: false });
   }
@@ -50,10 +52,13 @@ export class NotificationWorker implements OnApplicationShutdown {
     }
 
     if (isIdentityEvent(type)) {
-      // Đồng bộ sang IdP (identity-sync) làm ở nhánh feat/uc8-account-lifecycle (UC8 spec mục 13). Tới lúc đó chỉ ghi log,
-      // không đánh dấu đã xử lý và không coi là event nghỉ phép.
-      this.logger.log(`${type} ${eventId}: chưa có identity-sync, bỏ qua`);
-      return false;
+      // UC8: tài khoản, vai trò → IdP (identity-sync). Lỗi thì ném ra để message vào DLQ, không đánh dấu đã xử lý.
+      await this.identity.handle(type, payload as never);
+      await this.ds.query(
+        'INSERT INTO notification.processed_event (event_id, event_type) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [eventId, type],
+      );
+      return true;
     }
 
     if (isProfileEvent(type)) {

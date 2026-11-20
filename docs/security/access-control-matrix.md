@@ -43,6 +43,13 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 | Vai trò được cấp | Cấp | `POST /api/v1/admin/role-assignments` | — | — | — | ✓ | Không cho chính mình (403); người chưa có tài khoản, đã nghỉ (400); đã có (409); audit `ROLE_GRANT`, event `RoleGranted` cùng giao dịch | AC-8.7.1, 8.7.3, 8.7.6, 8.7.7 |
 | Vai trò được cấp | Thu hồi | `DELETE /api/v1/admin/role-assignments/{userId}/{role}` | — | — | — | ✓ | ADMIN cuối cùng còn hoạt động (409, kiểm trước); của chính mình (403); không có dòng (404); audit `ROLE_REVOKE` có lý do | AC-8.7.2, 8.7.4 |
 
+### Tài khoản đăng nhập của nhân viên (UC8 FR-8.6)
+
+| Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |
+|---|---|---|---:|---:|---:|---:|---|---|
+| Tài khoản của hồ sơ | Xem trạng thái | `GET /api/v1/employees/{id}/account` | — | — | ✓ | — | Mọi hồ sơ; không có mật khẩu, MFA; lỗi IdP chỉ là mã | UC8 AC-8.6.1, AC-8.6.3; `AccountController` |
+| Tài khoản của hồ sơ | Gửi (lại) lời mời | `POST /api/v1/employees/{id}/account/invite` | — | — | ✓ | — | Chỉ khi `NONE`, `INVITED`, `FAILED` (khác: 409); nhân viên đã nghỉ (400); audit `ACCOUNT_INVITE`, event `AccountInviteRequested` cùng giao dịch | AC-8.6.2, 8.6.4, 8.6.5 |
+
 ### Tổ chức
 
 | Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |

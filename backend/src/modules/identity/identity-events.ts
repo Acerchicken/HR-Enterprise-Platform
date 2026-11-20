@@ -19,6 +19,23 @@ export interface RoleEventPayload {
   role: 'HR' | 'ADMIN';
 }
 
+/** EmployeeCreated, AccountInviteRequested. `previousStatus` cho biết gửi lại thư mời hay tạo mới (luồng A6). */
+export interface AccountEventPayload {
+  employeeId: string;
+  accountId: string;
+  email: string;
+  fullName: string;
+  previousStatus?: 'NONE' | 'PENDING' | 'INVITED' | 'FAILED';
+}
+
+/** EmployeeTerminated, EmployeeReinstated, EmployeeEmailChanged (`oldEmail` chỉ có khi đổi email). */
+export interface EmployeeAccountEventPayload {
+  employeeId: string;
+  accountId: string;
+  email: string;
+  oldEmail?: string;
+}
+
 export function isIdentityEvent(type: string): type is IdentityEventType {
   return (IDENTITY_EVENTS as readonly string[]).includes(type);
 }

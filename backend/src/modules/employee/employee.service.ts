@@ -30,6 +30,7 @@ import {
   UpdateEmployeeDto,
 } from './employee.dto';
 import { canReveal, canSeeLevel, findSection, resolveRelation, visibleSections } from './profile-sections';
+import { onEmployeeCreated, onEmploymentChanged, onWorkEmailChanged } from './account-events';
 
 export const FIELD_CRYPTO = Symbol('FIELD_CRYPTO');
 
@@ -377,6 +378,11 @@ export class EmployeeService {
       }
       if (Object.keys(changes).length) {
         await repo.save({ ...e, ...changes });
+        // UC8 FR-8.4, A5, AC-8.3.6: khóa, mở, đổi email tài khoản trên IdP qua outbox (worker identity-sync).
+        if (changes.status !== undefined && (changes.status === 'TERMINATED') !== (e.status === 'TERMINATED')) {
+          await onEmploymentChanged(m, id, changes.status === 'TERMINATED');
+        }
+        if (changes.workEmail) await onWorkEmailChanged(m, id, changes.workEmail);
         // AC-2.9.8, UC1 AC-1.7.3: người nghỉ việc được gỡ khỏi vai trò trưởng, phó trong cùng giao dịch (có audit).
         if (changes.status === 'TERMINATED') {
           await this.org.removeRolesOf(id, actor, m);
@@ -418,6 +424,8 @@ export class EmployeeService {
       const saved = await m.getRepository(Employee).save(
         m.getRepository(Employee).create({ ...plain, workEmail: dto.workEmail.toLowerCase(), managerId: dto.managerId ?? null }),
       );
+      // UC8 luồng 4.2: tài khoản PENDING + event EmployeeCreated; worker tạo trên IdP và gửi thư mời.
+      await onEmployeeCreated(m, saved);
       // AC-2.8.3: dòng đầu tiên của quá trình công tác, mở từ ngày vào làm.
       await m.query(
         `INSERT INTO employee.employment_assignment (employee_id, department_id, position_id, manager_id, effective_from, reason, status, created_by, applied_at)

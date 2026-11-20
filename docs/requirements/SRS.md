@@ -3,7 +3,7 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform – môn Cloud Application Development |
-| Phiên bản tài liệu | 1.3 |
+| Phiên bản tài liệu | 1.5 |
 | Ngày | 17/11/2026 (tuần 11) |
 | Người soạn | TV1 (Dương), tách từ BRD 1.0 |
 | Người review | TV2 (Thanh) nghiệp vụ, TV4 (Duy) khả năng kiểm thử |
@@ -15,6 +15,7 @@
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
+| 1.5 | 18/11/2026 | Cập nhật trạng thái FR-8.1, 8.3, 8.4, 8.6, 8.7 sau ba nhánh code UC8 (`feat/uc8-roles-from-db`, `feat/uc8-role-admin`, `feat/uc8-account-lifecycle`) |
 | 1.4 | 18/11/2026 | Thêm FR-8.7 (ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, theo [ADR-18](../architecture/adr/ADR-18-authorization.md)); nhánh code của FR-8.1, 8.3, 8.4, 8.6 đổi sang `feat/uc8-*` tuần 11 |
 | 1.3 | 17/11/2026 | Thêm UC8 – Đăng nhập và tài khoản (mục 4.8, FR-8.1 → FR-8.6) theo [ADR-17](../architecture/adr/ADR-17-authentication.md); cập nhật trạng thái NFR-5.1 → 5.10; chốt câu hỏi số 2 (MFA) ở mục 8 |
 | 1.2 | 13/11/2026 | Thêm tài liệu theo tính năng UC1 → UC7 trong `docs/features/`: mỗi tính năng có `requirements.md` (user story, tiêu chí chấp nhận), `spec.md` (đặc tả use case), `deploy.md`, `test.md`; link từ mục 4 |
@@ -255,13 +256,13 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-8.1 | Đăng nhập, đăng xuất qua identity provider; tự đăng xuất sau 30 phút không thao tác | M | Không có form mật khẩu trong web; đăng nhập 4 tài khoản demo ở local và staging | Một phần: local đã có; staging lỗi `callback_urls`; tự đăng xuất tuần 11 (`feat/uc8-account-lifecycle`) |
+| FR-8.1 | Đăng nhập, đăng xuất qua identity provider; tự đăng xuất sau 30 phút không thao tác | M | Không có form mật khẩu trong web; đăng nhập 4 tài khoản demo ở local và staging | Một phần: local đã có, kể cả tự đăng xuất và màn hình lỗi `/callback`; staging lỗi `callback_urls` |
 | FR-8.2 | Quên mật khẩu tự phục vụ qua email đã xác minh | M | Thư đặt lại tới; email không tồn tại có cùng thông báo | Kế hoạch tuần 11 (`infra/idp-hardening`) |
-| FR-8.3 | Tạo tài khoản đăng nhập khi HR tạo hồ sơ, gửi email mời, bắt đổi mật khẩu tạm | M | Thư mời tới trong 1 phút; không tạo trùng khi event lặp | Kế hoạch tuần 11 (`feat/uc8-account-lifecycle`); SNS → SQS staging tuần 12 |
-| FR-8.4 | Khóa tài khoản và thu hồi phiên khi nghỉ việc; mở lại khi khôi phục | M | Trong 1 phút không đăng nhập lại được; token còn hạn bị 403 | Một phần: API đã chặn 403 (FR-1.7); khóa trên IdP tuần 11 (`feat/uc8-account-lifecycle`) |
+| FR-8.3 | Tạo tài khoản đăng nhập khi HR tạo hồ sơ, gửi email mời, bắt đổi mật khẩu tạm | M | Thư mời tới trong 1 phút; không tạo trùng khi event lặp | Một phần: local đã có (Keycloak, thư mời qua Mailpit); staging cần SNS → SQS, IAM, SES tuần 12 (`infra/idp-account-lifecycle`) |
+| FR-8.4 | Khóa tài khoản và thu hồi phiên khi nghỉ việc; mở lại khi khôi phục | M | Trong 1 phút không đăng nhập lại được; token còn hạn bị 403 | Một phần: API chặn 403 (FR-1.7); khóa, thu hồi phiên, mở lại trên IdP đã có ở local; staging tuần 12 |
 | FR-8.5 | MFA bằng ứng dụng TOTP | M | HR, ADMIN bị hỏi mã ở cả hai môi trường | Kế hoạch tuần 11 (`infra/idp-mfa`) |
-| FR-8.6 | HR xem trạng thái tài khoản đăng nhập, gửi lại lời mời | S | Vai trò khác bị 403; ghi audit | Kế hoạch tuần 11 (`feat/uc8-account-lifecycle`) |
-| FR-8.7 | ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, có lý do; vai trò chỉ lấy từ database, đồng bộ sang nhóm trên IdP | M | Có audit `ROLE_GRANT`, `ROLE_REVOKE`; tự cấp cho mình bị 403; thu hồi ADMIN cuối cùng bị 409; nhóm trong token bị bỏ qua | Kế hoạch tuần 11 (`feat/uc8-roles-from-db`, `feat/uc8-role-admin`) |
+| FR-8.6 | HR xem trạng thái tài khoản đăng nhập, gửi lại lời mời | S | Vai trò khác bị 403; ghi audit | Đã có |
+| FR-8.7 | ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, có lý do; vai trò chỉ lấy từ database, đồng bộ sang nhóm trên IdP | M | Có audit `ROLE_GRANT`, `ROLE_REVOKE`; tự cấp cho mình bị 403; thu hồi ADMIN cuối cùng bị 409; nhóm trong token bị bỏ qua | Đã có (đồng bộ nhóm trên IdP ở local; staging tuần 12) |
 
 **Tổng hợp FR:** 34 yêu cầu chức năng ở UC1 → UC7 (cộng 6 yêu cầu UC8 thêm 17/11); 23 đã có, 4 một phần (API có, chưa có giao diện), 7 theo kế hoạch tuần 10–12 (cập nhật 10/11).
 
