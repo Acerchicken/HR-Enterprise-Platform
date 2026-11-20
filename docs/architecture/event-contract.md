@@ -61,6 +61,43 @@ cùng một quyết định (bấm hai lần, retry) trả kết quả cũ và k
 | `LeaveCancelled` | Nhân viên tự hủy đơn đang chờ | `POST /leave-requests/{id}/cancel` | `SUBMITTED` → `CANCELLED` | Nhân viên | Quản lý trực tiếp |
 | `LeaveCompleted` | HR xác nhận hoàn tất | `POST /leave-requests/{id}/complete` | `APPROVED` → `COMPLETED` | Nhân viên HR | Nhân viên |
 
+### Event của yêu cầu cập nhật hồ sơ (UC1, từ #86)
+
+Thuộc aggregate **yêu cầu cập nhật hồ sơ** (`employee.profile_change_request`). Hiện ghi chung vào `leave.outbox` và đi qua
+cùng publisher, routing key `leave.<Event>` (**nợ kỹ thuật** so với quy tắc 3 mục 6; chuyển sang `employee.outbox` khi làm
+ADR-15). Email chỉ là thông báo chung, không chứa giá trị hồ sơ, lý do từ chối hay số tài khoản.
+
+| Event (`type`) | Phát khi | API gây ra | Email gửi tới |
+|---|---|---|---|
+| `ProfileChangeSubmitted` | Nhân viên gửi yêu cầu | `POST /employees/{id}/change-requests` | Mọi tài khoản có role HR (`iam.role_assignment`), **gộp tối đa 1 email mỗi giờ** (worker ghi mốc `ProfileHrDigest` vào `processed_event`) |
+| `ProfileChangeDecided` | HR duyệt hoặc từ chối | `POST /change-requests/{id}/approve`, `/reject` | Chủ hồ sơ |
+| `BankAccountChanged` | HR duyệt yêu cầu đổi tài khoản ngân hàng | `POST /change-requests/{id}/approve` | Chủ hồ sơ (cảnh báo nếu không phải họ yêu cầu) |
+
+Payload (`ProfileEventPayload` trong `employee/profile-events.ts`): `requestId`, `employeeId`, `section`, `status`,
+`occurredAt`. Worker nhận dạng bằng `isProfileEvent(type)`.
+
+**Event tài khoản, vai trò (UC8, ADR-17, ADR-18)**
+
+Thuộc aggregate **tài khoản** (`iam.user_account`, `aggregate_id` là id tài khoản). Ghi chung `leave.outbox` như event hồ sơ
+(cùng nợ kỹ thuật). Consumer là `identity-sync` (đồng bộ sang IdP), không gửi email. Danh sách đầy đủ ở
+[UC8 spec mục 9.2](../features/UC8-authentication/spec.md#92-hợp-đồng-api); hằng số `IDENTITY_EVENTS` trong
+`identity/identity-events.ts`, worker nhận dạng bằng `isIdentityEvent(type)`.
+
+| Event (`type`) | Phát khi | API gây ra | Payload |
+|---|---|---|---|
+| `RoleGranted` | ADMIN cấp HR, ADMIN; lệnh `grant-admin` | `POST /admin/role-assignments` | `accountId`, `email`, `role`, `occurredAt` |
+| `RoleRevoked` | ADMIN thu hồi | `DELETE /admin/role-assignments/{userId}/{role}` | như trên |
+| `EmployeeCreated` | HR tạo hồ sơ (tài khoản `PENDING`) | `POST /employees` | `employeeId`, `accountId`, `email`, `fullName`, `occurredAt` |
+| `AccountInviteRequested` | HR gửi (lại) lời mời | `POST /employees/{id}/account/invite` | như trên, thêm `previousStatus` (`NONE`, `INVITED`, `FAILED`) |
+| `EmployeeTerminated` | Hồ sơ chuyển sang `TERMINATED` | `PATCH /employees/{id}` | `employeeId`, `accountId`, `email`, `occurredAt` |
+| `EmployeeReinstated` | Hồ sơ từ `TERMINATED` về trạng thái khác | `PATCH /employees/{id}` | như trên |
+| `EmployeeEmailChanged` | HR đổi email công ty của người đã có tài khoản | `PATCH /employees/{id}` | như trên, thêm `oldEmail` |
+
+Hồ sơ chưa có tài khoản thì nghỉ việc, khôi phục, đổi email không phát event. Worker chuyển các event này sang `IdentitySync`
+(`worker/identity-sync.ts`): gọi IdP qua driver `IDP_ADMIN_DRIVER`, cập nhật `idp_status`, rồi đánh dấu `processed_event`. Mọi
+thao tác trên IdP idempotent (tạo khi đã có thì chỉ gắn, khóa người không còn thì bỏ qua) nên giao hai lần không sinh hai tài khoản,
+hai thư mời (AC-8.3.4). Lỗi IdP: thử lại trong worker, hết lượt thì ném lỗi, message vào DLQ (UC8 E6).
+
 Ánh xạ hành động → event: `EVENT_OF_ACTION` trong `leave-events.ts`; người nhận: `recipientOf()`. Nhân viên không có quản lý
 trực tiếp (CEO) thì event loại "gửi quản lý" được đánh dấu đã xử lý mà không gửi email.
 

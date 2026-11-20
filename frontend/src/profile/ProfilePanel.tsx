@@ -36,6 +36,8 @@ import { FileUpload, useAvatarUrl } from '../components/files';
 import { newKey } from './fields';
 import { ProfileState, useOpenProfile } from './navigation';
 import { SectionPage } from './SectionPage';
+import { TransferDialog } from '../pages/org/TransferDialog';
+import { AccountRow } from './AccountRow';
 
 export const SECTION_ICON: Record<string, LucideIcon> = {
   personal: UserRound,
@@ -127,6 +129,8 @@ export function ProfilePanel({ self = false }: { self?: boolean }) {
 }
 
 function ProfileHome({ s }: { s: ProfileSummary }) {
+  const { me } = useShell();
+  const [transferOpen, setTransferOpen] = useState(false);
   const openProfile = useOpenProfile();
   const avatarUrl = useAvatarUrl(s.id, s.hasAvatar);
   const has = (code: string) => s.sections.find((x) => x.code === code);
@@ -217,7 +221,21 @@ function ProfileHome({ s }: { s: ProfileSummary }) {
 
       {s.canEdit && (
         <div className="pad">
-          <Link className="button primary" to={`/employees/${s.id}/edit`}>Sửa hồ sơ</Link>
+          <Link className="button primary" to={`/employees/${s.id}/edit`}>Sửa hồ sơ</Link>{' '}
+          {me?.roles.includes('HR') && (
+            <button type="button" onClick={() => setTransferOpen(true)}>Điều chuyển</button>
+          )}
+          {transferOpen && (
+            <TransferDialog
+              employeeId={s.id}
+              onClose={() => setTransferOpen(false)}
+              onSaved={() => {
+                setTransferOpen(false);
+                invalidateSummary(s.id);
+                window.location.reload();
+              }}
+            />
+          )}
         </div>
       )}
 
@@ -227,6 +245,7 @@ function ProfileHome({ s }: { s: ProfileSummary }) {
             <h3 className="group-title">{GROUP_TITLE[g]}</h3>
             <div className="blk">
               {items.map((d) => <SectionRow key={d.code} s={s} def={d} />)}
+              {g === 'work' && me?.roles.includes('HR') && <AccountRow employeeId={s.id} />}
             </div>
           </section>
         ))}

@@ -57,7 +57,6 @@ Local dùng Keycloak (realm `hr`), staging dùng Amazon Cognito.
 | `OIDC_JWKS_URI` | `<OIDC_ISSUER>/protocol/openid-connect/certs` | `<issuer>/.well-known/jwks.json` | Staging | API | Nơi lấy public key kiểm tra chữ ký. Mặc định là đường dẫn kiểu Keycloak, nên với Cognito phải đặt |
 | `OIDC_ALLOWED_CLIENTS` | `hr-web` | Id client web của Cognito | Staging | API | Danh sách client được gọi API, cách nhau dấu phẩy. Local thêm `hr-api-test` để dùng curl/Postman |
 | `OIDC_CLIENT_CLAIM` | `azp` | `client_id` | Staging | API | Claim chứa client id trong access token |
-| `OIDC_ROLES_CLAIM` | `realm_access.roles` | `cognito:groups` | Staging | API | Đường dẫn claim chứa danh sách role |
 | `OIDC_USERINFO_URL` | (không có) | `https://<domain>.auth.<region>.amazoncognito.com/oauth2/userInfo` | Staging | API | Access token Cognito không có email: API gọi userinfo lấy email, cache theo `sub` 10 phút. Để trống với Keycloak |
 
 ### Mã hóa trường nhạy cảm
@@ -84,6 +83,23 @@ Dùng cho outbox publisher (trong API) và notification worker. Chi tiết: [h�
 | `SMTP_HOST` | `localhost` | Đặt ở task definition của worker | Staging | Worker | Local là Mailpit (giao diện xem mail http://localhost:8025) |
 | `SMTP_PORT` | `1025` | | Staging | Worker | Kết nối không TLS (`secure: false`) |
 | `SMTP_FROM` | `no-reply@hr.local` | | Staging | Worker | Địa chỉ người gửi |
+
+### Đồng bộ tài khoản sang IdP (UC8 FR-8.3, 8.4, 8.6, 8.7)
+
+Worker `identity-sync` (trong tiến trình worker) tạo, mời, khóa, mở tài khoản và đổi nhóm trên IdP theo event trong outbox.
+
+| Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
+|---|---|---|---|---|---|
+| `IDP_ADMIN_DRIVER` | `none` | `cognito` | Không | Worker | `keycloak`, `cognito` hoặc `none`. `none`: không gọi IdP, tài khoản coi như đã có (dùng với `AUTH_MODE=dev` và test). docker-compose đặt `keycloak` |
+| `KEYCLOAK_ADMIN_URL` | `OIDC_ISSUER` bỏ `/realms/<realm>` | (không dùng) | Không | Worker | Gốc Admin REST API. Trong docker-compose là `http://keycloak:8080` |
+| `KEYCLOAK_REALM` | Lấy từ `OIDC_ISSUER`, nếu không có thì `hr` | (không dùng) | Không | Worker | Realm chứa tài khoản nhân viên |
+| `KEYCLOAK_ADMIN_CLIENT_ID` | `hr-api-admin` | (không dùng) | Không | Worker | Client có service account, chỉ có `manage-users`, `view-users`, `view-realm` của `realm-management` |
+| `KEYCLOAK_ADMIN_CLIENT_SECRET` | (không có) | (không dùng) | **Có** khi `keycloak` | Worker | Local là `dev-only-hr-api-admin-secret` (khớp `keycloak/realm-hr.json`) |
+| `COGNITO_USER_POOL_ID` | (không có) | Id user pool | **Có** khi `cognito` | Worker | Quyền `cognito-idp:Admin*` lấy từ IAM role của worker; region lấy từ `AWS_REGION` |
+| `IDP_SYNC_ATTEMPTS` | `5` | `5` | Không | Worker | Số lần thử khi IdP lỗi tạm thời (mạng, 5xx, 429). Hết lượt thì tài khoản `FAILED`, message vào DLQ |
+| `IDP_SYNC_RETRY_DELAY_MS` | `1000` | `1000` | Không | Worker | Thời gian chờ lần đầu, nhân đôi mỗi lần |
+
+Web: `VITE_IDLE_TIMEOUT_MINUTES` (mặc định `30`) là số phút không thao tác thì tự đăng xuất, cảnh báo trước 1 phút (AC-8.1.6).
 
 ### Giới hạn tần suất (NFR-5.21, UC1 FR-1.14)
 

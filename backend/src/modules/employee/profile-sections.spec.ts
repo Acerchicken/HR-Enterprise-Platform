@@ -1,5 +1,5 @@
 import { AuthUser } from '../identity/roles';
-import { canReveal, findSection, PROFILE_SECTIONS, relationTo, visibleSections } from './profile-sections';
+import { canReveal, findSection, PROFILE_SECTIONS, relationTo, resolveRelation, visibleSections } from './profile-sections';
 
 const user = (employeeId: string, ...roles: AuthUser['roles']): AuthUser => ({
   userId: 'u-' + employeeId,
@@ -22,6 +22,23 @@ describe('profile sections (UC1 spec 9.1)', () => {
     expect(relationTo(user('m2', 'MANAGER'), target)).toBe('OTHER');
     expect(relationTo(user('a1', 'ADMIN'), target)).toBe('OTHER');
     expect(relationTo({ ...user('x'), employeeId: null }, target)).toBe('OTHER');
+  });
+
+  it('quản lý gián tiếp: chỉ hỏi database khi chưa xác định được, có trong chuỗi quản lý thì là MANAGER', async () => {
+    const managers: Record<string, string> = { m1: 'd1', d1: 'ceo' };
+    const db = {
+      query: jest.fn(async (_sql: string, params?: unknown[]) => {
+        const [start, viewer] = params as string[];
+        for (let id: string | undefined = managers[start]; id; id = managers[id]) if (id === viewer) return [{}];
+        return [];
+      }),
+    };
+    expect(await resolveRelation(db, user('m1'), target)).toBe('MANAGER');
+    expect(db.query).not.toHaveBeenCalled();
+    expect(await resolveRelation(db, user('d1'), target)).toBe('MANAGER');
+    expect(await resolveRelation(db, user('ceo'), target)).toBe('MANAGER');
+    expect(await resolveRelation(db, user('x1'), target)).toBe('OTHER');
+    expect(await resolveRelation(db, user('d1'), { id: 'ceo', managerId: null })).toBe('OTHER');
   });
 
   it('mức danh bạ không thấy mục nào (AC-1.8.4)', () => {

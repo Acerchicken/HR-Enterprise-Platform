@@ -121,7 +121,47 @@ paths:
   /api/v1/positions:
     get:
       operationId: OrganizationController_positions
+      parameters:
+        - name: active
+          required: false
+          in: query
+          description: "true: chỉ chức danh đang dùng (danh sách chọn)"
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: ""
+      tags: *a1
+      security: *a2
+    post:
+      operationId: OrganizationController_createPosition
       parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePositionDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a1
+      security: *a2
+  /api/v1/positions/{id}:
+    patch:
+      operationId: OrganizationController_updatePosition
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePositionDto"
       responses:
         "200":
           description: ""
@@ -158,6 +198,20 @@ paths:
           description: Lọc theo phòng ban
           schema:
             type: string
+        - name: includeChildren
+          required: false
+          in: query
+          description: "Khi lọc theo đơn vị: kèm nhân viên của đơn vị con cháu (mặc định
+            true, AC-2.1.5)"
+          schema:
+            type: boolean
+        - name: includeAncestors
+          required: false
+          in: query
+          description: "HR, ADMIN: đơn vị và các đơn vị cha (danh sách chọn trưởng, phó
+            kiêm nhiệm, AC-2.9.1)"
+          schema:
+            type: boolean
       responses:
         "200":
           description: ""
@@ -317,6 +371,78 @@ paths:
   /api/v1/departments/{id}/members:
     get:
       operationId: EmployeeController_members
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: includeChildren
+          required: false
+          in: query
+          description: Kèm nhân viên của đơn vị con cháu (mặc định false)
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/employees/{id}/transfers:
+    post:
+      operationId: EmployeeController_createTransfer
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransferDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a3
+      security: *a4
+    get:
+      operationId: EmployeeController_listTransfers
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/employees/{id}/transfers/{transferId}:
+    delete:
+      operationId: EmployeeController_cancelTransfer
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: transferId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "204":
+          description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/employees/{id}/termination-impact:
+    get:
+      operationId: EmployeeController_terminationImpact
       parameters:
         - name: id
           required: true
@@ -1130,6 +1256,15 @@ components:
     CreateDepartmentDto:
       type: object
       properties:
+        unitType:
+          type: string
+          enum: &a13
+            - COMPANY
+            - CENTER
+            - DEPARTMENT
+            - TEAM
+          example: DEPARTMENT
+          description: "ADR-14: Công ty, Trung tâm, Phòng, Nhóm"
         code:
           type: string
           example: ENG-PLT
@@ -1143,13 +1278,26 @@ components:
           type: object
         headEmployeeId:
           type: object
+        headActing:
+          type: boolean
+          description: 'FR-2.9: trưởng là "Quyền trưởng"'
+        deputyEmployeeIds:
+          description: "Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung
+            tâm 3, Phòng 3, Nhóm 0"
+          type: array
+          items:
+            type: string
       required:
+        - unitType
         - code
         - name
         - office
     UpdateDepartmentDto:
       type: object
       properties:
+        unitType:
+          type: string
+          enum: *a13
         name:
           type: string
         office:
@@ -1160,6 +1308,49 @@ components:
         headEmployeeId:
           type: object
           nullable: true
+        headActing:
+          type: boolean
+          description: 'FR-2.9: trưởng là "Quyền trưởng"'
+        deputyEmployeeIds:
+          description: "Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung
+            tâm 3, Phòng 3, Nhóm 0"
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+          description: "INACTIVE: ngừng hoạt động (FR-2.10), chỉ khi đơn vị đã trống"
+    CreatePositionDto:
+      type: object
+      properties:
+        code:
+          type: string
+          example: PM
+        title:
+          type: string
+          example: Quản lý dự án
+        level:
+          type: number
+          minimum: 1
+          maximum: 10
+      required:
+        - code
+        - title
+        - level
+    UpdatePositionDto:
+      type: object
+      properties:
+        title:
+          type: string
+        level:
+          type: number
+          minimum: 1
+          maximum: 10
+        active:
+          type: boolean
     MeEmployee:
       type: object
       properties:
@@ -1451,6 +1642,70 @@ components:
           description: Lương tháng (VND)
       required:
         - version
+    HeadChangeDto:
+      type: object
+      properties:
+        departmentId:
+          type: string
+        employeeId:
+          type: object
+          nullable: true
+          description: "null: để trống có chủ ý"
+      required:
+        - departmentId
+        - employeeId
+    ReportChoiceDto:
+      type: object
+      properties:
+        employeeId:
+          type: string
+        managerId:
+          type: string
+          description: Quản lý mới của cấp dưới; giữ nguyên thì là chính người được điều
+            chuyển
+      required:
+        - employeeId
+        - managerId
+    CreateTransferDto:
+      type: object
+      properties:
+        effectiveDate:
+          type: string
+          example: 2026-12-01
+          description: Hôm nay hoặc tương lai; quá khứ tối đa 30 ngày (AC-2.7.4)
+        departmentId:
+          type: string
+        positionId:
+          type: string
+        managerId:
+          type: object
+          nullable: true
+          description: Chỉ CEO được để trống
+        reason:
+          type: string
+          enum:
+            - TRANSFER
+            - PROMOTION
+            - MANAGER_CHANGE
+            - CORRECTION
+        note:
+          type: string
+        newHeads:
+          description: "AC-2.7.5: trưởng mới cho đơn vị người này đang làm trưởng"
+          type: array
+          items:
+            $ref: "#/components/schemas/HeadChangeDto"
+        reports:
+          description: "AC-2.7.6: bắt buộc đủ mọi cấp dưới đang làm việc"
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportChoiceDto"
+      required:
+        - effectiveDate
+        - departmentId
+        - positionId
+        - managerId
+        - reason
     SubmitChangeDto:
       type: object
       properties:
@@ -1597,7 +1852,7 @@ components:
           example: Quy chế làm việc
         type:
           type: string
-          enum: &a13
+          enum: &a14
             - POLICY
             - PROCESS
             - GUIDE
@@ -1639,7 +1894,7 @@ components:
           type: string
         type:
           type: string
-          enum: *a13
+          enum: *a14
         scope:
           $ref: "#/components/schemas/DocumentScopeDto"
       required:

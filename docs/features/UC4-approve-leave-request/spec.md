@@ -169,23 +169,23 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 
 **Quản lý duyệt đơn: chỉ một loại nên không có thanh tab (luồng chính, A1)**
 
-![Quản lý duyệt đơn nghỉ](../mockups/uc4-manager.png)
+![Quản lý duyệt đơn nghỉ](mockups/uc4-manager.png)
 
 **HR, tab "Đơn nghỉ": đơn Chờ HR duyệt kèm quyết định của quản lý (A3, A6)**
 
-![HR duyệt thêm](../mockups/uc4-hr.png)
+![HR duyệt thêm](mockups/uc4-hr.png)
 
 **HR, tab "Hoàn tất đơn nghỉ" (A2)**
 
-![HR hoàn tất đơn](../mockups/uc4-complete.png)
+![HR hoàn tất đơn](mockups/uc4-complete.png)
 
 **HR phân công duyệt thay `/approvals/delegations` (A4, FR-4.3)**
 
-![Phân công duyệt thay](../mockups/uc4-delegation.png)
+![Phân công duyệt thay](mockups/uc4-delegation.png)
 
 **Trên điện thoại: chi tiết đơn, từ chối bắt buộc ghi chú**
 
-![Duyệt đơn trên điện thoại](../mockups/uc4-mobile.png)
+![Duyệt đơn trên điện thoại](mockups/uc4-mobile.png)
 
 ## 10. Yêu cầu phi chức năng liên quan
 

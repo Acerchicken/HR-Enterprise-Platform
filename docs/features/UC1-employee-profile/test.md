@@ -28,8 +28,9 @@ tiếp. Rủi ro thứ ba là **lạm dụng**: tải file độc hại, spam y�
 |---|---|---|---|
 | AC-1.1.1 | "nhân viên xem hồ sơ người khác chỉ thấy thông tin danh bạ" | SEC-17 → SEC-34 | Có |
 | AC-1.1.2 | "quản lý trực tiếp thấy thông tin cá nhân, không thấy trường nhạy cảm" | SEC | Có |
+| AC-1.1.4 | "quản lý gián tiếp (quản lý của quản lý) xem mức QL như quản lý trực tiếp, không xem mức CN"; unit test `resolveRelation` | – | Có |
 | AC-1.1.3 | "xem hồ sơ: chủ hồ sơ PERSONAL, HR mức HR, ADMIN chỉ mức danh bạ…" | SEC | Có |
-| AC-1.2.2 | "nhân viên tự sửa số điện thoại; không sửa được lương hay hồ sơ người khác" | SEC | Có |
+| AC-1.2.2 | "nhân viên không ghi thẳng hồ sơ, kể cả điện thoại: 403", "mục HR quản lý, hồ sơ người khác… → 403" | SEC | Có |
 | AC-1.2.3 | "dữ liệu sai → 400", "lỗi validation trả thêm fields theo từng trường" | – | Có |
 | AC-1.3.1 | "HR xem trường nhạy cảm (đã giải mã) và lượt xem được audit" | SEC | Có |
 | AC-1.3.2 | "xem hồ sơ: … nhân viên không xem trường nhạy cảm" | SEC | Có |

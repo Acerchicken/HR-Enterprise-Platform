@@ -41,7 +41,9 @@ dd { margin: 0; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); }
 th { color: var(--muted); font-weight: 500; }
-input, select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; width: 100%; }
+input, select, textarea { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; width: 100%; }
+label textarea { margin-top: 4px; color: var(--text); resize: vertical; }
+.field-group { margin-bottom: 12px; }
 label { display: block; margin-bottom: 12px; color: var(--muted); font-size: 14px; }
 label input { margin-top: 4px; color: var(--text); }
 button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); font: inherit; cursor: pointer; }
@@ -55,6 +57,10 @@ button.link.active { font-weight: 600; }
 .toolbar select { flex: 1; }
 .pager { display: flex; gap: 12px; align-items: center; justify-content: flex-end; margin-top: 12px; }
 .badge { font-size: 11px; padding: 2px 6px; border-radius: 10px; background: #eef2ff; color: #3730a3; margin-left: 6px; }
+.badge.unit-company { background: #1e3a8a; color: #fff; }
+.badge.unit-center { background: #dbeafe; color: #1e40af; }
+.badge.unit-department { background: #eef2ff; color: #3730a3; }
+.badge.unit-team { background: #f1f5f9; color: #475569; }
 .role-hr { background: #ecfdf3; color: var(--ok); }
 .role-admin { background: #fef3f2; color: var(--danger); }
 .role-manager { background: #fffaeb; color: #b54708; }
@@ -90,3 +96,57 @@ button.primary:hover, a.button.primary:hover { background: var(--primary-hover);
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .todo-title { color: var(--todo); }
 .chua { display: inline-block; font-size: 11px; font-weight: 600; color: var(--todo); border: 1px solid #fca5a5; background: #fef2f2; border-radius: 6px; padding: 0 6px; margin-left: 6px; }
+
+/* UC2: sơ đồ tổ chức, form đơn vị, chức danh */
+.page-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.page-head h1 { margin: 0; font-size: 24px; }
+.page-head .actions, .page-head > button { margin-left: auto; display: flex; gap: 8px; }
+.page-head .button, .page-head button, .unit-head button { display: inline-flex; align-items: center; gap: 6px; }
+.crumbs { margin: 0 0 4px; }
+.unit-head { display: flex; align-items: flex-start; gap: 12px; justify-content: space-between; }
+.unit-head h3 { margin: 0 0 8px; }
+.section-label { margin: 16px 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.leaders { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.leader { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px; border-radius: 10px; }
+.leader:hover { border-color: var(--primary); }
+.leader strong { display: block; font-size: 14px; }
+.leader .badge { margin-left: 0; }
+.dialog { width: 600px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); overflow: auto; background: #fff; border-radius: 16px; box-shadow: 0 20px 50px #0f172a40; }
+.dialog-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.dialog-head h2 { margin: 0; font-size: 18px; outline: none; }
+.dialog-body { padding: 16px 20px; }
+.dialog-foot { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid var(--line); background: var(--bg); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.form-grid .span2 { grid-column: 1 / -1; }
+@media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+.form-grid select, .form-grid input:not([type='checkbox']) { margin-top: 4px; color: var(--text); }
+label.check { display: flex; align-items: center; gap: 8px; color: var(--text); margin-top: -4px; }
+label.check input { width: auto; margin: 0; }
+.label-text { display: block; color: var(--muted); font-size: 14px; margin-bottom: 4px; }
+.field-error { display: block; color: var(--danger); font-size: 13px; margin-top: 4px; }
+input[aria-invalid='true'], select[aria-invalid='true'] { border-color: var(--danger); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
+.chips select { flex: 1; min-width: 180px; border: none; padding: 4px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; background: var(--primary-soft); color: var(--primary); border-radius: 6px; padding: 3px 4px 3px 8px; font-size: 14px; font-weight: 600; }
+.chip button { border: none; background: none; padding: 0 4px; color: inherit; font-size: 16px; line-height: 1; }
+.note { background: var(--primary-soft); border: 1px solid var(--primary-soft-2); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #155e75; margin: 4px 0 8px; }
+.segmented { display: flex; gap: 6px; }
+.segmented button { border-radius: 999px; white-space: nowrap; }
+.card.flush { padding: 0; overflow-x: auto; }
+.card.flush th, .card.flush td { padding: 10px 14px; }
+tr.editing { background: var(--primary-soft); }
+.row-actions { display: flex; gap: 6px; }
+input.switch { width: 18px; height: 18px; accent-color: var(--primary); }
+.dialog.wide { width: 760px; }
+.dialog-head h2 { display: inline-flex; align-items: center; gap: 8px; }
+.note.warn { background: #fffaeb; border-color: #fedf89; color: #93370d; }
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.badge.ok { background: #ecfdf3; color: var(--ok); }
+.badge.bad { background: #fef3f2; color: var(--danger); }
+button.danger-fill { background: var(--danger); border-color: var(--danger); color: #fff; }
+.badge.upcoming { background: #fffaeb; color: var(--warn); }
+.org-box { display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 8px; margin-bottom: 12px; }
+.warn-text { color: var(--warn); font-variant-numeric: tabular-nums; }
+.auth-icon { width: 52px; height: 52px; border-radius: 50%; display: inline-grid; place-items: center; margin-bottom: 8px; }
+.auth-icon.bad { background: #fef3f2; color: var(--danger); }
+.auth-icon.info { background: #fffaeb; color: var(--warn); }

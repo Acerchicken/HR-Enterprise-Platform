@@ -29,14 +29,17 @@
 
 ### FR-1.1 Xem hồ sơ theo mức (M, đã có)
 
-- **AC-1.1.1** Giả sử B không phải quản lý trực tiếp của A, không phải HR. Khi B mở hồ sơ A. Thì B thấy mã nhân viên, họ tên,
+- **AC-1.1.1** Giả sử B không phải quản lý (trực tiếp hay gián tiếp) của A, không phải HR. Khi B mở hồ sơ A. Thì B thấy mã nhân viên, họ tên,
   ảnh, chức danh, phòng ban, quản lý trực tiếp, **số điện thoại và email công ty**; không thấy địa chỉ, ngày sinh, ngày vào làm,
   trạng thái hay bất kỳ mục nào bên dưới (spec 9.1).
 - **AC-1.1.2** Giả sử M là quản lý trực tiếp của A. Khi M mở hồ sơ A. Thì M thấy thêm ngày sinh, địa chỉ, ngày vào làm,
   trạng thái; không thấy CCCD, số tài khoản, lương.
+- **AC-1.1.4** Giả sử M là quản lý gián tiếp của A (quản lý của quản lý trực tiếp, đi lên bao nhiêu cấp cũng được). Khi M mở
+  hồ sơ A. Thì M thấy như quản lý trực tiếp (mức QL, AC-1.1.2). Quyền duyệt đơn nghỉ vẫn chỉ của quản lý trực tiếp (BR-05).
+  Cấp dưới mở hồ sơ cấp trên chỉ thấy mức danh bạ. Chốt 18/11/2026 (Duong chọn trên thẻ quyết định).
 - **AC-1.1.3** Giả sử người dùng có vai trò ADMIN. Khi mở hồ sơ người khác. Thì chỉ thấy mức danh bạ.
 
-### FR-1.2 Nhân viên sửa liên hệ qua yêu cầu (M; code chưa đạt: đang lưu thẳng)
+### FR-1.2 Nhân viên sửa liên hệ qua yêu cầu (M)
 
 - **AC-1.2.1** Giả sử nhân viên đã đăng nhập. Khi sửa `phone`, `address` của chính mình với giá trị hợp lệ và bấm
   "Gửi yêu cầu". Thì trả 202, tạo yêu cầu `PENDING` (FR-1.9); hồ sơ **chưa đổi**, `version` giữ nguyên.
@@ -83,6 +86,9 @@
 
 - **AC-1.7.1** Khi HR chuyển nhân viên còn cấp dưới đang làm việc sang `TERMINATED`. Thì trả 400, nêu số cấp dưới
   cần chuyển sang quản lý khác trước.
+- **AC-1.7.3** Khi HR cho B nghỉ việc. Thì trong cùng giao dịch: B được gỡ khỏi vai trò trưởng, phó
+  đơn vị (UC2 AC-2.9.8); điều chuyển chưa hiệu lực của B bị hủy; hộp xác nhận nêu trước các thay đổi này. Nếu B là quản lý mới
+  trong điều chuyển chưa hiệu lực của người khác thì trả 400, nêu các điều chuyển đó để HR sửa trước.
 - **AC-1.7.2** Giả sử hồ sơ đã `TERMINATED`. Khi tài khoản gắn với hồ sơ đó gọi API bằng token còn hạn. Thì bị từ
   chối (403).
 
@@ -193,8 +199,8 @@ luật, quá trình công tác trước khi có hệ thống.
 
 ### FR-1.13 Thông tin tự tính (C)
 
-- **AC-1.13.1** "Quá trình công tác" liệt kê các lần đổi phòng ban, chức danh, quản lý trực tiếp, lấy từ audit nhóm
-  trường tổ chức (AC-1.4.3) cộng các dòng HR nhập cho giai đoạn trước khi có hệ thống.
+- **AC-1.13.1** "Quá trình công tác" liệt kê các giai đoạn phòng ban, chức danh, quản lý trực tiếp, đọc từ bảng quá trình
+  công tác của UC2 (FR-2.8, có ngày hiệu lực, lý do, "Sắp hiệu lực") cộng các dòng HR nhập cho giai đoạn trước khi có hệ thống.
 - **AC-1.13.2** Giả sử ngày vào làm 1/3/2016. Khi xem "Các mốc trong công ty" ngày 14/11/2026. Thì thấy thâm niên 10
   năm 8 tháng, các mốc 5 năm (1/3/2021, 1/3/2026) và số ngày phép năm được cộng theo thâm niên (UC3 AC-3.1.3).
 - **AC-1.13.3** "Ngày nghỉ dài" liệt kê các đơn nghỉ từ 14 ngày làm việc trở lên đã duyệt hoặc hoàn tất (UC3) và các

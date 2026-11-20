@@ -3,14 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EmployeeService } from '../employee/employee.service';
 import { RoleAssignment } from './role-assignment.entity';
-import { AuthUser, Role, ROLES } from './roles';
+import { AuthUser, GRANTED_ROLES, Role } from './roles';
 import { VerifiedToken } from './token-verifier';
 import { UserAccount } from './user-account.entity';
 
 /**
- * Map tài khoản đăng nhập (IdP) ↔ nhân viên, và tính role thực tế:
- *   role trong token (realm role của Keycloak) ∪ role gán trong DB
- *   ∪ EMPLOYEE (nếu gắn với nhân viên) ∪ MANAGER (nếu có nhân viên trực thuộc).
+ * Map tài khoản đăng nhập (IdP) ↔ nhân viên, và tính vai trò thực tế mỗi request (ADR-18):
+ *   HR, ADMIN được cấp trong `iam.role_assignment`
+ *   ∪ EMPLOYEE (nếu gắn với hồ sơ chưa nghỉ việc) ∪ MANAGER (nếu có cấp dưới trực tiếp, ADR-10).
+ * Nhóm trong token (`realm_access.roles`, `cognito:groups`) không được dùng: nhóm trên IdP chỉ là bản sao để IdP bắt MFA
+ * (AC-8.1.10). Dòng EMPLOYEE, MANAGER cũ trong database cũng bị bỏ qua vì hai vai trò này chỉ suy ra.
  */
 @Injectable()
 export class IdentityService {
@@ -39,13 +41,16 @@ export class IdentityService {
       account.subject = token.subject;
       await this.accounts.update(account.id, { subject: token.subject, lastLoginAt: new Date() });
     }
+    // UC8 AC-8.3.5: đăng nhập được nghĩa là tài khoản trên IdP đã kích hoạt (sơ đồ g1: INVITED → ACTIVE).
+    if (account.idpStatus === 'INVITED' || account.idpStatus === 'PENDING' || account.idpStatus === 'FAILED') {
+      account.idpStatus = 'ACTIVE';
+      await this.accounts.update(account.id, { idpStatus: 'ACTIVE', idpError: null, lastLoginAt: new Date() });
+    }
 
     const roles = new Set<Role>();
-    for (const r of token.roles) {
-      const upper = r.toUpperCase() as Role;
-      if (ROLES.includes(upper)) roles.add(upper);
+    for (const ra of await this.roleRepo.findBy({ userId: account.id })) {
+      if (GRANTED_ROLES.includes(ra.role)) roles.add(ra.role);
     }
-    for (const ra of await this.roleRepo.findBy({ userId: account.id })) roles.add(ra.role);
     if (account.employeeId) {
       // AC-1.7.2: người đã nghỉ việc không dùng được hệ thống, kể cả khi token cũ còn hạn.
       if ((await this.employees.placementOf(account.employeeId))?.status === 'TERMINATED') {

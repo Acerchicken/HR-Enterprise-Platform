@@ -199,3 +199,17 @@ img.avatar { object-fit: cover; }
 .file-row .ellipsis { flex: 1; }
 .attach { display: grid; gap: 6px; margin: 10px 0; }
 button.link.danger { color: var(--danger); }
+
+/* Dòng "Tài khoản đăng nhập" trong hồ sơ (UC8 FR-8.6, bản vẽ uc8-account) */
+.account-detail { padding: 4px 16px 12px; background: var(--soft1, #f8fafc); }
+.account-detail .kv .k { width: 140px; }
+.account-detail .badge { margin-left: 0; }
+.account-acts { display: flex; gap: 8px; margin-top: 10px; }
+.account-acts button { display: inline-flex; align-items: center; gap: 6px; }
+.account-detail .note { display: flex; gap: 6px; align-items: flex-start; margin: 10px 0 0; }
+.badge.muted { background: #f1f5f9; color: #475569; }
+.badge.info { background: #eff8ff; color: #175cd3; }
+.account-detail .kv { flex-wrap: wrap; }
+.account-detail .badge { white-space: nowrap; }
+.account-detail .hint { flex-basis: 100%; padding-left: 150px; margin-top: -4px; }
+@media (max-width: 600px) { .account-detail .hint { padding-left: 0; } }

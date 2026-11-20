@@ -7,6 +7,8 @@ import { ErrorBox } from '../../components/ErrorBox';
 import { useCooldown } from '../../components/ui';
 import { CreateEmployeeBody, FieldGroup, FieldKey, formFields, GROUP_LABEL, UpdateEmployeeBody } from './employee-fields';
 import { FieldInput } from './FieldInput';
+import { TerminateDialog } from '../org/TerminateDialog';
+import { TransferDialog } from '../org/TransferDialog';
 
 type Values = Partial<Record<FieldKey, string>>;
 
@@ -25,7 +27,12 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
     [mode, id],
   );
 
-  const fields = useMemo(() => formFields(mode, 'HR'), [mode]);
+  // AC-2.7.7: khi sửa, đơn vị, chức danh, quản lý chỉ đổi qua "Điều chuyển" (có ngày hiệu lực, có quá trình công tác).
+  const fields = useMemo(
+    () => formFields(mode, 'HR').filter((f) => mode === 'create' || !ORG_KEYS.includes(f.key)),
+    [mode],
+  );
+  const [dialog, setDialog] = useState<'transfer' | 'terminate' | null>(null);
   const [values, setValues] = useState<Values>({});
   const [initial, setInitial] = useState<Values>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -46,10 +53,18 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
     setInitial(v);
   }, [current.data]);
 
-  // Gợi ý quản lý: trưởng phòng của phòng ban đang chọn.
+  // Gợi ý quản lý (AC-2.9.2): trưởng của đơn vị đang chọn; đơn vị chưa có trưởng (hoặc người đang sửa chính là trưởng) thì
+  // lấy trưởng của đơn vị cha gần nhất có trưởng. HR đổi được.
   const deptId = values.departmentId;
   useEffect(() => {
-    const head = departments.data?.find((d) => d.id === deptId)?.headEmployeeId;
+    const byId = new Map((departments.data ?? []).map((d) => [d.id, d]));
+    let head: string | null | undefined;
+    for (let d = deptId ? byId.get(deptId) : undefined, guard = 0; d && guard < 20; d = d.parentId ? byId.get(d.parentId) : undefined, guard++) {
+      if (d.headEmployeeId && d.headEmployeeId !== id) {
+        head = d.headEmployeeId;
+        break;
+      }
+    }
     if (!head) return setSuggested(null);
     api<DirectoryEntry>(`/employees/${head}`).then(setSuggested).catch(() => setSuggested(null));
   }, [deptId, departments.data]);
@@ -74,8 +89,14 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
     }
   }
 
-  async function submit(ev: FormEvent) {
+  async function submit(ev: FormEvent, confirmed = false) {
     ev.preventDefault();
+    // UC1 AC-1.7.3: cho nghỉ việc thì hiện hộp xác nhận nêu trước các thay đổi.
+    if (mode === 'edit' && !confirmed && values.status === 'TERMINATED' && initial.status !== 'TERMINATED') {
+      setDialog('terminate');
+      return;
+    }
+    setDialog(null);
     setSaving(true);
     setError(null);
     setFieldErrors({});
@@ -109,7 +130,11 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
   if (current.error) return <ErrorBox error={current.error} />;
   if (mode === 'edit' && !current.data) return <p>Đang tải…</p>;
 
-  const lookups = { departments: departments.data ?? [], positions: positions.data ?? [] };
+  // AC-2.6.2, AC-2.10.2: chỉ chọn đơn vị đang hoạt động, chức danh đang dùng; giá trị hiện tại của hồ sơ vẫn hiện.
+  const lookups = {
+    departments: (departments.data ?? []).filter((d) => d.status === 'ACTIVE' || d.id === initial.departmentId),
+    positions: (positions.data ?? []).filter((p) => p.active || p.id === initial.positionId),
+  };
   const groups: FieldGroup[] = ['basic', 'work', 'sensitive'];
 
   return (
@@ -128,6 +153,16 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
                   </button>
                 )}
               </p>
+            )}
+            {g === 'work' && mode === 'edit' && current.data && (
+              <div className="org-box">
+                <span>
+                  <span className="small muted">Đơn vị, chức danh, quản lý trực tiếp</span>
+                  <br />
+                  {current.data.departmentName} · {current.data.positionTitle} · quản lý {current.data.managerName ?? '—'}
+                </span>
+                <button type="button" onClick={() => setDialog('transfer')}>Điều chuyển…</button>
+              </div>
             )}
             {fields.filter((f) => f.group === g).map((f) => (
               <FieldInput
@@ -150,6 +185,27 @@ export function EmployeeFormPage({ mode }: { mode: 'create' | 'edit' }) {
         </div>
       </form>
       <ErrorBox error={error} />
+      {dialog === 'transfer' && (
+        <TransferDialog
+          employeeId={id!}
+          onClose={() => setDialog(null)}
+          onSaved={() => {
+            setDialog(null);
+            invalidateSummary(id!);
+            current.reload();
+          }}
+        />
+      )}
+      {dialog === 'terminate' && current.data && (
+        <TerminateDialog
+          employeeId={id!}
+          name={current.data.fullName}
+          onClose={() => setDialog(null)}
+          onConfirm={() => submit(new Event('submit') as unknown as FormEvent, true)}
+        />
+      )}
     </section>
   );
 }
+
+const ORG_KEYS: string[] = ['departmentId', 'positionId', 'managerId'];
