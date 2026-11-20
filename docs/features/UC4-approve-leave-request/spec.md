@@ -5,11 +5,11 @@
 | Mục tiêu kinh doanh | MT-2 (duyệt đơn nghỉ dưới 1 ngày làm việc), MT-3 (lượt duyệt có audit) |
 | Tác nhân chính | Quản lý trực tiếp (duyệt, từ chối); HR (duyệt thêm loại phép cần HR duyệt, BR-16; hoàn tất; duyệt đơn của CEO) |
 | Tác nhân phụ, hệ thống ngoài | Người duyệt thay (BR-06, chưa có); nhân viên (nhận email); queue và dịch vụ email |
-| Yêu cầu (SRS) | FR-4.1 → FR-4.8 |
+| Yêu cầu (SRS) | FR-4.1 → FR-4.9 |
 | Quy tắc | [BR-05 → BR-11, BR-14 → BR-19](../../business/leave-rules.md), ADR-03, ADR-09, ADR-10 |
 | Mức ưu tiên | M (FR-4.3, FR-4.4 là S) |
-| Trạng thái | Đã có; người duyệt thay (FR-4.3) kế hoạch tuần 10 |
-| Phiên bản | 1.2 – 17/11/2026 (chốt hạn hoàn tất, hủy sau duyệt, nhắc đơn chờ; BR-08, BR-10, BR-17) |
+| Trạng thái | Đã có luồng duyệt, hoàn tất; FR-4.3, FR-4.8, FR-4.9 và các quy tắc 13.4 → 13.6 kế hoạch tuần 12 (sau UC8) |
+| Phiên bản | 1.3 – 18/11/2026 (sơ đồ luồng `flows/`, hợp đồng API 9.3, thiết kế 13.4 → 13.7: xác nhận đề nghị hủy, nhắc đơn chờ, lịch lễ, quyền xử lý). 1.2 – 17/11/2026 (chốt hạn hoàn tất, hủy sau duyệt, nhắc đơn chờ; BR-08, BR-10, BR-17) |
 
 ## 1. Mô tả ngắn
 
@@ -27,6 +27,7 @@ ngày đã dùng. Mỗi bước gửi email cho người liên quan và ghi lị
 | HR | Xem mọi đơn; hoàn tất đơn `APPROVED`; duyệt, từ chối đơn của CEO; duyệt, từ chối đơn `PENDING_HR` (BR-16) | Bước đầu chỉ duyệt đơn của CEO; bước HR duyệt thêm không được duyệt đơn của chính mình |
 | Nhân viên | Nhận email kết quả; xem chi tiết và lịch sử đơn của mình | – |
 | ADMIN | Không tham gia | Không xem đơn của người khác |
+| Quản lý gián tiếp; trưởng, phó đơn vị không phải quản lý trực tiếp | Không tham gia (BR-05; UC2 FR-2.9; kiểm chéo UC3 mục 14) | 403 khi xem chi tiết đơn (AC-4.7.5) |
 
 ## 3. Điều kiện
 
@@ -106,6 +107,8 @@ stateDiagram-v2
   audit), gửi email chung. Nhân viên tự gọi endpoint này trên đơn `APPROVED` nhận 403/409 theo quyền và trạng thái.
 - **A8, nhắc đơn chờ (BR-17):** Sau một ngày làm việc đầy đủ, nếu `SUBMITTED` thì nhắc người duyệt đang có quyền; nếu
   `PENDING_HR` thì nhắc nhóm HR. Chỉ nhắc một lần cho mỗi giai đoạn, dùng email chung; không tự duyệt/hủy.
+- **A9, HR sửa lịch lễ (FR-4.9, BR-19):** HR thêm hoặc xóa ngày lễ, ngày nghỉ bù; hệ thống báo số đơn bị ảnh hưởng, không tự
+  sửa đơn. HR mở danh sách đơn bị ảnh hưởng và bấm "Tính lại" từng đơn, kèm lý do (13.6).
 - **A5 (bước 5), bấm duyệt hai lần:** lần hai trả lại đơn, không đổi số dư, không gửi email lần nữa (BR-11).
 
 ## 6. Ngoại lệ
@@ -126,6 +129,9 @@ stateDiagram-v2
 | E11 | HR duyệt thêm đơn của chính mình | 403 `FORBIDDEN` |
 | E12 | HR từ chối ở bước duyệt thêm mà không có lý do | 400 `VALIDATION_ERROR`, `fields: ["comment"]` |
 | E13 | Hoàn tất đơn `PENDING_HR`; quản lý gọi `hr-approve` | 409 `CONFLICT`; 403 `FORBIDDEN` |
+| E16 | Xác nhận, bác đề nghị hủy khi không có quyền: không phải quản lý trực tiếp hiện tại, người duyệt thay hoặc HR; quản lý xử lý đơn có `requiresHrApproval`; chủ đơn tự xác nhận | 403 `FORBIDDEN` |
+| E17 | Xác nhận, bác khi đơn không có đề nghị hủy, không còn `APPROVED`, hoặc đã tới `startDate` | 409 `CONFLICT` |
+| E18 | Tính lại đơn `COMPLETED`, `CANCELLED`, `REJECTED`; số ngày mới bằng 0; số ngày tăng mà không đủ số dư | 409 `CONFLICT` |
 | E9 | Queue hoặc dịch vụ email lỗi | Quyết định vẫn được lưu; event chờ trong outbox hoặc vào DLQ (NFR-3.4) |
 
 ## 7. Quy tắc áp dụng
@@ -156,7 +162,9 @@ stateDiagram-v2
 | A2 | Tab Hoàn tất đơn nghỉ: `/approvals?type=leave-complete`, `/approvals/leave-complete/:id` | `GET /leave-requests`, `POST …/complete` |
 | A3 | `/approvals?type=leave` (HR) | Như luồng chính |
 | A6 | `/approvals?type=leave` (HR), `/approvals/leave/:id` | `GET /leave-requests/pending-hr`, `POST …/hr-approve`, `POST …/hr-reject` |
-| A4 | `/approvals/delegations` (HR, vào từ nút "Phân công duyệt thay"; chưa có) | Chưa có |
+| A4 | `/approvals/delegations` (HR, vào từ nút "Phân công duyệt thay") | `POST /leave-delegations`, `GET /leave-delegations`, `POST /leave-delegations/{id}/end` |
+| A7 | Tab "Đơn nghỉ" của `/approvals`, dòng có nhãn "Đề nghị hủy" | `POST …/cancel-request/approve`, `POST …/cancel-request/reject` |
+| A9 | `/leave/holidays` (HR) | `POST /leave-holidays`, `DELETE /leave-holidays/{date}`, `GET /leave-requests/affected-by-holidays`, `POST …/recalculate` |
 
 Hiện code có `/leave/approvals`, `/leave/hr` là trang riêng; khi làm trang `/approvals` thì hai đường dẫn này chuyển tiếp sang
 tab tương ứng.
@@ -186,6 +194,57 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 **Trên điện thoại: chi tiết đơn, từ chối bắt buộc ghi chú**
 
 ![Duyệt đơn trên điện thoại](mockups/uc4-mobile.png)
+
+**Đề nghị hủy trong tab "Đơn nghỉ" (A7, 13.4; thêm 18/11/2026)**
+
+![Xác nhận hoặc bác đề nghị hủy](mockups/uc4-cancel-request.png)
+
+**HR quản lý lịch nghỉ lễ và tính lại đơn `/leave/holidays` (A9, FR-4.9, 13.6; thêm 18/11/2026)**
+
+![Lịch nghỉ lễ và đơn bị ảnh hưởng](mockups/uc4-holidays.png)
+
+### 9.2 Sơ đồ luồng
+
+Bấm "Chạy" để xem từng bước: [`flows/flows.html`](flows/flows.html). Ảnh PNG nằm cùng thư mục, xuất lại bằng `flows/render.js`
+hoặc `flows/render.ps1`. Luồng tạo, hủy đơn và cách tính số dư ở [UC3 mục 9.2](../UC3-create-leave-request/spec.md#92-sơ-đồ-luồng).
+
+| Luồng | Sơ đồ |
+|---|---|
+| Quản lý duyệt, từ chối (luồng chính, A1, A5) | [uc4-f1.png](flows/uc4-f1.png) |
+| HR duyệt thêm (A6, BR-16) | [uc4-f2.png](flows/uc4-f2.png) |
+| Xác nhận hoặc bác đề nghị hủy (A7, BR-08) | [uc4-f3.png](flows/uc4-f3.png) |
+| HR hoàn tất sau ngày kết thúc (A2, BR-10) | [uc4-f4.png](flows/uc4-f4.png) |
+| Job nhắc đơn chờ (A8, BR-17) | [uc4-f5.png](flows/uc4-f5.png) |
+| Người duyệt thay (A4, BR-06) | [uc4-f6.png](flows/uc4-f6.png) |
+| HR sửa lịch lễ, tính lại đơn bị ảnh hưởng (A9, BR-19) | [uc4-f7.png](flows/uc4-f7.png) |
+| Trạng thái đơn nghỉ (mục 4) | [uc4-g1.png](flows/uc4-g1.png) |
+| Ai được xử lý đơn (BR-05, BR-06, BR-16, ADR-18) | [uc4-g2.png](flows/uc4-g2.png) |
+
+### 9.3 Hợp đồng API
+
+Quy ước như [UC3 mục 9.3](../UC3-create-leave-request/spec.md#93-hợp-đồng-api). Mọi thao tác đổi đơn gửi `version` và trả lại
+đơn sau khi đổi (có `version` mới).
+
+| API | Ai gọi | Vào | Ra | Lỗi |
+|---|---|---|---|---|
+| `GET /leave-requests/pending-approval?page=&size=` | Quản lý trực tiếp, người duyệt thay; HR (đơn của CEO) | – | Trang đơn `SUBMITTED` **và** đơn `APPROVED` có đề nghị hủy mà người gọi được xác nhận; mỗi dòng có `kind: DECISION \| CANCEL_REQUEST`, `viaDelegation`, `overdue` | E2 |
+| `GET /leave-requests/pending-hr?page=&size=` | HR | – | Đơn `PENDING_HR` và đơn có đề nghị hủy chỉ HR xác nhận (BR-16) | E2 |
+| `POST /leave-requests/{id}/approve`, `/reject` | Như hiện nay | `{version, comment?}` (`comment` bắt buộc khi từ chối, AC-0.6.3) | 200 đơn | E1 → E5 |
+| `POST /leave-requests/{id}/hr-approve`, `/hr-reject` | HR, không phải chủ đơn | `{version, comment?}` | 200 đơn | E11 → E13 (13.3) |
+| `POST /leave-requests/{id}/cancel-request/approve` | Quản lý trực tiếp hiện tại, người duyệt thay hoặc HR; đơn có `requiresHrApproval` thì chỉ HR | `{version, comment?}` | 200 đơn `CANCELLED` | E16, E17, E5 |
+| `POST /leave-requests/{id}/cancel-request/reject` | Như trên | `{version, comment}` (bắt buộc) | 200 đơn `APPROVED`, `cancelRequest = null` | E16, E17, E12, E5 |
+| `GET /leave-requests?status=&from=&to=&page=` | HR | – | Mặc định `APPROVED`; mỗi dòng thêm `completableFrom` (= `endDate` + 1) | E2 |
+| `POST /leave-requests/{id}/complete` | HR | `{version, comment?}` | 200 đơn `COMPLETED` | E4, E5, E14 |
+| `POST /leave-holidays` | HR | `{date, name, kind: HOLIDAY \| COMPENSATORY}` | 201 `{date, name, kind, affectedRequests}` | 400, 403, 409 (ngày đã có) |
+| `DELETE /leave-holidays/{date}` | HR | – | 200 `{affectedRequests}` | 403, 404 |
+| `GET /leave-requests/affected-by-holidays?year=` | HR | – | Đơn `SUBMITTED`, `PENDING_HR`, `APPROVED` mà số ngày đã lưu khác số ngày tính theo lịch hiện tại: `{id, employeeName, startDate, endDate, storedDays, recalculatedDays}` | E2 |
+| `POST /leave-requests/{id}/recalculate` | HR | `{version, reason}` | 200 đơn với `days`, `allocations` mới | E18, E5 |
+| `POST /leave-delegations`, `GET /leave-delegations`, `POST /leave-delegations/{id}/end` | HR | Theo 13.1 | | 403, 400, 409 (chồng lấn) |
+
+**Audit** thêm `LEAVE_CANCEL_APPROVED`, `LEAVE_CANCEL_REQUEST_REJECT`, `LEAVE_RECALCULATE` (`entityType = leave_request`),
+`HOLIDAY_CREATE`, `HOLIDAY_DELETE` (`entityType = holiday`), `DELEGATION_CREATE`, `DELEGATION_END`. **Event**: `LeaveCancelled`
+(thêm lý do `CANCEL_REQUEST_APPROVED`, `SYSTEM`), `LeaveCancelRequestRejected`, `LeaveReminder`, `LeaveRecalculated`. Danh sách đủ
+ở [hợp đồng event](../../architecture/event-contract.md) mục 8.
 
 ## 10. Yêu cầu phi chức năng liên quan
 
@@ -257,3 +316,67 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 - **Event:** `LeaveManagerApproved` (người nhận: nhân viên, nhóm HR), `LeaveHrApproved`, `LeaveHrRejected`; payload tối thiểu
   theo 13.2. Cập nhật [hợp đồng event](../../architecture/event-contract.md).
 - **Migration:** đơn đang `SUBMITTED` lúc triển khai giữ `requires_hr_approval = false` (không áp dụng ngược).
+
+### 13.4 Xác nhận hoặc bác đề nghị hủy (BR-08)
+
+> Thiết kế 18/11/2026. Bổ sung phần còn thiếu của A7 (review #96, điểm 5): chủ đơn gửi đề nghị ở UC3, người có quyền xử lý ở đây.
+
+- **Ai xác nhận:** quản lý trực tiếp **hiện tại** của chủ đơn hoặc người duyệt thay đang hiệu lực (BR-05, BR-06), hoặc HR. Đơn
+  có `requires_hr_approval` (thai sản, nghỉ không lương dài, BR-16) thì **chỉ HR**, vì HR đã lập hồ sơ BHXH, lương theo đơn.
+  Đơn của CEO: HR. Người xác nhận không được là chủ đơn.
+- **Điều kiện:** đơn `APPROVED`, có `cancel_requested_at`, hôm nay (Asia/Ho_Chi_Minh) < `startDate`. Tới `startDate` mà chưa xử
+  lý thì đề nghị hết hiệu lực: API trả 409 (E17), danh sách hiện nhãn "Hết hạn", đơn đi tiếp tới hoàn tất như thường.
+- **Xác nhận:** một giao dịch: `APPROVED` → `CANCELLED`; trả `pending` theo từng dòng phân bổ (UC3 13.4); lịch sử
+  `CANCEL_APPROVE` (người xác nhận, ghi chú); audit `LEAVE_CANCEL_APPROVED` (không có lý do); outbox `LeaveCancelled`
+  (`reason = CANCEL_REQUEST_APPROVED`) gửi chủ đơn, quản lý trực tiếp; nếu đơn đã qua HR thì gửi thêm nhóm HR.
+- **Bác:** ghi chú bắt buộc; xóa `cancel_requested_at`, `cancel_requested_by`; lịch sử `CANCEL_REQUEST_REJECT`; audit
+  `LEAVE_CANCEL_REQUEST_REJECT`; outbox `LeaveCancelRequestRejected` gửi chủ đơn.
+- **Giao diện:** đề nghị hủy hiện trong tab "Đơn nghỉ" của trang "Việc cần duyệt", có nhãn tím "Đề nghị hủy". Chi tiết hiện lý
+  do của chủ đơn (lấy từ lịch sử), hai nút "Đồng ý hủy" và "Giữ đơn" ([bản vẽ](mockups/uc4-cancel-request.png)).
+
+### 13.5 Nhắc đơn chờ (BR-17, AC-4.6.6)
+
+- **Mốc "một ngày làm việc đầy đủ":** đơn vào giai đoạn chờ (`stage_entered_at`) ở ngày N. Ngày làm việc kế tiếp sau N là ngày
+  đầy đủ đầu tiên. Nhắc lúc **08:00 của ngày làm việc tiếp theo nữa** (giờ Việt Nam, bỏ T7, CN, ngày lễ theo dịch vụ lịch chung).
+  Ví dụ: gửi thứ Sáu 16:00 thì thứ Hai là ngày đầy đủ, nhắc 08:00 thứ Ba. Gửi thứ Tư 28/4/2026 thì 29/4 là ngày đầy đủ, 30/4,
+  1/5 là lễ, 2–3/5 là cuối tuần, nhắc 08:00 thứ Hai 4/5.
+- **Job** trong worker mỗi 15 phút: lấy đơn `SUBMITTED`, `PENDING_HR` có `reminded_at IS NULL` và đã tới mốc, bằng `FOR UPDATE
+  SKIP LOCKED`; mỗi đơn một giao dịch: ghi `reminded_at = now()` và outbox `LeaveReminder {requestId, stage}`. Không ghi lịch sử
+  đơn, không audit (không phải thao tác nghiệp vụ).
+- **Người nhận:** `SUBMITTED` gửi quản lý trực tiếp hiện tại, kèm người duyệt thay nếu đang hiệu lực; chủ đơn là CEO thì gửi nhóm
+  HR. `PENDING_HR` gửi nhóm HR. Không có người duyệt hợp lệ thì gửi nhóm HR với câu "có đơn chưa có người duyệt, kiểm tra sơ đồ
+  tổ chức" (UC4 E8).
+- **Nội dung:** theo BR-15: "Bạn có đơn nghỉ đang chờ xử lý quá một ngày làm việc", link `/approvals?type=leave`, không có tên,
+  ngày, loại phép, mã đơn.
+- Đổi giai đoạn (`SUBMITTED` → `PENDING_HR`) thì đặt lại `stage_entered_at`, `reminded_at = NULL`. Đơn đã có quyết định không
+  còn ở hai trạng thái trên nên job tự bỏ qua.
+- Danh sách chờ duyệt có cờ `overdue` cùng mốc này để hiện nhãn "Quá hạn".
+
+### 13.6 Lịch lễ thay đổi sau khi gửi đơn (BR-19, A9, FR-4.9)
+
+- **HR quản lý lịch** ở `/leave/holidays`: thêm ngày lễ hoặc ngày nghỉ bù, xóa ngày đã nhập. Mỗi thao tác có audit. Lịch năm
+  sau nên nhập trước 1/12 (đầu việc của HR, không chặn trong hệ thống).
+- **Không tự sửa đơn** (BR-19). Thêm hoặc xóa ngày thì API trả số đơn bị ảnh hưởng; trang hiện danh sách từ
+  `GET /leave-requests/affected-by-holidays`, so số ngày đã lưu với số ngày tính lại.
+- **Tính lại từng đơn:** HR bấm "Tính lại", nhập lý do. Một giao dịch: tính lại số ngày, phân bổ theo năm; chênh lệch cộng hoặc
+  trừ vào `pending` từng năm; lịch sử `RECALCULATE` (số ngày cũ, mới, lý do); audit `LEAVE_RECALCULATE` (số ngày cũ, mới);
+  outbox `LeaveRecalculated` gửi chủ đơn (email chung). Trạng thái và quyết định duyệt giữ nguyên.
+- **Từ chối tính lại (E18):** đơn `COMPLETED`, `CANCELLED`, `REJECTED`; số ngày mới bằng 0 (cả khoảng thành ngày nghỉ, HR hủy
+  theo luồng khác); số ngày tăng mà năm đó không đủ số dư (HR liên hệ nhân viên, không tự vượt số dư).
+- **Lịch dùng chung:** gom việc đếm ngày làm việc về `common/calendar` (đọc `leave.holiday`, cache theo năm, xóa cache khi HR sửa
+  lịch). UC1 (hạn 2 ngày làm việc), UC3 (BR-03, tháng lẻ ở 13.2), UC4 (hoàn tất, nhắc đơn) cùng gọi.
+
+### 13.7 Quyền xử lý đơn (ADR-18)
+
+Gom vào `leave-access.ts` (đề xuất ở [authorization.md](../../security/authorization.md)), một hàm `relation(actor, request)`
+trả về tập quan hệ: `OWNER`, `DIRECT_MANAGER`, `DELEGATE`, `HR`. Mỗi endpoint kiểm theo bảng:
+
+| Thao tác | Được khi |
+|---|---|
+| Xem chi tiết | `OWNER`, `DIRECT_MANAGER`, `DELEGATE`, `HR`. Quản lý gián tiếp, trưởng, phó đơn vị không có quan hệ nào nên nhận 403 (AC-4.7.5) |
+| Duyệt, từ chối | (`DIRECT_MANAGER` hoặc `DELEGATE`) và không phải `OWNER`; hoặc `HR` khi chủ đơn là CEO |
+| HR duyệt thêm | `HR` và không phải `OWNER` |
+| Hủy đơn chờ | `OWNER` |
+| Đề nghị hủy | `OWNER` |
+| Xác nhận, bác đề nghị hủy | Không có `requires_hr_approval`: (`DIRECT_MANAGER`, `DELEGATE` hoặc `HR`) và không phải `OWNER`. Có `requires_hr_approval`: `HR` và không phải `OWNER` |
+| Hoàn tất, tính lại | `HR` và không phải `OWNER` |

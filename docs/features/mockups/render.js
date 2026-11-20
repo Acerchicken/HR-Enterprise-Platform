@@ -22,6 +22,7 @@ const ids = ['home', 'home-hr', 'search', 'quickview', 'profile-desktop', 'profi
   'uc2-positions', 'uc2-org-mobile', 'uc2-career-mobile', 'uc3-new',
   'uc3-new-mobile', 'uc3-list', 'uc3-detail-mobile', 'uc4-manager',
   'uc4-hr', 'uc4-complete', 'uc4-delegation', 'uc4-mobile',
+  'uc3-cancel-request', 'uc3-event-mobile', 'uc3-balances', 'uc4-cancel-request', 'uc4-holidays',
   'uc56-documents', 'uc6-search', 'uc6-assistant', 'uc5-detail',
   'uc5-manage', 'uc5-upload', 'uc56-mobile', 'uc7-audit',
   // UC8

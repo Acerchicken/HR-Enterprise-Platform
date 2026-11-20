@@ -9,7 +9,7 @@
 | Quy tắc | [BR-01 → BR-04, BR-07 → BR-08, BR-11 → BR-19](../../business/leave-rules.md), [loại phép, ngày lễ](../../business/leave-types-holidays.md), ADR-03 |
 | Mức ưu tiên | M (FR-3.7 là S) |
 | Trạng thái | Đã có; tạo đơn hộ (FR-3.7) kế hoạch tuần 11 |
-| Phiên bản | 1.0 – 13/11/2026 |
+| Phiên bản | 1.1 – 18/11/2026 (sơ đồ luồng `flows/`, hợp đồng API mục 9.3, thiết kế 13.2 → 13.6, kiểm chéo với UC1, UC2, UC8 mục 14). 1.0 – 13/11/2026 |
 
 ## 1. Mô tả ngắn
 
@@ -116,6 +116,9 @@ sequenceDiagram
 | E9 | Tài khoản chưa gắn hồ sơ | 403 `FORBIDDEN` |
 | E10 | Dùng lại `Idempotency-Key` cũ cho đơn khác (loại phép, ngày hoặc buổi khác) | 409 `CONFLICT` |
 | E11 | Chủ đơn tự hủy `SUBMITTED`/`PENDING_HR` từ ngày bắt đầu nghỉ trở đi | 409 `CONFLICT`; HR xử lý sau khi xác minh thực tế nghỉ (BR-07) |
+| E12 | Loại phép theo sự kiện mà thiếu `eventDate`, loại khác mà có `eventDate`; số ngày vượt mức của sự kiện (AC-3.1.4) | 400 `BAD_REQUEST` kèm `fields` |
+| E13 | Đã có đơn cùng loại phép, cùng `eventDate` chưa bị từ chối, chưa bị hủy (AC-3.2.6) | 409 `CONFLICT` |
+| E14 | Gửi đề nghị hủy khi đơn không `APPROVED`, đã có đề nghị hoặc đã tới `startDate` | 409 `CONFLICT` |
 
 ## 7. Quy tắc áp dụng
 
@@ -137,15 +140,18 @@ sequenceDiagram
 | `startDate`, `endDate` | Có | `YYYY-MM-DD`, `endDate` ≥ `startDate` |
 | `halfDay` | Không | `AM` hoặc `PM`, chỉ khi `startDate = endDate` |
 | `reason` | Không | Tối đa 500 ký tự; với nghỉ ốm, thai sản chỉ chủ đơn và HR được xem (BR-14) |
+| `eventDate` | Với loại `PER_EVENT` | `YYYY-MM-DD`: ngày cưới, ngày mất, ngày sinh con; không quá 1 năm trước hoặc sau `startDate` (13.3) |
 | `version` (khi hủy) | Có | Version hiện tại của đơn |
+| `reason` (khi đề nghị hủy) | Có | 1–500 ký tự; chỉ lưu ở lịch sử đơn |
 
 ## 9. Giao diện và API
 
 | Luồng | Màn hình | API |
 |---|---|---|
 | Chính | `/leave/new` | `GET /leave-balances/me`, `GET /leave-types`, `GET /leave-holidays`, `POST /leave-requests` |
-| A1, A2 | `/leave`, `/leave/:id` | `GET /leave-requests/me`, `GET /leave-requests/{id}`, `POST /leave-requests/{id}/cancel` |
-| A3 | Chưa có | Chưa có |
+| A1, A2, A6 | `/leave`, `/leave/:id` | `GET /leave-requests/me`, `GET /leave-requests/{id}`, `POST /leave-requests/{id}/cancel`, `POST /leave-requests/{id}/cancel-request` |
+| FR-3.8 | `/leave/balances` (HR) | `GET /leave-balances`, `PUT /leave-balances/{employeeId}/{leaveType}/{year}` |
+| A3 | `/leave/new`, ô "Tạo cho" (13.1) | `GET /leave-balances?employeeId=`, `POST /leave-requests` có `employeeId` |
 
 ### 9.1 Bản vẽ giao diện
 
@@ -166,6 +172,59 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 | Đăng ký nghỉ | Hủy đơn |
 |---|---|
 | ![Đăng ký nghỉ trên điện thoại](mockups/uc3-new-mobile.png) | ![Xác nhận hủy đơn](mockups/uc3-detail-mobile.png) |
+
+**Bản vẽ thêm 18/11/2026 (thiết kế mục 13)**
+
+Đề nghị hủy đơn đã duyệt (A6, AC-3.6.6):
+
+![Đề nghị hủy đơn đã duyệt](mockups/uc3-cancel-request.png)
+
+HR xem, chỉnh số dư nhân viên `/leave/balances` (FR-3.8):
+
+![Số dư nhân viên](mockups/uc3-balances.png)
+
+| Nghỉ theo sự kiện, có ngày sự kiện (AC-3.1.4, AC-3.2.6) |
+|---|
+| ![Đăng ký nghỉ cưới](mockups/uc3-event-mobile.png) |
+
+### 9.2 Sơ đồ luồng
+
+Bấm "Chạy" để xem từng bước: [`flows/flows.html`](flows/flows.html). Ảnh PNG nằm cùng thư mục, xuất lại bằng `flows/render.js`
+(Playwright) hoặc `flows/render.ps1` (Windows). Luồng duyệt, hoàn tất, nhắc đơn và lịch lễ ở [UC4 mục 9.2](../UC4-approve-leave-request/spec.md#92-sơ-đồ-luồng).
+
+| Luồng | Sơ đồ |
+|---|---|
+| Tạo đơn: số ngày, tách theo năm, nghỉ theo sự kiện, giữ chỗ (luồng chính, A5) | [uc3-f1.png](flows/uc3-f1.png) |
+| Tự hủy đơn chờ, trước và từ ngày bắt đầu (A1, A7) | [uc3-f2.png](flows/uc3-f2.png) |
+| Đề nghị hủy đơn đã duyệt (A6, BR-08) | [uc3-f3.png](flows/uc3-f3.png) |
+| Tạo đơn hộ (A3, FR-3.7) | [uc3-f4.png](flows/uc3-f4.png) |
+| Cấp và tính lại số dư phép năm: job đầu năm, nhân viên mới, sửa ngày vào làm, nghỉ việc (13.2) | [uc3-f5.png](flows/uc3-f5.png) |
+| HR chỉnh hạn mức (FR-3.8) | [uc3-f6.png](flows/uc3-f6.png) |
+| Cách tính phép năm (BR-01, 13.2) | [uc3-g1.png](flows/uc3-g1.png) |
+| Loại phép theo cách tính số dư (13.3) | [uc3-g2.png](flows/uc3-g2.png) |
+
+### 9.3 Hợp đồng API
+
+Tất cả dưới `/api/v1`, cần đăng nhập (UC8). `docs/openapi.yaml` sinh từ code (`npm run openapi`), nên chỉ được cập nhật khi code merge.
+Bảng dưới là hợp đồng để code theo. Lỗi theo dạng chung `{code, message, traceId, fields?}`
+([error-codes.md](../../development/error-codes.md)). Endpoint duyệt, hoàn tất, lịch lễ ở [UC4 mục 9.3](../UC4-approve-leave-request/spec.md#93-hợp-đồng-api).
+
+| API | Ai gọi | Vào | Ra | Lỗi |
+|---|---|---|---|---|
+| `GET /leave-types` | Mọi người | – | Thêm `quotaKind` (`ACCRUED`, `YEARLY`, `PER_EVENT`), `maxDaysPerEvent`, `requiresEventDate`, `requiresDocument`, `hrApproval`, `hrApprovalMinDays` | – |
+| `GET /leave-balances/me?year=` | Có hồ sơ | – | `[{leaveType, year, entitled, used, pending, available, source: AUTO\|DEFAULT\|MANUAL}]`; chỉ loại `ACCRUED`, `YEARLY`. Số có 2 chữ số thập phân | E9 |
+| `GET /leave-balances?employeeId=&year=` | HR; quản lý trực tiếp hiện tại (chỉ cấp dưới trực tiếp, để tạo đơn hộ) | – | Như trên + `baseDays` (chỉ HR), `note` (chỉ HR) | 403 |
+| `PUT /leave-balances/{employeeId}/{leaveType}/{year}` | HR | `{version, baseDays?, entitled?, note}`: `baseDays` (12, 14, 16) chỉ cho `ANNUAL`; `entitled` chỉ cho loại `YEARLY`; `note` 1–200 ký tự, bắt buộc | 200 dòng số dư mới | 400 (`fields`), 403, 409 (`version` cũ; `entitled` < `used + pending`) |
+| `POST /leave-requests` | Có hồ sơ | Thêm `eventDate` (`YYYY-MM-DD`; bắt buộc với loại `PER_EVENT`, cấm với loại khác); thêm `employeeId` (tạo đơn hộ, 13.1) | 201 đơn + `allocations: [{year, days}]` | E1 → E5, E10, E12, E13 |
+| `GET /leave-requests/{id}` | Chủ đơn, quản lý trực tiếp hiện tại, người duyệt thay, HR | – | Thêm `allocations`, `eventDate`, `createdBy`, `requiresHrApproval`, `cancelRequest: {requestedAt, requestedBy} \| null`, `canCancel`, `canRequestCancel`, `canConfirmCancel` (giao diện chỉ hiện nút theo các cờ này); lịch sử có `action` | 403, 404 |
+| `POST /leave-requests/{id}/cancel` | Chủ đơn | `{version, comment?}` | 200 đơn `CANCELLED`. Chỉ `SUBMITTED`, `PENDING_HR` và hôm nay < `startDate` | E6, E7, E8, E11 |
+| `POST /leave-requests/{id}/cancel-request` | Chủ đơn | `{version, reason}` (1–500 ký tự) | 200 đơn (vẫn `APPROVED`, có `cancelRequest`) | 400; 403 (không phải chủ đơn); 409 (E14) |
+
+**Audit** (`entityType = leave_request`): thêm `LEAVE_CANCEL_REQUEST`, `LEAVE_CANCEL_APPROVED`, `LEAVE_CANCEL_REQUEST_REJECT`;
+`entityType = leave_balance`: `LEAVE_BALANCE_ADJUST` (giá trị cũ và mới của `baseDays`, `entitled`, không ghi `note`),
+`LEAVE_BALANCE_OVERDRAWN` (13.2). Lý do và ghi chú tự do chỉ nằm trong lịch sử đơn, không vào audit (BR-14). **Event**
+(`leave.outbox`, payload tối thiểu theo [UC4 13.2](../UC4-approve-leave-request/spec.md#132-riêng-tư-đơn-nghỉ-br-14-br-15)):
+`LeaveCancelRequested` → người có quyền xác nhận; `LeaveCancelRequestRejected` → chủ đơn.
 
 ## 10. Yêu cầu phi chức năng liên quan
 
@@ -212,3 +271,126 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
   chung theo BR-15).
 - **Giao diện:** `/leave/new` thêm ô "Tạo cho" chỉ hiện với HR (tìm mọi nhân viên) và quản lý (chọn trong cấp dưới trực tiếp).
   Số dư hiển thị là số dư của người được chọn: cần API `GET /leave-balances?employeeId=` cho HR và quản lý trực tiếp.
+
+### 13.2 Cấp và tính phép năm (BR-01, AC-3.1.3, AC-3.1.5, AC-3.1.7)
+
+> Thiết kế 18/11/2026, theo các quy tắc PR #96 đã chốt. Ba điểm dưới đây là **đề xuất** trong review #96, TV2 xác nhận hoặc sửa
+> trong #96: (a) tháng lẻ tính theo **lịch làm việc** từ `hireDate` hoặc ngày nghỉ việc, không theo chấm công (ADR-05);
+> (b) đủ mốc 5 năm trong năm nào thì **cả năm đó** được cộng; (c) phép năm **không chuyển** sang năm sau trong MVP.
+
+Phép năm (`quotaKind = ACCRUED`) luôn do hệ thống tính, HR không sửa trực tiếp `entitled`. HR chỉ đặt mức nền `baseDays`
+(12, 14, 16) cho người thuộc nhóm điều kiện lao động tương ứng (FR-3.8):
+
+```text
+entitled(nv, năm) =
+  nền     = leave_balance.base_days ?? 12
+  cộng    = seniority(hireDate, năm-12-31).annualLeaveBonus      // cùng hàm UC1 (profile-computed.ts)
+  từ      = max(hireDate, năm-01-01);  đến = min(ngày nghỉ việc ?? năm-12-31, năm-12-31)
+  tháng   = số tháng m trong [từ, đến] mà
+            (tháng đủ) hoặc (ngày làm việc của nv trong m ÷ ngày làm việc của m ≥ 0,5)   // bỏ T7, CN, ngày lễ
+  nếu tháng = 12: nền + cộng
+  ngược lại:      làm tròn lên 2 chữ số ((nền + cộng) / 12 × tháng)   // BR-01: không làm tròn giảm
+```
+
+Ví dụ: vào làm 01/7/2026 có 6 tháng, được 6,00 ngày. Vào làm 16/7/2026: tháng 7 có 23 ngày làm việc, người này làm 12 ngày
+(≥ 11,5) nên tháng 7 được tính, năm 2026 được 6,00. Vào làm 20/7/2026: làm 10 ngày (< 11,5), chỉ còn 5 tháng, được 5,00.
+Vào làm 15/8/2021 thì năm 2026 đủ 5 năm, được 13,00. Mức 14 ngày, đủ 10 năm, làm cả năm: 16,00. Mức 14 ngày, làm 7 tháng:
+14 / 12 × 7 = 8,1666…, được 8,17. Mức 13 ngày (12 + 1 thâm niên), làm 1 tháng: 1,0833…, được 1,09 (làm tròn lên,
+không phải 1,08).
+
+**Khi nào tính lại** (đều trong module Leave, không để module Employee gọi ngược):
+
+| Lúc | Việc |
+|---|---|
+| Đọc số dư, tạo đơn | `ensureBalances(nv, năm)`: chưa có dòng `ANNUAL` thì tạo theo công thức; dòng `SICK`, `UNPAID` chưa có thì tạo theo mặc định của loại phép (`source = DEFAULT`) |
+| Job 00:10 hằng ngày (worker) | Tính lại `ANNUAL` năm hiện tại cho người chưa nghỉ việc. Bắt được việc sửa `hireDate` (UC1 AC-1.4.4) và mốc thâm niên |
+| Job 00:10 ngày 01/01 | Tạo dòng năm mới cho mọi người đang làm việc. Không chuyển số dư năm cũ (đề xuất (c)) |
+| Event `EmployeeTerminated` (worker) | Hủy đơn chờ, hủy đơn đã duyệt bắt đầu sau ngày nghỉ việc (AC-3.1.7), rồi tính lại `ANNUAL` tới tháng nghỉ việc |
+
+Tính lại mà `entitled` mới nhỏ hơn `used + pending` (người nghỉ việc đã dùng quá số được hưởng) thì đặt `entitled = used + pending`
+để giữ CHECK của bảng, ghi audit `LEAVE_BALANCE_OVERDRAWN` kèm số tính được, và HR xử lý ngoài hệ thống (lương nằm ngoài
+phạm vi, ADR-05).
+
+### 13.3 Loại phép theo cách tính số dư (BR-01, BR-18, AC-3.1.4, AC-3.1.6)
+
+| `quotaKind` | Loại | Có dòng `leave_balance` | Kiểm khi tạo đơn |
+|---|---|---|---|
+| `ACCRUED` | `ANNUAL` | Có, tính theo 13.2 | Số ngày từng năm ≤ số dư khả dụng năm đó |
+| `YEARLY` | `SICK` (mặc định 30, HR sửa theo hồ sơ BHXH, BR-18), `UNPAID` (30, chính sách công ty) | Có, `entitled` do HR đặt hoặc mặc định | Như trên |
+| `PER_EVENT` | `MARRIAGE` 3, `CHILD_MARRIAGE` 1, `BEREAVEMENT` 3, `PATERNITY` 14, `MATERNITY` 6 tháng | Không | Có `eventDate`; số ngày ≤ `max_days_per_event` (thai sản: `endDate` ≤ `startDate` + 6 tháng − 1 ngày, sinh đôi HR kiểm giấy tờ ở bước HR duyệt); không trùng (nhân viên, loại phép, `eventDate`) với đơn chưa bị từ chối, chưa bị hủy |
+
+Dòng `SICK` mặc định 30 ngày (mức thấp nhất của điều kiện bình thường) có `source = DEFAULT`. Giao diện ghi "Mặc định, HR chưa
+xác minh hồ sơ BHXH"; HR sửa thì thành `MANUAL`. Mặc định không suy ra từ `hireDate` (BR-18). `PATERNITY` lấy mức cao nhất (14);
+quản lý và HR đối chiếu giấy tờ khi duyệt, hoàn tất. Code hiện tạo số dư cho mọi loại theo `max_days_per_year` (spec 12); bỏ
+cách đó cho loại `PER_EVENT`.
+
+### 13.4 Đơn qua hai năm (A5, AC-3.2.4)
+
+Bảng `leave.leave_request_allocation (request_id, year, days)` giữ số ngày của đơn theo từng năm, chỉ cho loại `ACCRUED`,
+`YEARLY`. Tạo đơn: tính số ngày từng năm theo BR-03, khóa các dòng số dư (thứ tự năm tăng dần để không khóa chéo), mỗi năm phải đủ
+số dư, không thì 400 và không ghi gì. Hủy, từ chối, hoàn tất, tính lại (UC4 13.6) đều cộng, trừ theo từng dòng phân bổ. Đơn
+`leave_request.days` vẫn là tổng. Năm sau chưa có dòng số dư thì `ensureBalances` tạo trước khi kiểm.
+
+### 13.5 Hủy đơn (A1, A6, A7; BR-07, BR-08)
+
+| Trạng thái | Trước `startDate` | Từ `startDate` trở đi |
+|---|---|---|
+| `SUBMITTED`, `PENDING_HR` | Chủ đơn tự hủy (`POST …/cancel`) | Chủ đơn nhận 409. Đơn vẫn đi tiếp luồng duyệt: nếu nhân viên không nghỉ thì người duyệt từ chối và `pending` được trả. HR điều chỉnh từng phần nằm ngoài MVP (**đề xuất** trong review #96, điểm 11) |
+| `APPROVED` | Chủ đơn gửi đề nghị (`POST …/cancel-request`); người có quyền xác nhận hoặc bác ([UC4 13.4](../UC4-approve-leave-request/spec.md#134-xác-nhận-hoặc-bác-đề-nghị-hủy-br-08)) | Không hủy qua hệ thống; HR hoàn tất theo số ngày thực tế đã đăng ký |
+
+Đề nghị hủy chỉ có một tại một thời điểm. Chủ đơn không rút lại đề nghị (đơn giản cho MVP); người duyệt bác thì chủ đơn gửi lại
+được. Đơn đang có đề nghị vẫn là `APPROVED`, vẫn giữ lịch (BR-02) và vẫn giữ `pending`.
+
+### 13.6 Thiết kế dữ liệu chung UC3, UC4
+
+Mỗi nhánh code thêm migration của phần mình (không sửa migration cũ), sửa `database-schema.md` mục 7 và `test.md` trong cùng PR.
+
+| Bảng | Thay đổi | Nhánh |
+|---|---|---|
+| `leave.leave_type` | `quota_kind varchar(10) NOT NULL` (CHECK `ACCRUED`, `YEARLY`, `PER_EVENT`); `max_days_per_event numeric(5,1) NULL`; `max_months_per_event smallint NULL`; `requires_event_date boolean`, `requires_document boolean`; `hr_approval`, `hr_approval_min_days` (UC4 13.3). Seed thêm `CHILD_MARRIAGE`, `BEREAVEMENT`, `MATERNITY`, `PATERNITY` | `feat/leave-balance-rules` (cột HR duyệt ở `feat/leave-hr-approval`) |
+| `leave.leave_balance` | `entitled`, `used`, `pending` đổi sang `numeric(5,2)`; thêm `base_days numeric(5,2) NULL`, `source varchar(8) NOT NULL DEFAULT 'AUTO'` (CHECK `AUTO`, `DEFAULT`, `MANUAL`), `note varchar(200)`, `version int NOT NULL DEFAULT 1`, `updated_by uuid`, `updated_at timestamptz`. Xóa các dòng của loại `PER_EVENT` mà `used = 0 AND pending = 0` | `feat/leave-balance-rules` |
+| `leave.leave_request_allocation` (mới) | `request_id uuid FK`, `year smallint`, `days numeric(5,1) CHECK > 0`, PK `(request_id, year)`. Migration điền một dòng cho mỗi đơn cũ của loại có số dư | `feat/leave-balance-rules` |
+| `leave.leave_request` | `event_date date NULL`, unique index có điều kiện `ux_leave_request_event (employee_id, leave_type_id, event_date) WHERE event_date IS NOT NULL AND status IN ('SUBMITTED','PENDING_HR','APPROVED','COMPLETED')` | `feat/leave-balance-rules` |
+| | `created_by uuid` (13.1) | `feat/leave-delegation` |
+| | `requires_hr_approval boolean NOT NULL DEFAULT false`, CHECK `status` thêm `PENDING_HR`, `stage_entered_at timestamptz NOT NULL DEFAULT now()` | `feat/leave-hr-approval` |
+| | `cancel_requested_at timestamptz NULL`, `cancel_requested_by uuid NULL` | `feat/leave-cancel-rules` |
+| | `reminded_at timestamptz NULL`; index `ix_leave_request_stage (status, stage_entered_at) WHERE reminded_at IS NULL` | `feat/leave-reminders` |
+| `leave.leave_request_history` | `action varchar(30) NOT NULL` (`SUBMIT`, `APPROVE`, `MANAGER_APPROVE`, `HR_APPROVE`, `REJECT`, `CANCEL`, `CANCEL_REQUEST`, `CANCEL_APPROVE`, `CANCEL_REQUEST_REJECT`, `COMPLETE`, `RECALCULATE`, `SYSTEM_CANCEL`); migration điền từ `to_status`. Đề nghị hủy, bác đề nghị, tính lại không đổi trạng thái nên cần cột này | `feat/leave-cancel-rules` |
+| `leave.holiday` | `kind varchar(12) NOT NULL DEFAULT 'HOLIDAY'` (CHECK `HOLIDAY`, `COMPENSATORY`), `created_by uuid`, `created_at timestamptz` | `feat/leave-holidays` |
+
+`stage_entered_at` đặt bằng `now()` khi đơn vào `SUBMITTED` và khi vào `PENDING_HR`; `reminded_at` về `NULL` mỗi lần đổi giai
+đoạn. `actor_id` của dòng lịch sử do hệ thống tạo (`SYSTEM_CANCEL`, nhắc việc) là `NULL`, nên bỏ `NOT NULL` của cột này.
+
+**Thứ tự nhánh code** (sau UC8; mỗi nhánh một PR, theo lát cắt dọc API, giao diện, test):
+
+| Thứ tự | Nhánh | Nội dung | Tiêu chí |
+|---|---|---|---|
+| 1 | `feat/leave-balance-rules` | Loại phép theo `quotaKind`, phép năm 13.2, đơn qua năm, nghỉ theo sự kiện, HR chỉnh hạn mức, xử lý nghỉ việc | AC-3.1.3 → AC-3.1.7, AC-3.2.4, AC-3.2.6, AC-3.8.x |
+| 2 | `feat/leave-hr-approval` | `PENDING_HR`, cấu hình loại phép (UC4 13.3) | AC-4.8.x |
+| 3 | `feat/leave-cancel-rules` | Tự hủy trước `startDate`, đề nghị hủy, xác nhận hoặc bác; chỉ hoàn tất sau `endDate` | AC-3.6.x, AC-4.5.3 → AC-4.5.7 |
+| 4 | `feat/leave-privacy` | Email chung, ẩn lý do nghỉ ốm, email đơn CEO cho HR (UC4 13.2) | AC-4.6.3, AC-4.6.5, AC-4.7.3, AC-4.7.4 |
+| 5 | `feat/leave-reminders` | Job nhắc đơn chờ (UC4 13.5) | AC-4.6.6 |
+| 6 | `feat/leave-delegation` | Người duyệt thay, tạo đơn hộ (13.1, UC4 13.1) | AC-3.7.x, AC-4.3.x |
+| 7 | `feat/leave-holidays` | HR quản lý lịch lễ, tính lại đơn bị ảnh hưởng, lịch dùng chung cho UC1 (UC4 13.6) | AC-3.4.3, AC-4.9.x |
+
+Nếu thiếu thời gian trước feature freeze 2/12 thì cắt từ dưới lên: 7, rồi 6.
+
+## 14. Kiểm chéo với UC1, UC2, UC8 (18/11/2026)
+
+Rà sau khi UC1, UC2 đã code xong (#80 → #90, #106 → #110). Mỗi dòng có tiêu chí hoặc mục thiết kế tương ứng.
+
+| Điểm chạm | Hiện trạng | Quyết định cho UC3, UC4 |
+|---|---|---|
+| Thâm niên (UC1 "Các mốc", `seniority()`) | UC1 hiện số ngày phép cộng theo thâm niên | Phép năm dùng cùng hàm, tính ở ngày 31/12 của năm (13.2) |
+| Sửa `hireDate` (UC1 AC-1.4.4) | HR sửa được | Job 00:10 tính lại `ANNUAL` năm hiện tại (13.2). Không sửa đơn đã gửi |
+| Nghỉ việc (UC1 AC-1.7.1, AC-1.7.3; UC2 hộp xác nhận) | Chặn khi còn cấp dưới; gỡ trưởng, phó; hủy điều chuyển chờ. Chưa đụng tới đơn nghỉ | Đơn `SUBMITTED`, `PENDING_HR` của người nghỉ việc bị hệ thống hủy, trả `pending`; đơn `APPROVED` bắt đầu sau ngày nghỉ việc cũng bị hủy; đơn đang diễn ra để HR xử lý. `termination-impact` thêm `leave: {pending, approvedFuture}` để hộp xác nhận nêu trước (AC-3.1.7) |
+| Người nghỉ việc là quản lý | Không cho nghỉ việc khi còn cấp dưới (UC1 AC-1.7.1) | Không có đơn chờ nào bị mồ côi; không cần luồng chuyển người duyệt riêng |
+| Điều chuyển đổi quản lý (UC2 AC-2.7.3, UC4 AC-4.2.6) | Đơn `SUBMITTED` đi theo quản lý mới; điều chuyển tương lai chỉ có hiệu lực khi job áp dụng | Người duyệt luôn là `manager_id` **lúc xử lý** (BR-05). Đề nghị hủy cũng theo quản lý mới. Đơn `PENDING_HR` không đổi |
+| Trưởng, phó đơn vị (UC2 FR-2.9) | Là vai trò của đơn vị, không cho quyền duyệt | Giữ nguyên: trưởng, phó không phải quản lý trực tiếp thì không xem, không duyệt đơn. Phó chỉ được ưu tiên trong danh sách chọn người duyệt thay (AC-2.9.3) |
+| Quản lý gián tiếp (UC1 AC-1.1.4, #110) | Xem hồ sơ mức QL của cấp dưới gián tiếp | Không mở rộng sang đơn nghỉ: quản lý gián tiếp không xem chi tiết, không thấy trong danh sách chờ (AC-4.7.5) |
+| Trạng thái `ON_LEAVE` (UC1) | HR đổi tay; "Ngày nghỉ dài" của UC1 đọc đơn ≥ 14 ngày đã duyệt, hoàn tất | Duyệt đơn thai sản không tự đổi `ON_LEAVE` trong MVP. Mục "Ngày nghỉ dài" vẫn chỉ đọc đơn `APPROVED`, `COMPLETED` |
+| Ngày làm việc của UC1 (hạn 2 ngày, AC-1.9.13) | `workdaysBetween` chỉ bỏ T7, CN, tính theo ngày UTC, không bỏ ngày lễ | Gom thành một dịch vụ lịch dùng chung (`common/calendar`) đọc `leave.holiday`, múi giờ Asia/Ho_Chi_Minh; UC1, UC3 (BR-03), UC4 (nhắc đơn, hoàn tất) cùng dùng (nhánh 7) |
+| Event hồ sơ ghi chung `leave.outbox` (UC1 spec 12) | Nợ kỹ thuật | `EmployeeTerminated` cũng tạm ghi `leave.outbox` như event hồ sơ; chuyển `employee.outbox` khi làm ADR-15 |
+| Đăng nhập (UC8, ADR-17) | UC8 làm trước UC3, UC4 | API nghỉ phép cần `employeeId` lấy từ tài khoản: tài khoản chưa gắn hồ sơ trả 403 (E9, code đang trả 404); hồ sơ `TERMINATED` trả 403 (UC1 AC-1.7.2) |
+| Phân quyền (ADR-18) | Điều kiện duyệt nằm rải trong `LeaveService` | Gom về `leave-access.ts` ở nhánh 3; thêm các dòng mới vào [ma trận phân quyền](../../security/access-control-matrix.md) |
+| Trang "Việc cần duyệt" (UC1 `/approvals`) | Mỗi loại một tab | Đề nghị hủy hiện trong tab "Đơn nghỉ" cùng đơn chờ duyệt, có nhãn "Đề nghị hủy", không thêm tab |

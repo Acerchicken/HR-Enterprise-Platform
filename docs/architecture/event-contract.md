@@ -219,3 +219,24 @@ cùng PR code và cập nhật lại các mục ở trên:
 | Thêm `document.outbox` và event `document.<Event>` (phiên bản `READY`, ẩn tài liệu, đổi phạm vi) | Quy tắc 3 | Search service nhận để cập nhật index |
 | Thêm queue `search.document` bind vào `hr.events` (local); SNS topic `hr-events` trước các queue SQS (AWS) | Quy tắc 4 | Fan-out: một event đến nhiều consumer; sửa `rabbitmq.ts`, Terraform và file này |
 | Thêm `traceparent` (W3C Trace Context) vào header RabbitMQ và message attribute SQS | Quy tắc 1 | Truy vết OpenTelemetry xuyên qua queue |
+
+## 8. Event nghỉ phép dự kiến cho UC3, UC4 (thiết kế 18/11/2026, chưa áp dụng)
+
+Thêm theo quy tắc 3 (loại event mới) cùng PR code của từng nhánh ([UC3 spec 13.6](../features/UC3-create-leave-request/spec.md#136-thiết-kế-dữ-liệu-chung-uc3-uc4)).
+Payload theo [UC4 13.2](../features/UC4-approve-leave-request/spec.md#132-riêng-tư-đơn-nghỉ-br-14-br-15): chỉ id và dữ liệu định
+tuyến; email chỉ là câu báo chung (BR-15).
+
+| Event (`type`) | Phát khi | API hoặc job | Email gửi tới | Nhánh |
+|---|---|---|---|---|
+| `LeaveManagerApproved` | Quản lý duyệt đơn cần HR duyệt thêm | `POST …/approve` | Chủ đơn; nhóm HR | `feat/leave-hr-approval` |
+| `LeaveHrApproved`, `LeaveHrRejected` | HR duyệt thêm, từ chối | `POST …/hr-approve`, `…/hr-reject` | Chủ đơn (từ chối: thêm quản lý) | `feat/leave-hr-approval` |
+| `LeaveCancelRequested` | Chủ đơn đề nghị hủy đơn đã duyệt | `POST …/cancel-request` | Người có quyền xác nhận (quản lý trực tiếp, người duyệt thay; HR nếu đơn đã qua HR hoặc của CEO) | `feat/leave-cancel-rules` |
+| `LeaveCancelled` (thêm trường `reason`: `OWNER`, `CANCEL_REQUEST_APPROVED`, `SYSTEM`) | Như hiện nay, cộng xác nhận đề nghị hủy và hệ thống hủy khi nghỉ việc | `POST …/cancel`, `…/cancel-request/approve`, event `EmployeeTerminated` | Chủ đơn, quản lý trực tiếp; nhóm HR nếu đơn đã qua HR | `feat/leave-cancel-rules` |
+| `LeaveCancelRequestRejected` | Người duyệt bác đề nghị hủy | `POST …/cancel-request/reject` | Chủ đơn | `feat/leave-cancel-rules` |
+| `LeaveReminder` (`stage`: `SUBMITTED`, `PENDING_HR`) | Đơn chờ quá một ngày làm việc đầy đủ | Job nhắc đơn | Người duyệt đang có quyền hoặc nhóm HR | `feat/leave-reminders` |
+| `LeaveRecalculated` | HR tính lại số ngày sau khi sửa lịch lễ | `POST …/recalculate` | Chủ đơn | `feat/leave-holidays` |
+| `EmployeeTerminated` (`employeeId`, `effectiveDate`) | HR cho nhân viên nghỉ việc | `PATCH /employees/{id}` | Không gửi email; worker gọi xử lý nghỉ việc của module Leave | `feat/leave-balance-rules` |
+
+`EmployeeTerminated` tạm ghi `leave.outbox` như event hồ sơ (nợ kỹ thuật ở mục 2), chuyển `employee.outbox` khi làm ADR-15.
+Audit đi kèm: `LEAVE_CANCEL_REQUEST`, `LEAVE_CANCEL_APPROVED`, `LEAVE_CANCEL_REQUEST_REJECT`, `LEAVE_RECALCULATE`,
+`LEAVE_BALANCE_ADJUST`, `LEAVE_BALANCE_OVERDRAWN`, `HOLIDAY_CREATE`, `HOLIDAY_DELETE`.
