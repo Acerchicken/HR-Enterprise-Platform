@@ -132,7 +132,6 @@ resource "aws_apprunner_service" "api" {
           OIDC_JWKS_URI        = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.main.id}/.well-known/jwks.json"
           OIDC_ALLOWED_CLIENTS = aws_cognito_user_pool_client.web.id
           OIDC_CLIENT_CLAIM    = "client_id"
-          OIDC_ROLES_CLAIM     = "cognito:groups"
           OIDC_USERINFO_URL    = "https://${aws_cognito_user_pool_domain.main.domain}.auth.${var.aws_region}.amazoncognito.com/oauth2/userInfo"
           CORS_ORIGIN          = "https://${aws_cloudfront_distribution.web.domain_name}"
           QUEUE_DRIVER         = "sqs"

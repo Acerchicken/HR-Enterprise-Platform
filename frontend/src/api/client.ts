@@ -39,6 +39,33 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 // ----- Kiểu dữ liệu (khớp với backend) -----
 export type Role = 'EMPLOYEE' | 'MANAGER' | 'HR' | 'ADMIN';
 
+/** Vai trò cấp tay (UC8 FR-8.7); EMPLOYEE, MANAGER tự suy ra. */
+export type AssignableRole = 'HR' | 'ADMIN';
+
+/** `GET /admin/role-assignments` (UC8 spec 9.2). */
+/** Tài khoản đăng nhập của một hồ sơ (UC8 FR-8.6, spec 9.2). `NONE`: hồ sơ chưa có tài khoản. */
+export type AccountStatus = 'NONE' | 'PENDING' | 'INVITED' | 'ACTIVE' | 'DISABLED' | 'FAILED';
+export interface AccountView {
+  status: AccountStatus;
+  email: string;
+  invitedAt: string | null;
+  lastLoginAt: string | null;
+  syncedAt: string | null;
+  error: string | null;
+}
+
+export interface RoleAssignment {
+  userId: string;
+  employeeId: string | null;
+  fullName: string | null;
+  email: string;
+  departmentName: string | null;
+  role: AssignableRole;
+  grantedBy: { id: string; fullName: string | null } | null;
+  grantedAt: string;
+  reason: string | null;
+}
+
 export interface DirectoryEntry {
   id: string;
   employeeCode: string;
@@ -357,6 +384,8 @@ export interface TerminationImpact {
   headRoles: { departmentId: string; name: string; role: 'HEAD' | 'DEPUTY' }[];
   scheduledTransfers: number;
   pendingAsNewManager: { transferId: string; employeeName: string; effectiveDate: string }[];
+  grantedRoles: ('HR' | 'ADMIN')[];
+  lastAdmin: boolean;
 }
 
 /** Hôm nay theo giờ Việt Nam (khớp job điều chuyển phía server). */

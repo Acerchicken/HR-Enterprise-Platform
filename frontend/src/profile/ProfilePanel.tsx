@@ -37,6 +37,7 @@ import { newKey } from './fields';
 import { ProfileState, useOpenProfile } from './navigation';
 import { SectionPage } from './SectionPage';
 import { TransferDialog } from '../pages/org/TransferDialog';
+import { AccountRow } from './AccountRow';
 
 export const SECTION_ICON: Record<string, LucideIcon> = {
   personal: UserRound,
@@ -244,6 +245,7 @@ function ProfileHome({ s }: { s: ProfileSummary }) {
             <h3 className="group-title">{GROUP_TITLE[g]}</h3>
             <div className="blk">
               {items.map((d) => <SectionRow key={d.code} s={s} def={d} />)}
+              {g === 'work' && me?.roles.includes('HR') && <AccountRow employeeId={s.id} />}
             </div>
           </section>
         ))}

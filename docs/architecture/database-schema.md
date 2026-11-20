@@ -104,6 +104,10 @@ erDiagram
     varchar email UK
     uuid employee_id "ref employee.employee"
     timestamptz last_login_at
+    varchar idp_status "PENDING | INVITED | ACTIVE | DISABLED | FAILED"
+    timestamptz invited_at
+    timestamptz idp_synced_at
+    varchar idp_error
     timestamptz created_at
   }
   role_assignment {
@@ -122,7 +126,13 @@ erDiagram
 | `email` | varchar(150) | NN, UQ | Email đăng nhập, dùng để ghép với hồ sơ nhân viên |
 | `employee_id` | uuid | ref → `employee.employee.id` | Hồ sơ nhân viên của tài khoản; NULL với tài khoản kỹ thuật/admin không có hồ sơ |
 | `last_login_at` | timestamptz | | Lần đăng nhập gần nhất |
+| `idp_status` | varchar(10) | NN, mặc định `ACTIVE`, CHECK `PENDING`, `INVITED`, `ACTIVE`, `DISABLED`, `FAILED` | Trạng thái tài khoản trên IdP (UC8 FR-8.6). `PENDING` khi hồ sơ vừa tạo hoặc HR vừa bấm gửi lời mời; worker `identity-sync` chuyển sang `INVITED`, `ACTIVE` (email đã có trên IdP), `DISABLED` (nghỉ việc) hoặc `FAILED`. Đăng nhập lần đầu chuyển `PENDING`, `INVITED`, `FAILED` thành `ACTIVE`. Dòng có trước UC8 là `ACTIVE`. "Chưa có tài khoản" (`NONE`) không lưu: là khi hồ sơ chưa có dòng |
+| `invited_at` | timestamptz | | Lần gửi thư mời gần nhất |
+| `idp_synced_at` | timestamptz | | Lần đồng bộ IdP thành công gần nhất |
+| `idp_error` | varchar(40) | | Mã lỗi lần đồng bộ hỏng gần nhất (`IDP_UNAVAILABLE`, `IDP_REJECTED`, `IDP_USER_NOT_FOUND`), không chứa thông báo gốc của IdP. Xóa khi đồng bộ thành công hoặc HR gửi lại lời mời |
 | `created_at` | timestamptz | NN, mặc định `now()` | |
+
+Index `ix_user_account_idp_status (idp_status)`. Migration `AccountLifecycle`.
 
 ### `iam.role_assignment`
 
@@ -131,6 +141,14 @@ erDiagram
 | `user_id` | uuid | PK (1/2), FK → `iam.user_account.id` `ON DELETE CASCADE` | Xóa tài khoản thì xóa luôn vai trò |
 | `role` | varchar(20) | PK (2/2), CHECK `EMPLOYEE`, `MANAGER`, `HR`, `ADMIN` | Một tài khoản có nhiều vai trò, mỗi vai trò một dòng |
 | `scope_department_id` | uuid | ref → `org.department.id` | Dự phòng cho vai trò giới hạn theo phòng ban; **hiện code chưa dùng** |
+| `granted_by` | uuid | FK → `iam.user_account.id` `ON DELETE SET NULL` | ADMIN đã cấp (UC8 FR-8.7). NULL với dòng seed, lệnh `grant-admin`, dòng có trước UC8 |
+| `granted_at` | timestamptz | NN, mặc định `now()` | Lúc cấp |
+| `reason` | varchar(200) | | Lý do cấp (5 – 200 ký tự khi cấp qua API) |
+
+Index `ix_role_assignment_role (role)` cho trang Phân quyền. API chỉ ghi `HR`, `ADMIN`; `IdentityService` bỏ qua dòng `EMPLOYEE`,
+`MANAGER` nếu có (hai vai trò này luôn suy ra, ADR-18). Thu hồi xóa dòng; lịch sử ở audit `ROLE_GRANT`, `ROLE_REVOKE`. Migration
+`RoleAssignmentAudit`.
+
 
 ### `iam.rate_limit_counter`
 
@@ -743,7 +761,7 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 
 | Cột | Trỏ tới | Ghi chú |
 |---|---|---|
-| `iam.user_account.employee_id` | `employee.employee.id` | Ghép theo email khi đăng nhập |
+| `iam.user_account.employee_id` | `employee.employee.id` | Ghép theo email khi đăng nhập. Module Employee ghi thẳng `iam.user_account` bằng SQL trong giao dịch lưu hồ sơ (`employee/account-events.ts`: tạo dòng `PENDING` khi tạo hồ sơ, đổi `email` khi đổi email công ty) vì Identity đã phụ thuộc Employee |
 | `iam.role_assignment.scope_department_id` | `org.department.id` | Chưa dùng |
 | `org.department.head_employee_id` | `employee.employee.id` | Kiểm đang làm việc, thuộc đơn vị hoặc đơn vị cha (`assertRoleHolders`) |
 | `org.department_deputy.employee_id`, `created_by` | `employee.employee.id` | Như trưởng đơn vị; nghỉ việc, điều chuyển thì gỡ |
@@ -772,6 +790,8 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `ProfileChangeService.computed` (`long-leaves`) | Đọc | `leave.leave_request`, `leave.leave_type` | Ngày nghỉ dài (AC-1.13.3); Leave phụ thuộc Employee nên không gọi ngược |
 | `ProfileChangeService` (outbox) | Ghi | `leave.outbox` | Event email của yêu cầu cập nhật hồ sơ dùng chung outbox và publisher hiện có. **Nợ kỹ thuật:** quy tắc 3 của [hợp đồng event](event-contract.md#6-quy-tắc-khi-đổi-hợp-đồng) yêu cầu `employee.outbox` riêng |
 | Worker `handleProfile` | Đọc | `iam.user_account`, `iam.role_assignment` | Lấy email HR để báo có yêu cầu mới |
+| `RoleAdminService` (`list`, `grant`, `revoke`) | Đọc | `employee.employee` (`full_name`, `status`, `department_id`), `org.department.name` | Trang Phân quyền hiện tên, đơn vị (mức danh bạ); chặn cấp cho người đã nghỉ (UC8 E13), đếm ADMIN còn hoạt động (E12). Identity đã phụ thuộc Employee nhưng cần lọc, phân trang trong một câu SQL |
+| `RoleAdminService`, `grant-admin.ts` | Ghi | `leave.outbox` | Event `RoleGranted`, `RoleRevoked` (cùng nợ kỹ thuật như dòng outbox ở trên) |
 
 ## 10. Ràng buộc nghiệp vụ ở database
 
