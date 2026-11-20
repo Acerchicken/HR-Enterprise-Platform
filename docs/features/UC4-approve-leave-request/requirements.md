@@ -27,7 +27,8 @@
 
 - **AC-4.2.1** Khi quản lý trực tiếp duyệt kèm `version` đúng. Thì đơn `APPROVED`, số dư không đổi, có lịch sử, audit
   `LEAVE_APPROVE`, nhân viên nhận email.
-- **AC-4.2.2** Khi từ chối. Thì đơn `REJECTED`, số ngày trả khỏi `pending` (BR-09), audit `LEAVE_REJECT`.
+- **AC-4.2.2** Khi từ chối kèm lý do. Thì đơn `REJECTED`, số ngày trả khỏi `pending` (BR-09), audit `LEAVE_REJECT`. Từ chối không
+  có lý do thì trả 400 (cùng quy tắc với AC-4.8.4 và giao diện AC-0.6.3; kiểm chéo 21/11).
 - **AC-4.2.3** Khi người không phải quản lý trực tiếp hiện tại duyệt (BR-05). Thì trả 403.
 - **AC-4.2.4** Khi duyệt lần hai. Thì trả lại đơn, không đổi số dư, không gửi email lần nữa (BR-11).
 - **AC-4.2.5** Khi từ chối đơn đã duyệt, hoặc gửi `version` cũ. Thì trả 409.

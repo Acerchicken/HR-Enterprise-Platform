@@ -67,7 +67,7 @@ sequenceDiagram
 
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
-| 1 | Nhân viên mở "Tạo đơn nghỉ" | Hiện số dư từng loại phép: được hưởng, đã dùng, đang chờ, còn lại = được hưởng − đã dùng − đang chờ (FR-3.1) |
+| 1 | Nhân viên mở "Tạo đơn nghỉ" | Hiện số dư từng loại phép: được hưởng, chuyển từ năm trước (phép năm), đã dùng, đang chờ, còn lại = được hưởng + chuyển sang − đã dùng − đang chờ (FR-3.1) |
 | 2 | Chọn loại phép, ngày bắt đầu, ngày kết thúc; nếu nghỉ nửa ngày thì chọn buổi sáng hoặc chiều (chỉ khi một ngày); nhập lý do (tùy chọn) | Kiểm định dạng ở form |
 | 3 | Bấm Gửi | Gửi `POST /leave-requests` kèm header `Idempotency-Key` sinh mới cho mỗi lần mở form |
 | 4 | | Nếu key đã dùng cho đơn trước của cùng nhân viên: trả lại đơn đó, không tạo mới (FR-3.5, BR-11) |
@@ -309,7 +309,7 @@ không phải 1,08).
 | Job 00:10 hằng ngày (worker) | Tính lại `ANNUAL` năm hiện tại cho người chưa nghỉ việc. Bắt được việc sửa `hireDate` (UC1 AC-1.4.4) và mốc thâm niên |
 | Job 00:10 ngày 01/01 | Tạo dòng năm mới cho mọi người đang làm việc, đặt `carried_in` theo công thức chuyển phép bên dưới |
 | Số dư năm trước đổi (đơn năm trước bị từ chối, hủy, tính lại; job hằng ngày) | Tính lại `carried_in` của năm hiện tại trong cùng transaction |
-| Event `EmployeeTerminated` (worker) | Hủy đơn chờ, hủy đơn đã duyệt bắt đầu sau ngày nghỉ việc (AC-3.1.7), rồi tính lại `ANNUAL` tới tháng nghỉ việc |
+| Job 5 phút (worker) quét hồ sơ `TERMINATED` còn đơn chưa xử lý | Hủy đơn chờ, hủy đơn đã duyệt bắt đầu sau ngày nghỉ việc (AC-3.1.7), rồi tính lại `ANNUAL` tới tháng nghỉ việc. Ngày nghỉ việc là `effective_to` của giai đoạn công tác vừa đóng (UC2 FR-2.8). Không dùng event `EmployeeTerminated`: event đó là của UC8 (payload `accountId`, chỉ phát khi hồ sơ có tài khoản, worker `identity-sync` xử lý) |
 
 Tính lại mà `entitled` mới nhỏ hơn `used + pending` (người nghỉ việc đã dùng quá số được hưởng) thì đặt `entitled = used + pending`
 để giữ CHECK của bảng, ghi audit `LEAVE_BALANCE_OVERDRAWN` kèm số tính được, và HR xử lý ngoài hệ thống (lương nằm ngoài
@@ -411,7 +411,30 @@ Rà sau khi UC1, UC2 đã code xong (#80 → #90, #106 → #110). Mỗi dòng c�
 | Quản lý gián tiếp (UC1 AC-1.1.4, #110) | Xem hồ sơ mức QL của cấp dưới gián tiếp | Không mở rộng sang đơn nghỉ: quản lý gián tiếp không xem chi tiết, không thấy trong danh sách chờ (AC-4.7.5) |
 | Trạng thái `ON_LEAVE` (UC1) | HR đổi tay; "Ngày nghỉ dài" của UC1 đọc đơn ≥ 14 ngày đã duyệt, hoàn tất | Duyệt đơn thai sản không tự đổi `ON_LEAVE` trong MVP. Mục "Ngày nghỉ dài" vẫn chỉ đọc đơn `APPROVED`, `COMPLETED` |
 | Ngày làm việc của UC1 (hạn 2 ngày, AC-1.9.13) | `workdaysBetween` chỉ bỏ T7, CN, tính theo ngày UTC, không bỏ ngày lễ | Gom thành một dịch vụ lịch dùng chung (`common/calendar`) đọc `leave.holiday`, múi giờ Asia/Ho_Chi_Minh; UC1, UC3 (BR-03), UC4 (nhắc đơn, hoàn tất) cùng dùng (nhánh 7) |
-| Event hồ sơ ghi chung `leave.outbox` (UC1 spec 12) | Nợ kỹ thuật | `EmployeeTerminated` cũng tạm ghi `leave.outbox` như event hồ sơ; chuyển `employee.outbox` khi làm ADR-15 |
+| Event hồ sơ ghi chung `leave.outbox` (UC1 spec 12); `EmployeeTerminated` của UC8 (#115) | Nợ kỹ thuật; `EmployeeTerminated` mang `accountId`, chỉ phát khi có tài khoản | Leave không nghe `EmployeeTerminated`; job của Leave quét hồ sơ `TERMINATED` (13.2, kiểm chéo lần 2 ngày 21/11) |
 | Đăng nhập (UC8, ADR-17) | UC8 làm trước UC3, UC4 | API nghỉ phép cần `employeeId` lấy từ tài khoản: tài khoản chưa gắn hồ sơ trả 403 (E9, code đang trả 404); hồ sơ `TERMINATED` trả 403 (UC1 AC-1.7.2) |
 | Phân quyền (ADR-18) | Điều kiện duyệt nằm rải trong `LeaveService` | Gom về `leave-access.ts` ở nhánh 3; thêm các dòng mới vào [ma trận phân quyền](../../security/access-control-matrix.md) |
 | Trang "Việc cần duyệt" (UC1 `/approvals`) | Mỗi loại một tab | Đề nghị hủy hiện trong tab "Đơn nghỉ" cùng đơn chờ duyệt, có nhãn "Đề nghị hủy", không thêm tab |
+
+## 15. Kiểm chéo lần 2 trước khi code (21/11/2026)
+
+Rà lại sau khi UC8 đã merge (#111 → #116) và quy tắc chuyển phép đã chốt (#118). Các chỗ lệch nhau và cách đã sửa:
+
+| Chỗ lệch | Sửa |
+|---|---|
+| #118 merge vào nhánh `docs/uc3-uc4-design` sau khi nhánh đó đã vào `dev`, nên quy tắc chuyển phép chưa có trên `dev` | Gộp lại vào `dev` cùng PR này |
+| `EmployeeTerminated` có hai payload khác nhau trong hợp đồng event (UC8: `accountId`, `email`; dòng dự kiến của UC3: `effectiveDate`); event của UC8 chỉ phát khi hồ sơ có tài khoản | Leave không nghe event này; job 5 phút của Leave quét hồ sơ `TERMINATED` (13.2). Bỏ dòng dự kiến trong hợp đồng event mục 8 |
+| BR-01, AC-3.1.1, luồng chính bước 1: số dư khả dụng chưa cộng `carried_in` | Sửa công thức `entitled + carried_in − used − pending` |
+| BR-02 chỉ nêu `SUBMITTED`, `APPROVED` giữ lịch; BR-16, UC4 13.3 nói `PENDING_HR` cũng giữ lịch | BR-02 thêm `PENDING_HR` |
+| BR-16 "quá 2 ngày làm việc" có nhãn Quá hạn; BR-17, UC4 13.5 dùng mốc một ngày làm việc đầy đủ | BR-16 dùng mốc của BR-17 |
+| UC4 A7 xác nhận hủy qua `POST …/cancel`; hợp đồng API 9.3 dùng `…/cancel-request/approve` | A7 theo 9.3 |
+| UC4 13.1 giao diện duyệt thay `/leave/delegations`; bảng mục 9 dùng `/approvals/delegations` | Dùng `/approvals/delegations` |
+| Sơ đồ trạng thái UC4 có "HR hủy đơn chờ từ `startDate`"; 13.5 ghi HR điều chỉnh từng phần nằm ngoài MVP | Bỏ hai cạnh đó; thêm cạnh hệ thống hủy khi nghỉ việc (AC-3.1.7) |
+| Từ chối đơn: UC4 mục 8 cho ghi chú tùy chọn; giao diện chung AC-0.6.3, UC1 FR-1.9, AC-4.8.4 bắt buộc lý do; E12 dùng mã `VALIDATION_ERROR` không có trong [error-codes.md](../../development/error-codes.md) | Từ chối, bác đề nghị hủy bắt buộc lý do (400 `BAD_REQUEST`), sửa AC-4.2.2 |
+
+Không lệch: vai trò `MANAGER` suy từ cấp dưới trực tiếp (ADR-10, UC8 #112) khớp quyền duyệt; nghỉ việc chặn khi còn cấp dưới
+(UC1) nên không có đơn chờ mồ côi; hồ sơ `TERMINATED` đã bị chặn đăng nhập ở `IdentityService` (403); `vnToday()` của UC2 dùng
+lại cho mốc "hôm nay" theo giờ Việt Nam; thâm niên dùng `seniority()` của UC1.
+
+Đề xuất (a), (b) ở 13.2 và hai điểm ở 13.5 (đơn chờ tới `startDate` vẫn đi tiếp luồng duyệt; đơn đã qua HR thì chỉ HR xác
+nhận hủy) vẫn là đề xuất chờ TV2 xác nhận. Code làm theo đề xuất; đổi thì sửa hàm tương ứng.
