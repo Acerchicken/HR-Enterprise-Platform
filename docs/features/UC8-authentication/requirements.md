@@ -92,19 +92,19 @@ Trạng thái hiện cho HR: "Chưa có tài khoản" (`NONE`, chưa có dòng `
 - **AC-8.6.5** *(chưa có)* Giả sử trạng thái `ACTIVE`, `DISABLED` hoặc `PENDING`, hoặc nhân viên đã nghỉ việc. Khi gửi lại lời mời.
   Thì 409 (E9) hoặc 400 (E10), không gửi thư.
 
-### FR-8.7 ADMIN cấp, thu hồi vai trò HR, ADMIN (M, chưa có)
+### FR-8.7 ADMIN cấp, thu hồi vai trò HR, ADMIN (M, một phần: chưa đồng bộ nhóm sang IdP)
 
-- **AC-8.7.1** *(chưa có)* Giả sử ADMIN chọn một nhân viên đang làm việc đã có tài khoản, chọn `HR`, nhập lý do. Khi lưu. Thì
+- **AC-8.7.1** *(một phần: chưa đồng bộ IdP)* Giả sử ADMIN chọn một nhân viên đang làm việc đã có tài khoản, chọn `HR`, nhập lý do. Khi lưu. Thì
   `iam.role_assignment` có dòng mới với người cấp, thời điểm, lý do; audit `ROLE_GRANT`; người đó có quyền HR từ request kế tiếp;
   trong 1 phút tài khoản trên IdP vào nhóm `hr` (để IdP bắt MFA).
-- **AC-8.7.2** *(chưa có)* Giả sử ADMIN thu hồi `HR` của một người, nhập lý do. Thì dòng bị xóa, audit `ROLE_REVOKE` (có lý do), mất
+- **AC-8.7.2** *(một phần: chưa đồng bộ IdP)* Giả sử ADMIN thu hồi `HR` của một người, nhập lý do. Thì dòng bị xóa, audit `ROLE_REVOKE` (có lý do), mất
   quyền HR từ request kế tiếp; nhóm trên IdP bị gỡ trong 1 phút.
-- **AC-8.7.3** *(chưa có)* Giả sử ADMIN tự cấp hoặc tự thu hồi vai trò của chính mình. Thì 403 (E11).
-- **AC-8.7.4** *(chưa có)* Giả sử chỉ còn một ADMIN. Khi thu hồi `ADMIN` của người đó. Thì 409 (E12).
-- **AC-8.7.5** *(chưa có)* Giả sử vai trò khác ADMIN, kể cả HR. Khi gọi API cấp, thu hồi, xem danh sách. Thì 403.
-- **AC-8.7.6** *(chưa có)* Giả sử thiếu lý do hoặc lý do dưới 5, trên 200 ký tự; hoặc vai trò khác `HR`, `ADMIN`. Thì 400.
-- **AC-8.7.7** *(chưa có)* Giả sử nhân viên chưa có tài khoản hoặc đã nghỉ việc. Thì 400 (E10, E13); vai trò đã có thì 409 (E14).
-- **AC-8.7.8** *(chưa có)* Giả sử ADMIN mở trang "Phân quyền". Thì thấy mọi người đang có `HR`, `ADMIN` với người cấp, ngày cấp,
+- **AC-8.7.3** Giả sử ADMIN tự cấp hoặc tự thu hồi vai trò của chính mình. Thì 403 (E11).
+- **AC-8.7.4** Giả sử chỉ còn một ADMIN. Khi thu hồi `ADMIN` của người đó. Thì 409 (E12).
+- **AC-8.7.5** Giả sử vai trò khác ADMIN, kể cả HR. Khi gọi API cấp, thu hồi, xem danh sách. Thì 403.
+- **AC-8.7.6** Giả sử thiếu lý do hoặc lý do dưới 5, trên 200 ký tự; hoặc vai trò khác `HR`, `ADMIN`. Thì 400.
+- **AC-8.7.7** Giả sử nhân viên chưa có tài khoản hoặc đã nghỉ việc. Thì 400 (E10, E13); vai trò đã có thì 409 (E14).
+- **AC-8.7.8** Giả sử ADMIN mở trang "Phân quyền". Thì thấy mọi người đang có `HR`, `ADMIN` với người cấp, ngày cấp,
   lý do; lọc theo vai trò; tìm theo tên, email.
 
 ## 3. Yêu cầu phi chức năng liên quan

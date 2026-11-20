@@ -40,8 +40,8 @@
 | AC-8.1.11 | Unit `CallbackPage` | Sửa `state` trong URL `/callback` | Chưa |
 | AC-8.3.6 | Unit consumer `EmployeeEmailChanged` | Đổi email, đăng nhập bằng email mới | Chưa |
 | AC-8.6.x | e2e quyền gửi lại lời mời, 409 theo trạng thái | Xem trạng thái, gửi lại | Chưa |
-| AC-8.7.1 → 8.7.7 | e2e mỗi tiêu chí; unit hàm kiểm trong `role-access.ts` | ADMIN cấp HR rồi người đó đăng nhập lại bị hỏi TOTP | Chưa (`feat/uc8-role-admin`) |
-| AC-8.7.8 | e2e lọc, tìm | Trang Phân quyền | Chưa |
+| AC-8.7.1 → 8.7.7 | e2e `UC8 FR-8.7` trong `app.e2e-spec.ts` (5 ca); unit `role-access.spec.ts` | ADMIN cấp HR rồi người đó đăng nhập lại bị hỏi TOTP (cần `identity-sync`) | Có (trừ phần IdP) |
+| AC-8.7.8 | e2e lọc theo vai trò, tìm theo email | Trang Phân quyền | Có |
 
 ## 4. Dữ liệu và tài khoản
 
