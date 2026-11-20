@@ -56,7 +56,7 @@ bị bỏ qua. Nhóm trên IdP là bản sao để IdP bắt MFA theo vai trò (
 | 4 | Consumer `identity-sync` thêm hoặc bớt nhóm trên IdP |
 | 5 | Có hiệu lực ngay ở API từ request kế tiếp (đọc database mỗi request) |
 
-API đề xuất (tuần 12, nhánh `feat/role-admin`): `GET /admin/role-assignments`, `POST /admin/role-assignments`,
+API (tuần 11, nhánh `feat/uc8-role-admin`, hợp đồng ở [UC8 spec mục 9.2](../features/UC8-authentication/spec.md#92-hợp-đồng-api)): `GET /admin/role-assignments`, `POST /admin/role-assignments`,
 `DELETE /admin/role-assignments/{userId}/{role}`. Chỉ `ADMIN`.
 
 ## 4. Quy ước code
@@ -108,9 +108,9 @@ nhưng không được làm 403; không được biết bản ghi tồn tại 40
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| `IdentityService` bỏ đọc vai trò từ token; bỏ `manager` ở `keycloak/realm-hr.json` và `infra/staging/cognito.tf` | ADR-18 nghiệm thu 1, 2 | TV1, TV3 | `fix/roles-from-db` | 11 |
-| API và màn hình cấp, thu hồi vai trò; audit; event `role.*` | ADR-18 nghiệm thu 3; NFR-5.10 | TV1 | `feat/role-admin` | 12 |
-| Đồng bộ nhóm sang IdP trong `identity-sync` | – | TV1 | `feat/idp-account-lifecycle` | 12 |
+| `IdentityService` bỏ đọc vai trò từ token; bỏ `manager` ở `keycloak/realm-hr.json` và `infra/staging/cognito.tf` | ADR-18 nghiệm thu 1, 2 | TV1 | `feat/uc8-roles-from-db` (xong) | 11 |
+| API và màn hình cấp, thu hồi vai trò; audit; event `RoleGranted`, `RoleRevoked` | ADR-18 nghiệm thu 3; NFR-5.10; UC8 FR-8.7 | TV1 | `feat/uc8-role-admin` | 11 |
+| Đồng bộ nhóm sang IdP trong `identity-sync` | UC8 AC-8.7.1 | TV1 | `feat/uc8-account-lifecycle` | 11 |
 | Gom điều kiện duyệt đơn về `leave-access.ts` | – | TV1 | cùng PR sửa UC4 | 11 |
 | Cập nhật ma trận: `direct-reports`, `members` mức danh bạ; cột 403/404 | ADR-18 mục 4, 5 | TV1 | PR này | 11 |
 | Ca kiểm thử: token có nhóm `hr` nhưng database không; tự cấp vai trò; thu hồi ADMIN cuối | ADR-18 nghiệm thu | TV4 | `docs/security-test-cases-week11` | 11 |

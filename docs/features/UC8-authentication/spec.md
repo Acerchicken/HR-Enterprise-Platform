@@ -230,7 +230,7 @@ Xem [`test.md`](test.md). Cách triển khai: [`deploy.md`](deploy.md).
 |---|---|---|
 | Đăng nhập, đăng xuất OIDC Code + PKCE | Đã có: `frontend/src/auth/auth.tsx`, `CallbackPage`, `token-verifier.ts` (Keycloak, Cognito) | Lỗi ở `/callback` chưa có màn hình (E1); `callback_urls` của Cognito (TV3) |
 | Gắn tài khoản theo `sub`, email | Đã có, chặn `TERMINATED` | Kiểm `email_verified` (`fix/auth-email-verified`) |
-| Vai trò | `identity.service.ts` lấy **hợp** của nhóm trong token và `iam.role_assignment`; Keycloak, Cognito còn `manager` | `feat/uc8-roles-from-db` |
+| Vai trò | Chỉ từ database (`feat/uc8-roles-from-db`): `HR`, `ADMIN` ở `iam.role_assignment`, `EMPLOYEE`, `MANAGER` suy ra; token không còn claim vai trò; bỏ `manager` ở realm Keycloak và Cognito | – |
 | Cấp, thu hồi vai trò | Chưa có (chỉ trên console IdP) | `feat/uc8-role-admin` |
 | Tạo, khóa, mở tài khoản trên IdP; trạng thái; gửi lại lời mời | Chưa có | `feat/uc8-account-lifecycle` |
 | Tự đăng xuất khi không thao tác | Chưa có (Keycloak chỉ hết phiên SSO sau 30 phút) | `feat/uc8-account-lifecycle` |
