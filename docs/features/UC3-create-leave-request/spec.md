@@ -289,13 +289,14 @@ entitled(nv, năm) =
   tháng   = số tháng m trong [từ, đến] mà
             (tháng đủ) hoặc (ngày làm việc của nv trong m ÷ ngày làm việc của m ≥ 0,5)   // bỏ T7, CN, ngày lễ
   nếu tháng = 12: nền + cộng
-  ngược lại:      làm tròn nửa lên 2 chữ số ((nền + cộng) / 12 × tháng)
+  ngược lại:      làm tròn lên 2 chữ số ((nền + cộng) / 12 × tháng)   // BR-01: không làm tròn giảm
 ```
 
 Ví dụ: vào làm 01/7/2026 có 6 tháng, được 6,00 ngày. Vào làm 16/7/2026: tháng 7 có 23 ngày làm việc, người này làm 12 ngày
 (≥ 11,5) nên tháng 7 được tính, năm 2026 được 6,00. Vào làm 20/7/2026: làm 10 ngày (< 11,5), chỉ còn 5 tháng, được 5,00.
 Vào làm 15/8/2021 thì năm 2026 đủ 5 năm, được 13,00. Mức 14 ngày, đủ 10 năm, làm cả năm: 16,00. Mức 14 ngày, làm 7 tháng:
-14 / 12 × 7 = 8,1666…, được 8,17.
+14 / 12 × 7 = 8,1666…, được 8,17. Mức 13 ngày (12 + 1 thâm niên), làm 1 tháng: 1,0833…, được 1,09 (làm tròn lên,
+không phải 1,08).
 
 **Khi nào tính lại** (đều trong module Leave, không để module Employee gọi ngược):
 
