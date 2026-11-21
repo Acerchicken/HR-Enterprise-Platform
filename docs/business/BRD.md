@@ -93,7 +93,7 @@ flowchart LR
 
 - Tính lương, chấm công, tuyển dụng, đánh giá năng lực (ADR-05).
 - Xuất dữ liệu nghỉ phép sang hệ thống Payroll (chỉ mô phỏng bằng file nếu còn thời gian).
-- HR điều chỉnh hoặc hủy đơn đã duyệt (BR-08 ghi rõ chưa thuộc MVP).
+- Chủ đơn đề nghị hủy đơn đã duyệt; quản lý trực tiếp hoặc HR xác nhận trước ngày bắt đầu theo BR-08. Điều chỉnh sau ngày bắt đầu cần HR xác minh thực tế nghỉ.
 - Ứng dụng di động riêng, đa ngôn ngữ, đa doanh nghiệp.
 - Production nhiều vùng (multi-AZ); version 1 chạy staging một vùng (ADR-06).
 
@@ -129,7 +129,7 @@ flowchart TD
 ```
 
 Mọi bước ghi lịch sử (ai, lúc nào, từ trạng thái nào sang trạng thái nào, ghi chú) và audit log trong cùng giao dịch với thay
-đổi dữ liệu. Business rule chi tiết BR-01 → BR-12: [`leave-rules.md`](leave-rules.md).
+đổi dữ liệu. Business rule chi tiết BR-01 → BR-19: [`leave-rules.md`](leave-rules.md).
 
 ## 7. Yêu cầu chức năng
 
@@ -150,7 +150,7 @@ nhận và trạng thái trên `dev`.
 
 | Nhóm | Quy tắc | Nguồn |
 |---|---|---|
-| Nghỉ phép | BR-01 số dư · BR-02 trùng lịch · BR-03 ngày làm việc, ngày lễ · BR-04 nửa ngày · BR-05 người duyệt hợp lệ · BR-06 người duyệt thay · BR-07, BR-08 hủy đơn · BR-09 từ chối · BR-10 HR hoàn tất · BR-11 lịch sử và thao tác lặp · BR-12 tạo đơn hộ | [`leave-rules.md`](leave-rules.md) |
+| Nghỉ phép | BR-01 số dư · BR-02 trùng lịch · BR-03 ngày làm việc, ngày lễ · BR-04 nửa ngày · BR-05 người duyệt hợp lệ · BR-06 người duyệt thay · BR-07, BR-08 hủy đơn · BR-09 từ chối · BR-10 HR hoàn tất · BR-11 lịch sử và thao tác lặp · BR-12 tạo đơn hộ · BR-13 retention · BR-14 quyền xem lý do sức khỏe · BR-15 email tối thiểu · BR-16 HR duyệt thêm · BR-17 nhắc đơn chờ · BR-18 hạn mức nghỉ ốm · BR-19 thay đổi lịch lễ | [`leave-rules.md`](leave-rules.md) |
 | Loại phép | 8 loại: phép năm, nghỉ ốm, cưới, con cưới, tang, thai sản (nữ, nam), không lương; số ngày, có lương hay không, giấy tờ | [`leave-types-holidays.md`](leave-types-holidays.md) |
 | Ngày lễ | Danh sách ngày lễ 2026 theo Bộ luật Lao động và thông báo của Bộ Nội vụ; ngày lễ không trừ phép | [`leave-types-holidays.md`](leave-types-holidays.md) |
 | Hồ sơ | Nhân viên chỉ sửa liên hệ; trường nhạy cảm chỉ HR; mỗi nhân viên đúng một quản lý trực tiếp, trừ CEO | FR tuần 5, issue #22 |
@@ -195,7 +195,7 @@ truy vết, chi phí, vận hành, bảo trì, khả dụng, tuân thủ; kèm S
 
 ## 13. Tiêu chí nghiệm thu version 1
 
-1. Luồng nghỉ phép chạy trên staging: tạo → duyệt/từ chối → hoàn tất, có email, đúng BR-01 → BR-12.
+1. Luồng nghỉ phép chạy trên staging: tạo → duyệt/từ chối → hoàn tất, có email, đúng BR-01 → BR-19.
 2. Mọi yêu cầu mức **M** ở [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng-fr) đạt tiêu chí chấp nhận, có e2e test hoặc biên bản kiểm thử chức năng.
 3. Mọi dòng của ma trận phân quyền có ca kiểm thử được phép và bị chặn.
 4. Load test tuần 11 đạt NFR-1, NFR-3 (SRS mục 6).

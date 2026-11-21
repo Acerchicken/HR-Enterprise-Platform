@@ -2,23 +2,14 @@ import { loadConfig } from '../config/config';
 import { LeaveEventPayload } from '../modules/leave/outbox/leave-events';
 import { NotificationWorker } from './notification-worker';
 
-const payload: LeaveEventPayload = {
-  requestId: 'r-1',
-  employeeId: 'emp',
-  leaveType: 'ANNUAL',
-  startDate: '2026-11-09',
-  endDate: '2026-11-09',
-  halfDay: null,
-  days: 1,
-  actorId: 'emp',
-  comment: null,
-  occurredAt: '2026-11-02T00:00:00.000Z',
-};
+const payload: LeaveEventPayload = { requestId: 'r-1', employeeId: 'emp', occurredAt: '2026-11-02T00:00:00.000Z' };
 
 function setup() {
   const processed = new Set<string>();
   const ds = {
     query: jest.fn(async (sql: string, params: string[]) => {
+      if (sql.includes('approval_delegation')) return [];
+      if (sql.includes("r.role = 'HR'")) return [{ email: 'hr@hr.local' }];
       if (sql.startsWith('SELECT')) return processed.has(params[0]) ? [{}] : [];
       processed.add(params[0]);
       return [];
@@ -27,9 +18,9 @@ function setup() {
   const employees = {
     managerIdOf: jest.fn(async () => 'mgr'),
     contactOf: jest.fn(async (id: string) => ({ email: `${id}@hr.local`, fullName: id })),
-    namesOf: jest.fn(async () => new Map([['emp', 'Trần Thị Nhân']])),
+    isCeo: jest.fn(async () => false),
   };
-  const worker = new NotificationWorker(loadConfig({}), ds as any, employees as any);
+  const worker = new NotificationWorker(loadConfig({}), ds as any, employees as any, { handle: jest.fn() } as any);
   const sendMail = jest.fn(async () => ({}));
   (worker as any).mailer = { sendMail };
   return { worker, sendMail };
@@ -40,6 +31,19 @@ describe('NotificationWorker', () => {
     const { worker, sendMail } = setup();
     await expect(worker.handle('1', 'LeaveRequested', payload)).resolves.toBe(true);
     expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'mgr@hr.local' }));
+  });
+
+  it('email chỉ có câu báo chung (BR-15)', async () => {
+    const { worker, sendMail } = setup();
+    await worker.handle('5', 'LeaveRequested', payload);
+    const mail = (sendMail.mock.calls[0] as any[])[0];
+    expect(`${mail.subject} ${mail.text}`).not.toMatch(/r-1|emp/);
+  });
+
+  it('HR duyệt thêm: quản lý duyệt báo chủ đơn và nhóm HR (BR-16)', async () => {
+    const { worker, sendMail } = setup();
+    await worker.handle('6', 'LeaveManagerApproved', payload);
+    expect(sendMail.mock.calls.map((c: any[]) => c[0].to)).toEqual(['emp@hr.local', 'hr@hr.local']);
   });
 
   it('kết quả duyệt gửi email cho nhân viên', async () => {

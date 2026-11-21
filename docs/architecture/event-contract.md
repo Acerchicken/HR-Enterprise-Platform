@@ -76,6 +76,28 @@ ADR-15). Email chỉ là thông báo chung, không chứa giá trị hồ sơ, l
 Payload (`ProfileEventPayload` trong `employee/profile-events.ts`): `requestId`, `employeeId`, `section`, `status`,
 `occurredAt`. Worker nhận dạng bằng `isProfileEvent(type)`.
 
+**Event tài khoản, vai trò (UC8, ADR-17, ADR-18)**
+
+Thuộc aggregate **tài khoản** (`iam.user_account`, `aggregate_id` là id tài khoản). Ghi chung `leave.outbox` như event hồ sơ
+(cùng nợ kỹ thuật). Consumer là `identity-sync` (đồng bộ sang IdP), không gửi email. Danh sách đầy đủ ở
+[UC8 spec mục 9.2](../features/UC8-authentication/spec.md#92-hợp-đồng-api); hằng số `IDENTITY_EVENTS` trong
+`identity/identity-events.ts`, worker nhận dạng bằng `isIdentityEvent(type)`.
+
+| Event (`type`) | Phát khi | API gây ra | Payload |
+|---|---|---|---|
+| `RoleGranted` | ADMIN cấp HR, ADMIN; lệnh `grant-admin` | `POST /admin/role-assignments` | `accountId`, `email`, `role`, `occurredAt` |
+| `RoleRevoked` | ADMIN thu hồi | `DELETE /admin/role-assignments/{userId}/{role}` | như trên |
+| `EmployeeCreated` | HR tạo hồ sơ (tài khoản `PENDING`) | `POST /employees` | `employeeId`, `accountId`, `email`, `fullName`, `occurredAt` |
+| `AccountInviteRequested` | HR gửi (lại) lời mời | `POST /employees/{id}/account/invite` | như trên, thêm `previousStatus` (`NONE`, `INVITED`, `FAILED`) |
+| `EmployeeTerminated` | Hồ sơ chuyển sang `TERMINATED` | `PATCH /employees/{id}` | `employeeId`, `accountId`, `email`, `occurredAt` |
+| `EmployeeReinstated` | Hồ sơ từ `TERMINATED` về trạng thái khác | `PATCH /employees/{id}` | như trên |
+| `EmployeeEmailChanged` | HR đổi email công ty của người đã có tài khoản | `PATCH /employees/{id}` | như trên, thêm `oldEmail` |
+
+Hồ sơ chưa có tài khoản thì nghỉ việc, khôi phục, đổi email không phát event. Worker chuyển các event này sang `IdentitySync`
+(`worker/identity-sync.ts`): gọi IdP qua driver `IDP_ADMIN_DRIVER`, cập nhật `idp_status`, rồi đánh dấu `processed_event`. Mọi
+thao tác trên IdP idempotent (tạo khi đã có thì chỉ gắn, khóa người không còn thì bỏ qua) nên giao hai lần không sinh hai tài khoản,
+hai thư mời (AC-8.3.4). Lỗi IdP: thử lại trong worker, hết lượt thì ném lỗi, message vào DLQ (UC8 E6).
+
 Ánh xạ hành động → event: `EVENT_OF_ACTION` trong `leave-events.ts`; người nhận: `recipientOf()`. Nhân viên không có quản lý
 trực tiếp (CEO) thì event loại "gửi quản lý" được đánh dấu đã xử lý mà không gửi email.
 
@@ -197,3 +219,25 @@ cùng PR code và cập nhật lại các mục ở trên:
 | Thêm `document.outbox` và event `document.<Event>` (phiên bản `READY`, ẩn tài liệu, đổi phạm vi) | Quy tắc 3 | Search service nhận để cập nhật index |
 | Thêm queue `search.document` bind vào `hr.events` (local); SNS topic `hr-events` trước các queue SQS (AWS) | Quy tắc 4 | Fan-out: một event đến nhiều consumer; sửa `rabbitmq.ts`, Terraform và file này |
 | Thêm `traceparent` (W3C Trace Context) vào header RabbitMQ và message attribute SQS | Quy tắc 1 | Truy vết OpenTelemetry xuyên qua queue |
+
+## 8. Event nghỉ phép dự kiến cho UC3, UC4 (thiết kế 18/11/2026, chưa áp dụng)
+
+Thêm theo quy tắc 3 (loại event mới) cùng PR code của từng nhánh ([UC3 spec 13.6](../features/UC3-create-leave-request/spec.md#136-thiết-kế-dữ-liệu-chung-uc3-uc4)).
+Payload theo [UC4 13.2](../features/UC4-approve-leave-request/spec.md#132-riêng-tư-đơn-nghỉ-br-14-br-15): chỉ id và dữ liệu định
+tuyến; email chỉ là câu báo chung (BR-15).
+
+| Event (`type`) | Phát khi | API hoặc job | Email gửi tới | Nhánh |
+|---|---|---|---|---|
+| `LeaveManagerApproved` | Quản lý duyệt đơn cần HR duyệt thêm | `POST …/approve` | Chủ đơn; nhóm HR | `feat/leave-hr-approval` |
+| `LeaveHrApproved`, `LeaveHrRejected` | HR duyệt thêm, từ chối | `POST …/hr-approve`, `…/hr-reject` | Chủ đơn (từ chối: thêm quản lý) | `feat/leave-hr-approval` |
+| `LeaveCancelRequested` | Chủ đơn đề nghị hủy đơn đã duyệt | `POST …/cancel-request` | Người có quyền xác nhận (quản lý trực tiếp, người duyệt thay; HR nếu đơn đã qua HR hoặc của CEO) | `feat/leave-cancel-rules` |
+| `LeaveCancelled` (thêm trường `reason`: `OWNER`, `CANCEL_REQUEST_APPROVED`, `SYSTEM`) | Như hiện nay, cộng xác nhận đề nghị hủy và hệ thống hủy khi nghỉ việc | `POST …/cancel`, `…/cancel-request/approve`, job nghỉ việc của Leave | Chủ đơn, quản lý trực tiếp; nhóm HR nếu đơn đã qua HR | `feat/leave-cancel-rules` |
+| `LeaveCancelRequestRejected` | Người duyệt bác đề nghị hủy | `POST …/cancel-request/reject` | Chủ đơn | `feat/leave-cancel-rules` |
+| `LeaveReminder` (`stage`: `SUBMITTED`, `PENDING_HR`) | Đơn chờ quá một ngày làm việc đầy đủ | Job nhắc đơn | Người duyệt đang có quyền hoặc nhóm HR | `feat/leave-reminders` |
+| `LeaveRecalculated` | HR tính lại số ngày sau khi sửa lịch lễ | `POST …/recalculate` | Chủ đơn | `feat/leave-holidays` |
+
+Kiểm chéo 21/11: bỏ dòng `EmployeeTerminated (employeeId, effectiveDate)` đã ghi ở đây vì trùng tên với event của UC8 (mục 3,
+payload `employeeId`, `accountId`, `email`, chỉ phát khi hồ sơ có tài khoản). Module Leave xử lý nghỉ việc bằng job quét hồ sơ
+`TERMINATED` ([UC3 spec 13.2](../features/UC3-create-leave-request/spec.md#132-cấp-và-tính-phép-năm-br-01-ac-313-ac-315-ac-317)), không cần event.
+Audit đi kèm: `LEAVE_CANCEL_REQUEST`, `LEAVE_CANCEL_APPROVED`, `LEAVE_CANCEL_REQUEST_REJECT`, `LEAVE_RECALCULATE`,
+`LEAVE_BALANCE_ADJUST`, `LEAVE_BALANCE_OVERDRAWN`, `HOLIDAY_CREATE`, `HOLIDAY_DELETE`.

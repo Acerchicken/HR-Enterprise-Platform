@@ -37,13 +37,18 @@ export class ApiErrorFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'Lỗi hệ thống';
     let fields: Record<string, string> | undefined;
+    let details: Record<string, unknown> | undefined;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const body = exception.getResponse();
       message =
         typeof body === 'string' ? body : ((body as { message?: string | string[] }).message ?? exception.message);
-      if (typeof body === 'object') fields = (body as { fields?: Record<string, string> }).fields;
+      if (typeof body === 'object') {
+        fields = (body as { fields?: Record<string, string> }).fields;
+        // Số liệu kèm lỗi để giao diện nói rõ lý do, ví dụ E13 UC2 {members, activeChildren}.
+        details = (body as { details?: Record<string, unknown> }).details;
+      }
     } else if ((exception as { type?: string })?.type === 'entity.too.large') {
       // body-parser: body vượt 64 KiB (E16).
       status = HttpStatus.PAYLOAD_TOO_LARGE;
@@ -61,6 +66,7 @@ export class ApiErrorFilter implements ExceptionFilter {
       code: CODE_BY_STATUS[status] ?? `HTTP_${status}`,
       message,
       ...(fields ? { fields } : {}),
+      ...(details ? { details } : {}),
       traceId: req.traceId,
     });
   }

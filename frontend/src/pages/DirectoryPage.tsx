@@ -49,7 +49,7 @@ export function DirectoryPage() {
         <input placeholder="Tìm theo tên, email, mã nhân viên…" value={input} onChange={(e) => setInput(e.target.value)} />
         <select value={dept} onChange={(e) => update({ dept: e.target.value, page: '1' })}>
           <option value="">Tất cả phòng ban</option>
-          {(departments.data ?? []).map((d) => (
+          {(departments.data ?? []).filter((d) => d.status === 'ACTIVE').map((d) => (
             <option key={d.id} value={d.id}>{d.name}</option>
           ))}
         </select>

@@ -36,7 +36,7 @@ Chỉ RBAC là không đủ: "quản lý duyệt đơn" đúng ở mức vai tr�
 | Vai trò | Loại | Có khi nào | Ý nghĩa |
 |---|---|---|---|
 | `EMPLOYEE` | Suy ra | Tài khoản gắn hồ sơ chưa `TERMINATED` | Dữ liệu của mình, danh bạ |
-| `MANAGER` | Suy ra | Có ít nhất một cấp dưới trực tiếp (ADR-10) | Thêm: dữ liệu mức quản lý của cấp dưới trực tiếp, duyệt đơn của họ |
+| `MANAGER` | Suy ra | Có ít nhất một cấp dưới trực tiếp (ADR-10) | Thêm: dữ liệu mức quản lý của mọi cấp dưới trực tiếp và gián tiếp (chuỗi quản lý, `resolveRelation`, chốt 18/11/2026); duyệt đơn chỉ của cấp dưới trực tiếp |
 | `HR` | Được cấp | ADMIN cấp trong ứng dụng | Toàn bộ hồ sơ, trường nhạy cảm (có audit), quản lý tổ chức, tài liệu |
 | `ADMIN` | Được cấp | ADMIN khác cấp; người đầu tiên tạo bằng seed hoặc `grant-admin` | Quản trị kỹ thuật: tài khoản, vai trò, đơn vị, audit. **Không** xem hồ sơ cá nhân, trường nhạy cảm của người khác |
 
@@ -45,6 +45,9 @@ Một người có thể có nhiều vai trò (HR cũng là EMPLOYEE, có thể 
 
 **Nguồn vai trò:** chỉ database (`iam.role_assignment` cho `HR`, `ADMIN`; sơ đồ tổ chức cho `MANAGER`). Claim vai trò trong token
 bị bỏ qua. Nhóm trên IdP là bản sao để IdP bắt MFA theo vai trò (ADR-17 mục 2).
+
+**Nghỉ việc:** chuyển hồ sơ sang `TERMINATED` thu hồi `HR`, `ADMIN` trong cùng giao dịch; khôi phục không trả lại, ADMIN cấp lại
+nếu cần. Không cho nghỉ việc ADMIN cuối cùng đang làm việc (409), cùng luật với thu hồi bằng tay (UC8 AC-8.7.9).
 
 ## 3. Cấp và thu hồi vai trò
 
@@ -56,7 +59,7 @@ bị bỏ qua. Nhóm trên IdP là bản sao để IdP bắt MFA theo vai trò (
 | 4 | Consumer `identity-sync` thêm hoặc bớt nhóm trên IdP |
 | 5 | Có hiệu lực ngay ở API từ request kế tiếp (đọc database mỗi request) |
 
-API đề xuất (tuần 12, nhánh `feat/role-admin`): `GET /admin/role-assignments`, `POST /admin/role-assignments`,
+API (tuần 11, nhánh `feat/uc8-role-admin`, hợp đồng ở [UC8 spec mục 9.2](../features/UC8-authentication/spec.md#92-hợp-đồng-api)): `GET /admin/role-assignments`, `POST /admin/role-assignments`,
 `DELETE /admin/role-assignments/{userId}/{role}`. Chỉ `ADMIN`.
 
 ## 4. Quy ước code
@@ -76,15 +79,16 @@ Không có `@Roles` nghĩa là mọi người đã đăng nhập; điều kiện
 ```ts
 // employee-access.ts (đã có)
 export function viewLevel(actor: AuthUser, target: { id: string; managerId: string | null }): ViewLevel
-// leave-access.ts (đề xuất, gom điều kiện đang nằm trong LeaveService)
-export function canDecide(actor: AuthUser, req: { ownerId: string; ownerManagerId: string | null; ownerIsCeo: boolean }): boolean
+// leave-access.ts (đã có): service đọc facts (quản lý hiện tại của chủ đơn, CEO, người duyệt thay hôm nay) rồi hỏi hàm thuần
+export function relation(actor: AuthUser, f: RequestFacts): Set<'OWNER' | 'DIRECT_MANAGER' | 'DELEGATE' | 'HR'>
+export function allowed(action: LeaveAction | 'recalculate', rel: Set<Relation>, f: RequestFacts): boolean
 ```
 
 | Module | File | Trạng thái |
 |---|---|---|
 | Employee | `employee-access.ts` | Đã có |
 | Document | `document-rules.ts` (`canView`) | Đã có, đổi tên hoặc tách `document-access.ts` khi sửa |
-| Leave | Điều kiện trong `LeaveService` | Gom về `leave-access.ts` |
+| Leave | `leave-access.ts` (`relation`, `allowed`, `canSeeReason`, `canCreateFor`) | Đã có (`feat/leave-uc3-uc4`) |
 | Organization | `@Roles('HR','ADMIN')` ở controller | Đủ cho version 1 |
 | Audit | `@Roles('HR','ADMIN')` | Đủ |
 
@@ -108,9 +112,9 @@ nhưng không được làm 403; không được biết bản ghi tồn tại 40
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| `IdentityService` bỏ đọc vai trò từ token; bỏ `manager` ở `keycloak/realm-hr.json` và `infra/staging/cognito.tf` | ADR-18 nghiệm thu 1, 2 | TV1, TV3 | `fix/roles-from-db` | 11 |
-| API và màn hình cấp, thu hồi vai trò; audit; event `role.*` | ADR-18 nghiệm thu 3; NFR-5.10 | TV1 | `feat/role-admin` | 12 |
-| Đồng bộ nhóm sang IdP trong `identity-sync` | – | TV1 | `feat/idp-account-lifecycle` | 12 |
-| Gom điều kiện duyệt đơn về `leave-access.ts` | – | TV1 | cùng PR sửa UC4 | 11 |
+| `IdentityService` bỏ đọc vai trò từ token; bỏ `manager` ở `keycloak/realm-hr.json` và `infra/staging/cognito.tf` | ADR-18 nghiệm thu 1, 2 | TV1 | `feat/uc8-roles-from-db` (xong) | 11 |
+| API và màn hình cấp, thu hồi vai trò; audit; event `RoleGranted`, `RoleRevoked` | ADR-18 nghiệm thu 3; NFR-5.10; UC8 FR-8.7 | TV1 | `feat/uc8-role-admin` | 11 |
+| Đồng bộ nhóm sang IdP trong `identity-sync` | UC8 AC-8.7.1 | TV1 | `feat/uc8-account-lifecycle` | 11 |
+| Gom điều kiện duyệt đơn về `leave-access.ts` | UC4 13.7 | TV1 | `feat/leave-uc3-uc4` (xong) | 12 |
 | Cập nhật ma trận: `direct-reports`, `members` mức danh bạ; cột 403/404 | ADR-18 mục 4, 5 | TV1 | PR này | 11 |
 | Ca kiểm thử: token có nhóm `hr` nhưng database không; tự cấp vai trò; thu hồi ADMIN cuối | ADR-18 nghiệm thu | TV4 | `docs/security-test-cases-week11` | 11 |

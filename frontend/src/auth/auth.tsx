@@ -30,12 +30,31 @@ export const userManager = new UserManager({
 });
 
 const DEV_KEY = 'hr.devUser';
+const EXPIRED_KEY = 'hr.sessionExpired';
+
+/** Lần đăng xuất trước là do hết phiên (AC-8.1.6)? Trang đăng nhập đọc rồi gọi `clearSessionExpired`. */
+export function sessionExpired(): boolean {
+  try {
+    return sessionStorage.getItem(EXPIRED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function clearSessionExpired() {
+  try {
+    sessionStorage.removeItem(EXPIRED_KEY);
+  } catch {
+    /* bỏ qua */
+  }
+}
 
 interface AuthState {
   ready: boolean;
   token: string | null;
   login: (devEmail?: string) => Promise<void>;
-  logout: () => Promise<void>;
+  /** `expired`: hết phiên do không thao tác (trang đăng nhập báo "Phiên đã hết"). `localOnly`: tab khác đã đăng xuất trên IdP. */
+  logout: (options?: { expired?: boolean; localOnly?: boolean }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -86,10 +105,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         await userManager.signinRedirect();
       },
-      logout: async () => {
+      logout: async (options = {}) => {
+        if (options.expired) sessionStorage.setItem(EXPIRED_KEY, '1');
         apply(null);
         if (AUTH_MODE === 'dev') {
           sessionStorage.removeItem(DEV_KEY);
+          return;
+        }
+        if (options.localOnly) {
+          await userManager.removeUser();
           return;
         }
         // Cognito không khai báo end_session_endpoint trong discovery: đăng xuất qua /logout của Hosted UI.

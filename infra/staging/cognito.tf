@@ -65,19 +65,13 @@ resource "aws_cognito_user_pool_client" "web" {
   ]
 }
 
-# 4 User Groups matching Application Role-Based Access Control
+# Nhóm trên IdP chỉ để IdP bắt MFA theo vai trò; API không đọc nhóm, vai trò lấy từ database (ADR-18).
+# Không có nhóm manager: MANAGER suy ra từ sơ đồ tổ chức (ADR-10).
 resource "aws_cognito_user_group" "employee" {
   name         = "employee"
   user_pool_id = aws_cognito_user_pool.main.id
   description  = "Standard employees group"
   precedence   = 40
-}
-
-resource "aws_cognito_user_group" "manager" {
-  name         = "manager"
-  user_pool_id = aws_cognito_user_pool.main.id
-  description  = "Department managers and team leads"
-  precedence   = 30
 }
 
 resource "aws_cognito_user_group" "hr" {
@@ -181,12 +175,6 @@ resource "aws_cognito_user_in_group" "employee" {
   user_pool_id = aws_cognito_user_pool.main.id
   group_name   = aws_cognito_user_group.employee.name
   username     = aws_cognito_user.employee.username
-}
-
-resource "aws_cognito_user_in_group" "manager" {
-  user_pool_id = aws_cognito_user_pool.main.id
-  group_name   = aws_cognito_user_group.manager.name
-  username     = aws_cognito_user.manager.username
 }
 
 resource "aws_cognito_user_in_group" "hr" {

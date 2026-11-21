@@ -13,6 +13,8 @@ import { randomUUID } from 'crypto';
 import { FieldCrypto } from '../common/field-crypto';
 import { loadConfig } from '../config/config';
 import dataSource from './data-source';
+import { seniority } from '../modules/employee/profile-computed';
+import { annualEntitlement } from '../modules/leave/leave-rules';
 
 export const TOTAL_EMPLOYEES = Number(process.env.SEED_EMPLOYEES ?? 2000);
 
@@ -25,39 +27,46 @@ export const DEMO_ACCOUNTS = {
 
 const OFFICES = ['Hà Nội', 'TP.HCM', 'Đà Nẵng'];
 
-// [code, tên, văn phòng, mã phòng ban cha]
-const DEPARTMENTS: [string, string, string, string | null][] = [
-  ['BOD', 'Ban Giám đốc', 'Hà Nội', null],
-  ['ENG', 'Khối Công nghệ', 'Hà Nội', 'BOD'],
-  ['ENG-PLT', 'Platform Engineering', 'Hà Nội', 'ENG'],
-  ['ENG-WEB', 'Web Engineering', 'Hà Nội', 'ENG'],
-  ['ENG-MOB', 'Mobile Engineering', 'TP.HCM', 'ENG'],
-  ['ENG-QA', 'Quality Assurance', 'Đà Nẵng', 'ENG'],
-  ['ENG-DATA', 'Data & AI', 'Hà Nội', 'ENG'],
-  ['IT', 'IT nội bộ', 'Hà Nội', 'ENG'],
-  ['HR', 'Khối Nhân sự', 'Hà Nội', 'BOD'],
-  ['HR-REC', 'Tuyển dụng', 'TP.HCM', 'HR'],
-  ['HR-CB', 'C&B (Lương thưởng)', 'Hà Nội', 'HR'],
-  ['HR-LD', 'Đào tạo & Phát triển', 'Đà Nẵng', 'HR'],
-  ['FIN', 'Khối Tài chính', 'Hà Nội', 'BOD'],
-  ['FIN-ACC', 'Kế toán', 'Hà Nội', 'FIN'],
-  ['FIN-PLAN', 'Kế hoạch tài chính', 'TP.HCM', 'FIN'],
-  ['SAL', 'Khối Kinh doanh', 'TP.HCM', 'BOD'],
-  ['SAL-N', 'Kinh doanh miền Bắc', 'Hà Nội', 'SAL'],
-  ['SAL-S', 'Kinh doanh miền Nam', 'TP.HCM', 'SAL'],
-  ['SAL-C', 'Kinh doanh miền Trung', 'Đà Nẵng', 'SAL'],
-  ['MKT', 'Marketing', 'TP.HCM', 'BOD'],
-  ['CS', 'Chăm sóc khách hàng', 'Đà Nẵng', 'BOD'],
-  ['CS-HL', 'Hotline', 'Đà Nẵng', 'CS'],
-  ['OPS', 'Vận hành', 'TP.HCM', 'BOD'],
-  ['OPS-LOG', 'Hậu cần', 'TP.HCM', 'OPS'],
-  ['LEG', 'Pháp chế', 'Hà Nội', 'BOD'],
+// [code, tên, văn phòng, mã đơn vị cha, loại đơn vị] (ADR-14: Công ty → Trung tâm → Phòng → Nhóm, số cấp linh hoạt)
+type SeedUnitType = 'COMPANY' | 'CENTER' | 'DEPARTMENT' | 'TEAM';
+const DEPARTMENTS: [string, string, string, string | null, SeedUnitType][] = [
+  ['HQ', 'Công ty Cổ phần HRHelper Demo', 'Hà Nội', null, 'COMPANY'],
+  ['ENG', 'Trung tâm Công nghệ', 'Hà Nội', 'HQ', 'CENTER'],
+  ['ENG-PLT', 'Platform Engineering', 'Hà Nội', 'ENG', 'DEPARTMENT'],
+  ['ENG-WEB', 'Web Engineering', 'Hà Nội', 'ENG', 'DEPARTMENT'],
+  ['ENG-WEB-BE', 'Nhóm Backend', 'Hà Nội', 'ENG-WEB', 'TEAM'],
+  ['ENG-WEB-FE', 'Nhóm Frontend', 'Hà Nội', 'ENG-WEB', 'TEAM'],
+  ['ENG-WEB-QC', 'Nhóm Kiểm thử', 'Hà Nội', 'ENG-WEB', 'TEAM'],
+  ['ENG-MOB', 'Mobile Engineering', 'TP.HCM', 'ENG', 'DEPARTMENT'],
+  ['ENG-QA', 'Quality Assurance', 'Đà Nẵng', 'ENG', 'DEPARTMENT'],
+  ['ENG-DATA', 'Data & AI', 'Hà Nội', 'ENG', 'DEPARTMENT'],
+  ['IT', 'IT nội bộ', 'Hà Nội', 'ENG', 'DEPARTMENT'],
+  ['HR', 'Trung tâm Nhân sự', 'Hà Nội', 'HQ', 'CENTER'],
+  ['HR-REC', 'Tuyển dụng', 'TP.HCM', 'HR', 'DEPARTMENT'],
+  ['HR-CB', 'C&B (Lương thưởng)', 'Hà Nội', 'HR', 'DEPARTMENT'],
+  ['HR-LD', 'Đào tạo & Phát triển', 'Đà Nẵng', 'HR', 'DEPARTMENT'],
+  ['FIN', 'Trung tâm Tài chính', 'Hà Nội', 'HQ', 'CENTER'],
+  ['FIN-ACC', 'Kế toán', 'Hà Nội', 'FIN', 'DEPARTMENT'],
+  ['FIN-PLAN', 'Kế hoạch tài chính', 'TP.HCM', 'FIN', 'DEPARTMENT'],
+  ['SAL', 'Trung tâm Kinh doanh', 'TP.HCM', 'HQ', 'CENTER'],
+  ['SAL-N', 'Kinh doanh miền Bắc', 'Hà Nội', 'SAL', 'DEPARTMENT'],
+  ['SAL-S', 'Kinh doanh miền Nam', 'TP.HCM', 'SAL', 'DEPARTMENT'],
+  ['SAL-C', 'Kinh doanh miền Trung', 'Đà Nẵng', 'SAL', 'DEPARTMENT'],
+  ['MKT', 'Marketing', 'TP.HCM', 'HQ', 'DEPARTMENT'],
+  ['CS', 'Trung tâm Chăm sóc khách hàng', 'Đà Nẵng', 'HQ', 'CENTER'],
+  ['CS-HL', 'Hotline', 'Đà Nẵng', 'CS', 'DEPARTMENT'],
+  ['OPS', 'Trung tâm Vận hành', 'TP.HCM', 'HQ', 'CENTER'],
+  ['OPS-LOG', 'Hậu cần', 'TP.HCM', 'OPS', 'DEPARTMENT'],
+  ['LEG', 'Pháp chế', 'Hà Nội', 'HQ', 'DEPARTMENT'],
 ];
 
 // [code, title, level, lương cơ bản (triệu VND)]
 const POSITIONS: [string, string, number, number][] = [
   ['CEO', 'Tổng Giám đốc', 10, 150],
-  ['DIR', 'Giám đốc khối', 8, 80],
+  ['VP', 'Phó Tổng Giám đốc', 9, 110],
+  ['DIR', 'Giám đốc trung tâm', 8, 80],
+  ['DDIR', 'Phó Giám đốc trung tâm', 7, 65],
+  ['DHEAD', 'Phó phòng', 6, 45],
   ['HEAD', 'Trưởng phòng', 7, 55],
   ['LEAD', 'Trưởng nhóm', 6, 40],
   ['SR', 'Chuyên viên cao cấp', 5, 30],
@@ -67,11 +76,26 @@ const POSITIONS: [string, string, number, number][] = [
   ['INT', 'Thực tập sinh', 1, 5],
 ];
 
-const LEAVE_TYPES: [string, string, number][] = [
-  ['ANNUAL', 'Nghỉ phép năm', 12],
-  ['SICK', 'Nghỉ ốm', 30],
-  ['MARRIAGE', 'Nghỉ cưới', 3],
-  ['UNPAID', 'Nghỉ không lương', 30],
+/** Danh mục loại phép (docs/business/leave-types-holidays.md; UC3 spec 13.3, UC4 13.3). */
+const LEAVE_TYPES: {
+  code: string;
+  name: string;
+  maxPerYear: number;
+  kind: 'ACCRUED' | 'YEARLY' | 'PER_EVENT';
+  perEvent?: number;
+  months?: number;
+  doc: boolean;
+  hr: 'NEVER' | 'ALWAYS' | 'OVER_DAYS';
+  hrMin?: number;
+}[] = [
+  { code: 'ANNUAL', name: 'Nghỉ phép năm', maxPerYear: 12, kind: 'ACCRUED', doc: false, hr: 'NEVER' },
+  { code: 'SICK', name: 'Nghỉ ốm', maxPerYear: 30, kind: 'YEARLY', doc: true, hr: 'NEVER' },
+  { code: 'UNPAID', name: 'Nghỉ không lương', maxPerYear: 30, kind: 'YEARLY', doc: false, hr: 'OVER_DAYS', hrMin: 3 },
+  { code: 'MARRIAGE', name: 'Nghỉ cưới', maxPerYear: 0, kind: 'PER_EVENT', perEvent: 3, doc: true, hr: 'NEVER' },
+  { code: 'CHILD_MARRIAGE', name: 'Con kết hôn', maxPerYear: 0, kind: 'PER_EVENT', perEvent: 1, doc: true, hr: 'NEVER' },
+  { code: 'BEREAVEMENT', name: 'Nghỉ tang', maxPerYear: 0, kind: 'PER_EVENT', perEvent: 3, doc: true, hr: 'NEVER' },
+  { code: 'PATERNITY', name: 'Nghỉ khi vợ sinh con', maxPerYear: 0, kind: 'PER_EVENT', perEvent: 14, doc: true, hr: 'NEVER' },
+  { code: 'MATERNITY', name: 'Nghỉ thai sản', maxPerYear: 0, kind: 'PER_EVENT', months: 6, doc: true, hr: 'ALWAYS' },
 ];
 
 const STREETS = ['Láng Hạ', 'Trần Duy Hưng', 'Nguyễn Trãi', 'Lê Lợi', 'Hai Bà Trưng', 'Nguyễn Huệ', 'Bạch Đằng', 'Phan Chu Trinh', 'Cầu Giấy', 'Điện Biên Phủ'];
@@ -121,7 +145,7 @@ async function main() {
   await dataSource.transaction(async (m) => {
     if (reset) {
       // audit_log là append-only (trigger chặn DELETE) nên dùng TRUNCATE – chỉ dành cho môi trường dev.
-      await m.query(`TRUNCATE audit.audit_log, leave.leave_request_history, leave.leave_request, leave.leave_balance,
+      await m.query(`TRUNCATE audit.audit_log, leave.leave_request_history, leave.leave_request_allocation, leave.approval_delegation, leave.leave_request, leave.leave_balance,
         leave.leave_type, iam.role_assignment, iam.user_account, employee.employee_sensitive, employee.employee,
         org.position, org.department RESTART IDENTITY CASCADE`);
     }
@@ -130,20 +154,22 @@ async function main() {
     const deptId = new Map<string, string>();
     for (const [code] of DEPARTMENTS) deptId.set(code, randomUUID());
     await m.query(
-      `INSERT INTO org.department (id, code, name, office, parent_id)
-       SELECT * FROM unnest($1::uuid[], $2::text[], $3::text[], $4::text[], $5::uuid[])`,
+      `INSERT INTO org.department (id, code, name, office, parent_id, unit_type)
+       SELECT * FROM unnest($1::uuid[], $2::text[], $3::text[], $4::text[], $5::uuid[], $6::text[])`,
       [
         DEPARTMENTS.map(([c]) => deptId.get(c)),
         DEPARTMENTS.map(([c]) => c),
         DEPARTMENTS.map(([, n]) => n),
         DEPARTMENTS.map(([, , o]) => o),
         DEPARTMENTS.map(([, , , p]) => (p ? deptId.get(p) : null)),
+        DEPARTMENTS.map(([, , , , t]) => t),
       ],
     );
     const posId = new Map<string, string>();
     for (const [code] of POSITIONS) posId.set(code, randomUUID());
     await m.query(
-      `INSERT INTO org.position (id, code, title, level) SELECT * FROM unnest($1::uuid[], $2::text[], $3::text[], $4::int[])`,
+      `INSERT INTO org.position (id, code, title, level, is_system)
+       SELECT *, code = 'CEO' FROM unnest($1::uuid[], $2::text[], $3::text[], $4::int[]) AS p(id, code, title, level)`,
       [POSITIONS.map(([c]) => posId.get(c)), POSITIONS.map(([c]) => c), POSITIONS.map(([, t]) => t), POSITIONS.map(([, , l]) => l)],
     );
     const baseSalary = new Map(POSITIONS.map(([c, , , s]) => [c, s]));
@@ -188,13 +214,21 @@ async function main() {
       return e;
     };
 
-    const ceo = make('BOD', 'CEO', null);
-    const headOf = new Map<string, SeedEmployee>([['BOD', ceo]]);
-    for (const [code, , , parent] of DEPARTMENTS) {
+    // Trưởng theo loại đơn vị: Giám đốc trung tâm, Trưởng phòng, Trưởng nhóm (ADR-14).
+    const HEAD_POSITION: Record<SeedUnitType, string> = { COMPANY: 'CEO', CENTER: 'DIR', DEPARTMENT: 'HEAD', TEAM: 'LEAD' };
+    const ceo = make('HQ', 'CEO', null);
+    const headOf = new Map<string, SeedEmployee>([['HQ', ceo]]);
+    for (const [code, , , parent, type] of DEPARTMENTS) {
       if (!parent) continue;
-      const isDivision = DEPARTMENTS.some(([, , , p]) => p === code);
-      headOf.set(code, make(code, isDivision ? 'DIR' : 'HEAD', headOf.get(parent)!.id));
+      headOf.set(code, make(code, HEAD_POSITION[type], headOf.get(parent)!.id));
     }
+
+    // Phó đơn vị (FR-2.9): 2 Phó Tổng Giám đốc, Phó Giám đốc ở các Trung tâm lớn, Phó phòng ở vài Phòng. Phó báo cáo trưởng đơn vị.
+    const DEPUTIES: [string, string][] = [
+      ['HQ', 'VP'], ['HQ', 'VP'], ['ENG', 'DDIR'], ['SAL', 'DDIR'], ['ENG-WEB', 'DHEAD'], ['SAL-N', 'DHEAD'], ['MKT', 'DHEAD'],
+    ];
+    const deputyRows = DEPUTIES.map(([code, pos]) => ({ code, e: make(code, pos, headOf.get(code)!.id) }));
+    for (const d of deputyRows) d.e.status = 'ACTIVE';
 
     // Tài khoản demo đặt ở vị trí cố định để dễ thử phân quyền.
     const demoManager = make('ENG-WEB', 'LEAD', headOf.get('ENG-WEB')!.id, DEMO_ACCOUNTS.manager, 'Nguyễn Văn Quản');
@@ -202,10 +236,11 @@ async function main() {
     const demoHr = make('HR-CB', 'HRS', headOf.get('HR-CB')!.id, DEMO_ACCOUNTS.hr, 'Lê Thu Hằng');
     const demoAdmin = make('IT', 'SR', headOf.get('IT')!.id, DEMO_ACCOUNTS.admin, 'Phạm Minh Quân');
 
-    // Trưởng nhóm: 8 mỗi phòng ban lá (khối HR chỉ 1, vì HR chỉ ~15 người).
-    // Cùng 25 trưởng phòng/giám đốc → ≈150 quản lý như bảng Users & stakeholders tuần 5.
-    const leafDepts = DEPARTMENTS.filter(([c]) => !DEPARTMENTS.some(([, , , p]) => p === c) && c !== 'BOD').map(([c]) => c);
+    // Trưởng nhóm: 8 mỗi phòng lá (trung tâm HR chỉ 1, vì HR chỉ ~15 người); trưởng của đơn vị Nhóm cũng nhận nhân viên.
+    // Cùng các giám đốc, trưởng phòng → ≈150 quản lý như bảng Users & stakeholders tuần 5.
+    const leafDepts = DEPARTMENTS.filter(([c, , , , t]) => t === 'DEPARTMENT' && !DEPARTMENTS.some(([, , , p]) => p === c)).map(([c]) => c);
     const leads: { weight: number; value: SeedEmployee }[] = [{ weight: 1, value: demoManager }];
+    for (const [code, , , , type] of DEPARTMENTS) if (type === 'TEAM') leads.push({ weight: 2, value: headOf.get(code)! });
     for (const dept of leafDepts) {
       const isHr = dept.startsWith('HR');
       const count = isHr ? 1 : dept === 'ENG-WEB' ? 7 : 8;
@@ -234,6 +269,9 @@ async function main() {
     for (const [code, head] of headOf) {
       await m.query('UPDATE org.department SET head_employee_id = $1 WHERE id = $2', [head.id, deptId.get(code)]);
     }
+    for (const d of deputyRows) {
+      await m.query('INSERT INTO org.department_deputy (department_id, employee_id) VALUES ($1, $2)', [deptId.get(d.code), d.e.id]);
+    }
 
     // Insert theo thứ tự (quản lý trước nhân viên) vì manager_id có FK tự tham chiếu.
     const cols = Object.keys(employees[0]) as (keyof SeedEmployee)[];
@@ -246,6 +284,13 @@ async function main() {
         cols.map((c) => batch.map((e) => e[c])),
       );
     }
+    // Quá trình công tác (UC2 FR-2.8): một dòng "Tuyển mới" cho mỗi người (người đã nghỉ: đã đóng).
+    await m.query(`INSERT INTO employee.employment_assignment
+        (employee_id, department_id, position_id, manager_id, effective_from, effective_to, reason, status, applied_at)
+      SELECT id, department_id, position_id, manager_id, hire_date,
+             CASE WHEN status = 'TERMINATED' THEN GREATEST(hire_date, current_date - 30) END,
+             'HIRE', CASE WHEN status = 'TERMINATED' THEN 'CLOSED' ELSE 'ACTIVE' END, now()
+        FROM employee.employee`);
 
     // ---- Trường nhạy cảm (mã hóa) ----
     const sens = employees.map((e) => {
@@ -269,25 +314,42 @@ async function main() {
 
     // ---- Loại phép & số dư năm hiện tại ----
     const typeId = new Map<string, string>();
-    for (const [code, name, max] of LEAVE_TYPES) {
+    for (const t of LEAVE_TYPES) {
       const [row] = await m.query(
-        'INSERT INTO leave.leave_type (code, name, max_days_per_year) VALUES ($1, $2, $3) RETURNING id',
-        [code, name, max],
+        `INSERT INTO leave.leave_type (code, name, max_days_per_year, quota_kind, max_days_per_event, max_months_per_event,
+           requires_event_date, requires_document, hr_approval, hr_approval_min_days)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+        [t.code, t.name, t.maxPerYear, t.kind, t.perEvent ?? null, t.months ?? null, t.kind === 'PER_EVENT', t.doc, t.hr, t.hrMin ?? null],
       );
-      typeId.set(code, row.id);
+      typeId.set(t.code, row.id);
     }
     const year = new Date().getFullYear();
     const active = employees.filter((e) => e.status !== 'TERMINATED');
-    // Phép năm: 12 ngày + 1 ngày cho mỗi 5 năm thâm niên (theo Bộ luật Lao động).
-    const annual = active.map((e) => 12 + Math.floor((year - Number(e.hire_date.slice(0, 4))) / 5));
-    await m.query(
-      `INSERT INTO leave.leave_balance (employee_id, leave_type_id, year, entitled, used)
-       SELECT unnest($1::uuid[]), $2::uuid, $3::int, unnest($4::numeric[]), unnest($5::numeric[])`,
-      [active.map((e) => e.id), typeId.get('ANNUAL'), year, annual, annual.map((a) => faker.number.int({ min: 0, max: Math.min(8, a) }))],
+    // Phép năm theo cùng công thức với API (BR-01, UC3 13.2): tỉ lệ tháng làm việc, tháng lẻ, thâm niên tính ở 31/12.
+    const holidays = new Set<string>(
+      (await m.query(`SELECT to_char(holiday_date, 'YYYY-MM-DD') AS d FROM leave.holiday WHERE extract(year FROM holiday_date) = $1`, [year])).map(
+        (h: { d: string }) => h.d,
+      ),
+    );
+    const annual = active.map((e) =>
+      annualEntitlement({
+        year,
+        hireDate: e.hire_date,
+        terminationDate: null,
+        baseDays: null,
+        seniorityBonus: seniority(e.hire_date, `${year}-12-31`).annualLeaveBonus,
+        holidays,
+        unpaidDays: new Map(),
+      }),
     );
     await m.query(
       `INSERT INTO leave.leave_balance (employee_id, leave_type_id, year, entitled, used)
-       SELECT unnest($1::uuid[]), $2::uuid, $3::int, 30, 0`,
+       SELECT unnest($1::uuid[]), $2::uuid, $3::int, unnest($4::numeric[]), unnest($5::numeric[])`,
+      [active.map((e) => e.id), typeId.get('ANNUAL'), year, annual, annual.map((a) => faker.number.int({ min: 0, max: Math.floor(Math.min(8, a)) }))],
+    );
+    await m.query(
+      `INSERT INTO leave.leave_balance (employee_id, leave_type_id, year, entitled, used, source)
+       SELECT unnest($1::uuid[]), $2::uuid, $3::int, 30, 0, 'DEFAULT'`,
       [active.map((e) => e.id), typeId.get('SICK'), year],
     );
 
@@ -309,7 +371,7 @@ async function main() {
 
     const managers = new Set(employees.map((e) => e.manager_id).filter(Boolean)).size;
     console.log(
-      `Seed xong: ${DEPARTMENTS.length} phòng ban, ${POSITIONS.length} chức danh, ${employees.length} nhân viên ` +
+      `Seed xong: ${DEPARTMENTS.length} đơn vị, ${POSITIONS.length} chức danh, ${employees.length} nhân viên ` +
         `(${managers} quản lý, ${hrStaff.length + 1} HR), ${OFFICES.length} văn phòng.`,
     );
   });

@@ -121,7 +121,47 @@ paths:
   /api/v1/positions:
     get:
       operationId: OrganizationController_positions
+      parameters:
+        - name: active
+          required: false
+          in: query
+          description: "true: chỉ chức danh đang dùng (danh sách chọn)"
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: ""
+      tags: *a1
+      security: *a2
+    post:
+      operationId: OrganizationController_createPosition
       parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePositionDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a1
+      security: *a2
+  /api/v1/positions/{id}:
+    patch:
+      operationId: OrganizationController_updatePosition
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePositionDto"
       responses:
         "200":
           description: ""
@@ -158,6 +198,20 @@ paths:
           description: Lọc theo phòng ban
           schema:
             type: string
+        - name: includeChildren
+          required: false
+          in: query
+          description: "Khi lọc theo đơn vị: kèm nhân viên của đơn vị con cháu (mặc định
+            true, AC-2.1.5)"
+          schema:
+            type: boolean
+        - name: includeAncestors
+          required: false
+          in: query
+          description: "HR, ADMIN: đơn vị và các đơn vị cha (danh sách chọn trưởng, phó
+            kiêm nhiệm, AC-2.9.1)"
+          schema:
+            type: boolean
       responses:
         "200":
           description: ""
@@ -317,6 +371,78 @@ paths:
   /api/v1/departments/{id}/members:
     get:
       operationId: EmployeeController_members
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: includeChildren
+          required: false
+          in: query
+          description: Kèm nhân viên của đơn vị con cháu (mặc định false)
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/employees/{id}/transfers:
+    post:
+      operationId: EmployeeController_createTransfer
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransferDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a3
+      security: *a4
+    get:
+      operationId: EmployeeController_listTransfers
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/employees/{id}/transfers/{transferId}:
+    delete:
+      operationId: EmployeeController_cancelTransfer
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: transferId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "204":
+          description: ""
+      tags: *a3
+      security: *a4
+  /api/v1/employees/{id}/termination-impact:
+    get:
+      operationId: EmployeeController_terminationImpact
       parameters:
         - name: id
           required: true
@@ -699,6 +825,100 @@ paths:
           description: ""
       tags: *a7
       security: *a8
+  /api/v1/admin/role-assignments:
+    get:
+      operationId: RoleAdminController_list
+      parameters:
+        - name: role
+          required: false
+          in: query
+          schema:
+            enum:
+              - HR
+              - ADMIN
+            type: string
+        - name: q
+          required: false
+          in: query
+          description: Tìm theo tên hoặc email
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: &a9
+        - admin
+      security: &a10
+        - bearer: []
+    post:
+      operationId: RoleAdminController_grant
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GrantRoleDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a9
+      security: *a10
+  /api/v1/admin/role-assignments/{userId}/{role}:
+    delete:
+      operationId: RoleAdminController_revoke
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: role
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RevokeRoleDto"
+      responses:
+        "204":
+          description: ""
+      tags: *a9
+      security: *a10
+  /api/v1/employees/{id}/account:
+    get:
+      operationId: AccountController_view
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: &a11
+        - identity
+      security: &a12
+        - bearer: []
+  /api/v1/employees/{id}/account/invite:
+    post:
+      operationId: AccountController_invite
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "202":
+          description: ""
+      tags: *a11
+      security: *a12
   /api/v1/leave-types:
     get:
       operationId: LeaveController_types
@@ -706,9 +926,9 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a9
+      tags: &a13
         - leave
-      security: &a10
+      security: &a14
         - bearer: []
   /api/v1/leave-holidays:
     get:
@@ -723,17 +943,101 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
-  /api/v1/leave-balances/me:
-    get:
-      operationId: LeaveController_myBalances
+      tags: *a13
+      security: *a14
+    post:
+      operationId: LeaveController_addHoliday
       parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHolidayDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a13
+      security: *a14
+  /api/v1/leave-holidays/{date}:
+    delete:
+      operationId: LeaveController_deleteHoliday
+      parameters:
+        - name: date
+          required: true
+          in: path
+          schema:
+            type: string
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a13
+      security: *a14
+  /api/v1/leave-balances/me:
+    get:
+      operationId: LeaveController_myBalances
+      parameters:
+        - name: year
+          required: false
+          in: query
+          schema:
+            example: 2026
+            type: number
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
+  /api/v1/leave-balances:
+    get:
+      operationId: LeaveController_balancesOf
+      parameters:
+        - name: year
+          required: false
+          in: query
+          schema:
+            example: 2026
+            type: number
+        - name: employeeId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
+  /api/v1/leave-balances/{employeeId}/{leaveType}/{year}:
+    put:
+      operationId: LeaveController_adjust
+      parameters:
+        - name: employeeId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: leaveType
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: year
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustBalanceDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
   /api/v1/leave-requests:
     post:
       operationId: LeaveController_create
@@ -754,8 +1058,8 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a13
+      security: *a14
     get:
       operationId: LeaveController_all
       parameters:
@@ -765,6 +1069,7 @@ paths:
           schema:
             enum:
               - SUBMITTED
+              - PENDING_HR
               - APPROVED
               - REJECTED
               - COMPLETED
@@ -773,8 +1078,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a13
+      security: *a14
   /api/v1/leave-requests/me:
     get:
       operationId: LeaveController_mine
@@ -785,6 +1090,7 @@ paths:
           schema:
             enum:
               - SUBMITTED
+              - PENDING_HR
               - APPROVED
               - REJECTED
               - COMPLETED
@@ -793,8 +1099,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a13
+      security: *a14
   /api/v1/leave-requests/pending-approval:
     get:
       operationId: LeaveController_pendingApproval
@@ -805,6 +1111,7 @@ paths:
           schema:
             enum:
               - SUBMITTED
+              - PENDING_HR
               - APPROVED
               - REJECTED
               - COMPLETED
@@ -813,8 +1120,44 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a13
+      security: *a14
+  /api/v1/leave-requests/pending-hr:
+    get:
+      operationId: LeaveController_pendingHr
+      parameters:
+        - name: status
+          required: false
+          in: query
+          schema:
+            enum:
+              - SUBMITTED
+              - PENDING_HR
+              - APPROVED
+              - REJECTED
+              - COMPLETED
+              - CANCELLED
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
+  /api/v1/leave-requests/affected-by-holidays:
+    get:
+      operationId: LeaveController_affected
+      parameters:
+        - name: year
+          required: false
+          in: query
+          schema:
+            example: 2026
+            type: number
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
   /api/v1/leave-requests/{id}:
     get:
       operationId: LeaveController_get
@@ -827,8 +1170,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a13
+      security: *a14
   /api/v1/leave-requests/{id}/approve:
     post:
       operationId: LeaveController_approve
@@ -847,8 +1190,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a13
+      security: *a14
   /api/v1/leave-requests/{id}/reject:
     post:
       operationId: LeaveController_reject
@@ -867,8 +1210,48 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a13
+      security: *a14
+  /api/v1/leave-requests/{id}/hr-approve:
+    post:
+      operationId: LeaveController_hrApprove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveDecisionDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
+  /api/v1/leave-requests/{id}/hr-reject:
+    post:
+      operationId: LeaveController_hrReject
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveDecisionDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
   /api/v1/leave-requests/{id}/cancel:
     post:
       operationId: LeaveController_cancel
@@ -887,8 +1270,68 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a13
+      security: *a14
+  /api/v1/leave-requests/{id}/cancel-request:
+    post:
+      operationId: LeaveController_cancelRequest
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelRequestDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
+  /api/v1/leave-requests/{id}/cancel-request/approve:
+    post:
+      operationId: LeaveController_cancelRequestApprove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveDecisionDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
+  /api/v1/leave-requests/{id}/cancel-request/reject:
+    post:
+      operationId: LeaveController_cancelRequestReject
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveDecisionDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
   /api/v1/leave-requests/{id}/complete:
     post:
       operationId: LeaveController_complete
@@ -907,8 +1350,76 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
-      security: *a10
+      tags: *a13
+      security: *a14
+  /api/v1/leave-requests/{id}/recalculate:
+    post:
+      operationId: LeaveController_recalculate
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecalculateDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
+  /api/v1/leave-delegations:
+    get:
+      operationId: LeaveController_delegations
+      parameters:
+        - name: managerId
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: activeOn
+          required: false
+          in: query
+          description: Chỉ phân công hiệu lực trong ngày này
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
+    post:
+      operationId: LeaveController_createDelegation
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDelegationDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a13
+      security: *a14
+  /api/v1/leave-delegations/{id}/end:
+    post:
+      operationId: LeaveController_endDelegation
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a13
+      security: *a14
   /api/v1/documents:
     get:
       operationId: DocumentController_list
@@ -927,9 +1438,9 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a11
+      tags: &a15
         - documents
-      security: &a12
+      security: &a16
         - bearer: []
     post:
       operationId: DocumentController_create
@@ -943,8 +1454,8 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a11
-      security: *a12
+      tags: *a15
+      security: *a16
   /api/v1/documents/manage:
     get:
       operationId: DocumentController_manageList
@@ -963,8 +1474,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
-      security: *a12
+      tags: *a15
+      security: *a16
   /api/v1/documents/manage/{id}:
     get:
       operationId: DocumentController_manageGet
@@ -977,8 +1488,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
-      security: *a12
+      tags: *a15
+      security: *a16
   /api/v1/documents/{id}:
     get:
       operationId: DocumentController_get
@@ -991,8 +1502,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
-      security: *a12
+      tags: *a15
+      security: *a16
     patch:
       operationId: DocumentController_update
       parameters:
@@ -1010,8 +1521,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
-      security: *a12
+      tags: *a15
+      security: *a16
   /api/v1/documents/{id}/download:
     get:
       operationId: DocumentController_downloadLatest
@@ -1024,8 +1535,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
-      security: *a12
+      tags: *a15
+      security: *a16
   /api/v1/documents/{id}/versions/{versionId}/download:
     get:
       operationId: DocumentController_download
@@ -1043,8 +1554,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
-      security: *a12
+      tags: *a15
+      security: *a16
   /api/v1/documents/{id}/versions:
     post:
       operationId: DocumentController_addVersion
@@ -1063,8 +1574,8 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a11
-      security: *a12
+      tags: *a15
+      security: *a16
   /api/v1/documents/{id}/versions/{versionId}/confirm:
     post:
       operationId: DocumentController_confirm
@@ -1082,8 +1593,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
-      security: *a12
+      tags: *a15
+      security: *a16
   /api/v1/documents/{id}/hide:
     post:
       operationId: DocumentController_hide
@@ -1096,8 +1607,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
-      security: *a12
+      tags: *a15
+      security: *a16
   /api/v1/documents/{id}/restore:
     post:
       operationId: DocumentController_restore
@@ -1110,8 +1621,8 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
-      security: *a12
+      tags: *a15
+      security: *a16
 info:
   title: HRHelper API (HR Enterprise Platform)
   description: "REST API /api/v1. Xác thực: Bearer JWT do Keycloak (OIDC) cấp.
@@ -1130,6 +1641,15 @@ components:
     CreateDepartmentDto:
       type: object
       properties:
+        unitType:
+          type: string
+          enum: &a17
+            - COMPANY
+            - CENTER
+            - DEPARTMENT
+            - TEAM
+          example: DEPARTMENT
+          description: "ADR-14: Công ty, Trung tâm, Phòng, Nhóm"
         code:
           type: string
           example: ENG-PLT
@@ -1143,13 +1663,26 @@ components:
           type: object
         headEmployeeId:
           type: object
+        headActing:
+          type: boolean
+          description: 'FR-2.9: trưởng là "Quyền trưởng"'
+        deputyEmployeeIds:
+          description: "Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung
+            tâm 3, Phòng 3, Nhóm 0"
+          type: array
+          items:
+            type: string
       required:
+        - unitType
         - code
         - name
         - office
     UpdateDepartmentDto:
       type: object
       properties:
+        unitType:
+          type: string
+          enum: *a17
         name:
           type: string
         office:
@@ -1160,6 +1693,49 @@ components:
         headEmployeeId:
           type: object
           nullable: true
+        headActing:
+          type: boolean
+          description: 'FR-2.9: trưởng là "Quyền trưởng"'
+        deputyEmployeeIds:
+          description: "Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung
+            tâm 3, Phòng 3, Nhóm 0"
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+          description: "INACTIVE: ngừng hoạt động (FR-2.10), chỉ khi đơn vị đã trống"
+    CreatePositionDto:
+      type: object
+      properties:
+        code:
+          type: string
+          example: PM
+        title:
+          type: string
+          example: Quản lý dự án
+        level:
+          type: number
+          minimum: 1
+          maximum: 10
+      required:
+        - code
+        - title
+        - level
+    UpdatePositionDto:
+      type: object
+      properties:
+        title:
+          type: string
+        level:
+          type: number
+          minimum: 1
+          maximum: 10
+        active:
+          type: boolean
     MeEmployee:
       type: object
       properties:
@@ -1451,6 +2027,70 @@ components:
           description: Lương tháng (VND)
       required:
         - version
+    HeadChangeDto:
+      type: object
+      properties:
+        departmentId:
+          type: string
+        employeeId:
+          type: object
+          nullable: true
+          description: "null: để trống có chủ ý"
+      required:
+        - departmentId
+        - employeeId
+    ReportChoiceDto:
+      type: object
+      properties:
+        employeeId:
+          type: string
+        managerId:
+          type: string
+          description: Quản lý mới của cấp dưới; giữ nguyên thì là chính người được điều
+            chuyển
+      required:
+        - employeeId
+        - managerId
+    CreateTransferDto:
+      type: object
+      properties:
+        effectiveDate:
+          type: string
+          example: 2026-12-01
+          description: Hôm nay hoặc tương lai; quá khứ tối đa 30 ngày (AC-2.7.4)
+        departmentId:
+          type: string
+        positionId:
+          type: string
+        managerId:
+          type: object
+          nullable: true
+          description: Chỉ CEO được để trống
+        reason:
+          type: string
+          enum:
+            - TRANSFER
+            - PROMOTION
+            - MANAGER_CHANGE
+            - CORRECTION
+        note:
+          type: string
+        newHeads:
+          description: "AC-2.7.5: trưởng mới cho đơn vị người này đang làm trưởng"
+          type: array
+          items:
+            $ref: "#/components/schemas/HeadChangeDto"
+        reports:
+          description: "AC-2.7.6: bắt buộc đủ mọi cấp dưới đang làm việc"
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportChoiceDto"
+      required:
+        - effectiveDate
+        - departmentId
+        - positionId
+        - managerId
+        - reason
     SubmitChangeDto:
       type: object
       properties:
@@ -1524,6 +2164,72 @@ components:
         - contentType
         - size
         - sha256
+    GrantRoleDto:
+      type: object
+      properties:
+        employeeId:
+          type: string
+        role:
+          type: string
+          enum:
+            - HR
+            - ADMIN
+          description: Chỉ HR, ADMIN; EMPLOYEE, MANAGER tự suy ra (ADR-10)
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 200
+      required:
+        - employeeId
+        - role
+        - reason
+    RevokeRoleDto:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 200
+      required:
+        - reason
+    CreateHolidayDto:
+      type: object
+      properties:
+        date:
+          type: string
+          example: 2026-05-04
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+            - HOLIDAY
+            - COMPENSATORY
+      required:
+        - date
+        - name
+        - kind
+    AdjustBalanceDto:
+      type: object
+      properties:
+        version:
+          type: number
+        baseDays:
+          type: number
+          enum:
+            - 12
+            - 14
+            - 16
+          description: Mức nền phép năm (chỉ ANNUAL)
+        entitled:
+          type: number
+          description: "Hạn mức (chỉ loại YEARLY: SICK, UNPAID)"
+        note:
+          type: string
+          description: Căn cứ, 1–200 ký tự (không vào audit)
+      required:
+        - version
+        - note
     CreateLeaveRequestDto:
       type: object
       properties:
@@ -1533,10 +2239,10 @@ components:
           description: Mã loại phép (GET /leave-types)
         startDate:
           type: string
-          example: 2026-11-09
+          example: 2026-12-09
         endDate:
           type: string
-          example: 2026-11-10
+          example: 2026-12-10
         halfDay:
           type: string
           enum:
@@ -1545,6 +2251,14 @@ components:
           description: Nghỉ nửa ngày (chỉ khi startDate = endDate)
         reason:
           type: string
+        eventDate:
+          type: string
+          description: "Ngày sự kiện: bắt buộc với loại nghỉ theo sự kiện, cấm với loại
+            khác (AC-3.2.6)"
+        employeeId:
+          type: string
+          description: Chủ đơn khi HR, quản lý trực tiếp tạo hộ (BR-12); bỏ trống là chính
+            người gọi
       required:
         - leaveType
         - startDate
@@ -1557,9 +2271,49 @@ components:
           description: Version hiện tại của đơn (optimistic locking). Lệch → 409.
         comment:
           type: string
-          description: Ghi chú, ví dụ lý do từ chối
+          description: Ghi chú; bắt buộc khi từ chối, bác đề nghị hủy (E12). Chỉ lưu ở
+            lịch sử đơn.
       required:
         - version
+    CancelRequestDto:
+      type: object
+      properties:
+        version:
+          type: number
+        reason:
+          type: string
+          description: Lý do đề nghị hủy; chỉ lưu ở lịch sử đơn
+      required:
+        - version
+        - reason
+    RecalculateDto:
+      type: object
+      properties:
+        version:
+          type: number
+        reason:
+          type: string
+      required:
+        - version
+        - reason
+    CreateDelegationDto:
+      type: object
+      properties:
+        managerId:
+          type: string
+          description: Quản lý vắng
+        delegateId:
+          type: string
+          description: Người duyệt thay
+        startDate:
+          type: string
+        endDate:
+          type: string
+      required:
+        - managerId
+        - delegateId
+        - startDate
+        - endDate
     DocumentScopeDto:
       type: object
       properties:
@@ -1597,7 +2351,7 @@ components:
           example: Quy chế làm việc
         type:
           type: string
-          enum: &a13
+          enum: &a18
             - POLICY
             - PROCESS
             - GUIDE
@@ -1639,7 +2393,7 @@ components:
           type: string
         type:
           type: string
-          enum: *a13
+          enum: *a18
         scope:
           $ref: "#/components/schemas/DocumentScopeDto"
       required:

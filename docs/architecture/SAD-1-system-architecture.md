@@ -108,7 +108,7 @@ flowchart LR
 |---|---|---|
 | Web app | Giao diện cho 4 vai trò, build ra file tĩnh | CDN |
 | Ứng dụng API | Toàn bộ nghiệp vụ, REST `/api/v1`, ghi outbox và đẩy event | 2 instance, không giữ phiên trong bộ nhớ |
-| Worker | Nhận event, gửi email; sau này trích text tài liệu | Thêm instance khi queue dồn |
+| Worker | Nhận event, gửi email; job áp dụng điều chuyển tới ngày (5 phút một lần); sau này trích text tài liệu | Thêm instance khi queue dồn; job dùng `SKIP LOCKED` nên nhiều instance vẫn an toàn |
 | Database quan hệ | Dữ liệu giao dịch, audit, outbox | Tăng tier; replica đọc khi cần |
 | Message queue | Chuyển event từ outbox sang worker | Dịch vụ managed |
 | Object storage | File tài liệu chính sách; file hồ sơ nhân viên ở bucket riêng (quyền đọc, thời hạn giữ khác) | Dịch vụ managed |

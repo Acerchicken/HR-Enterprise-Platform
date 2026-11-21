@@ -131,3 +131,14 @@ output "nat_instance_id" {
   description = "ID of the NAT instance (stop outside demo hours to save cost)"
   value       = aws_instance.nat.id
 }
+
+# Monitoring & Email Outputs (Tuần 10)
+output "sns_system_alerts_topic_arn" {
+  description = "ARN of the SNS topic receiving system metric alarms"
+  value       = aws_sns_topic.system_alerts.arn
+}
+
+output "ses_sender_identity" {
+  description = "Verified SES sender email address for notifications"
+  value       = aws_ses_email_identity.sender.email
+}

@@ -39,6 +39,11 @@ variable "alert_emails" {
   type        = list(string)
 }
 
+variable "sender_email" {
+  description = "Verified sender email address in Amazon SES (required in sandbox mode, set in terraform.tfvars)"
+  type        = string
+}
+
 variable "budget_limit_usd" {
   description = "Monthly budget limit in USD"
   type        = number

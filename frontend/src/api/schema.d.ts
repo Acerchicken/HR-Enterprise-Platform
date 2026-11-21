@@ -93,11 +93,27 @@ export interface paths {
         };
         get: operations["OrganizationController_positions"];
         put?: never;
-        post?: never;
+        post: operations["OrganizationController_createPosition"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/positions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["OrganizationController_updatePosition"];
         trace?: never;
     };
     "/api/v1/me": {
@@ -204,6 +220,54 @@ export interface paths {
             cookie?: never;
         };
         get: operations["EmployeeController_members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EmployeeController_listTransfers"];
+        put?: never;
+        post: operations["EmployeeController_createTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/transfers/{transferId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["EmployeeController_cancelTransfer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/termination-impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EmployeeController_terminationImpact"];
         put?: never;
         post?: never;
         delete?: never;
@@ -452,6 +516,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/role-assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RoleAdminController_list"];
+        put?: never;
+        post: operations["RoleAdminController_grant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/role-assignments/{userId}/{role}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["RoleAdminController_revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AccountController_view"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/account/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AccountController_invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/leave-types": {
         parameters: {
             query?: never;
@@ -477,8 +605,24 @@ export interface paths {
         };
         get: operations["LeaveController_holidays"];
         put?: never;
-        post?: never;
+        post: operations["LeaveController_addHoliday"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave-holidays/{date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["LeaveController_deleteHoliday"];
         options?: never;
         head?: never;
         patch?: never;
@@ -493,6 +637,38 @@ export interface paths {
         };
         get: operations["LeaveController_myBalances"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave-balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LeaveController_balancesOf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave-balances/{employeeId}/{leaveType}/{year}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["LeaveController_adjust"];
         post?: never;
         delete?: never;
         options?: never;
@@ -540,6 +716,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["LeaveController_pendingApproval"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave-requests/pending-hr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LeaveController_pendingHr"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave-requests/affected-by-holidays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LeaveController_affected"];
         put?: never;
         post?: never;
         delete?: never;
@@ -596,6 +804,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/leave-requests/{id}/hr-approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["LeaveController_hrApprove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave-requests/{id}/hr-reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["LeaveController_hrReject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/leave-requests/{id}/cancel": {
         parameters: {
             query?: never;
@@ -612,6 +852,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/leave-requests/{id}/cancel-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["LeaveController_cancelRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave-requests/{id}/cancel-request/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["LeaveController_cancelRequestApprove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave-requests/{id}/cancel-request/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["LeaveController_cancelRequestReject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/leave-requests/{id}/complete": {
         parameters: {
             query?: never;
@@ -622,6 +910,54 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["LeaveController_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave-requests/{id}/recalculate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["LeaveController_recalculate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave-delegations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LeaveController_delegations"];
+        put?: never;
+        post: operations["LeaveController_createDelegation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave-delegations/{id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["LeaveController_endDelegation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -793,6 +1129,12 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         CreateDepartmentDto: {
+            /**
+             * @description ADR-14: Công ty, Trung tâm, Phòng, Nhóm
+             * @example DEPARTMENT
+             * @enum {string}
+             */
+            unitType: "COMPANY" | "CENTER" | "DEPARTMENT" | "TEAM";
             /** @example ENG-PLT */
             code: string;
             /** @example Platform Engineering */
@@ -801,12 +1143,39 @@ export interface components {
             office: string;
             parentId?: Record<string, never>;
             headEmployeeId?: Record<string, never>;
+            /** @description FR-2.9: trưởng là "Quyền trưởng" */
+            headActing?: boolean;
+            /** @description Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung tâm 3, Phòng 3, Nhóm 0 */
+            deputyEmployeeIds?: string[];
         };
         UpdateDepartmentDto: {
+            /** @enum {string} */
+            unitType?: "COMPANY" | "CENTER" | "DEPARTMENT" | "TEAM";
             name?: string;
             office?: string;
             parentId?: Record<string, never> | null;
             headEmployeeId?: Record<string, never> | null;
+            /** @description FR-2.9: trưởng là "Quyền trưởng" */
+            headActing?: boolean;
+            /** @description Phó đơn vị (thay cả danh sách); tối đa theo loại: Công ty 5, Trung tâm 3, Phòng 3, Nhóm 0 */
+            deputyEmployeeIds?: string[];
+            /**
+             * @description INACTIVE: ngừng hoạt động (FR-2.10), chỉ khi đơn vị đã trống
+             * @enum {string}
+             */
+            status?: "ACTIVE" | "INACTIVE";
+        };
+        CreatePositionDto: {
+            /** @example PM */
+            code: string;
+            /** @example Quản lý dự án */
+            title: string;
+            level: number;
+        };
+        UpdatePositionDto: {
+            title?: string;
+            level?: number;
+            active?: boolean;
         };
         MeEmployee: {
             id: string;
@@ -923,6 +1292,34 @@ export interface components {
             /** @description Lương tháng (VND) */
             salary?: string;
         };
+        HeadChangeDto: {
+            departmentId: string;
+            /** @description null: để trống có chủ ý */
+            employeeId: Record<string, never> | null;
+        };
+        ReportChoiceDto: {
+            employeeId: string;
+            /** @description Quản lý mới của cấp dưới; giữ nguyên thì là chính người được điều chuyển */
+            managerId: string;
+        };
+        CreateTransferDto: {
+            /**
+             * @description Hôm nay hoặc tương lai; quá khứ tối đa 30 ngày (AC-2.7.4)
+             * @example 2026-12-01
+             */
+            effectiveDate: string;
+            departmentId: string;
+            positionId: string;
+            /** @description Chỉ CEO được để trống */
+            managerId: Record<string, never> | null;
+            /** @enum {string} */
+            reason: "TRANSFER" | "PROMOTION" | "MANAGER_CHANGE" | "CORRECTION";
+            note?: string;
+            /** @description AC-2.7.5: trưởng mới cho đơn vị người này đang làm trưởng */
+            newHeads?: components["schemas"]["HeadChangeDto"][];
+            /** @description AC-2.7.6: bắt buộc đủ mọi cấp dưới đang làm việc */
+            reports?: components["schemas"]["ReportChoiceDto"][];
+        };
         SubmitChangeDto: {
             /** @example emergency-contacts */
             section: string;
@@ -958,15 +1355,46 @@ export interface components {
             /** @description SHA-256 hex do trình duyệt tính */
             sha256: string;
         };
+        GrantRoleDto: {
+            employeeId: string;
+            /**
+             * @description Chỉ HR, ADMIN; EMPLOYEE, MANAGER tự suy ra (ADR-10)
+             * @enum {string}
+             */
+            role: "HR" | "ADMIN";
+            reason: string;
+        };
+        RevokeRoleDto: {
+            reason: string;
+        };
+        CreateHolidayDto: {
+            /** @example 2026-05-04 */
+            date: string;
+            name: string;
+            /** @enum {string} */
+            kind: "HOLIDAY" | "COMPENSATORY";
+        };
+        AdjustBalanceDto: {
+            version: number;
+            /**
+             * @description Mức nền phép năm (chỉ ANNUAL)
+             * @enum {number}
+             */
+            baseDays?: 12 | 14 | 16;
+            /** @description Hạn mức (chỉ loại YEARLY: SICK, UNPAID) */
+            entitled?: number;
+            /** @description Căn cứ, 1–200 ký tự (không vào audit) */
+            note: string;
+        };
         CreateLeaveRequestDto: {
             /**
              * @description Mã loại phép (GET /leave-types)
              * @example ANNUAL
              */
             leaveType: string;
-            /** @example 2026-11-09 */
+            /** @example 2026-12-09 */
             startDate: string;
-            /** @example 2026-11-10 */
+            /** @example 2026-12-10 */
             endDate: string;
             /**
              * @description Nghỉ nửa ngày (chỉ khi startDate = endDate)
@@ -974,12 +1402,33 @@ export interface components {
              */
             halfDay?: "AM" | "PM";
             reason?: string;
+            /** @description Ngày sự kiện: bắt buộc với loại nghỉ theo sự kiện, cấm với loại khác (AC-3.2.6) */
+            eventDate?: string;
+            /** @description Chủ đơn khi HR, quản lý trực tiếp tạo hộ (BR-12); bỏ trống là chính người gọi */
+            employeeId?: string;
         };
         LeaveDecisionDto: {
             /** @description Version hiện tại của đơn (optimistic locking). Lệch → 409. */
             version: number;
-            /** @description Ghi chú, ví dụ lý do từ chối */
+            /** @description Ghi chú; bắt buộc khi từ chối, bác đề nghị hủy (E12). Chỉ lưu ở lịch sử đơn. */
             comment?: string;
+        };
+        CancelRequestDto: {
+            version: number;
+            /** @description Lý do đề nghị hủy; chỉ lưu ở lịch sử đơn */
+            reason: string;
+        };
+        RecalculateDto: {
+            version: number;
+            reason: string;
+        };
+        CreateDelegationDto: {
+            /** @description Quản lý vắng */
+            managerId: string;
+            /** @description Người duyệt thay */
+            delegateId: string;
+            startDate: string;
+            endDate: string;
         };
         DocumentScopeDto: {
             /** @default false */
@@ -1164,12 +1613,59 @@ export interface operations {
     };
     OrganizationController_positions: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description true: chỉ chức danh đang dùng (danh sách chọn) */
+                active?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OrganizationController_createPosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePositionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OrganizationController_updatePosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePositionDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -1205,6 +1701,10 @@ export interface operations {
                 q?: string;
                 /** @description Lọc theo phòng ban */
                 dept?: string;
+                /** @description Khi lọc theo đơn vị: kèm nhân viên của đơn vị con cháu (mặc định true, AC-2.1.5) */
+                includeChildren?: boolean;
+                /** @description HR, ADMIN: đơn vị và các đơn vị cha (danh sách chọn trưởng, phó kiêm nhiệm, AC-2.9.1) */
+                includeAncestors?: boolean;
             };
             header?: never;
             path?: never;
@@ -1378,6 +1878,90 @@ export interface operations {
         };
     };
     EmployeeController_members: {
+        parameters: {
+            query?: {
+                /** @description Kèm nhân viên của đơn vị con cháu (mặc định false) */
+                includeChildren?: boolean;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_listTransfers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_createTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransferDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_cancelTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                transferId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EmployeeController_terminationImpact: {
         parameters: {
             query?: never;
             header?: never;
@@ -1761,6 +2345,110 @@ export interface operations {
             };
         };
     };
+    RoleAdminController_list: {
+        parameters: {
+            query?: {
+                role?: "HR" | "ADMIN";
+                /** @description Tìm theo tên hoặc email */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RoleAdminController_grant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrantRoleDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RoleAdminController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+                role: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevokeRoleDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AccountController_view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AccountController_invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     LeaveController_types: {
         parameters: {
             query?: never;
@@ -1797,9 +2485,51 @@ export interface operations {
             };
         };
     };
-    LeaveController_myBalances: {
+    LeaveController_addHoliday: {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHolidayDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_deleteHoliday: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_myBalances: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1814,10 +2544,55 @@ export interface operations {
             };
         };
     };
+    LeaveController_balancesOf: {
+        parameters: {
+            query: {
+                year?: number;
+                employeeId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_adjust: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                employeeId: string;
+                leaveType: string;
+                year: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustBalanceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     LeaveController_all: {
         parameters: {
             query?: {
-                status?: "SUBMITTED" | "APPROVED" | "REJECTED" | "COMPLETED" | "CANCELLED";
+                status?: "SUBMITTED" | "PENDING_HR" | "APPROVED" | "REJECTED" | "COMPLETED" | "CANCELLED";
             };
             header?: never;
             path?: never;
@@ -1860,7 +2635,7 @@ export interface operations {
     LeaveController_mine: {
         parameters: {
             query?: {
-                status?: "SUBMITTED" | "APPROVED" | "REJECTED" | "COMPLETED" | "CANCELLED";
+                status?: "SUBMITTED" | "PENDING_HR" | "APPROVED" | "REJECTED" | "COMPLETED" | "CANCELLED";
             };
             header?: never;
             path?: never;
@@ -1879,7 +2654,45 @@ export interface operations {
     LeaveController_pendingApproval: {
         parameters: {
             query?: {
-                status?: "SUBMITTED" | "APPROVED" | "REJECTED" | "COMPLETED" | "CANCELLED";
+                status?: "SUBMITTED" | "PENDING_HR" | "APPROVED" | "REJECTED" | "COMPLETED" | "CANCELLED";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_pendingHr: {
+        parameters: {
+            query?: {
+                status?: "SUBMITTED" | "PENDING_HR" | "APPROVED" | "REJECTED" | "COMPLETED" | "CANCELLED";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_affected: {
+        parameters: {
+            query?: {
+                year?: number;
             };
             header?: never;
             path?: never;
@@ -1960,7 +2773,122 @@ export interface operations {
             };
         };
     };
+    LeaveController_hrApprove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveDecisionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_hrReject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveDecisionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     LeaveController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveDecisionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_cancelRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_cancelRequestApprove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveDecisionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_cancelRequestReject: {
         parameters: {
             query?: never;
             header?: never;
@@ -1997,6 +2925,90 @@ export interface operations {
                 "application/json": components["schemas"]["LeaveDecisionDto"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_recalculate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecalculateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_delegations: {
+        parameters: {
+            query?: {
+                managerId?: string;
+                /** @description Chỉ phân công hiệu lực trong ngày này */
+                activeOn?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_createDelegation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDelegationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveController_endDelegation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {

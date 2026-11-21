@@ -48,7 +48,7 @@ Từ trên xuống:
 | Đơn nghỉ của tôi | `/leave` | Mọi người có hồ sơ | UC3 |
 | Việc cần duyệt | `/approvals` (mục 2.4) | Quản lý, người duyệt thay, HR | UC1, UC4 |
 | Danh bạ | `/directory` | Mọi người | UC2 |
-| Sơ đồ tổ chức | `/org` | Mọi người | UC2 |
+| Sơ đồ tổ chức | `/org` (HR, ADMIN: thêm, sửa đơn vị; HR: `/org/positions` chức danh) | Mọi người | UC2 |
 | Tra cứu tài liệu | `/documents`: một trang gồm ô tìm tài liệu (UC6 FR-6.2), khung hỏi trợ lý AI (UC6 FR-6.3) và danh sách tài liệu (UC5) | Mọi người | UC5, UC6 |
 | Quản lý nhân viên | `/employees/new`, danh bạ ở chế độ HR | HR | UC1 |
 | Đăng tài liệu | `/documents/manage` | HR | UC5 |
@@ -321,8 +321,8 @@ Bản vẽ màn hình riêng của từng UC nằm ở mục 9.1 trong `spec.md`
 | UC | Màn hình đã vẽ | Ở đâu |
 |---|---|---|
 | UC2 | Danh bạ, sơ đồ tổ chức, sửa phòng ban (trưởng, phó phòng), điều chuyển, chức danh; phòng ban và quá trình công tác trên điện thoại | [UC2 spec 9.1](UC2-organization/spec.md#91-bản-vẽ-giao-diện) |
-| UC3 | Đăng ký nghỉ, đơn nghỉ của tôi và chi tiết; form và hủy đơn trên điện thoại | [UC3 spec 9.1](UC3-create-leave-request/spec.md#91-bản-vẽ-giao-diện) |
-| UC4 | Quản lý duyệt (không có tab), HR duyệt thêm, HR hoàn tất, phân công duyệt thay; duyệt trên điện thoại | [UC4 spec 9.1](UC4-approve-leave-request/spec.md#91-bản-vẽ-giao-diện) |
+| UC3 | Đăng ký nghỉ, đơn nghỉ của tôi và chi tiết; form và hủy đơn trên điện thoại; đề nghị hủy đơn đã duyệt, nghỉ theo sự kiện, HR chỉnh số dư `/leave/balances` (18/11) | [UC3 spec 9.1](UC3-create-leave-request/spec.md#91-bản-vẽ-giao-diện) |
+| UC4 | Quản lý duyệt (không có tab), HR duyệt thêm, HR hoàn tất, phân công duyệt thay; duyệt trên điện thoại; đề nghị hủy trong tab Đơn nghỉ, lịch nghỉ lễ `/leave/holidays` (18/11) | [UC4 spec 9.1](UC4-approve-leave-request/spec.md#91-bản-vẽ-giao-diện) |
 | UC5 | Trang "Tra cứu tài liệu", chi tiết và phiên bản, quản lý tài liệu, đăng tài liệu; điện thoại | [UC5 spec 9.1](UC5-document-repository/spec.md#91-bản-vẽ-giao-diện) |
 | UC6 | Kết quả tìm tài liệu, trợ lý chính sách có trích dẫn | [UC6 spec 9.1](UC6-self-service-search/spec.md#91-bản-vẽ-giao-diện) |
 | UC7 | Lịch sử thao tác: bộ lọc, bảng, chi tiết một dòng | [UC7 spec 9.1](UC7-audit-log/spec.md#91-bản-vẽ-giao-diện) |
@@ -330,7 +330,9 @@ Bản vẽ màn hình riêng của từng UC nằm ở mục 9.1 trong `spec.md`
 Điểm cần duyệt trong bản vẽ (đề xuất, chưa có trong spec):
 
 - **Phân công duyệt thay** là trang `/approvals/delegations`, vào từ nút trên trang "Việc cần duyệt" của HR, không thêm ô ở trang
-  chủ. API cho UC4 FR-4.3 chưa có.
+  chủ. API ở UC4 spec 9.3 (thiết kế 18/11).
+- **Trang HR mới cho nghỉ phép** (18/11): `/leave/balances` (số dư nhân viên) và `/leave/holidays` (lịch nghỉ lễ), vào từ menu
+  "Nghỉ phép" của HR. Đề nghị hủy không thêm tab ở "Việc cần duyệt", nằm chung tab Đơn nghỉ với nhãn tím.
 - **Đơn nghỉ trùng ngày trong nhóm** hiện cho quản lý khi duyệt (chỉ tên và ngày) như mục 2.4 đã ghi; cần API trả danh sách này.
 - **Số ngày tính sẵn ở trình duyệt** trên form đăng ký nghỉ, cùng quy tắc BR-03; backend vẫn là nơi quyết định.
 - **Sơ đồ tổ chức trên điện thoại** đi từng cấp phòng ban thay vì vẽ cây.

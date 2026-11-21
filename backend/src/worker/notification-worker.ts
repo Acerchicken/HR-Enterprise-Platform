@@ -6,7 +6,7 @@ import { APP_CONFIG, AppConfig } from '../config/config';
 import { EmployeeService } from '../modules/employee/employee.service';
 import { EventConsumer } from '../messaging/event-bus';
 import { createEventConsumer } from '../messaging/factory';
-import { buildEmail, LeaveEventPayload, LeaveEventType, recipientOf } from '../modules/leave/outbox/leave-events';
+import { buildEmail, LeaveEventPayload, LeaveEventType, Recipient, recipientsOf } from '../modules/leave/outbox/leave-events';
 import {
   buildProfileEmail,
   HR_DIGEST_INTERVAL_MINUTES,
@@ -14,6 +14,8 @@ import {
   ProfileEventPayload,
   ProfileEventType,
 } from '../modules/employee/profile-events';
+import { isIdentityEvent } from '../modules/identity/identity-events';
+import { IdentitySync } from './identity-sync';
 
 /**
  * Worker nhận event nghỉ phép từ queue (RabbitMQ khi local, SQS trên AWS) và gửi email (local: Mailpit).
@@ -31,6 +33,7 @@ export class NotificationWorker implements OnApplicationShutdown {
     @Inject(APP_CONFIG) private readonly cfg: AppConfig,
     @InjectDataSource() private readonly ds: DataSource,
     private readonly employees: EmployeeService,
+    private readonly identity: IdentitySync,
   ) {
     this.mailer = createTransport({ host: cfg.smtp.host, port: cfg.smtp.port, secure: false });
   }
@@ -48,6 +51,16 @@ export class NotificationWorker implements OnApplicationShutdown {
       return false;
     }
 
+    if (isIdentityEvent(type)) {
+      // UC8: tài khoản, vai trò → IdP (identity-sync). Lỗi thì ném ra để message vào DLQ, không đánh dấu đã xử lý.
+      await this.identity.handle(type, payload as never);
+      await this.ds.query(
+        'INSERT INTO notification.processed_event (event_id, event_type) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [eventId, type],
+      );
+      return true;
+    }
+
     if (isProfileEvent(type)) {
       await this.handleProfile(type, payload as unknown as ProfileEventPayload);
       await this.ds.query(
@@ -57,27 +70,53 @@ export class NotificationWorker implements OnApplicationShutdown {
       return true;
     }
 
-    const recipientId =
-      recipientOf(type) === 'MANAGER' ? await this.employees.managerIdOf(payload.employeeId) : payload.employeeId;
-    if (recipientId) {
-      const [recipient, names] = await Promise.all([
-        this.employees.contactOf(recipientId),
-        this.employees.namesOf([payload.employeeId]),
-      ]);
-      if (recipient) {
-        const mail = buildEmail(type, payload, names.get(payload.employeeId) ?? payload.employeeId);
-        await this.mailer.sendMail({ from: this.cfg.smtp.from, to: recipient.email, ...mail });
-        this.logger.log(`${type} ${payload.requestId} → ${recipient.email}`);
-      }
-    } else {
-      this.logger.warn(`${type} ${payload.requestId}: nhân viên chưa có quản lý trực tiếp, không gửi email`);
+    // Email chung theo nhóm người nhận (BR-15): không tên, loại phép, ngày, mã đơn; log chỉ có loại event và số người nhận.
+    const sent = new Set<string>();
+    for (const group of recipientsOf(type, payload)) {
+      const emails = (await this.emailsOf(group, payload.employeeId)).filter((e) => !sent.has(e));
+      if (!emails.length) continue;
+      emails.forEach((e) => sent.add(e));
+      await this.mailer.sendMail({ from: this.cfg.smtp.from, to: emails.join(', '), ...buildEmail(type, group) });
     }
+    this.logger.log(`${type} → ${sent.size} người nhận`);
 
     await this.ds.query(
       'INSERT INTO notification.processed_event (event_id, event_type) VALUES ($1, $2) ON CONFLICT DO NOTHING',
       [eventId, type],
     );
     return true;
+  }
+
+  /**
+   * Email theo nhóm. `APPROVERS`: quản lý trực tiếp hiện tại và người duyệt thay đang hiệu lực (BR-05, BR-06); CEO hoặc người
+   * chưa có quản lý (dữ liệu lỗi, UC4 E8) thì nhóm HR.
+   */
+  private async emailsOf(group: Recipient, ownerId: string): Promise<string[]> {
+    if (group === 'OWNER') {
+      const c = await this.employees.contactOf(ownerId);
+      return c ? [c.email] : [];
+    }
+    if (group === 'APPROVERS') {
+      const managerId = await this.employees.managerIdOf(ownerId);
+      if (managerId) {
+        const delegates: { delegate_id: string }[] = await this.ds.query(
+          `SELECT delegate_id FROM leave.approval_delegation WHERE manager_id = $1 AND ended_at IS NULL
+              AND start_date <= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AND end_date >= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date`,
+          [managerId],
+        );
+        const ids = [managerId, ...delegates.map((d) => d.delegate_id)];
+        const contacts = await Promise.all(ids.map((id) => this.employees.contactOf(id)));
+        return contacts.filter((c): c is { email: string; fullName: string } => !!c).map((c) => c.email);
+      }
+      if (!(await this.employees.isCeo(ownerId))) this.logger.warn(`Nhân viên ${ownerId} chưa có quản lý trực tiếp: báo nhóm HR (UC4 E8)`);
+    }
+    const hr: { email: string }[] = await this.ds.query(
+      `SELECT DISTINCT a.email FROM iam.user_account a JOIN iam.role_assignment r ON r.user_id = a.id
+         LEFT JOIN employee.employee e ON e.id = a.employee_id
+        WHERE r.role = 'HR' AND coalesce(e.status, '') <> 'TERMINATED' AND coalesce(a.employee_id::text, '') <> $1`,
+      [ownerId],
+    );
+    return hr.map((h) => h.email);
   }
 
   /** Email của yêu cầu cập nhật hồ sơ: nhân viên nhận kết quả; HR nhận báo chung, gộp tối đa một email mỗi giờ. */

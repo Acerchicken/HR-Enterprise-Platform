@@ -19,8 +19,8 @@
 | Schema | Module sở hữu (`backend/src/modules/`) | Bảng | Tạo ở migration |
 |---|---|---|---|
 | `iam` | `identity`; `common/rate-limit` | `user_account`, `role_assignment`, `rate_limit_counter` | InitSchemas, RateLimitCounter |
-| `org` | `organization` | `department`, `position` | InitSchemas |
-| `employee` | `employee` | `employee`, `employee_sensitive`, `profile_item`, `profile_change_request`, `profile_file` | InitSchemas, ProfileChangeRequests, ProfileFiles |
+| `org` | `organization` | `department`, `department_deputy`, `position` | InitSchemas, OrgUnitTypes, OrgUnitRoles |
+| `employee` | `employee` | `employee`, `employee_sensitive`, `profile_item`, `profile_change_request`, `profile_file`, `employment_assignment` | InitSchemas, ProfileChangeRequests, ProfileFiles, EmploymentAssignment |
 | `leave` | `leave` | `leave_type`, `leave_balance`, `leave_request`, `leave_request_history`, `holiday`, `outbox` | InitSchemas, LeaveWorkflow, LeaveOutbox |
 | `notification` | `worker` (notification worker) | `processed_event` | LeaveOutbox |
 | `audit` | `audit` | `audit_log` | InitSchemas |
@@ -60,6 +60,8 @@ erDiagram
 
   org_department ||--o{ org_department : "parent_id"
   org_department }o..o| employee_employee : "head_employee_id (ref)"
+  org_department ||--o{ org_department_deputy : "phó đơn vị"
+  org_department_deputy }o..|| employee_employee : "employee_id (ref)"
   employee_employee }o..|| org_department : "department_id (ref)"
   employee_employee }o..|| org_position : "position_id (ref)"
   employee_employee ||--o{ employee_employee : "manager_id"
@@ -69,6 +71,9 @@ erDiagram
   employee_employee ||--o{ employee_profile_file : "file hồ sơ"
   employee_profile_item ||--o{ employee_profile_change_request : "item_id"
   employee_profile_item ||--o{ employee_profile_file : "item_id"
+  employee_employee ||--o{ employee_employment_assignment : "quá trình công tác"
+  employee_employment_assignment }o..|| org_department : "department_id (ref)"
+  employee_employment_assignment }o..|| org_position : "position_id (ref)"
 
   leave_leave_type ||--o{ leave_leave_balance : ""
   leave_leave_type ||--o{ leave_leave_request : ""
@@ -99,6 +104,10 @@ erDiagram
     varchar email UK
     uuid employee_id "ref employee.employee"
     timestamptz last_login_at
+    varchar idp_status "PENDING | INVITED | ACTIVE | DISABLED | FAILED"
+    timestamptz invited_at
+    timestamptz idp_synced_at
+    varchar idp_error
     timestamptz created_at
   }
   role_assignment {
@@ -117,7 +126,13 @@ erDiagram
 | `email` | varchar(150) | NN, UQ | Email đăng nhập, dùng để ghép với hồ sơ nhân viên |
 | `employee_id` | uuid | ref → `employee.employee.id` | Hồ sơ nhân viên của tài khoản; NULL với tài khoản kỹ thuật/admin không có hồ sơ |
 | `last_login_at` | timestamptz | | Lần đăng nhập gần nhất |
+| `idp_status` | varchar(10) | NN, mặc định `ACTIVE`, CHECK `PENDING`, `INVITED`, `ACTIVE`, `DISABLED`, `FAILED` | Trạng thái tài khoản trên IdP (UC8 FR-8.6). `PENDING` khi hồ sơ vừa tạo hoặc HR vừa bấm gửi lời mời; worker `identity-sync` chuyển sang `INVITED`, `ACTIVE` (email đã có trên IdP), `DISABLED` (nghỉ việc) hoặc `FAILED`. Đăng nhập lần đầu chuyển `PENDING`, `INVITED`, `FAILED` thành `ACTIVE`. Dòng có trước UC8 là `ACTIVE`. "Chưa có tài khoản" (`NONE`) không lưu: là khi hồ sơ chưa có dòng |
+| `invited_at` | timestamptz | | Lần gửi thư mời gần nhất |
+| `idp_synced_at` | timestamptz | | Lần đồng bộ IdP thành công gần nhất |
+| `idp_error` | varchar(40) | | Mã lỗi lần đồng bộ hỏng gần nhất (`IDP_UNAVAILABLE`, `IDP_REJECTED`, `IDP_USER_NOT_FOUND`), không chứa thông báo gốc của IdP. Xóa khi đồng bộ thành công hoặc HR gửi lại lời mời |
 | `created_at` | timestamptz | NN, mặc định `now()` | |
+
+Index `ix_user_account_idp_status (idp_status)`. Migration `AccountLifecycle`.
 
 ### `iam.role_assignment`
 
@@ -126,6 +141,14 @@ erDiagram
 | `user_id` | uuid | PK (1/2), FK → `iam.user_account.id` `ON DELETE CASCADE` | Xóa tài khoản thì xóa luôn vai trò |
 | `role` | varchar(20) | PK (2/2), CHECK `EMPLOYEE`, `MANAGER`, `HR`, `ADMIN` | Một tài khoản có nhiều vai trò, mỗi vai trò một dòng |
 | `scope_department_id` | uuid | ref → `org.department.id` | Dự phòng cho vai trò giới hạn theo phòng ban; **hiện code chưa dùng** |
+| `granted_by` | uuid | FK → `iam.user_account.id` `ON DELETE SET NULL` | ADMIN đã cấp (UC8 FR-8.7). NULL với dòng seed, lệnh `grant-admin`, dòng có trước UC8 |
+| `granted_at` | timestamptz | NN, mặc định `now()` | Lúc cấp |
+| `reason` | varchar(200) | | Lý do cấp (5 – 200 ký tự khi cấp qua API) |
+
+Index `ix_role_assignment_role (role)` cho trang Phân quyền. API chỉ ghi `HR`, `ADMIN`; `IdentityService` bỏ qua dòng `EMPLOYEE`,
+`MANAGER` nếu có (hai vai trò này luôn suy ra, ADR-18). Thu hồi xóa dòng; lịch sử ở audit `ROLE_GRANT`, `ROLE_REVOKE`. Migration
+`RoleAssignmentAudit`.
+
 
 ### `iam.rate_limit_counter`
 
@@ -146,21 +169,33 @@ Index: `ix_rate_limit_counter_window (window_start)` để dọn cửa sổ cũ.
 ```mermaid
 erDiagram
   department ||--o{ department : "parent_id"
+  department ||--o{ department_deputy : "department_id"
   department {
     uuid id PK
     varchar code UK
     varchar name
     varchar office
-    uuid parent_id FK "phòng ban cha"
+    varchar unit_type "COMPANY, CENTER, DEPARTMENT, TEAM"
+    varchar status "ACTIVE, INACTIVE"
+    uuid parent_id FK "đơn vị cha"
     uuid head_employee_id "ref employee.employee"
+    boolean head_acting "Quyền trưởng"
     timestamptz created_at
     timestamptz updated_at
+  }
+  department_deputy {
+    uuid department_id PK, FK
+    uuid employee_id PK "ref employee.employee"
+    uuid created_by "ref employee.employee"
+    timestamptz created_at
   }
   position {
     uuid id PK
     varchar code UK
     varchar title
     smallint level "1..10"
+    boolean active
+    boolean is_system "CEO"
   }
 ```
 
@@ -172,16 +207,27 @@ erDiagram
 | `code` | varchar(20) | NN, UQ | Mã phòng ban, ví dụ `ENG` |
 | `name` | varchar(150) | NN | Tên phòng ban |
 | `office` | varchar(50) | NN | Văn phòng (HN, HCM…) |
-| `parent_id` | uuid | FK → `org.department.id` | Phòng ban cha; NULL là gốc cây. Service chặn tạo vòng |
-| `head_employee_id` | uuid | ref → `employee.employee.id` | Trưởng phòng |
+| `unit_type` | varchar(12) | NN, CHECK `COMPANY`/`CENTER`/`DEPARTMENT`/`TEAM` | Loại đơn vị ([ADR-14](adr/ADR-14-org-unit-types.md)). Luật loại cha, loại con kiểm ở service (`unit-rules.ts`) |
+| `status` | varchar(10) | NN, mặc định `ACTIVE`, CHECK `ACTIVE`/`INACTIVE` | Đơn vị ngừng hoạt động ẩn khỏi cây (FR-2.10) |
+| `parent_id` | uuid | FK → `org.department.id` | Đơn vị cha; NULL là gốc cây. Service chặn tạo vòng |
+| `head_employee_id` | uuid | ref → `employee.employee.id` | Trưởng đơn vị (người của đơn vị hoặc đơn vị cha, kiểm ở service) |
+| `head_acting` | boolean | NN, mặc định `false` | "Quyền trưởng" (FR-2.9) |
 | `created_at`, `updated_at` | timestamptz | NN, mặc định `now()` | |
 
-Index: `ix_department_parent (parent_id)` để lấy cây tổ chức và phòng ban con.
+Index: `ix_department_parent (parent_id)` để lấy cây tổ chức và phòng ban con; `ix_department_head (head_employee_id) WHERE
+head_employee_id IS NOT NULL` để tìm vai trò trưởng của một người (điều chuyển, nghỉ việc); `ux_department_company` (unique, chỉ dòng
+`unit_type = 'COMPANY'`) bảo đảm đúng một Công ty. CHECK `ck_department_company_root`: Công ty khi và chỉ khi `parent_id` NULL.
 
-> **Đã quyết, chưa có migration ([ADR-14](adr/ADR-14-org-unit-types.md)):** bảng này là cây **đơn vị** có loại. Sẽ thêm
-> `unit_type` (`COMPANY`, `CENTER`, `DEPARTMENT`, `TEAM`), `status` (`ACTIVE`, `INACTIVE`), `head_acting` và bảng
-> `org.department_deputy`. Thiết kế: [UC2 spec mục 13](../features/UC2-organization/spec.md#13-thiết-kế-đề-xuất-cho-phần-chưa-có).
-> Khi migration merge thì cập nhật bảng trên và sơ đồ.
+### `org.department_deputy`
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| `department_id` | uuid | PK, FK → `org.department.id` | Đơn vị |
+| `employee_id` | uuid | PK, ref → `employee.employee.id` | Phó đơn vị; số phó tối đa theo loại kiểm ở service (Công ty 5, Trung tâm 3, Phòng 3, Nhóm 0) |
+| `created_by` | uuid | ref → `employee.employee.id` | Người gán |
+| `created_at` | timestamptz | NN, mặc định `now()` | |
+
+Index: `ix_department_deputy_employee (employee_id)` để gỡ vai trò khi nghỉ việc (AC-2.9.8).
 
 ### `org.position`
 
@@ -191,6 +237,8 @@ Index: `ix_department_parent (parent_id)` để lấy cây tổ chức và phòn
 | `code` | varchar(20) | NN, UQ | Mã chức danh |
 | `title` | varchar(100) | NN | Tên chức danh |
 | `level` | smallint | NN, CHECK `level BETWEEN 1 AND 10` | Cấp bậc |
+| `active` | boolean | NN, mặc định `true` | Ngừng dùng thì không còn trong danh sách chọn; người đang giữ không đổi (AC-2.6.2) |
+| `is_system` | boolean | NN, mặc định `false` | `CEO` = `true`: chỉ đổi được tên (AC-2.6.3) |
 
 ## 6. Schema `employee` – hồ sơ nhân viên
 
@@ -204,6 +252,8 @@ erDiagram
   profile_item ||--o{ profile_change_request : "item_id"
   profile_item ||--o{ profile_file : "item_id"
   profile_file |o--o| employee : "avatar_file_id"
+  employee ||--o{ employment_assignment : "employee_id"
+  employment_assignment |o--o{ employment_assignment : "parent_id"
   employee {
     uuid id PK
     varchar employee_code UK
@@ -394,6 +444,34 @@ Index: `ix_profile_file_employee (employee_id, section, status)`; `uq_profile_fi
 WHERE status = 'READY'` (cùng nội dung không lưu hai lần, AC-1.10.4). Hạn mức 50 file `READY`, 200 MiB mỗi người đếm từ bảng
 này.
 
+### `employee.employment_assignment`
+
+Quá trình công tác và điều chuyển có ngày hiệu lực (UC2 FR-2.7, FR-2.8). Chỉ thêm dòng; dòng cũ chỉ đổi `status`,
+`effective_to`. Cột `department_id`, `position_id`, `manager_id` của `employee.employee` vẫn là giá trị hiện tại.
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| `id` | uuid | PK, mặc định `gen_random_uuid()` | |
+| `employee_id` | uuid | NN, FK → `employee.employee.id` | Người được điều chuyển |
+| `department_id` | uuid | NN, ref → `org.department.id` | Đơn vị |
+| `position_id` | uuid | NN, ref → `org.position.id` | Chức danh |
+| `manager_id` | uuid | ref → `employee.employee.id` | Quản lý trực tiếp; `NULL` chỉ với CEO |
+| `effective_from` | date | NN | Ngày hiệu lực (giờ Việt Nam) |
+| `effective_to` | date | CHECK `>= effective_from - 1` | Ngày cuối; `NULL` khi đang hiệu lực. Điều chuyển hai lần cùng ngày để lại dòng độ dài 0, không hiện |
+| `reason` | varchar(20) | NN, CHECK `HIRE`, `TRANSFER`, `PROMOTION`, `MANAGER_CHANGE`, `CORRECTION` | Lý do |
+| `note` | varchar(500) | | Ghi chú của HR |
+| `status` | varchar(10) | NN, CHECK `SCHEDULED`, `ACTIVE`, `CLOSED`, `CANCELLED`, `FAILED` | |
+| `failure_reason` | varchar(300) | | Lý do job không áp dụng được (AC-2.7.8) |
+| `parent_id` | uuid | FK → `employee.employment_assignment.id` | Dòng đổi quản lý của cấp dưới đi theo điều chuyển này (AC-2.7.6) |
+| `head_changes` | jsonb | | `[{departmentId, employeeId \| null}]`: trưởng mới cho đơn vị người này rời đi (AC-2.7.5) |
+| `created_by` | uuid | ref → `employee.employee.id` | HR tạo |
+| `created_at` | timestamptz | NN, mặc định `now()` | |
+| `applied_at` | timestamptz | | Lúc áp dụng |
+
+Index: `ux_assignment_active (employee_id) WHERE status = 'ACTIVE'` và `ux_assignment_scheduled (employee_id) WHERE status =
+'SCHEDULED'` (mỗi người một dòng đang hiệu lực, một điều chuyển chờ); `ix_assignment_due (status, effective_from)` cho job;
+`ix_assignment_employee (employee_id, effective_from DESC)` cho quá trình công tác.
+
 ## 7. Schema `leave` – nghỉ phép và outbox
 
 ```mermaid
@@ -455,6 +533,12 @@ erDiagram
     varchar last_error
   }
 ```
+
+> **Đã có migration `1732500000000-LeaveRules` (21/11/2026, `feat/leave-uc3-uc4`), theo thiết kế 18/11:** UC3, UC4 thêm `leave.leave_request_allocation` (số ngày của đơn theo từng
+> năm), đổi số dư sang `numeric(5,2)`, thêm `carried_in` (phép năm chuyển từ năm trước, chốt 21/11), thêm `quota_kind` cho loại phép, `event_date`, `requires_hr_approval`, trạng thái
+> `PENDING_HR`, các cột đề nghị hủy và nhắc đơn cho `leave_request`, cột `action` cho lịch sử, `kind` cho ngày lễ. Bảng đủ ở
+> [UC3 spec mục 13.6](../features/UC3-create-leave-request/spec.md#136-thiết-kế-dữ-liệu-chung-uc3-uc4), mỗi cột ghi nhánh code
+> sẽ thêm nó. Khi migration merge thì cập nhật các bảng dưới và sơ đồ.
 
 ### `leave.leave_type`
 
@@ -677,9 +761,11 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 
 | Cột | Trỏ tới | Ghi chú |
 |---|---|---|
-| `iam.user_account.employee_id` | `employee.employee.id` | Ghép theo email khi đăng nhập |
+| `iam.user_account.employee_id` | `employee.employee.id` | Ghép theo email khi đăng nhập. Module Employee ghi thẳng `iam.user_account` bằng SQL trong giao dịch lưu hồ sơ (`employee/account-events.ts`: tạo dòng `PENDING` khi tạo hồ sơ, đổi `email` khi đổi email công ty) vì Identity đã phụ thuộc Employee |
 | `iam.role_assignment.scope_department_id` | `org.department.id` | Chưa dùng |
-| `org.department.head_employee_id` | `employee.employee.id` | |
+| `org.department.head_employee_id` | `employee.employee.id` | Kiểm đang làm việc, thuộc đơn vị hoặc đơn vị cha (`assertRoleHolders`) |
+| `org.department_deputy.employee_id`, `created_by` | `employee.employee.id` | Như trưởng đơn vị; nghỉ việc, điều chuyển thì gỡ |
+| `employee.employment_assignment.department_id`, `position_id` | `org.department.id`, `org.position.id` | Kiểm qua `OrganizationService` khi tạo điều chuyển; job kiểm lại trạng thái đơn vị lúc áp dụng |
 | `employee.employee.department_id` | `org.department.id` | Kiểm tra qua `OrganizationService` |
 | `employee.employee.position_id` | `org.position.id` | Kiểm tra qua `OrganizationService` |
 | `leave.leave_balance.employee_id` | `employee.employee.id` | |
@@ -699,20 +785,30 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 
 | Code | Đọc/ghi | Bảng | Lý do |
 |---|---|---|---|
-| `OrganizationService.assertActiveEmployee` | Đọc | `employee.employee.status` | Kiểm trưởng đơn vị đang làm việc (AC-2.4.7); Employee đã phụ thuộc Organization nên không gọi ngược service |
+| `OrganizationService` (`assertRoleHolders`, `deputiesOf`, `headsOf`, `memberCounts`, `positionViews`, ngừng hoạt động đơn vị) | Đọc | `employee.employee` (`status`, `department_id`, `position_id`, `full_name`) | Kiểm trưởng, phó đang làm việc và thuộc đơn vị (AC-2.9.1), đếm người của đơn vị (AC-2.10.1) và người giữ chức danh; Employee đã phụ thuộc Organization nên không gọi ngược service |
+| `TransferService.apply` | Đọc | `org.department.status` | Job kiểm đơn vị đích còn hoạt động ngay trong transaction áp dụng điều chuyển, không qua cache (AC-2.7.8) |
 | `ProfileChangeService.computed` (`long-leaves`) | Đọc | `leave.leave_request`, `leave.leave_type` | Ngày nghỉ dài (AC-1.13.3); Leave phụ thuộc Employee nên không gọi ngược |
 | `ProfileChangeService` (outbox) | Ghi | `leave.outbox` | Event email của yêu cầu cập nhật hồ sơ dùng chung outbox và publisher hiện có. **Nợ kỹ thuật:** quy tắc 3 của [hợp đồng event](event-contract.md#6-quy-tắc-khi-đổi-hợp-đồng) yêu cầu `employee.outbox` riêng |
 | Worker `handleProfile` | Đọc | `iam.user_account`, `iam.role_assignment` | Lấy email HR để báo có yêu cầu mới |
+| `RoleAdminService` (`list`, `grant`, `revoke`) | Đọc | `employee.employee` (`full_name`, `status`, `department_id`), `org.department.name` | Trang Phân quyền hiện tên, đơn vị (mức danh bạ); chặn cấp cho người đã nghỉ (UC8 E13), đếm ADMIN còn hoạt động (E12). Identity đã phụ thuộc Employee nhưng cần lọc, phân trang trong một câu SQL |
+| `RoleAdminService`, `grant-admin.ts` | Ghi | `leave.outbox` | Event `RoleGranted`, `RoleRevoked` (cùng nợ kỹ thuật như dòng outbox ở trên) |
+| `LeaveBalanceService.employeeFacts`, `LeaveService.facts`, `LeaveJobsService` | Đọc | `employee.employee` (`hire_date`, `status`, `manager_id`, `updated_at`), `employee.employment_assignment.effective_to` | Tính phép năm (BR-01), quản lý hiện tại lúc xử lý (BR-05), job hủy đơn của người đã nghỉ việc (UC3 AC-3.1.7) không dựa vào event `EmployeeTerminated` của UC8 |
+| `TransferService.terminationImpact` | Đọc | `leave.leave_request` | Hộp xác nhận nghỉ việc nêu số đơn sẽ bị hủy (UC3 AC-3.1.7); Leave phụ thuộc Employee nên không gọi ngược |
+| Worker `NotificationWorker.emailsOf` | Đọc | `leave.approval_delegation`, `iam.user_account`, `iam.role_assignment` | Người nhận email chung: người duyệt thay đang hiệu lực, nhóm HR |
 
 ## 10. Ràng buộc nghiệp vụ ở database
 
 | Ràng buộc | Bảng | Bảo vệ điều gì |
 |---|---|---|
-| `used + pending <= entitled`, `used >= 0`, `pending >= 0` | `leave.leave_balance` | Không xin/duyệt quá số dư, kể cả khi code lỗi hoặc request song song |
+| `used + pending <= entitled + carried_in`, các số `>= 0` (`ck_leave_balance_amounts`) | `leave.leave_balance` | Không xin/duyệt quá số dư, kể cả khi code lỗi hoặc request song song (BR-01, chuyển phép AC-3.1.8) |
+| `ux_leave_request_event (employee_id, leave_type_id, event_date)` có điều kiện | `leave.leave_request` | Mỗi sự kiện một đơn còn hiệu lực (AC-3.2.6) |
 | `end_date >= start_date`, `days > 0` | `leave.leave_request` | Đơn có khoảng ngày hợp lệ |
 | `half_day` chỉ khi một ngày | `leave.leave_request` | Nửa ngày không áp cho đơn nhiều ngày |
 | UQ `(employee_id, idempotency_key)` | `leave.leave_request` | Gửi trùng không tạo hai đơn |
 | `manager_id <> id` | `employee.employee` | Không tự làm quản lý của mình |
+| UQ một phần `ux_department_company`, CHECK `ck_department_company_root` | `org.department` | Đúng một Công ty, và Công ty là gốc duy nhất của cây (ADR-14) |
+| UQ một phần `ux_assignment_active`, `ux_assignment_scheduled` | `employee.employment_assignment` | Mỗi người một dòng đang hiệu lực, tối đa một điều chuyển chờ |
+| CHECK `effective_to >= effective_from - 1`, CHECK `reason`, `status` | `employee.employment_assignment` | Quá trình công tác không có khoảng ngày âm |
 | Trigger `trg_audit_append_only` | `audit.audit_log` | Không sửa, không xóa log |
 | UQ `(document_id, version_no)` | `document.document_version` | Không có hai file cùng số phiên bản |
 | UQ một phần `uq_profile_change_pending_place`, `uq_profile_change_pending_main` | `employee.profile_change_request` | Mỗi trường hoặc dòng chỉ một yêu cầu đang chờ |
@@ -731,6 +827,9 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `1731700000000-RateLimitCounter` | 11 | Bảng `iam.rate_limit_counter` (#85) |
 | `1731800000000-ProfileChangeRequests` | 11 | `employee.profile_item`, `employee.profile_change_request` (#86) |
 | `1731900000000-ProfileFiles` | 11 | `employee.profile_file`, cột `employee.avatar_file_id` (#87) |
+| `1732000000000-OrgUnitTypes` | 11 | `org.department`: `unit_type`, `status`, CHECK, index một Công ty; điền loại cho dữ liệu cũ (`feat/org-unit-types`) |
+| `1732100000000-OrgUnitRoles` | 11 | `org.department.head_acting`, `org.department_deputy`, `org.position.active`, `is_system` (`feat/department-admin-ui`) |
+| `1732200000000-EmploymentAssignment` | 11 | `employee.employment_assignment`; mỗi nhân viên đang có một dòng `HIRE` (`feat/employee-transfer`) |
 
 Lệnh: `npm run migration:run` (dev, ts-node), `npm run migration:run:prod` (bản build, dùng trên staging),
 `npm run migration:revert` (lùi một migration). Dữ liệu mẫu: `npm run seed`.

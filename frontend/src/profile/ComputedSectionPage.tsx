@@ -18,6 +18,8 @@ interface Period {
   position: string | null;
   manager: string | null;
   reason: string;
+  /** Điều chuyển chưa hiệu lực (UC2 AC-2.7.2). */
+  upcoming?: boolean;
   source: 'AUTO' | 'HR';
 }
 interface LongLeave {
@@ -77,6 +79,7 @@ export function ComputedSectionPage({ s, code }: { s: ProfileSummary; code: stri
             <div className="small muted">
               {formatDate(p.from)} – {p.to ? formatDate(p.to) : 'nay'}
               {p.source === 'HR' && ' · HR nhập'}
+              {p.upcoming && <span className="badge upcoming">Sắp hiệu lực</span>}
             </div>
             <div><b>{p.position ?? '—'}</b> · {p.department ?? '—'}</div>
             <div className="small muted">
