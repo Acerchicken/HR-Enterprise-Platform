@@ -273,9 +273,9 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Trang "Việc cần duyệt" gộp đơn nghỉ, hoàn tất; link cũ `/leave/approvals`, `/leave/hr` chuyển tiếp (AC-0.6.4) | Đã có | – |
 | Đo MT-2 (thời gian gửi → quyết định) | Chưa có báo cáo | Truy vấn trên `leave_request_history` khi có dữ liệu staging |
 
-## 13. Thiết kế đề xuất cho phần chưa có
+## 13. Thiết kế
 
-> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/leave-delegation` và `feat/leave-privacy`.
+> Đã code trong PR #120 (`feat/leave-uc3-uc4`, 21/11/2026). Đổi thiết kế thì sửa mục này cùng PR code.
 
 ### 13.1 Người duyệt thay (FR-4.3, BR-06)
 

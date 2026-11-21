@@ -255,7 +255,7 @@ lần 2 (mục 15). Unit test: `leave-rules.spec.ts`, `leave-state-machine.spec.
 | Lưu trữ 5 năm, legal hold (BR-13) | Chưa có | Thiết kế sau MVP; ghi trong SRS mục 8 |
 | Bản vẽ `uc3-balances.png` chưa có cột "Chuyển từ năm trước" | Giao diện đã có cột | Vẽ lại khi rảnh |
 
-## 13. Thiết kế đề xuất cho phần chưa có
+## 13. Thiết kế
 
 > Đã code trong PR #120 (`feat/leave-uc3-uc4`, 21/11/2026). Đổi thiết kế thì sửa mục này cùng PR code.
 

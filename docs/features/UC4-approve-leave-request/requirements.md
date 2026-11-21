@@ -55,7 +55,7 @@
   `LEAVE_COMPLETE`.
 - **AC-4.5.2** Khi hoàn tất đơn chưa duyệt. Thì trả 409, đơn giữ nguyên. Khi quản lý hoặc nhân viên hoàn tất. Thì trả 403.
 - **AC-4.5.3** *(chưa đạt)* Khi HR hoàn tất đơn `APPROVED`. Chỉ cho phép nếu ngày hiện tại theo múi giờ Việt Nam đã sau `endDate` (sớm nhất là ngày kế tiếp); hoàn tất trong ngày kết thúc hoặc trước đó trả 409. Thiếu giấy tờ bắt buộc thì giữ `APPROVED` (BR-10).
-- **AC-4.5.4** *(mới, TV1 triển khai)* Khi chủ đơn đề nghị hủy đơn `APPROVED` trước ngày bắt đầu nghỉ. Thì quản lý trực tiếp hiện tại hoặc HR xác nhận kèm lý do; đơn chuyển `CANCELLED`, số ngày trả khỏi `pending` theo từng năm, `used` không đổi; lịch sử lưu người đề nghị/người xác nhận/lý do, audit không chứa lý do tự do, gửi email chung (BR-08, BR-15). Từ ngày bắt đầu trở đi trả 409 cho luồng hủy này.
+- **AC-4.5.4** Khi chủ đơn đề nghị hủy đơn `APPROVED` trước ngày bắt đầu nghỉ. Thì quản lý trực tiếp hiện tại, người duyệt thay hoặc HR (đơn đã qua HR duyệt thêm, đơn của CEO: chỉ HR, AC-4.5.6) xác nhận kèm lý do; đơn chuyển `CANCELLED`, số ngày trả khỏi `pending` theo từng năm, `used` không đổi; lịch sử lưu người đề nghị/người xác nhận/lý do, audit không chứa lý do tự do, gửi email chung (BR-08, BR-15). Từ ngày bắt đầu trở đi trả 409 cho luồng hủy này.
 - **AC-4.5.5** *(mới, thiết kế 18/11)* Giả sử đơn `APPROVED` có đề nghị hủy, trước `startDate`. Khi quản lý trực tiếp bác kèm
   ghi chú. Thì đơn giữ `APPROVED`, đề nghị bị xóa, lịch sử `CANCEL_REQUEST_REJECT`, chủ đơn nhận email chung. Bác không có ghi
   chú thì trả 400.

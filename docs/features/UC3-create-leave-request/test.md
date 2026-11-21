@@ -15,36 +15,36 @@ là hàm thuần nên kiểm kỹ bằng unit test; luồng có số dư, lịch
 | Unit | `backend/src/modules/leave/leave-rules.spec.ts` | Ngày làm việc, ngày lễ, nửa ngày, trùng lịch, số dư |
 | Unit | `backend/src/modules/leave/leave-state-machine.spec.ts` | Chuyển trạng thái hợp lệ, thao tác lặp |
 | Unit | `backend/src/modules/leave/outbox/leave-events.spec.ts` | Người nhận theo loại event, routing key, nội dung email |
-| e2e | `backend/test/app.e2e-spec.ts`, nhóm "workflow nghỉ phép" | Liệt kê ở mục 3 |
+| e2e | `backend/test/app.e2e-spec.ts`, nhóm "UC3, UC4 nghỉ phép" | Liệt kê ở mục 3 |
 
 ## 3. Bảng phủ tiêu chí
 
 | Tiêu chí | Test tự động (e2e, tên test) | Ca tay | Trạng thái |
 |---|---|---|---|
-| AC-3.1.1, AC-3.1.2 | "số dư phép của tôi", "tạo → quản lý duyệt → HR hoàn tất; số dư, lịch sử và audit đúng" | TC-01 | Có |
-| AC-3.1.3 | – | TC-23 | Chờ TV1 triển khai phép năm theo tỉ lệ và thâm niên |
-| AC-3.1.4 | – | TC-24 | Chờ TV1 triển khai giới hạn theo sự kiện, không theo tổng số lần/năm |
-| AC-3.1.5 | – | TC-23 | Chờ xác nhận thời gian thử việc được tính nếu tiếp tục làm việc |
-| AC-3.1.6 | – | TC-31 | Chờ chức năng HR đặt hạn mức theo hồ sơ BHXH xác minh |
+| AC-3.1.1, AC-3.1.2 | "số dư phép của tôi", "UC3, UC4 nghỉ phép" › "tạo → quản lý duyệt → HR hoàn tất…" | TC-01 | Có |
+| AC-3.1.3 | Unit `leave-rules.spec.ts` "BR-01, 13.2: phép năm" | TC-23 | Có (unit); TV4 chạy ca tay |
+| AC-3.1.4 | "UC3, UC4 nghỉ phép" › "nghỉ theo sự kiện…" | TC-24 | Có |
+| AC-3.1.5 | Unit (tính từ `hireDate`, gồm thời gian thử việc) | TC-23 | Có (unit) |
+| AC-3.1.6 | "UC3, UC4 nghỉ phép" › "HR chỉnh hạn mức…" (SICK `DEFAULT` → `MANUAL`) | TC-31 | Có |
 | AC-3.2.1 | "tạo → quản lý duyệt → HR hoàn tất…" | TC-01 | Có (email kiểm tay ở Mailpit) |
 | AC-3.2.2, AC-3.2.3 | "không đủ số dư, dữ liệu sai hoặc thiếu Idempotency-Key → 400 (BR-01)" | TC-03, TC-10 | Có |
-| AC-3.2.4 | – | TC-25 | Chờ TV1 triển khai đơn qua năm, giữ/trừ số dư nguyên tử theo từng năm |
-| AC-3.2.5 | – | – | Chưa đạt (chưa gắn hồ sơ trả 404, yêu cầu là 403; TV1 xử lý) |
-| AC-3.2.6 | – | Cần thêm (TV4) | Chưa có tính năng (nhánh `feat/leave-balance-rules`) |
+| AC-3.2.4 | "UC3, UC4 nghỉ phép" › "đơn qua hai năm…" | TC-25 | Có |
+| AC-3.2.5 | "UC3, UC4 nghỉ phép" › "tài khoản chưa gắn hồ sơ → 403" | – | Có |
+| AC-3.2.6 | "UC3, UC4 nghỉ phép" › "nghỉ theo sự kiện…" | Cần thêm (TV4) | Có e2e |
 | AC-3.3.1 | "trùng lịch với đơn đang chờ → 409 (TC-04, BR-02)" | TC-04 | Có |
 | AC-3.3.2, AC-3.3.3 | "trùng lịch bị chặn; hai nửa ngày khác buổi thì được…" | TC-08, TC-09 | Có |
 | AC-3.4.1, AC-3.4.2 | "ngày lễ không trừ phép: 29/4–4/5/2026 tính 2 ngày…" | TC-05 → TC-07 | Có |
-| AC-3.4.3 | – | TC-30 | Chờ TV1 triển khai điều chỉnh lịch lễ có audit/lịch sử |
+| AC-3.4.3 | "UC3, UC4 nghỉ phép" › "HR sửa lịch lễ…" | TC-30 | Có |
 | AC-3.5.1 | – | TC-02 | Có ca tay |
 | AC-3.5.2 | "không đủ số dư, dữ liệu sai hoặc thiếu Idempotency-Key → 400" | – | Có |
 | AC-3.5.3 | – | Cần thêm | Chưa |
-| AC-3.6.1 | "trùng lịch bị chặn; … hủy trả lại số dư" | TC-17, TC-26, TC-27 | Có cho SUBMITTED; PENDING_HR/hủy muộn chờ TV1 |
-| AC-3.6.2 → AC-3.6.5 | – | TC-18, TC-27, TC-28 | Chờ TV1 triển khai quyền hủy đã duyệt và chặn tự hủy từ ngày bắt đầu |
-| AC-3.6.6, AC-3.6.7 | – | Cần thêm (TV4) | Chưa có tính năng (nhánh `feat/leave-cancel-rules`) |
-| AC-3.7.1 → AC-3.7.4 | – | – | Chưa có tính năng |
-| AC-3.1.7 | – | Cần thêm (TV4): nghỉ việc khi có đơn chờ, đơn đã duyệt tương lai | Chưa có tính năng |
-| AC-3.1.8 | – | Cần thêm (TV4): chuyển phép sang năm sau, trừ phần chuyển trước, đơn năm trước bị từ chối sau 01/01 | Chưa có tính năng |
-| AC-3.8.1 → AC-3.8.4 | – | Cần thêm (TV4) | Chưa có tính năng |
+| AC-3.6.1 | "UC3, UC4 nghỉ phép" › "trùng lịch, nửa ngày, tự hủy trước ngày bắt đầu…" | TC-17, TC-26, TC-27 | Có |
+| AC-3.6.2 → AC-3.6.5 | "UC3, UC4 nghỉ phép" › "tạo → … HR hoàn tất" (tự hủy đơn đã duyệt 409), "từ ngày bắt đầu không tự hủy được…", "đề nghị hủy đơn đã duyệt…" | TC-18, TC-27, TC-28 | Có |
+| AC-3.6.6, AC-3.6.7 | "UC3, UC4 nghỉ phép" › "đề nghị hủy đơn đã duyệt…" | Cần thêm (TV4) | Có e2e |
+| AC-3.7.1 → AC-3.7.4 | "UC3, UC4 nghỉ phép" › "tạo đơn hộ…" | Cần thêm (TV4) | Có e2e |
+| AC-3.1.7 | "UC3, UC4 nghỉ phép" › "nghỉ việc: hộp xác nhận nêu số đơn…" | Cần thêm (TV4) | Có e2e |
+| AC-3.1.8 | "UC3, UC4 nghỉ phép" › "đơn qua hai năm…; chuyển phép sang năm sau", unit "AC-3.1.8" | Cần thêm (TV4) | Có |
+| AC-3.8.1 → AC-3.8.4 | "UC3, UC4 nghỉ phép" › "HR chỉnh hạn mức…" | Cần thêm (TV4) | Có e2e |
 
 ## 4. Dữ liệu và tài khoản
 

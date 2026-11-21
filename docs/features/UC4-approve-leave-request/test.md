@@ -17,7 +17,7 @@ email kiểm tay ở Mailpit.
 | Unit | `backend/src/worker/notification-worker.spec.ts` | Người nhận email, chống gửi trùng, gửi lỗi thì đưa lại từ DLQ vẫn gửi được |
 | Unit | `backend/src/modules/leave/outbox/leave-events.spec.ts` | Người nhận theo loại event; nội dung email (xem lưu ý ở mục 7) |
 | Unit | `backend/src/messaging/messaging.spec.ts` | Handler lỗi thì thử lại rồi DLQ |
-| e2e | `backend/test/app.e2e-spec.ts`, nhóm "workflow nghỉ phép", "quản lý trực tiếp và CEO" | Liệt kê ở mục 3 |
+| e2e | `backend/test/app.e2e-spec.ts`, nhóm "UC3, UC4 nghỉ phép", "quản lý trực tiếp và CEO" | Liệt kê ở mục 3 |
 
 ## 3. Bảng phủ tiêu chí
 
@@ -25,27 +25,27 @@ email kiểm tay ở Mailpit.
 |---|---|---|---|
 | AC-4.1.1, AC-4.1.2 | "danh sách đơn: chờ duyệt cho MANAGER và HR (đơn của CEO); toàn hệ thống chỉ HR" | SEC-45 → SEC-54 | Có |
 | AC-4.2.1 | "tạo → quản lý duyệt → HR hoàn tất; số dư, lịch sử và audit đúng" | TC-11 | Có |
-| AC-4.2.2 | "quản lý từ chối trả lại số ngày đang giữ (BR-09)" | TC-15 | Có |
+| AC-4.2.2 | "UC3, UC4 nghỉ phép" › "từ chối bắt buộc lý do, trả số ngày…" | TC-15 | Có |
 | AC-4.2.3 | "chỉ quản lý trực tiếp duyệt/từ chối…" | TC-12 | Có |
 | AC-4.2.4 | – | TC-13 | Có ca tay |
 | AC-4.2.5 | – | TC-14, TC-16 | Có ca tay |
 | AC-4.2.6 | – | Cần thêm | Chưa |
-| AC-4.3.1 → AC-4.3.4 | – | – | Chưa có tính năng |
+| AC-4.3.1 → AC-4.3.4 | "UC3, UC4 nghỉ phép" › "người duyệt thay…" | Cần thêm (TV4) | Có e2e |
 | AC-4.4.1, AC-4.4.2 | "HR duyệt đơn của CEO…", "HR không duyệt được đơn của nhân viên khác CEO…" | – | Có |
 | AC-4.5.1, AC-4.5.2 | "tạo → … HR hoàn tất", "HR hoàn tất đơn chưa duyệt → 409 (TC-21…)" | TC-20 → TC-22 | Có |
-| AC-4.5.3 | – | TC-29 | Chờ TV1 chặn hoàn tất đến ngày kế tiếp `endDate` theo giờ Việt Nam và kiểm giấy tờ |
-| AC-4.5.4 | – | TC-28 | Chờ TV1 triển khai quản lý/HR xác nhận hủy đơn đã duyệt trước ngày bắt đầu |
-| AC-4.5.5 → AC-4.5.7 | – | Cần thêm (TV4) | Chưa có tính năng (nhánh `feat/leave-cancel-rules`) |
+| AC-4.5.3 | "UC3, UC4 nghỉ phép" › "từ ngày bắt đầu không tự hủy được…; hoàn tất trước khi qua ngày kết thúc → 409" | TC-29 | Có |
+| AC-4.5.4 | "UC3, UC4 nghỉ phép" › "đề nghị hủy đơn đã duyệt…" | TC-28 | Có |
+| AC-4.5.5 → AC-4.5.7 | "UC3, UC4 nghỉ phép" › "đề nghị hủy đơn đã duyệt…", "nghỉ không lương trên 3 ngày…" (AC-4.5.6); AC-4.5.7 unit `leave-state-machine.spec.ts` | Cần thêm (TV4) | Có |
 | AC-4.6.1, AC-4.6.2 | Unit `notification-worker.spec.ts` | Kiểm Mailpit | Có |
-| AC-4.6.3 | – | – | Chưa đạt (BR-15) |
-| AC-4.6.5 | – | – | Chưa đạt (CEO tạo đơn, HR không nhận email) |
+| AC-4.6.3 | Unit `leave-events.spec.ts` "BR-15", `notification-worker.spec.ts`; e2e kiểm payload outbox | – | Có |
+| AC-4.6.5 | Unit `leave-events.spec.ts` (người nhận `APPROVERS` của CEO là nhóm HR, worker `emailsOf`) | Kiểm Mailpit | Có |
 | AC-4.6.4 | Unit `messaging.spec.ts` | Tắt RabbitMQ rồi duyệt đơn | Có unit |
-| AC-4.6.6 | – | TC-32 | Chờ TV1 triển khai nhắc một lần theo từng giai đoạn chờ |
+| AC-4.6.6 | "UC3, UC4 nghỉ phép" › "nhắc đơn chờ quá một ngày làm việc…" | TC-32 | Có |
 | AC-4.7.1, AC-4.7.2 | "người ngoài không xem được đơn của nhân viên" | SEC-57, SEC-58 | Có |
-| AC-4.7.3, AC-4.7.4 | – | – | Chưa đạt (BR-14) |
-| AC-4.7.5 | – | Cần thêm: quản lý gián tiếp, phó phòng mở đơn → 403 | Code đã đúng (chỉ quản lý trực tiếp), thiếu test |
-| AC-4.8.1 → AC-4.8.8 | – | Cần thêm (TV4) | Chưa có tính năng |
-| AC-4.9.1 → AC-4.9.4 | – | Cần thêm (TV4) | Chưa có tính năng (nhánh `feat/leave-holidays`) |
+| AC-4.7.3, AC-4.7.4 | "UC3, UC4 nghỉ phép" › "lý do nghỉ ốm…" | – | Có |
+| AC-4.7.5 | Unit `leave-access.spec.ts` "xem chi tiết…" | Cần thêm: quản lý gián tiếp, phó phòng mở đơn → 403 | Có unit |
+| AC-4.8.1 → AC-4.8.8 | "UC3, UC4 nghỉ phép" › "nghỉ không lương trên 3 ngày qua HR duyệt thêm…"; AC-4.8.5 unit `leave-access.spec.ts` | Cần thêm (TV4) | Có |
+| AC-4.9.1 → AC-4.9.4 | "UC3, UC4 nghỉ phép" › "HR sửa lịch lễ…" | Cần thêm (TV4) | Có e2e |
 
 ## 4. Dữ liệu và tài khoản
 

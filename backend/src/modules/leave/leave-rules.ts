@@ -117,7 +117,7 @@ export interface AnnualInput {
   terminationDate: string | null;
   /** Mức nền 12, 14, 16 (FR-3.8); null là 12. */
   baseDays: number | null;
-  /** Số ngày cộng theo thâm niên tính ở 31/12 của năm (UC1 `seniority()`, đề xuất (b)). */
+  /** Số ngày cộng theo thâm niên tính ở 31/12 của năm (UC1 `seniority()`, 13.2 (b)). */
   seniorityBonus: number;
   holidays: ReadonlySet<string>;
   /** Ngày nghỉ không lương đã duyệt, hoàn tất (từng ngày làm việc; nửa ngày tính 0,5), 13.2 (a). */
