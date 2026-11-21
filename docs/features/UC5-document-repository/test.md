@@ -69,3 +69,8 @@ Không đặt `STORAGE_BUCKET` thì e2e vẫn xanh nhưng nhóm "kho tài liệu
 - URL tải lên quá 10 phút bị storage từ chối.
 - Giao diện (AC-5.1.8, AC-5.2.7) khi `feat/document-ui` xong.
 - Chạy lại toàn bộ trên staging tuần 12.
+
+- Ca kho tài liệu & giao diện (`AC-5.1.7`, `AC-5.1.8`, `AC-5.2.7`, `AC-5.2.1` -> `AC-5.2.5`):
+  - `AC-5.1.7`: Khi thiếu cấu hình `STORAGE_BUCKET`, gọi `GET /api/v1/documents` kỳ vọng trả lỗi storage/không khả dụng (đối chiếu mã `503` theo tiêu chí và hành vi `ObjectStorage`).
+  - `AC-5.1.8` & `AC-5.2.7`: Giao diện quản lý tài liệu của HR và trang `/documents` cho nhân viên/quản lý kiểm tra hiển thị theo phạm vi hiện tại và ẩn tài liệu đã ẩn.
+  - Ca tay: phòng ban con (`AC-5.2.1`), nhiều phạm vi theo phép OR (`AC-5.2.2`), đổi phòng ban rồi gọi tải ngay (`AC-5.2.4`/`AC-5.2.5`), đoán ID ngoài phạm vi kỳ vọng `404` (`AC-5.2.3`), file đổi đuôi (`.exe`/`.zip` đổi thành `.pdf`) bị từ chối ở `checkDeclaredFile`/`matchesContent` (`AC-5.1.6`).
