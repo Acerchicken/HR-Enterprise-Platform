@@ -14,24 +14,24 @@
 
 ## 2. Biến môi trường
 
-| Biến | Local (MinIO) | Staging (S3) | Thiếu thì sao |
+| Biến | Local (S3Mock/MinIO) | Staging (S3) | Thiếu thì sao |
 |---|---|---|---|
 | `STORAGE_BUCKET` | Tên bucket, ví dụ `hr-documents` | Bucket do Terraform tạo | Mọi API tài liệu trả 503; chức năng khác vẫn chạy |
-| `STORAGE_ENDPOINT` | `http://minio:9000` | Để trống | – |
-| `STORAGE_PUBLIC_ENDPOINT` | `http://localhost:9000` (trình duyệt PUT file vào đây) | Để trống | Trình duyệt không PUT được |
-| `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` | Tài khoản MinIO | Để trống, dùng IAM role của App Runner | – |
+| `STORAGE_ENDPOINT` | `http://s3mock:9090` (hoặc `http://localhost:9090` khi chạy ngoài Docker) | Để trống | – |
+| `STORAGE_PUBLIC_ENDPOINT` | `http://localhost:9090` (trình duyệt PUT file vào đây) | Để trống | Trình duyệt không PUT được |
+| `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` | `test` / `test` (với S3Mock local) | Để trống, dùng IAM role của App Runner | – |
 | `STORAGE_REGION` | Mặc định | `AWS_REGION` | – |
 
 ## 3. Hạ tầng
 
 | Môi trường | Tài nguyên | File |
 |---|---|---|
-| Local | MinIO trong docker-compose | Nhánh `chore/minio-local` (chưa merge) |
+| Local | S3Mock trong docker-compose (cổng 9090, tự tạo sẵn bucket `hr-documents` và `hr-profile-files-local`) | Nhánh `chore/minio-local` (chưa merge) |
 | Staging | Bucket S3 tài liệu: chặn public (NFR-5.19), mã hóa KMS (NFR-5.16), CORS cho domain web với `PUT`; IAM cho App Runner: `GetObject`, `PutObject`, `DeleteObject` trên bucket | Nhánh `infra/documents-email` (chưa merge) |
 
 ## 4. Các bước
 
-- **Local:** khi chưa có `chore/minio-local`, tự chạy MinIO, tạo bucket, đặt các biến ở mục 2 cho API.
+- **Local:** docker-compose đã có `s3mock` (cổng 9090) tự khởi tạo bucket `hr-documents` và `hr-profile-files-local`. API tự kết nối qua mạng nội bộ Docker (`http://s3mock:9090`) và cấp presigned URL với `http://localhost:9090` cho trình duyệt.
 - **Staging:**
   1. Merge `infra/documents-email`, `terraform plan` rồi TV1 duyệt, `apply` (tuần 12).
   2. Thêm `STORAGE_BUCKET` vào biến môi trường App Runner (`app_runner.tf`).
