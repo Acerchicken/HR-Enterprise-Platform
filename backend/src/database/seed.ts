@@ -13,6 +13,8 @@ import { randomUUID } from 'crypto';
 import { FieldCrypto } from '../common/field-crypto';
 import { loadConfig } from '../config/config';
 import dataSource from './data-source';
+import { seniority } from '../modules/employee/profile-computed';
+import { annualEntitlement } from '../modules/leave/leave-rules';
 
 export const TOTAL_EMPLOYEES = Number(process.env.SEED_EMPLOYEES ?? 2000);
 
@@ -323,12 +325,27 @@ async function main() {
     }
     const year = new Date().getFullYear();
     const active = employees.filter((e) => e.status !== 'TERMINATED');
-    // Phép năm: 12 ngày + 1 ngày cho mỗi 5 năm thâm niên (theo Bộ luật Lao động).
-    const annual = active.map((e) => 12 + Math.floor((year - Number(e.hire_date.slice(0, 4))) / 5));
+    // Phép năm theo cùng công thức với API (BR-01, UC3 13.2): tỉ lệ tháng làm việc, tháng lẻ, thâm niên tính ở 31/12.
+    const holidays = new Set<string>(
+      (await m.query(`SELECT to_char(holiday_date, 'YYYY-MM-DD') AS d FROM leave.holiday WHERE extract(year FROM holiday_date) = $1`, [year])).map(
+        (h: { d: string }) => h.d,
+      ),
+    );
+    const annual = active.map((e) =>
+      annualEntitlement({
+        year,
+        hireDate: e.hire_date,
+        terminationDate: null,
+        baseDays: null,
+        seniorityBonus: seniority(e.hire_date, `${year}-12-31`).annualLeaveBonus,
+        holidays,
+        unpaidDays: new Map(),
+      }),
+    );
     await m.query(
       `INSERT INTO leave.leave_balance (employee_id, leave_type_id, year, entitled, used)
        SELECT unnest($1::uuid[]), $2::uuid, $3::int, unnest($4::numeric[]), unnest($5::numeric[])`,
-      [active.map((e) => e.id), typeId.get('ANNUAL'), year, annual, annual.map((a) => faker.number.int({ min: 0, max: Math.min(8, a) }))],
+      [active.map((e) => e.id), typeId.get('ANNUAL'), year, annual, annual.map((a) => faker.number.int({ min: 0, max: Math.floor(Math.min(8, a)) }))],
     );
     await m.query(
       `INSERT INTO leave.leave_balance (employee_id, leave_type_id, year, entitled, used, source)

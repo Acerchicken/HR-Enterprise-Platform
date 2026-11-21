@@ -90,35 +90,49 @@ export class LeaveJobsService {
 
   /**
    * Một lần mỗi ngày (giờ Việt Nam): tạo dòng số dư năm hiện tại còn thiếu (đầu năm có chuyển phép) và tính lại phép năm,
-   * bắt được sửa `hireDate`, mốc thâm niên, nghỉ việc (UC3 13.2). Đánh dấu ngày đã chạy trong `notification.processed_event`.
+   * bắt được sửa `hireDate`, mốc thâm niên, nghỉ việc (UC3 13.2). Chỉ đánh dấu ngày đã chạy (`notification.processed_event`) sau
+   * khi chạy hết; worker chết giữa chừng thì lần sau chạy lại, an toàn vì tính lại là idempotent. `pg_try_advisory_lock` để
+   * nhiều worker không chạy cùng lúc. `only`: giới hạn nhân viên (test).
    */
-  async dailyBalances(now = new Date()): Promise<number | null> {
+  async dailyBalances(now = new Date(), only?: string[]): Promise<number | null> {
     const today = vnToday(now);
-    const [mark] = await this.ds.query(
-      `INSERT INTO notification.processed_event (event_id, event_type) VALUES ($1, 'LeaveDailyBalances') ON CONFLICT DO NOTHING RETURNING event_id`,
-      [`leave-daily-${today}`],
-    );
-    if (!mark) return null;
-    const year = Number(today.slice(0, 4));
-    const ids: { id: string }[] = await this.ds.query(
-      `SELECT e.id FROM employee.employee e
-        WHERE e.hire_date <= $2 AND (e.status <> 'TERMINATED' OR EXISTS (
-          SELECT 1 FROM leave.leave_balance b WHERE b.employee_id = e.id AND b.year = $1))`,
-      [year, `${year}-12-31`],
-    );
-    let n = 0;
-    for (const { id } of ids) {
+    const markId = `leave-daily-${today}`;
+    const qr = this.ds.createQueryRunner();
+    await qr.connect();
+    try {
+      const [{ ok }] = await qr.query(`SELECT pg_try_advisory_lock(hashtext('leave-daily-balances')) AS ok`);
+      if (!ok) return null;
       try {
-        await this.ds.transaction(async (m) => {
-          await m.query('SELECT pg_advisory_xact_lock(hashtext($1))', [id]);
-          await this.balances.ensureYear(m, id, year);
-          await this.balances.recalcAnnual(m, id, year, null);
-        });
-        n++;
-      } catch (e) {
-        this.logger.warn(`Tính lại số dư ${id} lỗi: ${(e as Error).message}`);
+        if (!only && (await qr.query(`SELECT 1 FROM notification.processed_event WHERE event_id = $1`, [markId])).length) return null;
+        const year = Number(today.slice(0, 4));
+        const ids: { id: string }[] = await qr.query(
+          `SELECT e.id FROM employee.employee e
+            WHERE e.hire_date <= $2 AND ($3::uuid[] IS NULL OR e.id = ANY($3)) AND (e.status <> 'TERMINATED' OR EXISTS (
+              SELECT 1 FROM leave.leave_balance b WHERE b.employee_id = e.id AND b.year = $1))`,
+          [year, `${year}-12-31`, only ?? null],
+        );
+        let n = 0;
+        for (const { id } of ids) {
+          try {
+            await this.ds.transaction(async (m) => {
+              await m.query('SELECT pg_advisory_xact_lock(hashtext($1))', [id]);
+              await this.balances.ensureYear(m, id, year);
+              await this.balances.recalcAnnual(m, id, year, null);
+            });
+            n++;
+          } catch (e) {
+            this.logger.warn(`Tính lại số dư ${id} lỗi: ${(e as Error).message}`);
+          }
+        }
+        if (!only) {
+          await qr.query(`INSERT INTO notification.processed_event (event_id, event_type) VALUES ($1, 'LeaveDailyBalances') ON CONFLICT DO NOTHING`, [markId]);
+        }
+        return n;
+      } finally {
+        await qr.query(`SELECT pg_advisory_unlock(hashtext('leave-daily-balances'))`);
       }
+    } finally {
+      await qr.release();
     }
-    return n;
   }
 }

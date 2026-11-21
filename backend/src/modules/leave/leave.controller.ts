@@ -134,7 +134,7 @@ export class LeaveController {
 
   @Get('leave-requests/:id')
   get(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    return this.leave.get(id, user);
+    return this.leave.get(id, user, true);
   }
 
   @Post('leave-requests/:id/approve')

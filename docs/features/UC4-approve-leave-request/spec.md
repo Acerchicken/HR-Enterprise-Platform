@@ -229,7 +229,7 @@ Quy ước như [UC3 mục 9.3](../UC3-create-leave-request/spec.md#93-hợp-đ�
 | API | Ai gọi | Vào | Ra | Lỗi |
 |---|---|---|---|---|
 | `GET /leave-requests/pending-approval?page=&size=` | Quản lý trực tiếp, người duyệt thay; HR (đơn của CEO) | – | Trang đơn `SUBMITTED` **và** đơn `APPROVED` có đề nghị hủy mà người gọi được xác nhận; mỗi dòng có `kind: DECISION \| CANCEL_REQUEST`, `viaDelegation`, `overdue` | E2 |
-| `GET /leave-requests/pending-hr?page=&size=` | HR | – | Đơn `PENDING_HR` và đơn có đề nghị hủy chỉ HR xác nhận (BR-16) | E2 |
+| `GET /leave-requests/pending-hr?page=&size=` | HR | – | Đơn `PENDING_HR` và mọi đơn có đề nghị hủy (HR xác nhận được mọi đề nghị; đơn đã qua HR, đơn của CEO thì chỉ HR), trừ đơn của chính mình | E2 |
 | `POST /leave-requests/{id}/approve`, `/reject` | Như hiện nay | `{version, comment?}` (`comment` bắt buộc khi từ chối, AC-0.6.3) | 200 đơn | E1 → E5 |
 | `POST /leave-requests/{id}/hr-approve`, `/hr-reject` | HR, không phải chủ đơn | `{version, comment?}` | 200 đơn | E11 → E13 (13.3) |
 | `POST /leave-requests/{id}/cancel-request/approve` | Quản lý trực tiếp hiện tại, người duyệt thay hoặc HR; đơn có `requiresHrApproval` thì chỉ HR | `{version, comment?}` | 200 đơn `CANCELLED` | E16, E17, E5 |
@@ -294,8 +294,8 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 ### 13.2 Riêng tư đơn nghỉ (BR-14, BR-15)
 
-- **Ẩn lý do:** với loại phép ốm, thai sản, `reason` chỉ trả cho chủ đơn và HR ở chi tiết, danh sách, lịch sử. HR đọc lý do thì
-  ghi audit `VIEW_LEAVE_REASON` (chỉ ID đơn, không giá trị).
+- **Ẩn lý do:** với loại phép ốm, thai sản, `reason` chỉ trả cho chủ đơn và HR ở chi tiết, danh sách, lịch sử. HR mở chi tiết đơn thì
+  ghi audit `VIEW_LEAVE_REASON` (chỉ ID đơn, không giá trị); response sau một thao tác không ghi thêm.
 - **Audit:** bỏ `comment` khỏi `changedFields` của duyệt, từ chối, hủy, hoàn tất; ghi chú vẫn nằm trong lịch sử đơn.
 - **Outbox và email:** payload chỉ còn `eventId`, `eventType`, `requestId`, `employeeId`, `occurredAt`. Email: tiêu đề và nội dung
   chung, link `/leave` hoặc `/approvals?type=leave` (không có mã đơn). Đổi [hợp đồng event](../../architecture/event-contract.md)

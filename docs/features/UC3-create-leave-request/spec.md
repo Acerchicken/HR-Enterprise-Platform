@@ -306,7 +306,7 @@ không phải 1,08).
 | Lúc | Việc |
 |---|---|
 | Đọc số dư, tạo đơn | `ensureBalances(nv, năm)`: chưa có dòng `ANNUAL` thì tạo theo công thức; dòng `SICK`, `UNPAID` chưa có thì tạo theo mặc định của loại phép (`source = DEFAULT`) |
-| Job hằng ngày (worker `LeaveJob` chạy 5 phút một lần, việc này một lần mỗi ngày giờ Việt Nam, đánh dấu ngày trong `notification.processed_event`) | Tính lại `ANNUAL` năm hiện tại cho người chưa nghỉ việc. Bắt được việc sửa `hireDate` (UC1 AC-1.4.4) và mốc thâm niên |
+| Job hằng ngày (worker `LeaveJob` chạy 5 phút một lần, việc này một lần mỗi ngày giờ Việt Nam; đánh dấu ngày trong `notification.processed_event` sau khi chạy xong, `pg_try_advisory_lock` chống chạy trùng; chết giữa chừng thì lần sau chạy lại) | Tính lại `ANNUAL` năm hiện tại cho người chưa nghỉ việc. Bắt được việc sửa `hireDate` (UC1 AC-1.4.4) và mốc thâm niên |
 | Lần chạy đầu tiên của năm (cùng job) | Tạo dòng năm mới cho mọi người đang làm việc, đặt `carried_in` theo công thức chuyển phép bên dưới |
 | Số dư năm trước đổi (đơn năm trước bị từ chối, hủy, tính lại; job hằng ngày) | Tính lại `carried_in` của năm hiện tại trong cùng transaction |
 | Job 5 phút (worker) quét hồ sơ `TERMINATED` còn đơn chưa xử lý | Hủy đơn chờ, hủy đơn đã duyệt bắt đầu sau ngày nghỉ việc (AC-3.1.7), rồi tính lại `ANNUAL` tới tháng nghỉ việc. Ngày nghỉ việc là `effective_to` của giai đoạn công tác vừa đóng (UC2 FR-2.8). Không dùng event `EmployeeTerminated`: event đó là của UC8 (payload `accountId`, chỉ phát khi hồ sơ có tài khoản, worker `identity-sync` xử lý) |

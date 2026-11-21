@@ -387,14 +387,18 @@ export class LeaveService {
 
   // ---------- Xem đơn ----------
 
-  async get(id: string, actor: AuthUser): Promise<LeaveRequestView> {
+  /**
+   * Chi tiết đơn. `auditReason`: chỉ `GET /leave-requests/{id}` là HR chủ động xem, mới ghi `VIEW_LEAVE_REASON`; response trả về
+   * sau một thao tác (duyệt, hủy…) không ghi thêm (review #120).
+   */
+  async get(id: string, actor: AuthUser, auditReason = false): Promise<LeaveRequestView> {
     const r = await this.requests.findOneBy({ id });
     if (!r) throw new NotFoundException('Không tìm thấy đơn nghỉ');
     const facts = await this.facts(this.requests.manager, r);
     const rel = relation(actor, facts);
     if (!canView(rel)) throw new ForbiddenException('Không có quyền xem đơn này');
     const view = await this.detail(r, rel);
-    if (view.reason && PRIVATE_REASON_TYPES.includes(view.leaveType ?? '') && !rel.has('OWNER')) {
+    if (auditReason && view.reason && PRIVATE_REASON_TYPES.includes(view.leaveType ?? '') && !rel.has('OWNER')) {
       // HR đọc lý do nghỉ ốm, thai sản: ghi ai đọc đơn nào, không ghi nội dung (BR-14, AC-4.7.4).
       await this.audit.record({ actorId: actor.employeeId, action: 'VIEW_LEAVE_REASON', entityType: 'leave_request', entityId: r.id, changedFields: { field: 'reason' } });
     }
@@ -448,21 +452,16 @@ export class LeaveService {
     return page;
   }
 
-  /** HR: đơn `PENDING_HR` và đề nghị hủy chỉ HR xác nhận (đơn đã qua HR, đơn của CEO), trừ đơn của chính mình. */
-  async pendingHr(actor: AuthUser, q: LeaveRequestQuery): Promise<Page<LeaveRequestView>> {
+  /**
+   * HR: đơn `PENDING_HR` và mọi đề nghị hủy đơn đã duyệt (HR được xác nhận mọi đề nghị hủy, UC4 13.7; đơn đã qua HR, đơn của CEO
+   * thì chỉ HR), trừ đơn của chính mình.
+   */
+  pendingHr(actor: AuthUser, q: LeaveRequestQuery): Promise<Page<LeaveRequestView>> {
     const me = this.requireEmployee(actor);
-    // Đề nghị hủy đơn của CEO cũng chỉ HR xác nhận (`allowed`), mà đơn CEO có requires_hr_approval = false.
-    const ceo = (await this.employees.ceoIds()).filter((id) => id !== me);
     return this.page(
       (qb) =>
         qb.where('r.employee_id <> :me', { me }).andWhere(
-          new Brackets((b) =>
-            b
-              .where(`r.status = 'PENDING_HR'`)
-              .orWhere(`r.status = 'APPROVED' AND r.cancel_requested_at IS NOT NULL AND (r.requires_hr_approval = true OR r.employee_id IN (:...ceo))`, {
-                ceo: ceo.length ? ceo : ['00000000-0000-0000-0000-000000000000'],
-              }),
-          ),
+          new Brackets((b) => b.where(`r.status = 'PENDING_HR'`).orWhere(`r.status = 'APPROVED' AND r.cancel_requested_at IS NOT NULL`)),
         ),
       { ...q, status: undefined } as LeaveRequestQuery,
       actor,

@@ -1900,6 +1900,9 @@ describe('HRHelper API (e2e)', () => {
       await post(r.id, 'cancel-request', EMPLOYEE, { version: cur.version, reason: 'Lần hai' }).expect(409);
       const queue = (await http.get('/api/v1/leave-requests/pending-approval').set(MANAGER)).body.items;
       expect(queue.find((x: any) => x.id === r.id)).toMatchObject({ kind: 'CANCEL_REQUEST' });
+      // HR cũng thấy trong danh sách việc của mình (review #120).
+      const hrQueue = (await http.get('/api/v1/leave-requests/pending-hr').set(HR)).body.items;
+      expect(hrQueue.find((x: any) => x.id === r.id)).toMatchObject({ kind: 'CANCEL_REQUEST' });
 
       await post(r.id, 'cancel-request/reject', MANAGER, { version: cur.version }).expect(400);
       cur = (await post(r.id, 'cancel-request/reject', MANAGER, { version: cur.version, comment: 'Dự án cần' }).expect(200)).body;
@@ -2001,10 +2004,13 @@ describe('HRHelper API (e2e)', () => {
       expect(await get(r.id, MANAGER)).toMatchObject({ reason: null, reasonHidden: true });
       expect((await http.get('/api/v1/leave-requests/pending-approval').set(MANAGER)).body.items.find((x: any) => x.id === r.id).reason).toBeNull();
       expect((await get(r.id, HR)).reason).toBe('Khám chuyên khoa');
+      // HR thao tác trên đơn (xác nhận hủy) không ghi thêm dòng "đã đọc lý do"; chỉ lần mở chi tiết ở trên (review #120).
+      const ok = (await post(r.id, 'approve', MANAGER, { version: r.version }).expect(200)).body;
+      await post(r.id, 'cancel-request', EMPLOYEE, { version: ok.version, reason: 'Khỏi rồi' }).expect(200);
+      await post(r.id, 'cancel-request/approve', HR, { version: ok.version + 1 }).expect(200);
       const logs = (await http.get(`/api/v1/audit-logs?entity=leave_request&entityId=${r.id}`).set(HR)).body.items;
-      expect(logs.map((l: any) => l.action)).toContain('VIEW_LEAVE_REASON');
+      expect(logs.filter((l: any) => l.action === 'VIEW_LEAVE_REASON')).toHaveLength(1);
       expect(JSON.stringify(logs)).not.toContain('Khám chuyên khoa');
-      await post(r.id, 'cancel', EMPLOYEE, { version: r.version }).expect(200);
     });
 
     it('tạo đơn hộ: quản lý trực tiếp, HR được; quản lý khác 403 (AC-3.7.x)', async () => {
@@ -2130,6 +2136,19 @@ describe('HRHelper API (e2e)', () => {
         await ds.query('DELETE FROM employee.employment_assignment WHERE employee_id = $1', [created.id]);
         await ds.query('DELETE FROM employee.employee WHERE id = $1', [created.id]);
       }
+    });
+
+    it('seed phép năm khớp công thức BR-01: job tính lại không đổi số (review #120)', async () => {
+      const { LeaveJobsService } = await import('../src/modules/leave/leave-jobs.service');
+      const y = Number(today.slice(0, 4));
+      const read = async () =>
+        Number((await ds.query(
+          `SELECT entitled FROM leave.leave_balance WHERE employee_id = $1 AND year = $2 AND leave_type_id = (SELECT id FROM leave.leave_type WHERE code = 'ANNUAL')`,
+          [strangerId, y],
+        ))[0].entitled);
+      const before = await read();
+      expect(await app.get(LeaveJobsService).dailyBalances(new Date(), [strangerId])).toBe(1);
+      expect(await read()).toBe(before);
     });
 
     it('tài khoản chưa gắn hồ sơ → 403 (AC-3.2.5)', async () => {
