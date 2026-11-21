@@ -65,6 +65,19 @@ services:
       # Local không có TLS: cho phép SMTP auth không mã hóa, nếu không Mailpit thoát ngay khi khởi động.
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
+  # S3Mock (Adobe): giả lập AWS S3 ở local cho kho tài liệu chính sách HR và hồ sơ (UC5).
+  # Cả nhóm pull được không cần đăng nhập; tự tạo sẵn bucket hr-documents mà không cần container init phụ.
+  s3mock:
+    image: adobe/s3mock:3.3.0
+    environment:
+      initialBuckets: hr-documents,hr-profile-files-local
+      root: /s3mockroot
+      retainFilesOnExit: "true"
+    ports:
+      - "9090:9090"
+    volumes:
+      - s3mock-data:/s3mockroot
+
   api:
     build: ./backend
     environment:
@@ -86,6 +99,12 @@ services:
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
       SMTP_FROM: no-reply@hr.local
+      STORAGE_BUCKET: hr-documents
+      PROFILE_STORAGE_BUCKET: hr-profile-files-local
+      STORAGE_ENDPOINT: http://s3mock:9090
+      STORAGE_PUBLIC_ENDPOINT: http://localhost:9090
+      STORAGE_ACCESS_KEY_ID: test
+      STORAGE_SECRET_ACCESS_KEY: test
     ports:
       - "3000:3000"
     depends_on:
@@ -95,6 +114,8 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_healthy
+      s3mock:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1/health || exit 1"]
       interval: 5s
@@ -119,6 +140,12 @@ services:
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
       SMTP_FROM: no-reply@hr.local
+      STORAGE_BUCKET: hr-documents
+      PROFILE_STORAGE_BUCKET: hr-profile-files-local
+      STORAGE_ENDPOINT: http://s3mock:9090
+      STORAGE_PUBLIC_ENDPOINT: http://localhost:9090
+      STORAGE_ACCESS_KEY_ID: test
+      STORAGE_SECRET_ACCESS_KEY: test
       IDP_ADMIN_DRIVER: keycloak
       KEYCLOAK_ADMIN_URL: http://keycloak:8080
       KEYCLOAK_REALM: hr
@@ -132,6 +159,8 @@ services:
       rabbitmq:
         condition: service_healthy
       mailpit:
+        condition: service_started
+      s3mock:
         condition: service_started
     restart: unless-stopped
 
@@ -167,3 +196,4 @@ services:
 volumes:
   db-data:
   rabbitmq-data:
+  s3mock-data:
