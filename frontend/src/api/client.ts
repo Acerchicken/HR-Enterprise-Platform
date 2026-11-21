@@ -307,25 +307,53 @@ export interface LeaveBalance {
   leaveTypeName: string;
   year: number;
   entitled: number;
+  /** Phép năm chuyển từ năm trước, hết hạn 31/12 của `year` (AC-3.1.8). */
+  carriedIn: number;
   used: number;
   pending: number;
   available: number;
+  source: 'AUTO' | 'DEFAULT' | 'MANUAL';
+  /** Chỉ HR thấy (FR-3.8). */
+  baseDays?: number | null;
+  note?: string | null;
+  version?: number;
 }
 
-export type LeaveStatus = 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
-export type LeaveAction = 'approve' | 'reject' | 'cancel' | 'complete';
+export type LeaveStatus = 'SUBMITTED' | 'PENDING_HR' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
+/** Thao tác trên đơn; phần đuôi của `POST /leave-requests/{id}/<path>`. */
+export type LeaveAction =
+  | 'approve'
+  | 'reject'
+  | 'hr-approve'
+  | 'hr-reject'
+  | 'cancel'
+  | 'cancel-request'
+  | 'cancel-request/approve'
+  | 'cancel-request/reject'
+  | 'complete';
 
 export interface LeaveType {
   id: string;
   code: string;
   name: string;
-  maxDaysPerYear: string;
+  quotaKind: 'ACCRUED' | 'YEARLY' | 'PER_EVENT';
+  maxDaysPerEvent: number | null;
+  maxMonthsPerEvent: number | null;
+  requiresEventDate: boolean;
+  requiresDocument: boolean;
+  hrApproval: 'NEVER' | 'ALWAYS' | 'OVER_DAYS';
+  hrApprovalMinDays: number | null;
 }
 
+export type LeaveHistoryAction =
+  | 'SUBMIT' | 'APPROVE' | 'MANAGER_APPROVE' | 'HR_APPROVE' | 'REJECT' | 'HR_REJECT' | 'CANCEL' | 'CANCEL_REQUEST'
+  | 'CANCEL_APPROVE' | 'CANCEL_REQUEST_REJECT' | 'COMPLETE' | 'RECALCULATE' | 'SYSTEM_CANCEL';
+
 export interface LeaveHistory {
+  action: LeaveHistoryAction;
   fromStatus: LeaveStatus | null;
   toStatus: LeaveStatus;
-  actorId: string;
+  actorId: string | null;
   actorName: string | null;
   comment: string | null;
   at: string;
@@ -335,20 +363,66 @@ export interface LeaveRequest {
   id: string;
   employeeId: string;
   employeeName: string | null;
+  createdBy: string;
   leaveType: string | null;
+  leaveTypeName: string | null;
   startDate: string;
   endDate: string;
   halfDay: 'AM' | 'PM' | null;
+  eventDate: string | null;
   days: number;
+  allocations: { year: number; days: number }[];
   reason: string | null;
+  /** Lý do nghỉ ốm, thai sản bị ẩn với người xem (BR-14). */
+  reasonHidden: boolean;
   status: LeaveStatus;
+  requiresHrApproval: boolean;
   approverId: string | null;
+  cancelRequest: { requestedAt: string; requestedBy: string | null } | null;
+  completableFrom: string;
   version: number;
   createdAt: string;
   updatedAt: string;
+  kind?: 'DECISION' | 'CANCEL_REQUEST';
+  viaDelegation?: boolean;
+  overdue?: boolean;
   history?: LeaveHistory[];
-  /** Có ở API xem chi tiết: người gọi được duyệt/từ chối đơn này. */
   canDecide?: boolean;
+  canHrDecide?: boolean;
+  canCancel?: boolean;
+  canRequestCancel?: boolean;
+  canConfirmCancel?: boolean;
+  canComplete?: boolean;
+}
+
+export interface Holiday {
+  date: string;
+  name: string;
+  kind: 'HOLIDAY' | 'COMPENSATORY';
+}
+
+export interface AffectedRequest {
+  id: string;
+  employeeId: string;
+  employeeName: string | null;
+  startDate: string;
+  endDate: string;
+  status: LeaveStatus;
+  version: number;
+  storedDays: number;
+  recalculatedDays: number;
+}
+
+export interface Delegation {
+  id: string;
+  managerId: string;
+  managerName: string | null;
+  delegateId: string;
+  delegateName: string | null;
+  startDate: string;
+  endDate: string;
+  endedAt: string | null;
+  active: boolean;
 }
 
 // ----- Điều chuyển (UC2 FR-2.7) -----
@@ -386,6 +460,8 @@ export interface TerminationImpact {
   pendingAsNewManager: { transferId: string; employeeName: string; effectiveDate: string }[];
   grantedRoles: ('HR' | 'ADMIN')[];
   lastAdmin: boolean;
+  /** Đơn nghỉ hệ thống sẽ hủy sau khi lưu (UC3 AC-3.1.7). */
+  leave: { pending: number; approvedFuture: number };
 }
 
 /** Hôm nay theo giờ Việt Nam (khớp job điều chuyển phía server). */

@@ -8,7 +8,7 @@
 | Yêu cầu (SRS) | FR-4.1 → FR-4.9 |
 | Quy tắc | [BR-05 → BR-11, BR-14 → BR-19](../../business/leave-rules.md), ADR-03, ADR-09, ADR-10 |
 | Mức ưu tiên | M (FR-4.3, FR-4.4 là S) |
-| Trạng thái | Đã có luồng duyệt, hoàn tất; FR-4.3, FR-4.8, FR-4.9 và các quy tắc 13.4 → 13.6 kế hoạch tuần 12 (sau UC8) |
+| Trạng thái | Đã có toàn bộ FR-4.1 → FR-4.9 (`feat/leave-uc3-uc4`, 21/11/2026) |
 | Phiên bản | 1.3 – 18/11/2026 (sơ đồ luồng `flows/`, hợp đồng API 9.3, thiết kế 13.4 → 13.7: xác nhận đề nghị hủy, nhắc đơn chờ, lịch lễ, quyền xử lý). 1.2 – 17/11/2026 (chốt hạn hoàn tất, hủy sau duyệt, nhắc đơn chờ; BR-08, BR-10, BR-17) |
 
 ## 1. Mô tả ngắn
@@ -229,7 +229,7 @@ Quy ước như [UC3 mục 9.3](../UC3-create-leave-request/spec.md#93-hợp-đ�
 | API | Ai gọi | Vào | Ra | Lỗi |
 |---|---|---|---|---|
 | `GET /leave-requests/pending-approval?page=&size=` | Quản lý trực tiếp, người duyệt thay; HR (đơn của CEO) | – | Trang đơn `SUBMITTED` **và** đơn `APPROVED` có đề nghị hủy mà người gọi được xác nhận; mỗi dòng có `kind: DECISION \| CANCEL_REQUEST`, `viaDelegation`, `overdue` | E2 |
-| `GET /leave-requests/pending-hr?page=&size=` | HR | – | Đơn `PENDING_HR` và đơn có đề nghị hủy chỉ HR xác nhận (BR-16) | E2 |
+| `GET /leave-requests/pending-hr?page=&size=` | HR | – | Đơn `PENDING_HR` và mọi đơn có đề nghị hủy (HR xác nhận được mọi đề nghị; đơn đã qua HR, đơn của CEO thì chỉ HR), trừ đơn của chính mình | E2 |
 | `POST /leave-requests/{id}/approve`, `/reject` | Như hiện nay | `{version, comment?}` (`comment` bắt buộc khi từ chối, AC-0.6.3) | 200 đơn | E1 → E5 |
 | `POST /leave-requests/{id}/hr-approve`, `/hr-reject` | HR, không phải chủ đơn | `{version, comment?}` | 200 đơn | E11 → E13 (13.3) |
 | `POST /leave-requests/{id}/cancel-request/approve` | Quản lý trực tiếp hiện tại, người duyệt thay hoặc HR; đơn có `requiresHrApproval` thì chỉ HR | `{version, comment?}` | 200 đơn `CANCELLED` | E16, E17, E5 |
@@ -262,23 +262,20 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
-| Danh sách chờ, duyệt, từ chối, hoàn tất, lịch sử, email | Đã có | – |
-| HR duyệt đơn của CEO | Đã có (PR #60) | – |
-| Người duyệt thay (FR-4.3, BR-06) | Chưa có | TV1, nhánh `feat/leave-delegation`, mức 3 tuần 10 |
-| Ẩn lý do nghỉ ốm với quản lý (BR-14) | Chưa có | TV1 |
-| Email chỉ báo chung, không chi tiết (BR-15) | Chưa có: email, payload outbox có loại phép, ngày, số ngày, ghi chú | TV1, `feat/leave-privacy` |
-| Audit không chứa ghi chú tự do (BR-14) | Code chưa đúng: audit duyệt, từ chối có `comment` | TV1, `feat/leave-privacy` |
-| Email "có đơn mới" của CEO gửi tới HR (E8) | Code chưa có: worker bỏ qua vì CEO không có quản lý | TV1, `feat/leave-privacy` (cùng chỗ sửa worker) |
-| Chỉ hoàn tất sau ngày kết thúc (A2 bước 4, E10/E14, BR-10) | Code chưa có: hoàn tất được bất kỳ lúc nào | TV1 chặn hoàn tất đến ngày kế tiếp `endDate` theo giờ Việt Nam; kiểm giấy tờ |
-| Hủy đơn đã duyệt trước ngày bắt đầu (A7, BR-08) | Chưa có luồng quản lý/HR xác nhận hủy; nhân viên tự hủy `APPROVED` tiếp tục bị chặn | TV1 triển khai theo UC3 AC-3.6.2 → AC-3.6.4 |
-| Hủy đơn chờ từ ngày bắt đầu trở đi (BR-07, UC3 A7) | Chưa phân biệt hủy tự phục vụ trước/sau `startDate` | TV1 chặn tự hủy muộn; HR xác minh thực tế nghỉ và điều chỉnh có audit |
-| HR duyệt thêm theo loại phép (FR-4.8, BR-16, A6) | Chưa có: chưa có trạng thái `PENDING_HR`, cấu hình loại phép, API `pending-hr`, `hr-approve`, `hr-reject` | TV1, nhánh `feat/leave-hr-approval`, tuần 12. Xem 13.3 |
-| Nhắc đơn chờ quá một ngày làm việc (BR-17, AC-4.6.6) | Chưa có | TV1 gửi một email chung cho người đang có quyền duyệt/nhóm HR theo từng giai đoạn chờ |
+| Danh sách chờ, duyệt, từ chối (bắt buộc lý do), hoàn tất sau `endDate`, lịch sử có `action` | Đã có | – |
+| HR duyệt đơn của CEO; email "có đơn" của CEO tới nhóm HR (E8) | Đã có | – |
+| Người duyệt thay (FR-4.3, BR-06), trang `/approvals/delegations` | Đã có | Danh sách chọn người thay chưa đưa phó đơn vị lên đầu (UC2 AC-2.9.3) |
+| HR duyệt thêm theo loại phép (FR-4.8, BR-16) | Đã có | Chưa có màn HR đổi cấu hình loại phép (`LEAVE_TYPE_UPDATE`); đổi bằng migration |
+| Xác nhận, bác đề nghị hủy (BR-08, 13.4) | Đã có | – |
+| Nhắc đơn chờ (BR-17), nhãn "Quá hạn" | Đã có (`LeaveJob`) | – |
+| Lịch lễ, tính lại đơn (FR-4.9, BR-19) | Đã có | UC1 hạn 2 ngày làm việc (AC-1.9.13) vẫn dùng `workdaysBetween` chưa bỏ ngày lễ |
+| Email chung, payload tối thiểu, audit không chứa ghi chú (BR-14, BR-15) | Đã có | – |
+| Trang "Việc cần duyệt" gộp đơn nghỉ, hoàn tất; link cũ `/leave/approvals`, `/leave/hr` chuyển tiếp (AC-0.6.4) | Đã có | – |
 | Đo MT-2 (thời gian gửi → quyết định) | Chưa có báo cáo | Truy vấn trên `leave_request_history` khi có dữ liệu staging |
 
-## 13. Thiết kế đề xuất cho phần chưa có
+## 13. Thiết kế
 
-> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/leave-delegation` và `feat/leave-privacy`.
+> Đã code trong PR #120 (`feat/leave-uc3-uc4`, 21/11/2026). Đổi thiết kế thì sửa mục này cùng PR code.
 
 ### 13.1 Người duyệt thay (FR-4.3, BR-06)
 
@@ -297,8 +294,8 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 ### 13.2 Riêng tư đơn nghỉ (BR-14, BR-15)
 
-- **Ẩn lý do:** với loại phép ốm, thai sản, `reason` chỉ trả cho chủ đơn và HR ở chi tiết, danh sách, lịch sử. HR đọc lý do thì
-  ghi audit `VIEW_LEAVE_REASON` (chỉ ID đơn, không giá trị).
+- **Ẩn lý do:** với loại phép ốm, thai sản, `reason` chỉ trả cho chủ đơn và HR ở chi tiết, danh sách, lịch sử. HR mở chi tiết đơn thì
+  ghi audit `VIEW_LEAVE_REASON` (chỉ ID đơn, không giá trị); response sau một thao tác không ghi thêm.
 - **Audit:** bỏ `comment` khỏi `changedFields` của duyệt, từ chối, hủy, hoàn tất; ghi chú vẫn nằm trong lịch sử đơn.
 - **Outbox và email:** payload chỉ còn `eventId`, `eventType`, `requestId`, `employeeId`, `occurredAt`. Email: tiêu đề và nội dung
   chung, link `/leave` hoặc `/approvals?type=leave` (không có mã đơn). Đổi [hợp đồng event](../../architecture/event-contract.md)
@@ -369,7 +366,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 ### 13.7 Quyền xử lý đơn (ADR-18)
 
-Gom vào `leave-access.ts` (đề xuất ở [authorization.md](../../security/authorization.md)), một hàm `relation(actor, request)`
+Gom vào `leave-access.ts` (đã có, [authorization.md](../../security/authorization.md)), một hàm `relation(actor, request)`
 trả về tập quan hệ: `OWNER`, `DIRECT_MANAGER`, `DELEGATE`, `HR`. Mỗi endpoint kiểm theo bảng:
 
 | Thao tác | Được khi |

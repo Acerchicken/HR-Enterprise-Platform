@@ -1,6 +1,8 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
 
-/** Ngày nghỉ lễ (kể cả ngày nghỉ bù) không trừ vào phép – BR-03. */
+export type HolidayKind = 'HOLIDAY' | 'COMPENSATORY';
+
+/** Ngày nghỉ lễ, nghỉ bù không trừ phép (BR-03); HR sửa được (FR-4.9, BR-19). */
 @Entity({ schema: 'leave', name: 'holiday' })
 export class Holiday {
   @PrimaryColumn({ name: 'holiday_date', type: 'date' })
@@ -8,4 +10,13 @@ export class Holiday {
 
   @Column({ length: 100 })
   name: string;
+
+  @Column({ type: 'varchar', length: 12 })
+  kind: HolidayKind;
+
+  @Column({ name: 'created_by', type: 'uuid', nullable: true })
+  createdBy: string | null;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
 }

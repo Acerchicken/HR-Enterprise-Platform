@@ -276,7 +276,7 @@ Không có `DELETE /positions`: chỉ ngừng dùng (E11 giữ cho trường h�
 | `GET /employees/{id}/transfers` | HR | – | Các điều chuyển (mọi trạng thái), mới nhất trước | 403 |
 | `DELETE /employees/{id}/transfers/{transferId}` | HR | – | 204; chỉ khi `SCHEDULED` (kéo theo dòng của cấp dưới) | 409 nếu đã `ACTIVE`, `FAILED` |
 | `GET /employees/{id}/profile/career-history` | Mức QL (UC1) | – | `[{from, to, departmentName, unitType, positionTitle, managerName, reason, status}]` mới nhất trước; đọc từ bảng quá trình công tác | 404 (UC1 E7) |
-| `GET /employees/{id}/termination-impact` | HR | – | `{activeReports, headRoles: [{departmentId, name, role: HEAD\|DEPUTY}], scheduledTransfers, pendingAsNewManager: [{transferId, employeeName}]}` | 403 |
+| `GET /employees/{id}/termination-impact` | HR | – | `{activeReports, headRoles: [{departmentId, name, role: HEAD\|DEPUTY}], scheduledTransfers, pendingAsNewManager: [{transferId, employeeName}], grantedRoles, lastAdmin, leave: {pending, approvedFuture}}` | 403 |
 
 `PATCH /employees/{id}` (UC1): khi có điều chuyển, gửi `departmentId`, `positionId`, `managerId` thì 400 (AC-2.7.7); chuyển
 `TERMINATED` làm thêm các việc ở UC1 AC-1.7.3 trong cùng giao dịch.

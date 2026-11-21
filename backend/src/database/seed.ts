@@ -13,6 +13,8 @@ import { randomUUID } from 'crypto';
 import { FieldCrypto } from '../common/field-crypto';
 import { loadConfig } from '../config/config';
 import dataSource from './data-source';
+import { seniority } from '../modules/employee/profile-computed';
+import { annualEntitlement } from '../modules/leave/leave-rules';
 
 export const TOTAL_EMPLOYEES = Number(process.env.SEED_EMPLOYEES ?? 2000);
 
@@ -74,11 +76,26 @@ const POSITIONS: [string, string, number, number][] = [
   ['INT', 'Thực tập sinh', 1, 5],
 ];
 
-const LEAVE_TYPES: [string, string, number][] = [
-  ['ANNUAL', 'Nghỉ phép năm', 12],
-  ['SICK', 'Nghỉ ốm', 30],
-  ['MARRIAGE', 'Nghỉ cưới', 3],
-  ['UNPAID', 'Nghỉ không lương', 30],
+/** Danh mục loại phép (docs/business/leave-types-holidays.md; UC3 spec 13.3, UC4 13.3). */
+const LEAVE_TYPES: {
+  code: string;
+  name: string;
+  maxPerYear: number;
+  kind: 'ACCRUED' | 'YEARLY' | 'PER_EVENT';
+  perEvent?: number;
+  months?: number;
+  doc: boolean;
+  hr: 'NEVER' | 'ALWAYS' | 'OVER_DAYS';
+  hrMin?: number;
+}[] = [
+  { code: 'ANNUAL', name: 'Nghỉ phép năm', maxPerYear: 12, kind: 'ACCRUED', doc: false, hr: 'NEVER' },
+  { code: 'SICK', name: 'Nghỉ ốm', maxPerYear: 30, kind: 'YEARLY', doc: true, hr: 'NEVER' },
+  { code: 'UNPAID', name: 'Nghỉ không lương', maxPerYear: 30, kind: 'YEARLY', doc: false, hr: 'OVER_DAYS', hrMin: 3 },
+  { code: 'MARRIAGE', name: 'Nghỉ cưới', maxPerYear: 0, kind: 'PER_EVENT', perEvent: 3, doc: true, hr: 'NEVER' },
+  { code: 'CHILD_MARRIAGE', name: 'Con kết hôn', maxPerYear: 0, kind: 'PER_EVENT', perEvent: 1, doc: true, hr: 'NEVER' },
+  { code: 'BEREAVEMENT', name: 'Nghỉ tang', maxPerYear: 0, kind: 'PER_EVENT', perEvent: 3, doc: true, hr: 'NEVER' },
+  { code: 'PATERNITY', name: 'Nghỉ khi vợ sinh con', maxPerYear: 0, kind: 'PER_EVENT', perEvent: 14, doc: true, hr: 'NEVER' },
+  { code: 'MATERNITY', name: 'Nghỉ thai sản', maxPerYear: 0, kind: 'PER_EVENT', months: 6, doc: true, hr: 'ALWAYS' },
 ];
 
 const STREETS = ['Láng Hạ', 'Trần Duy Hưng', 'Nguyễn Trãi', 'Lê Lợi', 'Hai Bà Trưng', 'Nguyễn Huệ', 'Bạch Đằng', 'Phan Chu Trinh', 'Cầu Giấy', 'Điện Biên Phủ'];
@@ -128,7 +145,7 @@ async function main() {
   await dataSource.transaction(async (m) => {
     if (reset) {
       // audit_log là append-only (trigger chặn DELETE) nên dùng TRUNCATE – chỉ dành cho môi trường dev.
-      await m.query(`TRUNCATE audit.audit_log, leave.leave_request_history, leave.leave_request, leave.leave_balance,
+      await m.query(`TRUNCATE audit.audit_log, leave.leave_request_history, leave.leave_request_allocation, leave.approval_delegation, leave.leave_request, leave.leave_balance,
         leave.leave_type, iam.role_assignment, iam.user_account, employee.employee_sensitive, employee.employee,
         org.position, org.department RESTART IDENTITY CASCADE`);
     }
@@ -297,25 +314,42 @@ async function main() {
 
     // ---- Loại phép & số dư năm hiện tại ----
     const typeId = new Map<string, string>();
-    for (const [code, name, max] of LEAVE_TYPES) {
+    for (const t of LEAVE_TYPES) {
       const [row] = await m.query(
-        'INSERT INTO leave.leave_type (code, name, max_days_per_year) VALUES ($1, $2, $3) RETURNING id',
-        [code, name, max],
+        `INSERT INTO leave.leave_type (code, name, max_days_per_year, quota_kind, max_days_per_event, max_months_per_event,
+           requires_event_date, requires_document, hr_approval, hr_approval_min_days)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+        [t.code, t.name, t.maxPerYear, t.kind, t.perEvent ?? null, t.months ?? null, t.kind === 'PER_EVENT', t.doc, t.hr, t.hrMin ?? null],
       );
-      typeId.set(code, row.id);
+      typeId.set(t.code, row.id);
     }
     const year = new Date().getFullYear();
     const active = employees.filter((e) => e.status !== 'TERMINATED');
-    // Phép năm: 12 ngày + 1 ngày cho mỗi 5 năm thâm niên (theo Bộ luật Lao động).
-    const annual = active.map((e) => 12 + Math.floor((year - Number(e.hire_date.slice(0, 4))) / 5));
-    await m.query(
-      `INSERT INTO leave.leave_balance (employee_id, leave_type_id, year, entitled, used)
-       SELECT unnest($1::uuid[]), $2::uuid, $3::int, unnest($4::numeric[]), unnest($5::numeric[])`,
-      [active.map((e) => e.id), typeId.get('ANNUAL'), year, annual, annual.map((a) => faker.number.int({ min: 0, max: Math.min(8, a) }))],
+    // Phép năm theo cùng công thức với API (BR-01, UC3 13.2): tỉ lệ tháng làm việc, tháng lẻ, thâm niên tính ở 31/12.
+    const holidays = new Set<string>(
+      (await m.query(`SELECT to_char(holiday_date, 'YYYY-MM-DD') AS d FROM leave.holiday WHERE extract(year FROM holiday_date) = $1`, [year])).map(
+        (h: { d: string }) => h.d,
+      ),
+    );
+    const annual = active.map((e) =>
+      annualEntitlement({
+        year,
+        hireDate: e.hire_date,
+        terminationDate: null,
+        baseDays: null,
+        seniorityBonus: seniority(e.hire_date, `${year}-12-31`).annualLeaveBonus,
+        holidays,
+        unpaidDays: new Map(),
+      }),
     );
     await m.query(
       `INSERT INTO leave.leave_balance (employee_id, leave_type_id, year, entitled, used)
-       SELECT unnest($1::uuid[]), $2::uuid, $3::int, 30, 0`,
+       SELECT unnest($1::uuid[]), $2::uuid, $3::int, unnest($4::numeric[]), unnest($5::numeric[])`,
+      [active.map((e) => e.id), typeId.get('ANNUAL'), year, annual, annual.map((a) => faker.number.int({ min: 0, max: Math.floor(Math.min(8, a)) }))],
+    );
+    await m.query(
+      `INSERT INTO leave.leave_balance (employee_id, leave_type_id, year, entitled, used, source)
+       SELECT unnest($1::uuid[]), $2::uuid, $3::int, 30, 0, 'DEFAULT'`,
       [active.map((e) => e.id), typeId.get('SICK'), year],
     );
 

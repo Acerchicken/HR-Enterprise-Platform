@@ -87,7 +87,8 @@
 - **AC-1.7.1** Khi HR chuyển nhân viên còn cấp dưới đang làm việc sang `TERMINATED`. Thì trả 400, nêu số cấp dưới
   cần chuyển sang quản lý khác trước.
 - **AC-1.7.3** Khi HR cho B nghỉ việc. Thì trong cùng giao dịch: B được gỡ khỏi vai trò trưởng, phó
-  đơn vị (UC2 AC-2.9.8); điều chuyển chưa hiệu lực của B bị hủy; hộp xác nhận nêu trước các thay đổi này. Nếu B là quản lý mới
+  đơn vị (UC2 AC-2.9.8); điều chuyển chưa hiệu lực của B bị hủy; hộp xác nhận nêu trước các thay đổi này, kể cả số đơn nghỉ chờ duyệt và đơn đã duyệt chưa
+  bắt đầu của B sẽ bị hệ thống hủy ngay sau đó (UC3 AC-3.1.7). Nếu B là quản lý mới
   trong điều chuyển chưa hiệu lực của người khác thì trả 400, nêu các điều chuyển đó để HR sửa trước.
 - **AC-1.7.2** Giả sử hồ sơ đã `TERMINATED`. Khi tài khoản gắn với hồ sơ đó gọi API bằng token còn hạn. Thì bị từ
   chối (403).

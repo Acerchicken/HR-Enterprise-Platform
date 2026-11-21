@@ -91,4 +91,9 @@ export interface TerminationImpact {
   grantedRoles: ('HR' | 'ADMIN')[];
   /** Là ADMIN cuối cùng đang làm việc: phải cấp ADMIN cho người khác trước (409 khi lưu). */
   lastAdmin: boolean;
+  /**
+   * Đơn nghỉ sẽ bị hệ thống hủy sau khi lưu (UC3 AC-3.1.7): đơn đang chờ, đơn đã duyệt bắt đầu sau hôm nay. Đơn đang diễn ra
+   * giữ nguyên để HR xử lý.
+   */
+  leave: { pending: number; approvedFuture: number };
 }

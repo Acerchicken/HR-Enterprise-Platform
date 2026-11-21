@@ -696,7 +696,7 @@ describe('HRHelper API (e2e)', () => {
 
   it('số dư phép của tôi', async () => {
     const res = await http.get('/api/v1/leave-balances/me').set(EMPLOYEE).expect(200);
-    expect(res.body.map((b: any) => b.leaveType).sort()).toEqual(['ANNUAL', 'SICK']);
+    expect(res.body.map((b: any) => b.leaveType).sort()).toEqual(['ANNUAL', 'SICK', 'UNPAID']);
   });
 
   /** Issue #22 (FR-2.5, FR-4.4): một quản lý cho mỗi nhân viên trừ CEO; HR duyệt đơn của CEO. */
@@ -755,6 +755,10 @@ describe('HRHelper API (e2e)', () => {
         await http.post(`/api/v1/leave-requests/${r.id}/approve`).set(MANAGER).send({ version: r.version }).expect(403);
         const ok = await http.post(`/api/v1/leave-requests/${r.id}/approve`).set(HR).send({ version: r.version }).expect(200);
         expect(ok.body.status).toBe('APPROVED');
+        // Đề nghị hủy đơn của CEO chỉ HR xác nhận, nên phải hiện trong danh sách chờ HR (review #120).
+        await http.post(`/api/v1/leave-requests/${r.id}/cancel-request`).set(CEO).send({ version: ok.body.version, reason: 'Đổi lịch' }).expect(200);
+        const hrQueue = (await http.get('/api/v1/leave-requests/pending-hr').set(HR).expect(200)).body.items;
+        expect(hrQueue.find((x: any) => x.id === r.id)).toMatchObject({ kind: 'CANCEL_REQUEST' });
       } finally {
         await ds.query('DELETE FROM leave.leave_request_history WHERE request_id = $1', [r.id]);
         await ds.query('DELETE FROM leave.outbox WHERE aggregate_id = $1', [r.id]);
@@ -1729,185 +1733,434 @@ describe('HRHelper API (e2e)', () => {
     });
   });
 
-  describe('workflow nghỉ phép', () => {
+  describe('UC3, UC4 nghỉ phép', () => {
     let ds: import('typeorm').DataSource;
-    let savedBalances: { leave_type_id: string; used: string }[];
+    let holidays: Set<string>;
+    let today: string;
     const key = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const annual = async () =>
-      (await http.get('/api/v1/leave-balances/me').set(EMPLOYEE)).body.find((b: any) => b.leaveType === 'ANNUAL');
-    const create = (body: object, k = key()) =>
-      http.post('/api/v1/leave-requests').set(EMPLOYEE).set('Idempotency-Key', k).send(body);
+    const plus = (d: string, n: number) => {
+      const t = new Date(`${d}T00:00:00Z`);
+      t.setUTCDate(t.getUTCDate() + n);
+      return t.toISOString().slice(0, 10);
+    };
+    const isWork = (d: string) => ![0, 6].includes(new Date(`${d}T00:00:00Z`).getUTCDay()) && !holidays.has(d);
+    /** Ngày làm việc thứ k sau hôm nay (k > 0) hoặc trước hôm nay (k < 0). */
+    const wd = (k: number) => {
+      let d = today;
+      for (let i = 0; i < Math.abs(k); ) {
+        d = plus(d, Math.sign(k));
+        if (isWork(d)) i++;
+      }
+      return d;
+    };
+    const balance = async (code = 'ANNUAL', year?: number) =>
+      (await http.get(`/api/v1/leave-balances/me${year ? `?year=${year}` : ''}`).set(EMPLOYEE)).body.find((b: any) => b.leaveType === code);
+    /** Số dư phép năm của năm chứa ngày `d`. */
+    const bal = (d: string) => balance('ANNUAL', Number(d.slice(0, 4)));
+    const create = (body: object, who = EMPLOYEE, k = key()) => http.post('/api/v1/leave-requests').set(who).set('Idempotency-Key', k).send(body);
+    const annual = (startDate: string, endDate = startDate, extra: object = {}) => create({ leaveType: 'ANNUAL', startDate, endDate, ...extra });
+    const post = (id: string, path: string, who: Record<string, string>, body: object) => http.post(`/api/v1/leave-requests/${id}/${path}`).set(who).send(body);
+    const get = async (id: string, who = HR) => (await http.get(`/api/v1/leave-requests/${id}`).set(who).expect(200)).body;
+    /** Dọn đơn đang giữ chỗ: đơn chờ thì quản lý từ chối, đơn đã duyệt thì đề nghị hủy rồi HR xác nhận. */
+    const release = async (id: string) => {
+      const r = await get(id);
+      if (r.status === 'SUBMITTED') await post(id, 'reject', MANAGER, { version: r.version, comment: 'Dọn test' }).expect(200);
+      if (r.status === 'PENDING_HR') await post(id, 'hr-reject', HR, { version: r.version, comment: 'Dọn test' }).expect(200);
+    };
     const clean = async () => {
-      await ds.query(
-        `DELETE FROM leave.leave_request_history WHERE request_id IN (SELECT id FROM leave.leave_request WHERE employee_id = $1)`,
-        [employeeId],
-      );
-      await ds.query(
-        `DELETE FROM leave.outbox WHERE aggregate_id IN (SELECT id FROM leave.leave_request WHERE employee_id = $1)`,
-        [employeeId],
-      );
+      await ds.query(`DELETE FROM leave.leave_request_history WHERE request_id IN (SELECT id FROM leave.leave_request WHERE employee_id = $1)`, [employeeId]);
+      await ds.query(`DELETE FROM leave.outbox WHERE aggregate_id IN (SELECT id FROM leave.leave_request WHERE employee_id = $1)`, [employeeId]);
       await ds.query('DELETE FROM leave.leave_request WHERE employee_id = $1', [employeeId]);
+      await ds.query('UPDATE leave.leave_balance SET used = 0, pending = 0, carried_in = 0 WHERE employee_id = $1', [employeeId]);
+      await ds.query(`DELETE FROM leave.leave_balance WHERE employee_id = $1 AND year > $2`, [employeeId, Number(today.slice(0, 4))]);
     };
 
-    // Dọn đơn của nhân viên demo và đưa số dư về 0 ngày đã dùng để test chạy lại được; afterAll trả lại số liệu seed.
     beforeAll(async () => {
       const { DataSource } = await import('typeorm');
+      const { vnToday } = await import('../src/modules/employee/transfer-rules');
       ds = app.get(DataSource);
-      savedBalances = await ds.query('SELECT leave_type_id, used FROM leave.leave_balance WHERE employee_id = $1', [employeeId]);
+      today = vnToday();
+      const y = Number(today.slice(0, 4));
+      const rows = await ds.query(`SELECT to_char(holiday_date, 'YYYY-MM-DD') AS d FROM leave.holiday WHERE extract(year FROM holiday_date) BETWEEN $1 AND $2`, [y - 1, y + 1]);
+      holidays = new Set(rows.map((r: any) => r.d));
       await clean();
-      await ds.query('UPDATE leave.leave_balance SET used = 0, pending = 0 WHERE employee_id = $1', [employeeId]);
     });
 
-    afterAll(async () => {
-      await clean();
-      for (const b of savedBalances) {
-        await ds.query(
-          'UPDATE leave.leave_balance SET used = $3, pending = 0 WHERE employee_id = $1 AND leave_type_id = $2',
-          [employeeId, b.leave_type_id, b.used],
-        );
-      }
-    });
+    afterAll(clean);
 
-    it('tạo → quản lý duyệt → HR hoàn tất; số dư, lịch sử và audit đúng', async () => {
-      const before = await annual();
+    it('tạo → quản lý duyệt → HR hoàn tất sau ngày kết thúc; số dư, lịch sử, audit, outbox đúng (AC-3.2.1, AC-4.2.x, AC-4.5.1)', async () => {
+      const before = await balance();
       const k = key();
-      const body = { leaveType: 'ANNUAL', startDate: '2026-11-09', endDate: '2026-11-10', reason: 'Việc gia đình' };
-      const created = await create(body, k).expect(201);
-      expect(created.body).toMatchObject({ status: 'SUBMITTED', days: 2, approverId: null });
-      expect((await annual()).pending).toBe(before.pending + 2);
+      const body = { leaveType: 'ANNUAL', startDate: wd(-3), endDate: wd(-2), reason: 'Việc gia đình' };
+      const created = await create(body, EMPLOYEE, k).expect(201);
+      expect(created.body).toMatchObject({ status: 'SUBMITTED', days: 2, approverId: null, requiresHrApproval: false });
+      expect(created.body.allocations).toEqual([{ year: Number(body.startDate.slice(0, 4)), days: 2 }]);
+      expect((await balance()).pending).toBe(before.pending + 2);
 
-      // Idempotency-Key: gửi lại cùng nội dung trả về đơn cũ; khác nội dung thì 409.
-      expect((await create(body, k).expect(201)).body.id).toBe(created.body.id);
-      await create({ ...body, endDate: '2026-11-11' }, k).expect(409);
+      // Idempotency-Key: gửi lại cùng nội dung trả đơn cũ; khác nội dung thì 409 (AC-3.5.x).
+      expect((await create(body, EMPLOYEE, k).expect(201)).body.id).toBe(created.body.id);
+      await create({ ...body, endDate: wd(-1) }, EMPLOYEE, k).expect(409);
 
       const id = created.body.id;
       const v = created.body.version;
-      await http.post(`/api/v1/leave-requests/${id}/approve`).set(EMPLOYEE).send({ version: v }).expect(403);
-      await http.post(`/api/v1/leave-requests/${id}/approve`).set(HR).send({ version: v }).expect(403);
-      await http.post(`/api/v1/leave-requests/${id}/approve`).set(MANAGER).send({ version: v + 5 }).expect(409);
-
+      await post(id, 'approve', EMPLOYEE, { version: v }).expect(403);
+      await post(id, 'approve', HR, { version: v }).expect(403);
+      await post(id, 'approve', MANAGER, { version: v + 5 }).expect(409);
       const queue = await http.get('/api/v1/leave-requests/pending-approval').set(MANAGER).expect(200);
-      expect(queue.body.items.map((r: any) => r.id)).toContain(id);
+      expect(queue.body.items.find((r: any) => r.id === id)).toMatchObject({ kind: 'DECISION', viaDelegation: false });
 
-      const approved = await http.post(`/api/v1/leave-requests/${id}/approve`).set(MANAGER).send({ version: v }).expect(200);
-      expect(approved.body).toMatchObject({ status: 'APPROVED', approverId: managerId });
-      // BR-11: duyệt lặp không đổi gì; quyết định ngược lại bị chặn; nhân viên không tự hủy đơn đã duyệt (BR-08).
-      const again = await http.post(`/api/v1/leave-requests/${id}/approve`).set(MANAGER).send({ version: v }).expect(200);
-      expect(again.body.version).toBe(approved.body.version);
-      await http.post(`/api/v1/leave-requests/${id}/reject`).set(MANAGER).send({ version: approved.body.version }).expect(409);
-      await http.post(`/api/v1/leave-requests/${id}/cancel`).set(EMPLOYEE).send({ version: approved.body.version }).expect(409);
+      const approved = (await post(id, 'approve', MANAGER, { version: v }).expect(200)).body;
+      expect(approved).toMatchObject({ status: 'APPROVED', approverId: managerId });
+      // BR-11: duyệt lặp không đổi gì; quyết định ngược lại bị chặn; nhân viên không tự hủy đơn đã duyệt (AC-3.6.2).
+      expect((await post(id, 'approve', MANAGER, { version: v }).expect(200)).body.version).toBe(approved.version);
+      await post(id, 'reject', MANAGER, { version: approved.version, comment: 'x' }).expect(409);
+      await post(id, 'cancel', EMPLOYEE, { version: approved.version }).expect(409);
 
-      const hrQueue = await http.get('/api/v1/leave-requests').set(HR).expect(200);
-      expect(hrQueue.body.items.map((r: any) => r.id)).toContain(id);
-      await http.get('/api/v1/leave-requests').set(EMPLOYEE).expect(403);
-
-      const done = await http
-        .post(`/api/v1/leave-requests/${id}/complete`)
-        .set(HR)
-        .send({ version: approved.body.version })
-        .expect(200);
-      expect(done.body.status).toBe('COMPLETED');
-      expect(done.body.history.map((h: any) => h.toStatus)).toEqual(['SUBMITTED', 'APPROVED', 'COMPLETED']);
-      const after = await annual();
+      expect((await http.get('/api/v1/leave-requests').set(HR).expect(200)).body.items.map((r: any) => r.id)).toContain(id);
+      expect((await get(id)).canComplete).toBe(true);
+      const done = (await post(id, 'complete', HR, { version: approved.version }).expect(200)).body;
+      expect(done.status).toBe('COMPLETED');
+      expect(done.history.map((h: any) => h.action)).toEqual(['SUBMIT', 'APPROVE', 'COMPLETE']);
+      const after = await balance();
       expect(after.pending).toBe(before.pending);
       expect(after.used).toBe(before.used + 2);
 
       const logs = await http.get(`/api/v1/audit-logs?entity=leave_request&entityId=${id}`).set(HR).expect(200);
       expect(logs.body.items.map((l: any) => l.action).sort()).toEqual(['LEAVE_APPROVE', 'LEAVE_COMPLETE', 'LEAVE_SUBMIT']);
-
-      // Outbox: mỗi thao tác ghi đúng một event trong cùng transaction (lần gửi lặp không ghi thêm).
+      // BR-15: payload outbox chỉ có id để định tuyến, không loại phép, ngày, lý do.
       const events = await ds.query('SELECT event_type, payload FROM leave.outbox WHERE aggregate_id = $1 ORDER BY id', [id]);
       expect(events.map((e: any) => e.event_type)).toEqual(['LeaveRequested', 'LeaveApproved', 'LeaveCompleted']);
-      expect(events[0].payload).toMatchObject({ requestId: id, employeeId, leaveType: 'ANNUAL', days: 2 });
+      expect(Object.keys(events[0].payload).sort()).toEqual(['employeeId', 'hrInvolved', 'occurredAt', 'onBehalf', 'requestId']);
     });
 
-    it('quản lý từ chối trả lại số ngày đang giữ (BR-09)', async () => {
-      const before = await annual();
-      const r = (await create({ leaveType: 'ANNUAL', startDate: '2026-11-11', endDate: '2026-11-11' }).expect(201)).body;
-      const rejected = await http
-        .post(`/api/v1/leave-requests/${r.id}/reject`)
-        .set(MANAGER)
-        .send({ version: r.version, comment: 'Trùng lịch dự án' })
-        .expect(200);
-      expect(rejected.body.status).toBe('REJECTED');
-      expect(rejected.body.history[1]).toMatchObject({ toStatus: 'REJECTED', comment: 'Trùng lịch dự án' });
-      expect(await annual()).toMatchObject({ pending: before.pending, used: before.used });
+    it('từ chối bắt buộc lý do, trả số ngày (AC-4.2.2, BR-09); lý do không vào audit (BR-14)', async () => {
+      const before = await bal(wd(30));
+      const r = (await annual(wd(30)).expect(201)).body;
+      await post(r.id, 'reject', MANAGER, { version: r.version }).expect(400);
+      const rejected = (await post(r.id, 'reject', MANAGER, { version: r.version, comment: 'Trùng lịch dự án' }).expect(200)).body;
+      expect(rejected.history[1]).toMatchObject({ action: 'REJECT', toStatus: 'REJECTED', comment: 'Trùng lịch dự án' });
+      expect(await bal(wd(30))).toMatchObject({ pending: before.pending, used: before.used });
+      const logs = (await http.get(`/api/v1/audit-logs?entity=leave_request&entityId=${r.id}`).set(HR)).body.items;
+      expect(JSON.stringify(logs)).not.toContain('Trùng lịch dự án');
     });
 
-    it('trùng lịch bị chặn; hai nửa ngày khác buổi thì được; hủy trả lại số dư (BR-02, BR-04, BR-07)', async () => {
-      const before = await annual();
-      const am = (await create({ leaveType: 'ANNUAL', startDate: '2026-11-16', endDate: '2026-11-16', halfDay: 'AM' }).expect(201)).body;
+    it('trùng lịch, nửa ngày, tự hủy trước ngày bắt đầu (BR-02, BR-04, BR-07)', async () => {
+      const d = wd(31);
+      const before = await bal(d);
+      const am = (await annual(d, d, { halfDay: 'AM' }).expect(201)).body;
       expect(am.days).toBe(0.5);
-      const pm = (await create({ leaveType: 'ANNUAL', startDate: '2026-11-16', endDate: '2026-11-16', halfDay: 'PM' }).expect(201)).body;
-      await create({ leaveType: 'ANNUAL', startDate: '2026-11-13', endDate: '2026-11-16' }).expect(409);
-      expect((await annual()).pending).toBe(before.pending + 1);
-
-      await http.post(`/api/v1/leave-requests/${am.id}/cancel`).set(MANAGER).send({ version: am.version }).expect(403);
-      for (const r of [am, pm]) {
-        const res = await http.post(`/api/v1/leave-requests/${r.id}/cancel`).set(EMPLOYEE).send({ version: r.version }).expect(200);
-        expect(res.body.status).toBe('CANCELLED');
-      }
-      expect((await annual()).pending).toBe(before.pending);
-      const mine = await http.get('/api/v1/leave-requests/me?status=CANCELLED').set(EMPLOYEE).expect(200);
-      expect(mine.body.total).toBe(2);
+      const pm = (await annual(d, d, { halfDay: 'PM' }).expect(201)).body;
+      await annual(wd(30), d).expect(409);
+      expect((await bal(d)).pending).toBe(before.pending + 1);
+      await post(am.id, 'cancel', MANAGER, { version: am.version }).expect(403);
+      for (const r of [am, pm]) expect((await post(r.id, 'cancel', EMPLOYEE, { version: r.version }).expect(200)).body.status).toBe('CANCELLED');
+      expect((await bal(d)).pending).toBe(before.pending);
     });
 
-    it('ngày lễ không trừ phép: 29/4–4/5/2026 tính 2 ngày, chỉ ngày nghỉ bù 27/4 bị từ chối (BR-03)', async () => {
-      const r = await create({ leaveType: 'ANNUAL', startDate: '2026-04-29', endDate: '2026-05-04' }).expect(201);
-      expect(r.body.days).toBe(2);
-      await http.post(`/api/v1/leave-requests/${r.body.id}/cancel`).set(EMPLOYEE).send({ version: r.body.version }).expect(200);
-      await create({ leaveType: 'ANNUAL', startDate: '2026-04-27', endDate: '2026-04-27' }).expect(400);
-      await create({ leaveType: 'ANNUAL', startDate: '2026-11-14', endDate: '2026-11-15' }).expect(400); // T7, CN
+    it('từ ngày bắt đầu không tự hủy được (AC-3.6.5); hoàn tất trước khi qua ngày kết thúc → 409 (AC-4.5.3)', async () => {
+      const past = (await annual(wd(-6)).expect(201)).body;
+      await post(past.id, 'cancel', EMPLOYEE, { version: past.version }).expect(409);
+      await release(past.id);
+      const future = (await annual(wd(32)).expect(201)).body;
+      const ok = (await post(future.id, 'approve', MANAGER, { version: future.version }).expect(200)).body;
+      await post(future.id, 'complete', HR, { version: ok.version }).expect(409);
+      for (const who of [EMPLOYEE, MANAGER, ADMIN]) await post(future.id, 'complete', who, { version: ok.version }).expect(403);
+      await post(future.id, 'cancel-request', EMPLOYEE, { version: ok.version, reason: 'Dọn test' }).expect(200);
+      await post(future.id, 'cancel-request/approve', HR, { version: ok.version + 1 }).expect(200);
     });
 
-    it('không đủ số dư, dữ liệu sai hoặc thiếu Idempotency-Key → 400 (BR-01)', async () => {
-      await create({ leaveType: 'ANNUAL', startDate: '2026-12-01', endDate: '2026-12-31' }).expect(400);
-      await create({ leaveType: 'ANNUAL', startDate: '2026-12-01', endDate: '2026-11-30' }).expect(400);
-      await create({ leaveType: 'ANNUAL', startDate: '2026-12-01', endDate: '2026-12-02', halfDay: 'AM' }).expect(400);
-      await create({ leaveType: 'KHONG_CO', startDate: '2026-12-01', endDate: '2026-12-01' }).expect(400);
-      await http
-        .post('/api/v1/leave-requests')
-        .set(EMPLOYEE)
-        .send({ leaveType: 'ANNUAL', startDate: '2026-12-01', endDate: '2026-12-01' })
-        .expect(400);
+    it('ngày lễ không trừ phép: 29/4–4/5/2026 tính 2 ngày; chỉ ngày nghỉ bù hoặc cuối tuần → 400 (BR-03)', async () => {
+      const r = (await annual('2026-04-29', '2026-05-04').expect(201)).body;
+      expect(r.days).toBe(2);
+      await release(r.id);
+      await annual('2026-04-27').expect(400);
+      await annual('2026-11-14', '2026-11-15').expect(400);
     });
 
-    it('người ngoài không xem được đơn của nhân viên', async () => {
-      const r = (await create({ leaveType: 'ANNUAL', startDate: '2026-12-07', endDate: '2026-12-07' }).expect(201)).body;
+    it('không đủ số dư, dữ liệu sai, thiếu Idempotency-Key → 400; người ngoài không xem được đơn (AC-4.7.2)', async () => {
+      await annual(wd(33), wd(60)).expect(400);
+      await annual(wd(33), wd(32)).expect(400);
+      await annual(wd(33), wd(34), { halfDay: 'AM' }).expect(400);
+      await create({ leaveType: 'KHONG_CO', startDate: wd(33), endDate: wd(33) }).expect(400);
+      await http.post('/api/v1/leave-requests').set(EMPLOYEE).send({ leaveType: 'ANNUAL', startDate: wd(33), endDate: wd(33) }).expect(400);
+      const r = (await annual(wd(33)).expect(201)).body;
       await http.get(`/api/v1/leave-requests/${r.id}`).set(ADMIN).expect(403);
       await http.get(`/api/v1/leave-requests/${r.id}`).set(MANAGER).expect(200);
-      await http.post(`/api/v1/leave-requests/${r.id}/cancel`).set(EMPLOYEE).send({ version: r.version }).expect(200);
+      await post(r.id, 'cancel', EMPLOYEE, { version: r.version }).expect(200);
     });
 
-    it('trùng lịch với đơn đang chờ → 409 (TC-04, BR-02)', async () => {
-      const r = (await create({ leaveType: 'ANNUAL', startDate: '2026-11-23', endDate: '2026-11-23' }).expect(201)).body;
-      await create({ leaveType: 'ANNUAL', startDate: '2026-11-23', endDate: '2026-11-25' }).expect(409);
-      await http.post(`/api/v1/leave-requests/${r.id}/cancel`).set(EMPLOYEE).send({ version: r.version }).expect(200);
+    it('đề nghị hủy đơn đã duyệt: gửi, bác có lý do, gửi lại, xác nhận (AC-3.6.6, AC-3.6.7, AC-4.5.4, AC-4.5.5)', async () => {
+      const before = await bal(wd(34));
+      const r = (await annual(wd(34)).expect(201)).body;
+      let cur = (await post(r.id, 'approve', MANAGER, { version: r.version }).expect(200)).body;
+      expect((await get(r.id, EMPLOYEE)).canRequestCancel).toBe(true);
+      await post(r.id, 'cancel-request', MANAGER, { version: cur.version, reason: 'x' }).expect(403);
+      cur = (await post(r.id, 'cancel-request', EMPLOYEE, { version: cur.version, reason: 'Đổi kế hoạch' }).expect(200)).body;
+      expect(cur).toMatchObject({ status: 'APPROVED', cancelRequest: expect.any(Object) });
+      await post(r.id, 'cancel-request', EMPLOYEE, { version: cur.version, reason: 'Lần hai' }).expect(409);
+      const queue = (await http.get('/api/v1/leave-requests/pending-approval').set(MANAGER)).body.items;
+      expect(queue.find((x: any) => x.id === r.id)).toMatchObject({ kind: 'CANCEL_REQUEST' });
+      // HR cũng thấy trong danh sách việc của mình (review #120).
+      const hrQueue = (await http.get('/api/v1/leave-requests/pending-hr').set(HR)).body.items;
+      expect(hrQueue.find((x: any) => x.id === r.id)).toMatchObject({ kind: 'CANCEL_REQUEST' });
+
+      await post(r.id, 'cancel-request/reject', MANAGER, { version: cur.version }).expect(400);
+      cur = (await post(r.id, 'cancel-request/reject', MANAGER, { version: cur.version, comment: 'Dự án cần' }).expect(200)).body;
+      expect(cur).toMatchObject({ status: 'APPROVED', cancelRequest: null });
+      cur = (await post(r.id, 'cancel-request', EMPLOYEE, { version: cur.version, reason: 'Xin lại' }).expect(200)).body;
+      cur = (await post(r.id, 'cancel-request/approve', MANAGER, { version: cur.version }).expect(200)).body;
+      expect(cur.status).toBe('CANCELLED');
+      expect(cur.history.map((h: any) => h.action)).toEqual(['SUBMIT', 'APPROVE', 'CANCEL_REQUEST', 'CANCEL_REQUEST_REJECT', 'CANCEL_REQUEST', 'CANCEL_APPROVE']);
+      expect(await bal(wd(34))).toMatchObject({ pending: before.pending, used: before.used });
+      const logs = JSON.stringify((await http.get(`/api/v1/audit-logs?entity=leave_request&entityId=${r.id}`).set(HR)).body.items);
+      expect(logs).toContain('LEAVE_CANCEL_APPROVED');
+      expect(logs).not.toMatch(/Đổi kế hoạch|Dự án cần/);
     });
 
-    it('HR hoàn tất đơn chưa duyệt → 409, đơn giữ SUBMITTED (TC-21, BR-10)', async () => {
-      const r = (await create({ leaveType: 'ANNUAL', startDate: '2026-11-26', endDate: '2026-11-26' }).expect(201)).body;
-      await http.post(`/api/v1/leave-requests/${r.id}/complete`).set(HR).send({ version: r.version }).expect(409);
-      expect((await http.get(`/api/v1/leave-requests/${r.id}`).set(HR).expect(200)).body.status).toBe('SUBMITTED');
-      await http.post(`/api/v1/leave-requests/${r.id}/cancel`).set(EMPLOYEE).send({ version: r.version }).expect(200);
+    it('nghỉ không lương trên 3 ngày qua HR duyệt thêm; 2 ngày thì duyệt ngay (AC-4.8.1 → AC-4.8.4)', async () => {
+      const long = (await create({ leaveType: 'UNPAID', startDate: wd(40), endDate: wd(44) }).expect(201)).body;
+      expect(long).toMatchObject({ days: 5, requiresHrApproval: true });
+      let cur = (await post(long.id, 'approve', MANAGER, { version: long.version }).expect(200)).body;
+      expect(cur.status).toBe('PENDING_HR');
+      expect((await http.get('/api/v1/leave-requests/pending-hr').set(HR).expect(200)).body.items.map((x: any) => x.id)).toContain(long.id);
+      await http.get('/api/v1/leave-requests/pending-hr').set(MANAGER).expect(403);
+      await post(long.id, 'hr-approve', MANAGER, { version: cur.version }).expect(403);
+      await post(long.id, 'complete', HR, { version: cur.version }).expect(409);
+      await post(long.id, 'hr-reject', HR, { version: cur.version }).expect(400);
+      cur = (await post(long.id, 'hr-approve', HR, { version: cur.version }).expect(200)).body;
+      expect(cur.status).toBe('APPROVED');
+      // Đơn đã qua HR: quản lý không xác nhận đề nghị hủy, HR thì được (AC-4.5.6).
+      cur = (await post(long.id, 'cancel-request', EMPLOYEE, { version: cur.version, reason: 'Không cần nữa' }).expect(200)).body;
+      await post(long.id, 'cancel-request/approve', MANAGER, { version: cur.version }).expect(403);
+      expect((await post(long.id, 'cancel-request/approve', HR, { version: cur.version }).expect(200)).body.status).toBe('CANCELLED');
+
+      const short = (await create({ leaveType: 'UNPAID', startDate: wd(46), endDate: wd(47) }).expect(201)).body;
+      expect((await post(short.id, 'approve', MANAGER, { version: short.version }).expect(200)).body.status).toBe('APPROVED');
+      const s2 = await get(short.id);
+      await post(short.id, 'cancel-request', EMPLOYEE, { version: s2.version, reason: 'Dọn' }).expect(200);
+      await post(short.id, 'cancel-request/approve', MANAGER, { version: s2.version + 1 }).expect(200);
     });
 
-    it('chỉ quản lý trực tiếp duyệt/từ chối, chỉ HR hoàn tất, chỉ chủ đơn hủy (TC-22, BR-05, BR-07, BR-10)', async () => {
-      const r = (await create({ leaveType: 'ANNUAL', startDate: '2026-11-27', endDate: '2026-11-27' }).expect(201)).body;
-      for (const who of [EMPLOYEE, HR, ADMIN]) {
-        await http.post(`/api/v1/leave-requests/${r.id}/reject`).set(who).send({ version: r.version }).expect(403);
+    it('nghỉ theo sự kiện: cần ngày sự kiện, tối đa theo loại, mỗi sự kiện một đơn, không trừ phép năm (AC-3.1.4, AC-3.2.6)', async () => {
+      const start = wd(50);
+      const before = await bal(start);
+      await create({ leaveType: 'MARRIAGE', startDate: start, endDate: start }).expect(400);
+      await create({ leaveType: 'ANNUAL', startDate: start, endDate: start, eventDate: start }).expect(400);
+      await create({ leaveType: 'MARRIAGE', startDate: start, endDate: wd(53), eventDate: start }).expect(400);
+      const r = (await create({ leaveType: 'MARRIAGE', startDate: start, endDate: wd(52), eventDate: start }).expect(201)).body;
+      expect(r).toMatchObject({ days: 3, eventDate: start, allocations: [] });
+      await create({ leaveType: 'MARRIAGE', startDate: wd(55), endDate: wd(55), eventDate: start }).expect(409);
+      expect(await bal(start)).toMatchObject({ pending: before.pending });
+      await post(r.id, 'cancel', EMPLOYEE, { version: r.version }).expect(200);
+      const again = (await create({ leaveType: 'MARRIAGE', startDate: wd(55), endDate: wd(55), eventDate: start }).expect(201)).body;
+      await post(again.id, 'cancel', EMPLOYEE, { version: again.version }).expect(200);
+    });
+
+    it('đơn qua hai năm: một đơn, giữ chỗ từng năm; chuyển phép sang năm sau (AC-3.2.4, AC-3.1.8)', async () => {
+      const y = Number(today.slice(0, 4)) + (today >= `${today.slice(0, 4)}-12-20` ? 1 : 0);
+      const cur = await balance('ANNUAL', y);
+      const next0 = await balance('ANNUAL', y + 1);
+      // Phần chuyển sang năm sau = được hưởng năm nay − phần năm nay đã dùng, giữ (không tính phần chuyển từ năm trước).
+      const carry = (b: any) => Math.max(0, b.entitled - Math.max(0, b.used + b.pending - b.carriedIn));
+      expect(next0.carriedIn).toBeCloseTo(carry(cur), 2);
+      const r = (await annual(`${y}-12-29`, `${y + 1}-01-05`).expect(201)).body;
+      expect(r.allocations.map((a: any) => a.year)).toEqual([y, y + 1]);
+      const curAfter = await balance('ANNUAL', y);
+      const next1 = await balance('ANNUAL', y + 1);
+      expect(curAfter.pending).toBe(cur.pending + r.allocations[0].days);
+      expect(next1.pending).toBe(next0.pending + r.allocations[1].days);
+      expect(next1.carriedIn).toBeCloseTo(carry(curAfter), 2);
+      await post(r.id, 'cancel', EMPLOYEE, { version: r.version }).expect(200);
+      expect((await balance('ANNUAL', y + 1)).carriedIn).toBeCloseTo(next0.carriedIn, 2);
+    });
+
+    it('HR chỉnh hạn mức; quản lý xem số dư cấp dưới không thấy mức nền (AC-3.8.x)', async () => {
+      const mine = (await http.get(`/api/v1/leave-balances?employeeId=${employeeId}`).set(MANAGER).expect(200)).body;
+      expect(mine[0]).not.toHaveProperty('baseDays');
+      await http.get(`/api/v1/leave-balances?employeeId=${strangerId}`).set(MANAGER).expect(403);
+      const hrView = (await http.get(`/api/v1/leave-balances?employeeId=${employeeId}`).set(HR).expect(200)).body;
+      const ann = hrView.find((b: any) => b.leaveType === 'ANNUAL');
+      const sick = hrView.find((b: any) => b.leaveType === 'SICK');
+      const y = ann.year;
+      const put = (code: string, body: object, who = HR) => http.put(`/api/v1/leave-balances/${employeeId}/${code}/${y}`).set(who).send(body);
+      await put('ANNUAL', { version: ann.version, entitled: 20, note: 'x' }).expect(400);
+      await put('ANNUAL', { version: ann.version, baseDays: 13, note: 'x' }).expect(400);
+      await put('ANNUAL', { version: ann.version, baseDays: 14, note: 'x' }, MANAGER).expect(403);
+      const a14 = (await put('ANNUAL', { version: ann.version, baseDays: 14, note: 'Nghề nặng nhọc' }).expect(200)).body;
+      expect(a14).toMatchObject({ baseDays: 14, version: ann.version + 1 });
+      expect(a14.entitled).toBeGreaterThan(ann.entitled);
+      await put('ANNUAL', { version: a14.version, baseDays: 12, note: 'Trả lại' }).expect(200);
+      const s40 = (await put('SICK', { version: sick.version, entitled: 40, note: 'Hồ sơ BHXH 16 năm' }).expect(200)).body;
+      expect(s40).toMatchObject({ entitled: 40, source: 'MANUAL' });
+      await put('SICK', { version: s40.version, entitled: 30, note: 'Trả lại' }).expect(200);
+      const logs = JSON.stringify((await http.get(`/api/v1/audit-logs?entity=leave_balance&entityId=${employeeId}`).set(HR)).body.items);
+      expect(logs).toContain('LEAVE_BALANCE_ADJUST');
+      expect(logs).not.toContain('Nghề nặng nhọc');
+    });
+
+    it('lý do nghỉ ốm: quản lý không thấy, HR thấy và có audit (AC-4.7.3, AC-4.7.4)', async () => {
+      const r = (await create({ leaveType: 'SICK', startDate: wd(36), endDate: wd(36), reason: 'Khám chuyên khoa' }).expect(201)).body;
+      expect(r.reason).toBe('Khám chuyên khoa');
+      expect(await get(r.id, MANAGER)).toMatchObject({ reason: null, reasonHidden: true });
+      expect((await http.get('/api/v1/leave-requests/pending-approval').set(MANAGER)).body.items.find((x: any) => x.id === r.id).reason).toBeNull();
+      expect((await get(r.id, HR)).reason).toBe('Khám chuyên khoa');
+      // HR thao tác trên đơn (xác nhận hủy) không ghi thêm dòng "đã đọc lý do"; chỉ lần mở chi tiết ở trên (review #120).
+      const ok = (await post(r.id, 'approve', MANAGER, { version: r.version }).expect(200)).body;
+      await post(r.id, 'cancel-request', EMPLOYEE, { version: ok.version, reason: 'Khỏi rồi' }).expect(200);
+      await post(r.id, 'cancel-request/approve', HR, { version: ok.version + 1 }).expect(200);
+      const logs = (await http.get(`/api/v1/audit-logs?entity=leave_request&entityId=${r.id}`).set(HR)).body.items;
+      expect(logs.filter((l: any) => l.action === 'VIEW_LEAVE_REASON')).toHaveLength(1);
+      expect(JSON.stringify(logs)).not.toContain('Khám chuyên khoa');
+    });
+
+    it('tạo đơn hộ: quản lý trực tiếp, HR được; quản lý khác 403 (AC-3.7.x)', async () => {
+      const byMgr = (await create({ leaveType: 'ANNUAL', startDate: wd(37), endDate: wd(37), employeeId }, MANAGER).expect(201)).body;
+      expect(byMgr).toMatchObject({ employeeId, createdBy: managerId });
+      const [evt] = await ds.query(`SELECT payload FROM leave.outbox WHERE aggregate_id = $1`, [byMgr.id]);
+      expect(evt.payload.onBehalf).toBe(true);
+      await create({ leaveType: 'ANNUAL', startDate: wd(38), endDate: wd(38), employeeId: strangerId }, MANAGER).expect(403);
+      const byHr = (await create({ leaveType: 'ANNUAL', startDate: wd(38), endDate: wd(38), employeeId }, HR).expect(201)).body;
+      expect((await get(byHr.id, EMPLOYEE)).history[0]).toMatchObject({ action: 'SUBMIT' });
+      for (const r of [byMgr, byHr]) await post(r.id, 'cancel', EMPLOYEE, { version: r.version }).expect(200);
+    });
+
+    it('người duyệt thay: thấy và duyệt trong thời hạn; hết phân công thì 403 (AC-4.3.x)', async () => {
+      const [other] = await ds.query(
+        `SELECT e.id, e.work_email FROM employee.employee e
+          WHERE e.status = 'ACTIVE' AND e.id <> $1 AND EXISTS (SELECT 1 FROM employee.employee c WHERE c.manager_id = e.id AND c.status <> 'TERMINATED')
+            AND e.manager_id IS NOT NULL LIMIT 1`,
+        [managerId],
+      );
+      const DELEGATE = as(other.work_email);
+      const d = (await http.post('/api/v1/leave-delegations').set(HR).send({ managerId, delegateId: other.id, startDate: today, endDate: wd(5) }).expect(201)).body;
+      try {
+        await http.post('/api/v1/leave-delegations').set(MANAGER).send({ managerId, delegateId: other.id, startDate: today, endDate: wd(5) }).expect(403);
+        await http.post('/api/v1/leave-delegations').set(HR).send({ managerId, delegateId: other.id, startDate: wd(2), endDate: wd(8) }).expect(409);
+        const r = (await annual(wd(39)).expect(201)).body;
+        const queue = (await http.get('/api/v1/leave-requests/pending-approval').set(DELEGATE).expect(200)).body.items;
+        expect(queue.find((x: any) => x.id === r.id)).toMatchObject({ viaDelegation: true });
+        const ok = (await post(r.id, 'approve', DELEGATE, { version: r.version }).expect(200)).body;
+        expect(ok.history[1]).toMatchObject({ action: 'APPROVE', actorId: other.id });
+        await http.post(`/api/v1/leave-delegations/${d.id}/end`).set(HR).expect(200);
+        const r2 = (await annual(wd(41)).expect(201)).body;
+        await post(r2.id, 'approve', DELEGATE, { version: r2.version }).expect(403);
+        await post(r2.id, 'cancel', EMPLOYEE, { version: r2.version }).expect(200);
+        await post(r.id, 'cancel-request', EMPLOYEE, { version: ok.version, reason: 'Dọn' }).expect(200);
+        await post(r.id, 'cancel-request/approve', HR, { version: ok.version + 1 }).expect(200);
+      } finally {
+        await ds.query('DELETE FROM leave.approval_delegation WHERE id = $1', [d.id]);
       }
-      await http.post(`/api/v1/leave-requests/${r.id}/cancel`).set(HR).send({ version: r.version }).expect(403);
-      const ok = (await http.post(`/api/v1/leave-requests/${r.id}/approve`).set(MANAGER).send({ version: r.version }).expect(200)).body;
-      for (const who of [EMPLOYEE, MANAGER, ADMIN]) {
-        await http.post(`/api/v1/leave-requests/${r.id}/complete`).set(who).send({ version: ok.version }).expect(403);
-      }
-      expect((await http.get(`/api/v1/leave-requests/${r.id}`).set(EMPLOYEE).expect(200)).body.status).toBe('APPROVED');
     });
 
-    it('danh sách ngày lễ 2026', async () => {
+    it('HR sửa lịch lễ: báo số đơn bị ảnh hưởng, tính lại từng đơn (AC-4.9.x)', async () => {
+      const d = wd(42);
+      const r = (await annual(wd(42), wd(43)).expect(201)).body;
+      await http.post('/api/v1/leave-holidays').set(MANAGER).send({ date: d, name: 'Nghỉ bù thử', kind: 'COMPENSATORY' }).expect(403);
+      try {
+        const added = (await http.post('/api/v1/leave-holidays').set(HR).send({ date: d, name: 'Nghỉ bù thử', kind: 'COMPENSATORY' }).expect(201)).body;
+        expect(added.affectedRequests).toBeGreaterThanOrEqual(1);
+        expect((await get(r.id)).days).toBe(2);
+        const affected = (await http.get(`/api/v1/leave-requests/affected-by-holidays?year=${d.slice(0, 4)}`).set(HR).expect(200)).body;
+        expect(affected.find((x: any) => x.id === r.id)).toMatchObject({ storedDays: 2, recalculatedDays: 1 });
+        await http.post(`/api/v1/leave-requests/${r.id}/recalculate`).set(HR).send({ version: r.version }).expect(400);
+        const re = (await http.post(`/api/v1/leave-requests/${r.id}/recalculate`).set(HR).send({ version: r.version, reason: 'Lịch nghỉ bù mới' }).expect(200)).body;
+        expect(re).toMatchObject({ days: 1, status: 'SUBMITTED' });
+        expect(re.history.at(-1)).toMatchObject({ action: 'RECALCULATE' });
+      } finally {
+        await http.delete(`/api/v1/leave-holidays/${d}`).set(HR);
+      }
+      await post(r.id, 'cancel', EMPLOYEE, { version: (await get(r.id)).version }).expect(200);
+    });
+
+    it('nhắc đơn chờ quá một ngày làm việc, một lần mỗi giai đoạn (AC-4.6.6)', async () => {
+      const { LeaveJobsService } = await import('../src/modules/leave/leave-jobs.service');
+      const jobs = app.get(LeaveJobsService);
+      const r = (await annual(wd(45)).expect(201)).body;
+      await ds.query(`UPDATE leave.leave_request SET stage_entered_at = now() - interval '10 days' WHERE id = $1`, [r.id]);
+      expect((await http.get('/api/v1/leave-requests/pending-approval').set(MANAGER)).body.items.find((x: any) => x.id === r.id).overdue).toBe(true);
+      await jobs.sendReminders();
+      await jobs.sendReminders();
+      const reminders = await ds.query(`SELECT payload FROM leave.outbox WHERE aggregate_id = $1 AND event_type = 'LeaveReminder'`, [r.id]);
+      expect(reminders).toHaveLength(1);
+      expect(reminders[0].payload.stage).toBe('SUBMITTED');
+      await post(r.id, 'cancel', EMPLOYEE, { version: r.version }).expect(200);
+    });
+
+    it('nghỉ việc: hộp xác nhận nêu số đơn; job hủy đơn chờ, đơn tương lai, giữ đơn đã qua (AC-3.1.7)', async () => {
+      const positions = (await http.get('/api/v1/positions').set(HR)).body;
+      const me = (await http.get(`/api/v1/employees/${employeeId}`).set(HR)).body;
+      const email = `leaver-leave-${Date.now() % 100000}@hr.local`;
+      const created = (
+        await http.post('/api/v1/employees').set(HR).send({
+          employeeCode: `E8${String(Date.now()).slice(-4)}`,
+          fullName: 'Người Nghỉ Có Đơn',
+          workEmail: email,
+          departmentId: me.departmentId,
+          positionId: positions.find((p: any) => p.code !== 'CEO').id,
+          managerId,
+          hireDate: '2020-01-01',
+        }).expect(201)
+      ).body;
+      const LEAVER = as(email);
+      try {
+        const mk = (s: string, e = s) => http.post('/api/v1/leave-requests').set(LEAVER).set('Idempotency-Key', key()).send({ leaveType: 'ANNUAL', startDate: s, endDate: e }).expect(201);
+        const pending = (await mk(wd(20))).body;
+        const future = (await mk(wd(22))).body;
+        await post(future.id, 'approve', MANAGER, { version: future.version }).expect(200);
+        const pastApproved = (await mk(wd(-4))).body;
+        await post(pastApproved.id, 'approve', MANAGER, { version: pastApproved.version }).expect(200);
+        const impact = (await http.get(`/api/v1/employees/${created.id}/termination-impact`).set(HR).expect(200)).body;
+        expect(impact.leave).toEqual({ pending: 1, approvedFuture: 1 });
+
+        const version = await versionOf(created.id);
+        await http.patch(`/api/v1/employees/${created.id}`).set(HR).send({ status: 'TERMINATED', version }).expect(200);
+        const { LeaveJobsService } = await import('../src/modules/leave/leave-jobs.service');
+        expect(await app.get(LeaveJobsService).cancelForTerminated()).toBeGreaterThanOrEqual(2);
+        for (const id of [pending.id, future.id]) {
+          const v = await get(id);
+          expect(v.status).toBe('CANCELLED');
+          expect(v.history.at(-1)).toMatchObject({ action: 'SYSTEM_CANCEL', actorId: null });
+        }
+        expect((await get(pastApproved.id)).status).toBe('APPROVED');
+        const [b] = await ds.query(
+          `SELECT pending FROM leave.leave_balance WHERE employee_id = $1 AND year = $2 AND leave_type_id = (SELECT id FROM leave.leave_type WHERE code = 'ANNUAL')`,
+          [created.id, Number(wd(-4).slice(0, 4))],
+        );
+        expect(Number(b.pending)).toBe(1);
+      } finally {
+        await ds.query(`DELETE FROM leave.leave_request_history WHERE request_id IN (SELECT id FROM leave.leave_request WHERE employee_id = $1)`, [created.id]);
+        await ds.query(`DELETE FROM leave.outbox WHERE aggregate_id IN (SELECT id FROM leave.leave_request WHERE employee_id = $1)`, [created.id]);
+        await ds.query('DELETE FROM leave.leave_request WHERE employee_id = $1', [created.id]);
+        await ds.query('DELETE FROM leave.leave_balance WHERE employee_id = $1', [created.id]);
+        await ds.query('DELETE FROM iam.user_account WHERE employee_id = $1', [created.id]);
+        await ds.query('DELETE FROM employee.employment_assignment WHERE employee_id = $1', [created.id]);
+        await ds.query('DELETE FROM employee.employee WHERE id = $1', [created.id]);
+      }
+    });
+
+    it('seed phép năm khớp công thức BR-01: job tính lại không đổi số (review #120)', async () => {
+      const { LeaveJobsService } = await import('../src/modules/leave/leave-jobs.service');
+      const y = Number(today.slice(0, 4));
+      const read = async () =>
+        Number((await ds.query(
+          `SELECT entitled FROM leave.leave_balance WHERE employee_id = $1 AND year = $2 AND leave_type_id = (SELECT id FROM leave.leave_type WHERE code = 'ANNUAL')`,
+          [strangerId, y],
+        ))[0].entitled);
+      const before = await read();
+      expect(await app.get(LeaveJobsService).dailyBalances(new Date(), [strangerId])).toBe(1);
+      expect(await read()).toBe(before);
+    });
+
+    it('tài khoản chưa gắn hồ sơ → 403 (AC-3.2.5)', async () => {
+      const NOBODY = as(`nobody-${Date.now() % 100000}@example.com`);
+      await http.get('/api/v1/leave-balances/me').set(NOBODY).expect(403);
+      await http.post('/api/v1/leave-requests').set(NOBODY).set('Idempotency-Key', key()).send({ leaveType: 'ANNUAL', startDate: wd(5), endDate: wd(5) }).expect(403);
+      await ds.query(`DELETE FROM iam.user_account WHERE email LIKE 'nobody-%@example.com'`);
+    });
+
+    it('danh sách ngày lễ có loại', async () => {
       const res = await http.get('/api/v1/leave-holidays?year=2026').set(EMPLOYEE).expect(200);
-      expect(res.body.map((h: any) => h.date)).toContain('2026-11-24');
+      expect(res.body.find((h: any) => h.date === '2026-04-27')).toMatchObject({ kind: 'COMPENSATORY' });
     });
   });
 

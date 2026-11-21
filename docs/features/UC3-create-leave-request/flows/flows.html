@@ -242,16 +242,16 @@ const FLOWS = [
 {
   id: 'f5', grp: 'Hệ thống', name: 'Cấp và tính lại số dư', sub: '13.2',
   refs: 'FR-3.1 · AC-3.1.3, AC-3.1.5, AC-3.1.7 · BR-01',
-  intro: 'Mọi việc tính số dư nằm trong module Leave. Module Employee không gọi ngược; nó chỉ phát event EmployeeTerminated qua outbox.',
+  intro: 'Mọi việc tính số dư nằm trong module Leave. Module Employee không gọi ngược; job của Leave tự quét hồ sơ đã nghỉ việc.',
   type: 'seq', p: ['H', 'A', 'D', 'J', 'O'],
   m: [
-    { frag: 'loop', c: 'job 00:10 giờ Việt Nam mỗi ngày', m: [
+    { frag: 'loop', c: 'LeaveJob: một lần mỗi ngày giờ Việt Nam', m: [
       { f: 'J', t: 'D', l: 'Mỗi người chưa nghỉ việc: tính entitled ANNUAL năm nay theo 13.2 (bắt được sửa hireDate, mốc thâm niên)' },
-      { f: 'J', t: 'D', l: 'Ngày 01/01: tạo dòng năm mới; không chuyển số dư năm cũ' },
+      { f: 'J', t: 'D', l: 'Lần chạy đầu năm: tạo dòng năm mới, carried_in = phần được hưởng năm trước chưa dùng (AC-3.1.8)' },
     ] },
     { f: 'H', t: 'A', l: 'PATCH /employees/{id} status = TERMINATED (UC1 AC-1.7.3)', s: 'AC-3.1.7' },
-    { f: 'A', t: 'D', l: 'Giao dịch của module Employee + outbox EmployeeTerminated {employeeId, effectiveDate}' },
-    { f: 'D', t: 'J', l: 'Worker nhận EmployeeTerminated', k: 'async' },
+    { f: 'A', t: 'D', l: 'Giao dịch của module Employee: hồ sơ TERMINATED, đóng giai đoạn công tác (effective_to)' },
+    { f: 'D', t: 'J', l: 'Job 5 phút quét hồ sơ TERMINATED còn đơn', k: 'async' },
     { f: 'J', t: 'D', l: 'Hủy SUBMITTED, PENDING_HR và APPROVED bắt đầu sau ngày nghỉ việc: CANCELLED, lịch sử SYSTEM_CANCEL, trả pending từng năm' },
     { f: 'J', t: 'D', l: 'Tính lại ANNUAL tới tháng nghỉ việc; entitled < used + pending → đặt bằng used + pending, audit LEAVE_BALANCE_OVERDRAWN', k: 'err' },
     { f: 'D', t: 'O', l: 'LeaveCancelled (reason SYSTEM) → quản lý cũ; không email cho tài khoản đã khóa', k: 'async' },

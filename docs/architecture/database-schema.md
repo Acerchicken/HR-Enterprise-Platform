@@ -534,7 +534,7 @@ erDiagram
   }
 ```
 
-> **Đã thiết kế, chưa có migration (18/11/2026):** UC3, UC4 thêm `leave.leave_request_allocation` (số ngày của đơn theo từng
+> **Đã có migration `1732500000000-LeaveRules` (21/11/2026, `feat/leave-uc3-uc4`), theo thiết kế 18/11:** UC3, UC4 thêm `leave.leave_request_allocation` (số ngày của đơn theo từng
 > năm), đổi số dư sang `numeric(5,2)`, thêm `carried_in` (phép năm chuyển từ năm trước, chốt 21/11), thêm `quota_kind` cho loại phép, `event_date`, `requires_hr_approval`, trạng thái
 > `PENDING_HR`, các cột đề nghị hủy và nhắc đơn cho `leave_request`, cột `action` cho lịch sử, `kind` cho ngày lễ. Bảng đủ ở
 > [UC3 spec mục 13.6](../features/UC3-create-leave-request/spec.md#136-thiết-kế-dữ-liệu-chung-uc3-uc4), mỗi cột ghi nhánh code
@@ -792,12 +792,16 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | Worker `handleProfile` | Đọc | `iam.user_account`, `iam.role_assignment` | Lấy email HR để báo có yêu cầu mới |
 | `RoleAdminService` (`list`, `grant`, `revoke`) | Đọc | `employee.employee` (`full_name`, `status`, `department_id`), `org.department.name` | Trang Phân quyền hiện tên, đơn vị (mức danh bạ); chặn cấp cho người đã nghỉ (UC8 E13), đếm ADMIN còn hoạt động (E12). Identity đã phụ thuộc Employee nhưng cần lọc, phân trang trong một câu SQL |
 | `RoleAdminService`, `grant-admin.ts` | Ghi | `leave.outbox` | Event `RoleGranted`, `RoleRevoked` (cùng nợ kỹ thuật như dòng outbox ở trên) |
+| `LeaveBalanceService.employeeFacts`, `LeaveService.facts`, `LeaveJobsService` | Đọc | `employee.employee` (`hire_date`, `status`, `manager_id`, `updated_at`), `employee.employment_assignment.effective_to` | Tính phép năm (BR-01), quản lý hiện tại lúc xử lý (BR-05), job hủy đơn của người đã nghỉ việc (UC3 AC-3.1.7) không dựa vào event `EmployeeTerminated` của UC8 |
+| `TransferService.terminationImpact` | Đọc | `leave.leave_request` | Hộp xác nhận nghỉ việc nêu số đơn sẽ bị hủy (UC3 AC-3.1.7); Leave phụ thuộc Employee nên không gọi ngược |
+| Worker `NotificationWorker.emailsOf` | Đọc | `leave.approval_delegation`, `iam.user_account`, `iam.role_assignment` | Người nhận email chung: người duyệt thay đang hiệu lực, nhóm HR |
 
 ## 10. Ràng buộc nghiệp vụ ở database
 
 | Ràng buộc | Bảng | Bảo vệ điều gì |
 |---|---|---|
-| `used + pending <= entitled`, `used >= 0`, `pending >= 0` | `leave.leave_balance` | Không xin/duyệt quá số dư, kể cả khi code lỗi hoặc request song song |
+| `used + pending <= entitled + carried_in`, các số `>= 0` (`ck_leave_balance_amounts`) | `leave.leave_balance` | Không xin/duyệt quá số dư, kể cả khi code lỗi hoặc request song song (BR-01, chuyển phép AC-3.1.8) |
+| `ux_leave_request_event (employee_id, leave_type_id, event_date)` có điều kiện | `leave.leave_request` | Mỗi sự kiện một đơn còn hiệu lực (AC-3.2.6) |
 | `end_date >= start_date`, `days > 0` | `leave.leave_request` | Đơn có khoảng ngày hợp lệ |
 | `half_day` chỉ khi một ngày | `leave.leave_request` | Nửa ngày không áp cho đơn nhiều ngày |
 | UQ `(employee_id, idempotency_key)` | `leave.leave_request` | Gửi trùng không tạo hai đơn |
