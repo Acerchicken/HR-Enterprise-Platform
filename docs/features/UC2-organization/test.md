@@ -76,3 +76,7 @@ npm run test:e2e
 - Dữ liệu test đã theo seed mới (gốc `HQ`, loại đơn vị ADR-14). Job điều chuyển chạy 5 phút một lần, nên điều chuyển hiệu lực ngày D được áp dụng trong khoảng 00:00–00:05 ngày D (giờ Việt Nam), trước mốc 00:15 của AC-2.7.2.
 - Các ca biên nghiệp vụ trước đây còn thiếu (nghỉ việc gỡ vai trò, ngừng đơn vị có trưởng kiêm nhiệm, bảo vệ chức danh `CEO`)
   đã có test e2e ở `feat/department-admin-ui`.
+
+- Ca loại đơn vị & luật cha-con (`AC-2.4.8`, `AC-2.4.9`, ADR-14):
+  - Tạo đơn vị đúng quan hệ cha-con theo `ALLOWED_PARENT` (`COMPANY` -> `CENTER` hoặc `DEPARTMENT` -> `TEAM`, `CENTER` -> `DEPARTMENT`) kỳ vọng `201 Created`; sai luật cha-con hoặc tạo vòng lặp kỳ vọng `400 Bad Request` và hiển thị lỗi dưới ô chọn đơn vị cha trên giao diện.
+  - Đối chiếu cây đơn vị với gốc `HQ` và các loại đơn vị ADR-14; lưu ý `deptCache` (10 phút) chỉ xóa khi đổi qua service nên test thao tác trực tiếp DB cần tính đến cache.

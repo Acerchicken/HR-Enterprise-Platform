@@ -53,3 +53,8 @@ npm run test:e2e
 - AC-7.1.3: audit không chứa CCCD, số tài khoản, lý do nghỉ ốm.
 - AC-7.3.1: lọc theo `actor` và khoảng thời gian; AC-7.3.5: `to` không tính mốc. AC-7.3.3: ngày sai định dạng, `size = 101`.
 - AC-7.1.1 cho thao tác kho tài liệu (`DOCUMENT_*`).
+
+- Ca lọc audit & kiểm tra không lộ giá trị nhạy cảm (`AC-7.1.1`, `AC-7.1.2`, `AC-7.1.3`, `AC-7.3.1`, `AC-7.3.3`, `AC-7.3.5`):
+  - `AC-7.1.1` & `AC-7.1.3`: Sau thao tác `DOCUMENT_*` và cập nhật hồ sơ/nghỉ phép, kiểm tra `changedFields` không ghi plaintext giá trị nhạy cảm (CCCD, số tài khoản, lương, lý do nghỉ ốm).
+  - `AC-7.1.2`: Thao tác lỗi (ví dụ duyệt đơn lệch `version` trả `409`) không ghi audit mới khi chạy trong transaction.
+  - `AC-7.3.1`, `AC-7.3.3` & `AC-7.3.5`: Lọc theo `actor`, `entity`, `entityId`, `from`, `to` (lưu ý `AuditService.search` hiện dùng `a.at < :to`); kiểm tra `size = 101` hoặc ngày sai định dạng trả `400 Bad Request`.
