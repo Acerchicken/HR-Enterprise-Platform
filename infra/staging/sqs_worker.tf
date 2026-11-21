@@ -1,10 +1,8 @@
 # ==============================================================================
 # GHI CHÚ VỀ EMAIL VÀ OUTBOX WORKER TRÊN STAGING:
-# Trong tuần 9, ECS Worker chỉ xử lý outbox queue từ SQS và ghi nhận idempotent
-# processing vào database (consumer xử lý message và ghi log). Để giữ chi phí Staging
-# dưới $50-60 USD (hạn mức ngân sách và thẻ thanh toán), dịch vụ gửi email thực tế ra
-# ngoài (Amazon SES / SMTP relay) được chuyển sang triển khai ở tuần 10.
-# Do đó chưa cấu hình các biến SMTP_* / SES credentials tại staging tuần 9.
+# Theo quyết định ngày 14/11, Worker trên ECS gửi email thông báo nghỉ phép qua
+# Amazon SES API bằng AWS SDK (MAIL_DRIVER=ses), sử dụng trực tiếp IAM task role
+# mà không dùng SMTP credentials. Môi trường local vẫn giữ SMTP gửi tới Mailpit.
 # ==============================================================================
 
 # Dead-Letter Queue (DLQ) for failed notification jobs
@@ -155,6 +153,15 @@ resource "aws_iam_policy" "worker_sqs_policy" {
         Resource = [
           aws_kms_key.main.arn
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.documents.arn}/*"
+        ]
       }
     ]
   })
@@ -191,7 +198,11 @@ resource "aws_ecs_task_definition" "worker" {
         { name = "DB_SSL", value = "require" },
         { name = "QUEUE_DRIVER", value = "sqs" },
         { name = "AWS_REGION", value = var.aws_region },
-        { name = "SQS_QUEUE_URL", value = aws_sqs_queue.worker_queue.url }
+        { name = "SQS_QUEUE_URL", value = aws_sqs_queue.worker_queue.url },
+        { name = "STORAGE_BUCKET", value = aws_s3_bucket.documents.id },
+        { name = "STORAGE_REGION", value = var.aws_region },
+        { name = "MAIL_DRIVER", value = "ses" },
+        { name = "SMTP_FROM", value = var.sender_email }
       ]
 
       secrets = [
