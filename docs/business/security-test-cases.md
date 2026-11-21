@@ -77,3 +77,21 @@
 | **SEC-56** | Đơn - Hủy | `manager` | `POST /api/v1/leave-requests/{id}/cancel` | `403 Forbidden`. |
 | **SEC-57** | Đơn - HR hoàn tất | `hr` | `POST /api/v1/leave-requests/{id}/complete` (Body: `{"version":2,"comment":"Da cap nhat he thong"}`) | `200 OK`. |
 | **SEC-58** | Đơn - HR hoàn tất | `manager` | `POST /api/v1/leave-requests/{id}/complete` | `403 Forbidden`. |
+
+## 5. Xác thực, Phiên đăng nhập & Bảo vệ hạ tầng (NFR-5.2 → 5.5, 5.9, 5.21, 5.22)
+| Mã TC | Dòng ma trận / NFR | Tài khoản | Thao tác / Request | Kết quả mong đợi |
+| :--- | :--- | :--- | :--- | :--- |
+| **SEC-59** | NFR-5.9 – Không tự đăng ký | Khách (Chưa có tài khoản) | Mở màn hình đăng nhập Keycloak (`realm hr`) và Cognito Hosted UI (staging) | Không hiển thị nút/liên kết tự đăng ký (*Register* / *Sign up*); endpoint đăng ký tự do bị tắt. |
+| **SEC-60** | NFR-5.9 – Liên kết `email_verified` | Tài khoản IdP có `email_verified = false` | `GET /api/v1/me` (kèm Bearer token có `email_verified: false` trùng email nhân viên) | `403 Forbidden` (hoặc không liên kết `employeeId`), ngăn chiếm tài khoản qua email chưa xác minh (T-02). |
+| **SEC-61** | NFR-5.2 – Chính sách mật khẩu | `employee` (hoặc tài khoản mới) | Đặt/đổi mật khẩu trên IdP với chuỗi `< 8` ký tự (`Abc12`), thiếu chữ hoa (`passw0rd1`), thiếu chữ thường (`PASSW0RD1`), thiếu số (`Password!`) hoặc trùng email | IdP từ chối cập nhật, yêu cầu đủ tối thiểu 8 ký tự gồm chữ hoa, chữ thường, số và không trùng email. |
+| **SEC-62** | NFR-5.2 – Không ép đổi định kỳ | `employee` | Kiểm tra cấu hình Password Policy trên Keycloak và Cognito User Pool | Không bật chính sách hết hạn mật khẩu định kỳ (*Password Expiration* tắt theo NIST SP 800-63B). |
+| **SEC-63** | NFR-5.3 – Chống dò mật khẩu | `employee` | Nhập sai mật khẩu 5 lần liên tiếp trong 15 phút trên trang đăng nhập IdP, sau đó thử lần thứ 6 (kể cả nhập đúng mật khẩu) | Từ lần thứ 6 tài khoản bị khóa tạm 15 phút; thông báo lỗi chung chung, không tiết lộ email có tồn tại hay không. |
+| **SEC-64** | NFR-5.4 – MFA bắt buộc (HR, ADMIN) | `hr`, `admin` | Đăng nhập tài khoản `hr` hoặc `admin` trên Keycloak (và mọi tài khoản trên Cognito staging) | Bắt buộc thiết lập ứng dụng TOTP (quét mã QR) và nhập mã OTP 6 chữ số hợp lệ mới cấp token. |
+| **SEC-65** | NFR-5.4 – MFA tự chọn (Employee) | `employee` | Đăng nhập tài khoản `employee` trên Keycloak local | Đăng nhập thành công bằng mật khẩu mà không bị bắt buộc bật TOTP. |
+| **SEC-66** | NFR-5.5 – Hết hạn Access Token | `employee` | Giữ Access Token quá 15 phút (không refresh), sau đó gọi `GET /api/v1/me` | `401 Unauthorized`, API từ chối token đã hết hạn (`exp`). |
+| **SEC-67** | NFR-5.5 – Hết phiên không thao tác / tối đa | `employee` | Ngừng thao tác `> 30` phút (hoặc giữ phiên liên tục `> 10` giờ) rồi tải lại trang / gọi refresh token | IdP từ chối gia hạn phiên, bắt buộc người dùng đăng nhập lại. |
+| **SEC-68** | NFR-5.21 – Rate limit chung | `employee` | Gửi liên tiếp `101` request `GET /api/v1/me` trong vòng 60 giây | Từ request thứ 101 trả về `429 Too Many Requests` kèm header `Retry-After` và `{ code, message, traceId }`. |
+| **SEC-69** | NFR-5.21 – Rate limit tìm kiếm | `employee` | Gửi liên tiếp `21` request `GET /api/v1/employees?q=Nguyen` trong vòng 60 giây | Request thứ 21 trả về `429 Too Many Requests`. |
+| **SEC-70** | NFR-5.21 – Rate limit ghi & xem nhạy cảm | `employee` / `hr` | Gửi `> 30` lệnh `PATCH /api/v1/employees/{id}` trong 1 phút (hoặc `> 100` lượt `GET /api/v1/employees/{id}?include=sensitive` trong 1 giờ) | Vượt ngưỡng trả về `429 Too Many Requests`. |
+| **SEC-71** | NFR-5.22 – Header bảo mật HTTP | Không token | `GET /api/v1/health` (và trang chủ frontend trên staging) | Response header có đủ `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` (hoặc `frame-ancestors 'none'`), `Content-Security-Policy` và `Strict-Transport-Security` (trên HTTPS). |
+| **SEC-72** | NFR-5.22 – Kiểm soát CORS | Không token | Gửi request `OPTIONS` / `GET /api/v1/health` kèm header `Origin: https://evil.example.com` (khác `CORS_ORIGIN`) | Server không trả `Access-Control-Allow-Origin: https://evil.example.com`; trình duyệt chặn truy cập chéo nguồn. |
