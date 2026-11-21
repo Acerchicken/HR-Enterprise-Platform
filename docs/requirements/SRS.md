@@ -3,7 +3,7 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform – môn Cloud Application Development |
-| Phiên bản tài liệu | 1.3 |
+| Phiên bản tài liệu | 1.5 |
 | Ngày | 17/11/2026 (tuần 11) |
 | Người soạn | TV1 (Dương), tách từ BRD 1.0 |
 | Người review | TV2 (Thanh) nghiệp vụ, TV4 (Duy) khả năng kiểm thử |
@@ -15,6 +15,8 @@
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
+| 1.5 | 18/11/2026 | Cập nhật trạng thái FR-8.1, 8.3, 8.4, 8.6, 8.7 sau ba nhánh code UC8 (`feat/uc8-roles-from-db`, `feat/uc8-role-admin`, `feat/uc8-account-lifecycle`) |
+| 1.4 | 18/11/2026 | Thêm FR-8.7 (ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, theo [ADR-18](../architecture/adr/ADR-18-authorization.md)); nhánh code của FR-8.1, 8.3, 8.4, 8.6 đổi sang `feat/uc8-*` tuần 11 |
 | 1.3 | 17/11/2026 | Thêm UC8 – Đăng nhập và tài khoản (mục 4.8, FR-8.1 → FR-8.6) theo [ADR-17](../architecture/adr/ADR-17-authentication.md); cập nhật trạng thái NFR-5.1 → 5.10; chốt câu hỏi số 2 (MFA) ở mục 8 |
 | 1.2 | 13/11/2026 | Thêm tài liệu theo tính năng UC1 → UC7 trong `docs/features/`: mỗi tính năng có `requirements.md` (user story, tiêu chí chấp nhận), `spec.md` (đặc tả use case), `deploy.md`, `test.md`; link từ mục 4 |
 | 1.1 | 13/11/2026 | Tách rõ FR và NFR (định nghĩa, tiêu đề mục, bảng phân biệt). Viết lại mục 6: 11 nhóm NFR, 74 yêu cầu có ngưỡng đo, cách kiểm chứng và trạng thái; bảo mật chia 5 phần (đăng nhập và phiên, phân quyền, bảo vệ dữ liệu, bảo mật ứng dụng web, secret); thêm SLI/SLO/SLA (6.13) và kịch bản lỗi (6.14) |
@@ -84,12 +86,12 @@ LLM API (trợ lý, tuần 12) và hệ thống Payroll (ngoài phạm vi versio
 |---|---|---|
 | UC1 Hồ sơ nhân viên | Xem hồ sơ theo mức, trang hồ sơ chia nhóm, nhân viên đề xuất cập nhật và tải file, HR xác nhận, nhật ký thay đổi, HR quản lý hồ sơ và trường nhạy cảm, chống spam | FR-1.1 → FR-1.14 |
 | UC2 Thông tin tổ chức | Danh bạ, cây đơn vị (Công ty, Trung tâm, Phòng, Nhóm), quản lý trực tiếp, quản lý đơn vị, chức danh, điều chuyển, quá trình công tác, trưởng/phó đơn vị | FR-2.1 → FR-2.10 |
-| UC3 Tạo đơn nghỉ | Xem số dư, tạo, hủy đơn, tạo đơn hộ | FR-3.1 → FR-3.7 |
-| UC4 Duyệt đơn | Duyệt, từ chối, duyệt thay, HR duyệt thêm theo loại phép, HR hoàn tất, email thông báo | FR-4.1 → FR-4.8 |
+| UC3 Tạo đơn nghỉ | Xem số dư, tạo, hủy đơn, đề nghị hủy đơn đã duyệt, tạo đơn hộ, HR chỉnh hạn mức | FR-3.1 → FR-3.8 |
+| UC4 Duyệt đơn | Duyệt, từ chối, duyệt thay, HR duyệt thêm theo loại phép, HR hoàn tất, email thông báo, HR cập nhật lịch lễ | FR-4.1 → FR-4.9 |
 | UC5 Kho tài liệu | Đăng tài liệu theo phạm vi xem, phiên bản | FR-5.1 → FR-5.3 |
 | UC6 Tra cứu chung và trợ lý | Ô tìm đồng nghiệp trên nav bar; trang "Tra cứu tài liệu" gồm tìm trong nội dung tài liệu và trợ lý chính sách | FR-6.1 → FR-6.3 |
 | UC7 Lịch sử thao tác | Audit append-only, tra cứu audit | FR-7.1 → FR-7.3 |
-| UC8 Đăng nhập và tài khoản | Đăng nhập, đăng xuất qua identity provider, quên mật khẩu, MFA, tạo và khóa tài khoản theo hồ sơ | FR-8.1 → FR-8.6 |
+| UC8 Đăng nhập và tài khoản | Đăng nhập, đăng xuất qua identity provider, quên mật khẩu, MFA, tạo và khóa tài khoản theo hồ sơ, cấp và thu hồi vai trò | FR-8.1 → FR-8.7 |
 
 ### 2.3 Lớp người dùng
 
@@ -195,13 +197,14 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-3.1 | Xem số dư phép theo loại: được hưởng, đã dùng, đang chờ, còn lại | M | Còn lại = được hưởng − đã dùng − đang chờ | Đã có |
+| FR-3.1 | Xem số dư phép theo loại: được hưởng, chuyển từ năm trước (phép năm), đã dùng, đang chờ, còn lại | M | Còn lại = được hưởng + chuyển từ năm trước − đã dùng − đang chờ; phần chuyển sang dùng trước, hết hạn cuối năm (BR-01) | Đã có; chuyển phép chốt 21/11 |
 | FR-3.2 | Tạo đơn: loại phép, khoảng ngày, nghỉ nửa ngày, lý do | M | Không đủ số dư trả 400 (BR-01) | Đã có |
 | FR-3.3 | Không cho đơn trùng lịch với đơn đang chờ hoặc đã duyệt | M | Trùng ngày trả 409; hai nửa ngày khác buổi không trùng (BR-02, BR-04) | Đã có |
 | FR-3.4 | Số ngày tính theo ngày làm việc, bỏ cuối tuần và ngày lễ | M | 29/4–4/5/2026 tính 2 ngày; đơn chỉ gồm ngày nghỉ bù 27/4 bị từ chối (BR-03) | Đã có |
 | FR-3.5 | Gửi lại do mạng lỗi không tạo đơn thứ hai | M | Cùng `Idempotency-Key` trả lại đơn cũ (BR-11) | Đã có |
 | FR-3.6 | Nhân viên hủy đơn chưa có quyết định; không tự hủy đơn đã duyệt | M | Hủy trả lại số ngày; hủy đơn đã duyệt trả 409 (BR-07, BR-08) | Đã có |
 | FR-3.7 | HR và quản lý trực tiếp tạo đơn hộ nhân viên | S | Số dư là của nhân viên; nhân viên nhận email, vẫn tự hủy được; lịch sử ghi người tạo hộ (BR-12) | Kế hoạch tuần 10 |
+| FR-3.8 | HR chỉnh mức nền phép năm (12, 14, 16 ngày) và hạn mức nghỉ ốm theo hồ sơ BHXH | S | Phép năm tính lại theo BR-01; hạn mức nhỏ hơn đã dùng cộng đang chờ trả 409; có audit (BR-18) | Thiết kế 18/11 (UC3 spec 13.2, 13.3) |
 
 ### 4.4 UC4 – Duyệt đơn (FR-4.x)
 
@@ -217,6 +220,7 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-4.6 | Email thông báo: đơn mới → quản lý; duyệt, từ chối, hoàn tất → nhân viên; hủy → quản lý | M | Email tới đúng người; không gửi trùng khi hệ thống gửi lại event | Đã có |
 | FR-4.7 | Xem chi tiết đơn và lịch sử trạng thái | M | Chỉ chủ đơn, quản lý trực tiếp, HR xem được | Đã có |
 | FR-4.8 | HR duyệt thêm sau quản lý với loại phép được cấu hình (thai sản; nghỉ không lương trên 3 ngày) | S | Quản lý duyệt → `PENDING_HR`; HR duyệt → `APPROVED`, từ chối phải có lý do; HR không duyệt đơn của chính mình (BR-16) | Chưa có, kế hoạch tuần 12 |
+| FR-4.9 | HR cập nhật lịch lễ, nghỉ bù và tính lại đơn bị ảnh hưởng | S | Sửa lịch không tự đổi đơn; HR tính lại từng đơn có lý do, không vượt số dư (BR-19) | Thiết kế 18/11 (UC4 spec 13.6) |
 
 ### 4.5 UC5 – Kho tài liệu chính sách (FR-5.x)
 
@@ -254,12 +258,13 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-8.1 | Đăng nhập, đăng xuất qua identity provider; tự đăng xuất sau 30 phút không thao tác | M | Không có form mật khẩu trong web; đăng nhập 4 tài khoản demo ở local và staging | Một phần: local đã có; staging lỗi `callback_urls`, chưa tự đăng xuất |
+| FR-8.1 | Đăng nhập, đăng xuất qua identity provider; tự đăng xuất sau 30 phút không thao tác | M | Không có form mật khẩu trong web; đăng nhập 4 tài khoản demo ở local và staging | Một phần: local đã có, kể cả tự đăng xuất và màn hình lỗi `/callback`; staging lỗi `callback_urls` |
 | FR-8.2 | Quên mật khẩu tự phục vụ qua email đã xác minh | M | Thư đặt lại tới; email không tồn tại có cùng thông báo | Kế hoạch tuần 11 (`infra/idp-hardening`) |
-| FR-8.3 | Tạo tài khoản đăng nhập khi HR tạo hồ sơ, gửi email mời, bắt đổi mật khẩu tạm | M | Thư mời tới trong 1 phút; không tạo trùng khi event lặp | Kế hoạch tuần 12 (`feat/idp-account-lifecycle`) |
-| FR-8.4 | Khóa tài khoản và thu hồi phiên khi nghỉ việc; mở lại khi khôi phục | M | Trong 1 phút không đăng nhập lại được; token còn hạn bị 403 | Một phần: API đã chặn 403 (FR-1.7); khóa trên IdP tuần 12 |
+| FR-8.3 | Tạo tài khoản đăng nhập khi HR tạo hồ sơ, gửi email mời, bắt đổi mật khẩu tạm | M | Thư mời tới trong 1 phút; không tạo trùng khi event lặp | Một phần: local đã có (Keycloak, thư mời qua Mailpit); staging cần SNS → SQS, IAM, SES tuần 12 (`infra/idp-account-lifecycle`) |
+| FR-8.4 | Khóa tài khoản và thu hồi phiên khi nghỉ việc; mở lại khi khôi phục | M | Trong 1 phút không đăng nhập lại được; token còn hạn bị 403 | Một phần: API chặn 403 (FR-1.7); khóa, thu hồi phiên, mở lại trên IdP đã có ở local; staging tuần 12 |
 | FR-8.5 | MFA bằng ứng dụng TOTP | M | HR, ADMIN bị hỏi mã ở cả hai môi trường | Kế hoạch tuần 11 (`infra/idp-mfa`) |
-| FR-8.6 | HR xem trạng thái tài khoản đăng nhập, gửi lại lời mời | S | Vai trò khác bị 403; ghi audit | Kế hoạch tuần 12 (`feat/idp-account-lifecycle`) |
+| FR-8.6 | HR xem trạng thái tài khoản đăng nhập, gửi lại lời mời | S | Vai trò khác bị 403; ghi audit | Đã có |
+| FR-8.7 | ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, có lý do; vai trò chỉ lấy từ database, đồng bộ sang nhóm trên IdP | M | Có audit `ROLE_GRANT`, `ROLE_REVOKE`; tự cấp cho mình bị 403; thu hồi ADMIN cuối cùng bị 409; nhóm trong token bị bỏ qua | Đã có (đồng bộ nhóm trên IdP ở local; staging tuần 12) |
 
 **Tổng hợp FR:** 34 yêu cầu chức năng ở UC1 → UC7 (cộng 6 yêu cầu UC8 thêm 17/11); 23 đã có, 4 một phần (API có, chưa có giao diện), 7 theo kế hoạch tuần 10–12 (cập nhật 10/11).
 
@@ -548,10 +553,10 @@ Chiều xuôi: mục tiêu (BRD) → yêu cầu (SRS) → thiết kế (SAD) →
 | Mục tiêu (BRD) | Use case | Yêu cầu (SRS) | Business rule | Thiết kế (SAD) | Kiểm chứng |
 |---|---|---|---|---|---|
 | MT-1 | UC1, UC2 | FR-1.1 → FR-1.14, FR-2.1 → FR-2.5 | Quy tắc hồ sơ, issue #21, #22 | Module Employee, Organization, Identity; ADR-10 | e2e `app.e2e-spec.ts`; biên bản kiểm thử tuần 7 |
-| MT-2 | UC3, UC4 | FR-3.1 → FR-3.7, FR-4.1 → FR-4.8 | BR-01 → BR-12, BR-16 | Module Leave, Worker; outbox + queue (ADR-03) | 22 ca kiểm thử `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
+| MT-2 | UC3, UC4 | FR-3.1 → FR-3.8, FR-4.1 → FR-4.9 | BR-01 → BR-19 | Module Leave, Worker; outbox + queue (ADR-03) | 22 ca kiểm thử `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
 | MT-3 | UC1, UC7 | FR-1.3, FR-1.4, FR-7.1 → FR-7.3 | ADR-08, ADR-09 | Module Employee (`FieldCrypto`, ADR-08), Audit (ADR-09) | e2e audit, `VIEW_SENSITIVE`; ma trận phân quyền |
 | MT-4 | UC5, UC6 | FR-5.1 → FR-5.3, FR-6.1 → FR-6.3 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13) | Kế hoạch kiểm thử tuần 10, 12 |
-| MT-3 | UC8 | FR-8.1 → FR-8.6, NFR-5.1 → NFR-5.10 | Threat model T-02, T-03, T-06 | Module Identity, Keycloak/Cognito, outbox + SNS/SQS (ADR-17) | `test.md` UC8; ca kiểm thử bảo mật |
+| MT-3 | UC8 | FR-8.1 → FR-8.7, NFR-5.1 → NFR-5.13 | Threat model T-02, T-03, T-06 | Module Identity, Keycloak/Cognito, outbox + SNS/SQS (ADR-17, ADR-18) | `test.md` UC8; ca kiểm thử bảo mật |
 
 Thiết kế chi tiết từng module: [kiến trúc phần mềm mục 4](../architecture/SAD-2-software-architecture.md#4-danh-mục-module).
 NFR-1 → NFR-11 dẫn tới quyết định kiến trúc ở [kiến trúc hệ thống mục 1](../architecture/SAD-1-system-architecture.md#1-yêu-cầu-dẫn-dắt-kiến-trúc).

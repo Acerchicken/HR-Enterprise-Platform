@@ -35,6 +35,21 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 |---|---|---|---:|---:|---:|---:|---|---|
 | Audit log | Tìm kiếm/xem | `GET /api/v1/audit-logs` | — | — | ✓ | ✓ | Có thể lọc theo loại đối tượng, ID đối tượng, người thao tác, thời gian; phân trang. Log chỉ được thêm, không có API sửa/xóa. | UC7, ADR-09 |
 
+### Vai trò (UC8 FR-8.7, ADR-18)
+
+| Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |
+|---|---|---|---:|---:|---:|---:|---|---|
+| Vai trò được cấp | Xem danh sách | `GET /api/v1/admin/role-assignments` | — | — | — | ✓ | Chỉ dòng `HR`, `ADMIN`; tên, đơn vị ở mức danh bạ; lọc, phân trang trong SQL | UC8 AC-8.7.5, AC-8.7.8; `RoleAdminController` |
+| Vai trò được cấp | Cấp | `POST /api/v1/admin/role-assignments` | — | — | — | ✓ | Không cho chính mình (403); người chưa có tài khoản, đã nghỉ (400); đã có (409); audit `ROLE_GRANT`, event `RoleGranted` cùng giao dịch | AC-8.7.1, 8.7.3, 8.7.6, 8.7.7 |
+| Vai trò được cấp | Thu hồi | `DELETE /api/v1/admin/role-assignments/{userId}/{role}` | — | — | — | ✓ | ADMIN cuối cùng còn hoạt động (409, kiểm trước); của chính mình (403); không có dòng (404); audit `ROLE_REVOKE` có lý do | AC-8.7.2, 8.7.4 |
+
+### Tài khoản đăng nhập của nhân viên (UC8 FR-8.6)
+
+| Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |
+|---|---|---|---:|---:|---:|---:|---|---|
+| Tài khoản của hồ sơ | Xem trạng thái | `GET /api/v1/employees/{id}/account` | — | — | ✓ | — | Mọi hồ sơ; không có mật khẩu, MFA; lỗi IdP chỉ là mã | UC8 AC-8.6.1, AC-8.6.3; `AccountController` |
+| Tài khoản của hồ sơ | Gửi (lại) lời mời | `POST /api/v1/employees/{id}/account/invite` | — | — | ✓ | — | Chỉ khi `NONE`, `INVITED`, `FAILED` (khác: 409); nhân viên đã nghỉ (400); audit `ACCOUNT_INVITE`, event `AccountInviteRequested` cùng giao dịch | AC-8.6.2, 8.6.4, 8.6.5 |
+
 ### Tổ chức
 
 | Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |
@@ -56,11 +71,11 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 | Hồ sơ nhân viên | Tạo | `POST /api/v1/employees` | — | — | ✓ | — | Chỉ `HR`; phòng ban và chức danh phải tồn tại; quản lý theo FR-2.5. `ADMIN` không được phép. Audit `CREATE` theo nhóm trường | UC1; `EmployeeController.create` |
 | Hồ sơ nhân viên | Xem trang mặc định, thẻ xem nhanh | `GET /api/v1/employees/{id}/summary` | ✓ | ✓ | ✓ | ✓ | Chỉ dữ liệu mức danh bạ cộng danh sách mục người xem được thấy (`relation`: HR, OWNER, MANAGER, OTHER; MANAGER gồm cả quản lý gián tiếp, AC-1.1.4); hàng "Diện đối tượng" chỉ từ mức QL | UC1 FR-1.8; `profile-sections.ts` |
 | Hồ sơ nhân viên | Xem đầy đủ (form HR, trang cũ) | `GET /api/v1/employees/{id}` | ✓ | ✓ | ✓ | ✓ | Chủ hồ sơ, quản lý trực tiếp và gián tiếp (chuỗi quản lý phía trên, AC-1.1.4) thấy thêm dữ liệu cá nhân; HR thấy cấp HR; người khác, kể cả ADMIN, chỉ thấy cấp danh bạ. `include=sensitive` chỉ HR, mỗi lượt ghi `VIEW_SENSITIVE`, tối đa 100 lượt/giờ | UC1; `employee-access.ts:viewLevel` |
-| Hồ sơ nhân viên | Cập nhật trường chính | `PATCH /api/v1/employees/{id}` | — | — | ✓ | — | **Chỉ HR** (từ #86). Nhân viên đổi điện thoại, địa chỉ qua yêu cầu cập nhật. Không đổi được `departmentId`, `positionId`, `managerId` (400, dùng điều chuyển, AC-2.7.7); chuyển `TERMINATED` khi là quản lý mới trong điều chuyển chờ thì 400 (AC-1.7.3). `version` bắt buộc; không cho chuyển `TERMINATED` khi còn cấp dưới; trùng email 409. Audit theo nhóm trường | UC1 FR-1.2, FR-1.4, FR-1.6, FR-1.7; `employee-access.ts:forbiddenFields` |
+| Hồ sơ nhân viên | Cập nhật trường chính | `PATCH /api/v1/employees/{id}` | — | — | ✓ | — | **Chỉ HR** (từ #86). Nhân viên đổi điện thoại, địa chỉ qua yêu cầu cập nhật. Không đổi được `departmentId`, `positionId`, `managerId` (400, dùng điều chuyển, AC-2.7.7); chuyển `TERMINATED` khi là quản lý mới trong điều chuyển chờ thì 400 (AC-1.7.3). `version` bắt buộc; không cho chuyển `TERMINATED` khi còn cấp dưới; trùng email 409. Chuyển `TERMINATED` thu hồi `HR`, `ADMIN` (audit `ROLE_REVOKE`); ADMIN cuối cùng đang làm việc thì 409 (UC8 AC-8.7.9). Audit theo nhóm trường | UC1 FR-1.2, FR-1.4, FR-1.6, FR-1.7; `employee-access.ts:forbiddenFields` |
 | Danh bạ cấp dưới | Xem cấp dưới trực tiếp của một nhân viên | `GET /api/v1/employees/{id}/direct-reports` | ✓ | ✓ | ✓ | ✓ | ID nhân viên phải tồn tại; truy vấn trả nhân viên ACTIVE/ON_LEAVE có `managerId` bằng ID trên. Mở cho mọi người đã đăng nhập vì là dữ liệu danh bạ, nhưng chỉ trả trường mức danh bạ (ADR-18 mục 5). | UC2; `EmployeeService.directReports` |
 | Điều chuyển | Tạo | `POST /api/v1/employees/{id}/transfers` | — | — | ✓ | — | **Chỉ HR**. Kiểm FR-2.5 (quản lý đang làm việc, không vòng), ngày hiệu lực không trước ngày vào làm, lùi tối đa 30 ngày; phải chọn quản lý cho từng cấp dưới (AC-2.7.6) và trưởng mới cho đơn vị đang làm trưởng (AC-2.7.5); một người tối đa một điều chuyển chờ (409). Giới hạn nhóm `profile-write`. Audit `TRANSFER`, `TRANSFER_SCHEDULE` | UC2 FR-2.7 |
 | Điều chuyển | Xem, hủy | `GET /api/v1/employees/{id}/transfers`, `DELETE …/transfers/{transferId}` | — | — | ✓ | — | **Chỉ HR**; hủy chỉ khi `SCHEDULED` (409 nếu đã áp dụng, `FAILED`), kéo theo dòng của cấp dưới; audit `TRANSFER_CANCEL` | UC2 FR-2.7 |
-| Nghỉ việc | Xem ảnh hưởng trước khi xác nhận | `GET /api/v1/employees/{id}/termination-impact` | — | — | ✓ | — | **Chỉ HR**; liệt kê cấp dưới đang làm việc, vai trò trưởng, phó, điều chuyển chờ, điều chuyển mà người này là quản lý mới | UC1 AC-1.7.3 |
+| Nghỉ việc | Xem ảnh hưởng trước khi xác nhận | `GET /api/v1/employees/{id}/termination-impact` | — | — | ✓ | — | **Chỉ HR**; liệt kê cấp dưới đang làm việc, vai trò trưởng, phó, điều chuyển chờ, điều chuyển mà người này là quản lý mới, vai trò `HR`, `ADMIN` sẽ bị thu hồi, có phải ADMIN cuối cùng không | UC1 AC-1.7.3, UC8 AC-8.7.9 |
 | Danh bạ phòng ban | Xem thành viên | `GET /api/v1/departments/{id}/members` | ✓ | ✓ | ✓ | ✓ | Phòng ban phải tồn tại; kết quả lọc theo ID phòng ban, loại TERMINATED và phân trang. Mở cho mọi người đã đăng nhập ở mức danh bạ (ADR-18 mục 5). | UC2; `EmployeeController.members` |
 | Mục hồ sơ | Xem | `GET /api/v1/employees/{id}/profile/{section}` | ✓ | ✓ | ✓ | ✓ | Theo mức của mục (spec 9.1): QL cho chủ hồ sơ, quản lý trực tiếp và gián tiếp, HR; CN, NC cho chủ hồ sơ và HR. Không được xem hoặc mục không tồn tại: 404. `reveal=true` giải mã giá trị NC (chủ hồ sơ, HR) hoặc CCCD (chỉ HR), ghi `VIEW_SENSITIVE` | UC1 FR-1.3, FR-1.8, FR-1.12, FR-1.13 |
 | Mục hồ sơ | HR thêm, sửa, xóa dòng trực tiếp | `POST /api/v1/employees/{id}/profile/{section}`, `PATCH/DELETE …/{itemId}` | — | — | ✓ | — | Chỉ HR; `version` từng dòng; hợp đồng trùng khoảng ngày 409; 30 lệnh ghi/phút. Audit `PROFILE_ITEM_*` | UC1 FR-1.9 A9, FR-1.12 |
@@ -87,8 +102,14 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 | Đơn nghỉ phép | Xem chi tiết | `GET /api/v1/leave-requests/{id}` | ✓ | ✓ | ✓ | ✓ | Chỉ chủ đơn, quản lý trực tiếp hiện tại của chủ đơn, hoặc HR; điều kiện chủ đơn/quản lý áp dụng cho mọi role, gồm ADMIN. Người khác bị từ chối. | BR-05; `LeaveService.get` |
 | Đơn nghỉ phép | Duyệt | `POST /api/v1/leave-requests/{id}/approve` | — | ✓ | ✓ chỉ đơn của CEO | — | MANAGER phải là quản lý trực tiếp hiện tại hoặc người duyệt thay hợp lệ theo BR-06; HR chỉ duyệt đơn của CEO. Đơn phải ở `SUBMITTED`; thay đổi trạng thái yêu cầu `version` hiện tại; thao tác lặp cùng quyết định không tạo side effect. Code đã có HR duyệt đơn CEO (tuần 10); chưa có người duyệt thay (BR-06). | UC4, BR-05, BR-06, BR-11 |
 | Đơn nghỉ phép | Từ chối | `POST /api/v1/leave-requests/{id}/reject` | — | ✓ | ✓ chỉ đơn của CEO | — | MANAGER phải là quản lý trực tiếp hiện tại hoặc người duyệt thay hợp lệ theo BR-06; HR chỉ từ chối đơn của CEO. Đơn phải ở `SUBMITTED`; thay đổi trạng thái yêu cầu `version` hiện tại; thao tác lặp cùng quyết định không tạo side effect. Code đã có HR từ chối đơn CEO (tuần 10); chưa có người duyệt thay (BR-06). | UC4, BR-05, BR-06, BR-09, BR-11 |
-| Đơn nghỉ phép | Hủy | `POST /api/v1/leave-requests/{id}/cancel` | ✓ | ✓ | ✓ | ✓ | Chỉ chủ đơn; đơn phải ở `SUBMITTED`. Role không thay thế điều kiện sở hữu; không tự hủy đơn đã duyệt. | BR-07, BR-08 |
+| Đơn nghỉ phép | Hủy | `POST /api/v1/leave-requests/{id}/cancel` | ✓ | ✓ | ✓ | ✓ | Chỉ chủ đơn; đơn phải ở `SUBMITTED` (thiết kế 18/11: thêm `PENDING_HR`, và hôm nay trước `startDate`). Role không thay thế điều kiện sở hữu; không tự hủy đơn đã duyệt (dùng đề nghị hủy). | BR-07, BR-08 |
 | Đơn nghỉ phép | HR hoàn tất | `POST /api/v1/leave-requests/{id}/complete` | — | — | ✓ | — | Role HR; đơn phải ở `APPROVED`; thay đổi trạng thái yêu cầu `version` hiện tại. Chỉ HR được hoàn tất. | BR-10, BR-11 |
+| Số dư phép | Xem số dư của người khác *(thiết kế 18/11)* | `GET /api/v1/leave-balances?employeeId=` | — | ✓ cấp dưới trực tiếp | ✓ | — | MANAGER chỉ cấp dưới trực tiếp, không thấy `baseDays`, `note`; dùng cho tạo đơn hộ (BR-12) | UC3 FR-3.8, AC-3.8.4 |
+| Số dư phép | Chỉnh mức nền phép năm, hạn mức nghỉ ốm *(thiết kế 18/11)* | `PUT /api/v1/leave-balances/{employeeId}/{leaveType}/{year}` | — | — | ✓ | — | Chỉ HR; `version` hiện tại; audit `LEAVE_BALANCE_ADJUST` | UC3 FR-3.8, BR-18 |
+| Đơn nghỉ phép | Đề nghị hủy đơn đã duyệt *(thiết kế 18/11)* | `POST /api/v1/leave-requests/{id}/cancel-request` | ✓ | ✓ | ✓ | ✓ | Chỉ chủ đơn; đơn `APPROVED`, trước `startDate`, chưa có đề nghị | BR-08, UC3 AC-3.6.6 |
+| Đơn nghỉ phép | Xác nhận, bác đề nghị hủy *(thiết kế 18/11)* | `POST /api/v1/leave-requests/{id}/cancel-request/approve`, `/reject` | — | ✓ | ✓ | — | Quản lý trực tiếp hiện tại, người duyệt thay hoặc HR; đơn đã qua HR duyệt thêm (BR-16) thì chỉ HR; không phải chủ đơn | BR-08, UC4 13.4 |
+| Ngày lễ | Thêm, xóa *(thiết kế 18/11)* | `POST /api/v1/leave-holidays`, `DELETE /api/v1/leave-holidays/{date}` | — | — | ✓ | — | Chỉ HR; không tự sửa đơn đã gửi | BR-19, UC4 FR-4.9 |
+| Đơn nghỉ phép | Xem đơn bị ảnh hưởng bởi lịch lễ, tính lại *(thiết kế 18/11)* | `GET /api/v1/leave-requests/affected-by-holidays`, `POST /api/v1/leave-requests/{id}/recalculate` | — | — | ✓ | — | Chỉ HR; đơn `SUBMITTED`, `PENDING_HR`, `APPROVED`; không vượt số dư | BR-19, UC4 13.6 |
 
 ### Kho tài liệu (tuần 10, `document-rules.md`)
 

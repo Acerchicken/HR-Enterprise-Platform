@@ -62,9 +62,27 @@ dưới đây. Các ca dùng ngày năm 2026.
 | TC-21 | HR hoàn tất đơn chưa duyệt | BR-10 | `hr` | Đơn `SUBMITTED` | 409, đơn giữ `SUBMITTED` |
 | TC-22 | Không phải HR hoàn tất | BR-10 | `employee`, `manager` | Đơn `APPROVED` | 403 |
 
+## 6. Các quy tắc được chốt bổ sung (chờ triển khai UC3/UC4)
+
+Các ca dưới đây là tiêu chí nghiệm thu cho các quy tắc vừa được TV2 chốt; chúng **chưa được tính là test tự động đã chạy**.
+
+| Mã | Tên ca | BR | Tài khoản | Đầu vào | Kết quả mong đợi |
+|---|---|---|---|---|---|
+| TC-23 | Phép năm theo tỉ lệ, thâm niên và thử việc | BR-01 | `employee`, HR | Nhân viên bắt đầu 01/07 trong thời gian thử việc rồi tiếp tục làm chính thức, điều kiện bình thường, không có ngày thâm niên; trường hợp hai đủ 10 năm cùng người sử dụng lao động | Thời gian thử việc được tính khi tiếp tục làm; trường hợp đầu được 6 ngày cho năm đó, trường hợp sau được 14 ngày/năm. Số dư giữ 2 chữ số thập phân, không làm tròn giảm |
+| TC-24 | Nghỉ theo sự kiện đúng hạn mức | BR-01 | `employee`, HR | Tạo đơn cưới 3 ngày; sau đó thử 4 ngày; tạo đơn cho sự kiện đủ điều kiện khác trong cùng năm | Đơn 3 ngày hợp lệ; 4 ngày trả 400, không tạo/giữ số dư; sự kiện hợp lệ khác vẫn được xét, không áp trần tổng số lần/năm; một sự kiện không được yêu cầu lần thứ hai |
+| TC-25 | Đơn phép năm qua hai năm | BR-01 | `employee` | Đơn 29/12/2026–04/01/2027; lặp lại với số dư năm 2027 không đủ | Đơn đầu được tạo và giữ chỗ đúng từng năm; trường hợp thiếu số dư một năm trả 400, không tạo đơn và không giữ chỗ một phần |
+| TC-26 | Chủ đơn hủy khi `PENDING_HR` trước ngày bắt đầu | BR-07, BR-16 | `employee` | Đơn đã được quản lý duyệt, đang `PENDING_HR`, `startDate` còn ở tương lai | Đơn `CANCELLED`; `pending` được trả đúng theo từng năm; không thay đổi `used`; chỉ gửi thông báo chung |
+| TC-27 | Chặn tự hủy đơn chờ từ ngày bắt đầu | BR-07 | `employee`, HR | Đơn `SUBMITTED` hoặc `PENDING_HR` có `startDate` là hôm nay hoặc trong quá khứ; sau đó HR xác minh thực tế và xử lý | Chủ đơn nhận 409, số dư không tự đổi. HR chỉ hủy/điều chỉnh sau khi xác minh, ghi lý do, lịch sử và audit |
+| TC-28 | Hủy đơn đã duyệt trước ngày bắt đầu | BR-08, BR-15 | Chủ đơn, quản lý trực tiếp, HR | Chủ đơn đề nghị; quản lý trực tiếp hoặc HR xác nhận với lý do trước `startDate`; thử chủ đơn tự gọi xác nhận | Chủ đơn tự gọi bị từ chối; người có quyền xác nhận thì đơn `CANCELLED`, `pending` giảm đúng theo từng năm, `used` không đổi; lịch sử có lý do, audit không có nội dung lý do; email chung |
+| TC-29 | Không hoàn tất trước ngày kế tiếp `endDate` | BR-10 | HR | Hoàn tất đơn `APPROVED` trong ngày kết thúc; thử lại vào ngày kế tiếp theo giờ Việt Nam, có đủ giấy tờ | Lần đầu trả 409; lần sau hoàn tất được, chuyển đúng số ngày từ `pending` sang `used`. Thiếu giấy tờ thì vẫn `APPROVED` |
+| TC-30 | Cập nhật lịch lễ không âm thầm đổi đơn | BR-19 | HR, `employee` | Gửi đơn trước khi HR thêm ngày nghỉ lễ/nghỉ bù nằm trong khoảng đơn; HR cập nhật lịch và rà soát đơn | Đơn cũ giữ nguyên cho tới điều chỉnh có audit/lịch sử và email chung; đơn mới dùng lịch mới; điều chỉnh số dư theo đúng năm |
+| TC-31 | Hạn mức nghỉ ốm theo hồ sơ BHXH | BR-18 | HR, `employee` | `hireDate` mới nhưng có lịch sử đóng BHXH dài hơn; HR đặt hạn mức theo hồ sơ xác minh; thử tạo đơn vượt hạn mức | Hạn mức không suy từ `hireDate`; đơn trong hạn được xét bình thường, vượt hạn mức trả 400; HR kiểm giấy tờ khi hoàn tất |
+| TC-32 | Nhắc một lần cho đơn chờ | BR-17 | Quản lý/người duyệt thay, HR | Đơn giữ `SUBMITTED` quá một ngày làm việc đầy đủ; đơn khác giữ `PENDING_HR` quá một ngày làm việc đầy đủ; đơn thứ ba được xử lý trước ngưỡng | Gửi đúng một nhắc chung tới người đang có quyền hoặc nhóm HR theo trạng thái; không nhắc đơn đã xử lý, không lặp trong cùng giai đoạn, không tự đổi trạng thái |
+
 ## Ghi chú
 
-- Cả 22 ca đã có e2e test tương ứng trong `backend/test/app.e2e-spec.ts` (nhóm "workflow nghỉ phép"); TC-04, TC-21, TC-22
+- TC-01 → TC-22 đã có e2e test tương ứng trong `backend/test/app.e2e-spec.ts` (nhóm "workflow nghỉ phép"); TC-04, TC-21, TC-22
   bổ sung ở nhánh `test/access-control-e2e` (tuần 9).
+- TC-23 → TC-32 là ca nghiệm thu nghiệp vụ mới, chưa có nghĩa là code/test tương ứng đã được triển khai; cập nhật trạng thái khi TV1/TV4 hoàn thành.
 - BR-06 (người duyệt thay) chưa có trong hệ thống nên chưa có ca kiểm thử.
 - Khi có màn hình nghỉ phép (`feat/leave-ui`), chạy lại các ca trên qua giao diện và ghi kết quả vào `test-report-tuan-08.md`.

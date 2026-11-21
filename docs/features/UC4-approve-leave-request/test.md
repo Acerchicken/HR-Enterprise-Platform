@@ -33,14 +33,19 @@ email kiểm tay ở Mailpit.
 | AC-4.3.1 → AC-4.3.4 | – | – | Chưa có tính năng |
 | AC-4.4.1, AC-4.4.2 | "HR duyệt đơn của CEO…", "HR không duyệt được đơn của nhân viên khác CEO…" | – | Có |
 | AC-4.5.1, AC-4.5.2 | "tạo → … HR hoàn tất", "HR hoàn tất đơn chưa duyệt → 409 (TC-21…)" | TC-20 → TC-22 | Có |
-| AC-4.5.3 | – | – | Chưa đạt (hoàn tất được trước ngày kết thúc) |
+| AC-4.5.3 | – | TC-29 | Chờ TV1 chặn hoàn tất đến ngày kế tiếp `endDate` theo giờ Việt Nam và kiểm giấy tờ |
+| AC-4.5.4 | – | TC-28 | Chờ TV1 triển khai quản lý/HR xác nhận hủy đơn đã duyệt trước ngày bắt đầu |
+| AC-4.5.5 → AC-4.5.7 | – | Cần thêm (TV4) | Chưa có tính năng (nhánh `feat/leave-cancel-rules`) |
 | AC-4.6.1, AC-4.6.2 | Unit `notification-worker.spec.ts` | Kiểm Mailpit | Có |
 | AC-4.6.3 | – | – | Chưa đạt (BR-15) |
 | AC-4.6.5 | – | – | Chưa đạt (CEO tạo đơn, HR không nhận email) |
 | AC-4.6.4 | Unit `messaging.spec.ts` | Tắt RabbitMQ rồi duyệt đơn | Có unit |
+| AC-4.6.6 | – | TC-32 | Chờ TV1 triển khai nhắc một lần theo từng giai đoạn chờ |
 | AC-4.7.1, AC-4.7.2 | "người ngoài không xem được đơn của nhân viên" | SEC-57, SEC-58 | Có |
 | AC-4.7.3, AC-4.7.4 | – | – | Chưa đạt (BR-14) |
+| AC-4.7.5 | – | Cần thêm: quản lý gián tiếp, phó phòng mở đơn → 403 | Code đã đúng (chỉ quản lý trực tiếp), thiếu test |
 | AC-4.8.1 → AC-4.8.8 | – | Cần thêm (TV4) | Chưa có tính năng |
+| AC-4.9.1 → AC-4.9.4 | – | Cần thêm (TV4) | Chưa có tính năng (nhánh `feat/leave-holidays`) |
 
 ## 4. Dữ liệu và tài khoản
 
@@ -69,6 +74,7 @@ kiểm email đến Mailpit.
 - e2e cho AC-4.2.4 (duyệt hai lần) và AC-4.2.5 (version cũ).
 - AC-4.8.x (HR duyệt thêm): mỗi tiêu chí một ca; thêm ca MT-2 tính thời gian tới quyết định cuối cùng (sau HR).
 - AC-4.3.x, AC-4.6.3, AC-4.7.3 khi `feat/leave-delegation`, `feat/leave-privacy` xong.
+- Thực hiện TC-28, TC-29 và TC-32 sau khi TV1 hoàn thành; đây là tiêu chí nghiệp vụ, chưa phải kết quả test tự động.
 
 **Lưu ý:** unit test "nội dung email có thời gian, số ngày và ghi chú" trong `leave-events.spec.ts` đang kiểm đúng điều BR-15
 cấm. Nhánh `feat/leave-privacy` phải đổi test này thành "email không có loại phép, ngày, lý do".

@@ -8,15 +8,32 @@
   "accessTokenLifespan": 900,
   "ssoSessionIdleTimeout": 1800,
   "bruteForceProtected": true,
+  "resetPasswordAllowed": true,
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "no-reply@hr.local",
+    "fromDisplayName": "HRHelper",
+    "auth": "false",
+    "ssl": "false",
+    "starttls": "false"
+  },
+  "eventsEnabled": true,
+  "eventsExpiration": 604800,
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "LOGOUT",
+    "UPDATE_PASSWORD",
+    "SEND_RESET_PASSWORD",
+    "EXECUTE_ACTIONS"
+  ],
+  "adminEventsEnabled": true,
   "roles": {
     "realm": [
       {
         "name": "employee",
         "description": "Nhân viên"
-      },
-      {
-        "name": "manager",
-        "description": "Quản lý"
       },
       {
         "name": "hr",
@@ -55,6 +72,17 @@
       "publicClient": true,
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": true
+    },
+    {
+      "clientId": "hr-api-admin",
+      "name": "Worker identity-sync: tạo, khóa tài khoản qua Admin API (UC8 FR-8.3, 8.4)",
+      "enabled": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "dev-only-hr-api-admin-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
     }
   ],
   "users": [
@@ -91,8 +119,7 @@
         }
       ],
       "realmRoles": [
-        "employee",
-        "manager"
+        "employee"
       ]
     },
     {
@@ -132,6 +159,18 @@
         "employee",
         "admin"
       ]
+    },
+    {
+      "username": "service-account-hr-api-admin",
+      "enabled": true,
+      "serviceAccountClientId": "hr-api-admin",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "view-realm"
+        ]
+      }
     }
   ]
 }

@@ -1,7 +1,9 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './auth/auth';
+import { IdleGuard } from './auth/idle';
 import { Layout } from './components/Layout';
 import { ShellProvider } from './components/shell';
+import { RolesPage } from './pages/admin/RolesPage';
 import { ApprovalsPage } from './pages/ApprovalsPage';
 import { ExpiringContractsPage } from './pages/ExpiringContractsPage';
 import { CallbackPage } from './pages/CallbackPage';
@@ -31,6 +33,7 @@ export function App() {
   return (
     <ShellProvider>
       <AppRoutes />
+      <IdleGuard />
     </ShellProvider>
   );
 }
@@ -65,6 +68,7 @@ function AppRoutes() {
           <Route path="approvals" element={<ApprovalsPage />} />
           <Route path="approvals/profile/:id" element={<ApprovalsPage />} />
           <Route path="contracts/expiring" element={<ExpiringContractsPage />} />
+          <Route path="admin/roles" element={<RolesPage />} />
           <Route path="coming-soon" element={<ComingSoonPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

@@ -9,6 +9,7 @@ import {
   List,
   LucideIcon,
   Network,
+  ShieldCheck,
   Upload,
   UserPlus,
   UserRound,
@@ -44,7 +45,7 @@ const COMMON: Tile[] = [
   { title: 'Tra cứu tài liệu', desc: 'Tìm quy chế, chính sách; hỏi trợ lý AI', icon: FileSearch, to: '/coming-soon', ready: false },
 ];
 
-/** Nhóm "Chức năng HR" (bản vẽ 10.2). Trang "Việc cần duyệt" có tab (frontend.md 2.4) làm ở tuần 12; tạm dẫn tới trang cũ. */
+/** Nhóm "Chức năng HR" (bản vẽ 10.2); ADMIN không có HR thấy nhóm này với tên "Quản trị". Trang "Việc cần duyệt" có tab (frontend.md 2.4) làm ở tuần 12; tạm dẫn tới trang cũ. */
 const HR_TILES: Tile[] = [
   { title: 'Việc cần duyệt', desc: 'Yêu cầu cập nhật hồ sơ, đơn nghỉ', icon: Inbox, to: '/approvals?type=profile', who: ['HR'] },
   { title: 'Hoàn tất đơn nghỉ', desc: 'Đơn đã duyệt chờ HR hoàn tất', icon: CalendarDays, to: '/leave/hr', who: ['HR'] },
@@ -52,6 +53,7 @@ const HR_TILES: Tile[] = [
   { title: 'Hợp đồng sắp hết hạn', desc: 'Hết hạn trong 30 ngày tới', icon: CalendarClock, to: '/contracts/expiring', who: ['HR'] },
   { title: 'Đăng tài liệu', desc: 'Quy chế, biểu mẫu, phạm vi xem', icon: Upload, to: '/coming-soon', who: ['HR'], ready: false },
   { title: 'Lịch sử thao tác', desc: 'Ai làm gì, lúc nào', icon: History, to: '/coming-soon', who: ['HR', 'ADMIN'], ready: false },
+  { title: 'Phân quyền', desc: 'Cấp, thu hồi vai trò HR, ADMIN', icon: ShieldCheck, to: '/admin/roles', who: ['ADMIN'] },
 ];
 
 const DAY = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -106,7 +108,7 @@ export function HomePage() {
       )}
       {hr.length > 0 && (
         <>
-          <h2 className="sect">Chức năng HR</h2>
+          <h2 className="sect">{me.roles.includes('HR') ? 'Chức năng HR' : 'Quản trị'}</h2>
           <div className="tiles">{hr.map(tile)}</div>
         </>
       )}

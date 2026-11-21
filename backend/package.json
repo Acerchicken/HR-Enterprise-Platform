@@ -13,12 +13,14 @@
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
     "migration:run:prod": "typeorm migration:run -d dist/database/data-source.js",
     "seed": "ts-node --transpile-only src/database/seed.ts",
+    "grant-admin": "ts-node --transpile-only src/database/grant-admin.ts",
     "seed:prod": "node dist/database/seed.js",
     "test": "jest",
     "test:e2e": "jest --config test/jest-e2e.json --runInBand",
     "openapi": "ts-node --transpile-only src/export-openapi.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.1164.0",
     "@aws-sdk/client-s3": "^3.1164.0",
     "@aws-sdk/client-sqs": "^3.1164.0",
     "@aws-sdk/s3-request-presigner": "^3.1164.0",

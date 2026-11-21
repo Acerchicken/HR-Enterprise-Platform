@@ -31,8 +31,6 @@ export interface AppConfig {
     allowedClients: string[];
     /** Claim chứa client id: `azp` (Keycloak) hoặc `client_id` (access token Cognito). */
     clientClaim: string;
-    /** Đường dẫn claim chứa danh sách role: `realm_access.roles` (Keycloak) hoặc `cognito:groups` (Cognito). */
-    rolesClaim: string;
     /** Endpoint userinfo của IdP; dùng khi access token không có email (Cognito). */
     userinfoUrl: string | null;
   };
@@ -78,7 +76,22 @@ export interface AppConfig {
     enabled: boolean;
     overrides: Record<string, Partial<Record<'minute' | 'hour' | 'day', number>>>;
   };
+  /**
+   * Tạo, khóa tài khoản và đồng bộ nhóm trên IdP (UC8 FR-8.3, 8.4, 8.7; ADR-17 mục 4). Worker dùng.
+   * IDP_ADMIN_DRIVER=keycloak (local) | cognito (staging) | none (mặc định: chỉ ghi log, dùng cho AUTH_MODE=dev và test).
+   */
+  idpAdmin: {
+    driver: IdpAdminDriver;
+    /** Keycloak: gốc server (bỏ phần /realms/...), realm, client `hr-api-admin` (client credentials, role manage-users). */
+    keycloak: { baseUrl: string; realm: string; clientId: string; clientSecret: string | null };
+    cognito: { userPoolId: string | null; region: string };
+    /** Số lần thử khi IdP lỗi tạm thời và thời gian chờ ban đầu (nhân đôi mỗi lần). */
+    attempts: number;
+    retryDelayMs: number;
+  };
 }
+
+export type IdpAdminDriver = 'keycloak' | 'cognito' | 'none';
 
 export interface LoadOptions {
   /** false cho process worker: worker không xác thực token nên không bắt buộc OIDC_ISSUER. */
@@ -112,7 +125,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
       jwksUri: env.OIDC_JWKS_URI ?? `${issuer}/protocol/openid-connect/certs`,
       allowedClients: (env.OIDC_ALLOWED_CLIENTS ?? 'hr-web').split(',').map((c) => c.trim()),
       clientClaim: env.OIDC_CLIENT_CLAIM ?? 'azp',
-      rolesClaim: env.OIDC_ROLES_CLAIM ?? 'realm_access.roles',
       userinfoUrl: env.OIDC_USERINFO_URL || null,
     },
     fieldEncryptionKey: env.FIELD_ENCRYPTION_KEY ?? DEV_FIELD_ENCRYPTION_KEY,
@@ -135,6 +147,21 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
       enabled: env.RATE_LIMIT_ENABLED !== 'false',
       overrides: parseOverrides(env.RATE_LIMIT_OVERRIDES),
     },
+    idpAdmin: {
+      driver: (env.IDP_ADMIN_DRIVER ?? 'none') as IdpAdminDriver,
+      keycloak: {
+        baseUrl: env.KEYCLOAK_ADMIN_URL ?? issuer.replace(/\/realms\/[^/]+\/?$/, ''),
+        realm: env.KEYCLOAK_REALM ?? (/\/realms\/([^/]+)/.exec(issuer)?.[1] ?? 'hr'),
+        clientId: env.KEYCLOAK_ADMIN_CLIENT_ID ?? 'hr-api-admin',
+        clientSecret: env.KEYCLOAK_ADMIN_CLIENT_SECRET || null,
+      },
+      cognito: {
+        userPoolId: env.COGNITO_USER_POOL_ID || null,
+        region: env.AWS_REGION || 'ap-southeast-1',
+      },
+      attempts: Number(env.IDP_SYNC_ATTEMPTS ?? 5),
+      retryDelayMs: Number(env.IDP_SYNC_RETRY_DELAY_MS ?? 1000),
+    },
   };
   assertValid(cfg, env, opts.needsAuth ?? true);
   return cfg;
@@ -152,6 +179,10 @@ function assertValid(cfg: AppConfig, env: NodeJS.ProcessEnv, needsAuth: boolean)
   }
   if (!['off', 'require', 'verify'].includes(cfg.db.ssl)) problems.push('DB_SSL phải là off, require hoặc verify');
   if (cfg.db.ssl === 'verify' && !cfg.db.sslCaFile) problems.push('DB_SSL=verify cần DB_SSL_CA_FILE');
+  const idp = cfg.idpAdmin;
+  if (!['keycloak', 'cognito', 'none'].includes(idp.driver)) problems.push('IDP_ADMIN_DRIVER chỉ nhận keycloak, cognito, none');
+  if (idp.driver === 'keycloak' && !idp.keycloak.clientSecret) problems.push('IDP_ADMIN_DRIVER=keycloak cần KEYCLOAK_ADMIN_CLIENT_SECRET');
+  if (idp.driver === 'cognito' && !idp.cognito.userPoolId) problems.push('IDP_ADMIN_DRIVER=cognito cần COGNITO_USER_POOL_ID');
 
   if (cfg.nodeEnv === 'production' && env.ALLOW_DEV_SECRETS !== 'true') {
     if (!env.FIELD_ENCRYPTION_KEY) problems.push('thiếu FIELD_ENCRYPTION_KEY');

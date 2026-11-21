@@ -296,6 +296,205 @@ describe('HRHelper API (e2e)', () => {
     expect(update.changedFields.salary).toBe('***');
   });
 
+  describe('UC8 FR-8.7: ADMIN cấp, thu hồi vai trò (AC-8.7.x, ADR-18)', () => {
+    const path = '/api/v1/admin/role-assignments';
+    const db = () => app.get(require('typeorm').DataSource);
+    const reason = 'Kiểm thử e2e cấp vai trò';
+    let employeeAccount: string;
+    let adminAccount: string;
+
+    beforeAll(async () => {
+      [{ id: employeeAccount }] = await db().query(`SELECT id FROM iam.user_account WHERE email = 'employee@hr.local'`);
+      [{ id: adminAccount }] = await db().query(`SELECT id FROM iam.user_account WHERE email = 'admin@hr.local'`);
+      await db().query(`DELETE FROM iam.role_assignment WHERE user_id = $1 AND role IN ('HR', 'ADMIN')`, [employeeAccount]);
+    });
+
+    it('chỉ ADMIN gọi được, kể cả HR bị 403 (AC-8.7.5)', async () => {
+      await http.get(path).set(HR).expect(403);
+      await http.get(path).set(EMPLOYEE).expect(403);
+      await http.post(path).set(HR).send({ employeeId, role: 'HR', reason }).expect(403);
+      const list = (await http.get(`${path}?role=ADMIN`).set(ADMIN).expect(200)).body;
+      expect(list.items.map((r: any) => r.email)).toContain('admin@hr.local');
+      expect(list.items.every((r: any) => r.role === 'ADMIN')).toBe(true);
+    });
+
+    it('cấp HR: có quyền ngay ở request kế tiếp, có người cấp, lý do, audit, event (AC-8.7.1)', async () => {
+      await http.get('/api/v1/audit-logs').set(EMPLOYEE).expect(403);
+      const row = (await http.post(path).set(ADMIN).send({ employeeId, role: 'HR', reason: `  ${reason}  ` }).expect(201)).body;
+      expect(row).toMatchObject({ userId: employeeAccount, employeeId, role: 'HR', reason, grantedBy: { id: adminAccount } });
+      expect((await http.get('/api/v1/me').set(EMPLOYEE)).body.roles).toContain('HR');
+      await http.get('/api/v1/audit-logs').set(EMPLOYEE).expect(200);
+      const [audit] = await db().query(
+        `SELECT actor_id, changed_fields FROM audit.audit_log WHERE action = 'ROLE_GRANT' AND entity_id = $1 ORDER BY id DESC LIMIT 1`,
+        [employeeAccount],
+      );
+      // audit.audit_log.actor_id là id hồ sơ nhân viên (như mọi audit khác), không phải id tài khoản.
+      const adminEmployee = (await http.get('/api/v1/me').set(ADMIN)).body.employee.id;
+      expect(audit).toMatchObject({ actor_id: adminEmployee, changed_fields: { role: 'HR', reason } });
+      const [event] = await db().query(`SELECT payload FROM leave.outbox WHERE event_type = 'RoleGranted' AND aggregate_id = $1 ORDER BY id DESC LIMIT 1`, [employeeAccount]);
+      expect(event.payload).toMatchObject({ accountId: employeeAccount, email: 'employee@hr.local', role: 'HR' });
+      const found = (await http.get(`${path}?q=employee@hr`).set(ADMIN).expect(200)).body;
+      expect(found.items).toEqual([expect.objectContaining({ userId: employeeAccount, role: 'HR' })]);
+    });
+
+    it('đã có vai trò → 409; lý do ngắn, vai trò MANAGER → 400 (AC-8.7.6, AC-8.7.7)', async () => {
+      await http.post(path).set(ADMIN).send({ employeeId, role: 'HR', reason }).expect(409);
+      expect((await http.post(path).set(ADMIN).send({ employeeId, role: 'HR', reason: ' ab ' }).expect(400)).body.fields).toHaveProperty('reason');
+      await http.post(path).set(ADMIN).send({ employeeId, role: 'MANAGER', reason }).expect(400);
+      const noAccount = (await db().query(
+        `SELECT e.id FROM employee.employee e LEFT JOIN iam.user_account a ON a.employee_id = e.id WHERE a.id IS NULL AND e.status <> 'TERMINATED' LIMIT 1`,
+      ))[0].id;
+      await http.post(path).set(ADMIN).send({ employeeId: noAccount, role: 'HR', reason }).expect(400);
+    });
+
+    it('tự cấp cho mình → 403; ADMIN duy nhất tự thu hồi → 409 (AC-8.7.3, AC-8.7.4)', async () => {
+      const adminEmployee = (await http.get('/api/v1/me').set(ADMIN)).body.employee.id;
+      await http.post(path).set(ADMIN).send({ employeeId: adminEmployee, role: 'HR', reason }).expect(403);
+      const [{ n }] = await db().query(`SELECT count(*)::int AS n FROM iam.role_assignment WHERE role = 'ADMIN'`);
+      expect(n).toBe(1);
+      const res = await http.delete(`${path}/${adminAccount}/ADMIN`).set(ADMIN).send({ reason }).expect(409);
+      expect(res.body.message).toContain('ít nhất một ADMIN');
+      await http.delete(`${path}/${adminAccount}/HR`).set(ADMIN).send({ reason }).expect(403);
+    });
+
+    it('thu hồi HR: mất quyền ở request kế tiếp, audit có lý do (AC-8.7.2)', async () => {
+      await http.delete(`${path}/${employeeAccount}/HR`).set(ADMIN).send({ reason: 'ab' }).expect(400);
+      await http.delete(`${path}/${employeeAccount}/HR`).set(ADMIN).send({ reason }).expect(204);
+      await http.get('/api/v1/audit-logs').set(EMPLOYEE).expect(403);
+      await http.delete(`${path}/${employeeAccount}/HR`).set(ADMIN).send({ reason }).expect(404);
+      const [audit] = await db().query(`SELECT changed_fields FROM audit.audit_log WHERE action = 'ROLE_REVOKE' AND entity_id = $1 ORDER BY id DESC LIMIT 1`, [employeeAccount]);
+      expect(audit.changed_fields).toMatchObject({ role: 'HR', reason });
+    });
+  });
+
+  describe('UC8 FR-8.3, FR-8.6: tài khoản theo hồ sơ, HR gửi lời mời (AC-8.3.1, AC-8.6.x)', () => {
+    const db = () => app.get(require('typeorm').DataSource);
+    const account = (id: string) => `/api/v1/employees/${id}/account`;
+    let newId: string;
+    let email: string;
+
+    it('HR tạo hồ sơ: tài khoản PENDING và event EmployeeCreated trong outbox (AC-8.3.1)', async () => {
+      const dept = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code !== 'HQ');
+      const pos = (await http.get('/api/v1/positions').set(HR)).body.find((p: any) => p.code !== 'CEO');
+      const code = `E8${String(Date.now() % 10000).padStart(4, '0')}`;
+      email = `acc-${code.toLowerCase()}@hr.local`;
+      newId = (
+        await http
+          .post('/api/v1/employees')
+          .set(HR)
+          .send({ employeeCode: code, fullName: 'Tài Khoản Mới', workEmail: email, departmentId: dept.id, positionId: pos.id, managerId, hireDate: '2026-11-18' })
+          .expect(201)
+      ).body.id;
+      const view = (await http.get(account(newId)).set(HR).expect(200)).body;
+      expect(view).toMatchObject({ status: 'PENDING', email, invitedAt: null, error: null });
+      const [acc] = await db().query(`SELECT id FROM iam.user_account WHERE employee_id = $1`, [newId]);
+      const [evt] = await db().query(`SELECT payload FROM leave.outbox WHERE event_type = 'EmployeeCreated' AND aggregate_id = $1`, [acc.id]);
+      expect(evt.payload).toMatchObject({ employeeId: newId, accountId: acc.id, email, fullName: 'Tài Khoản Mới' });
+    });
+
+    it('chỉ HR xem và gửi lời mời, kể cả ADMIN bị 403 (AC-8.6.3)', async () => {
+      for (const who of [EMPLOYEE, MANAGER, ADMIN]) {
+        await http.get(account(newId)).set(who).expect(403);
+        await http.post(`${account(newId)}/invite`).set(who).expect(403);
+      }
+      await http.get(account('00000000-0000-4000-8000-000000000000')).set(HR).expect(404);
+    });
+
+    it('PENDING, ACTIVE → 409; nghỉ việc → 400 (AC-8.6.5)', async () => {
+      await http.post(`${account(newId)}/invite`).set(HR).expect(409);
+      expect((await http.get(account(employeeId)).set(HR)).body.status).toBe('ACTIVE');
+      await http.post(`${account(employeeId)}/invite`).set(HR).expect(409);
+      const [{ id: terminated }] = await db().query(`SELECT id FROM employee.employee WHERE status = 'TERMINATED' LIMIT 1`);
+      await http.post(`${account(terminated)}/invite`).set(HR).expect(400);
+    });
+
+    it('FAILED → gửi lại: PENDING, xóa lỗi, event có trạng thái trước, audit (AC-8.6.2)', async () => {
+      await db().query(`UPDATE iam.user_account SET idp_status = 'FAILED', idp_error = 'IDP_UNAVAILABLE' WHERE employee_id = $1`, [newId]);
+      expect((await http.get(account(newId)).set(HR)).body).toMatchObject({ status: 'FAILED', error: 'IDP_UNAVAILABLE' });
+      await http.post(`${account(newId)}/invite`).set(HR).expect(202, { status: 'PENDING' });
+      expect((await http.get(account(newId)).set(HR)).body).toMatchObject({ status: 'PENDING', error: null });
+      const [acc] = await db().query(`SELECT id FROM iam.user_account WHERE employee_id = $1`, [newId]);
+      const [evt] = await db().query(
+        `SELECT payload FROM leave.outbox WHERE event_type = 'AccountInviteRequested' AND aggregate_id = $1 ORDER BY id DESC LIMIT 1`,
+        [acc.id],
+      );
+      expect(evt.payload).toMatchObject({ previousStatus: 'FAILED', email });
+      const [audit] = await db().query(`SELECT changed_fields FROM audit.audit_log WHERE action = 'ACCOUNT_INVITE' AND entity_id = $1`, [acc.id]);
+      expect(audit.changed_fields).toMatchObject({ employeeId: newId, previousStatus: 'FAILED' });
+    });
+
+    it('hồ sơ chưa có tài khoản (NONE) → gửi lời mời tạo tài khoản (AC-8.6.4)', async () => {
+      await db().query(`DELETE FROM iam.user_account WHERE employee_id = $1`, [newId]);
+      expect((await http.get(account(newId)).set(HR)).body).toMatchObject({ status: 'NONE', email });
+      await http.post(`${account(newId)}/invite`).set(HR).expect(202);
+      const [acc] = await db().query(`SELECT id, email, idp_status FROM iam.user_account WHERE employee_id = $1`, [newId]);
+      expect(acc).toMatchObject({ email, idp_status: 'PENDING' });
+    });
+
+    it('nghỉ việc, khôi phục, đổi email: event cho worker đồng bộ IdP (AC-8.4.2, AC-8.4.3, AC-8.3.6)', async () => {
+      const [acc] = await db().query(`SELECT id FROM iam.user_account WHERE employee_id = $1`, [newId]);
+      const events = async () =>
+        (await db().query(`SELECT event_type, payload FROM leave.outbox WHERE aggregate_id = $1 ORDER BY id`, [acc.id])).map((r: any) => r.event_type);
+      // Lấy version trước khi tạo request: supertest dùng chung server, request lồng nhau làm đóng server.
+      const patch = async (body: object) => {
+        const version = await versionOf(newId);
+        await http.patch(`/api/v1/employees/${newId}`).set(HR).send({ ...body, version }).expect(200);
+      };
+      await patch({ status: 'TERMINATED' });
+      await patch({ status: 'ACTIVE' });
+      const changed = email.replace('acc-', 'acc2-');
+      await patch({ workEmail: changed });
+      expect((await events()).slice(-3)).toEqual(['EmployeeTerminated', 'EmployeeReinstated', 'EmployeeEmailChanged']);
+      const [{ email: loginEmail }] = await db().query(`SELECT email FROM iam.user_account WHERE id = $1`, [acc.id]);
+      expect(loginEmail).toBe(changed);
+    });
+  });
+
+  describe('Nghỉ việc thu hồi HR, ADMIN; không cho nghỉ việc ADMIN cuối cùng (ADR-18, UC8 AC-8.7.4)', () => {
+    const db = () => app.get(require('typeorm').DataSource);
+    const patch = async (id: string, body: object) => {
+      const version = await versionOf(id);
+      return http.patch(`/api/v1/employees/${id}`).set(HR).send({ ...body, version });
+    };
+
+    it('ADMIN cuối cùng: hộp xác nhận báo trước, lưu bị 409, không đổi gì', async () => {
+      const adminEmployee = (await http.get('/api/v1/me').set(ADMIN)).body.employee.id;
+      const impact = (await http.get(`/api/v1/employees/${adminEmployee}/termination-impact`).set(HR).expect(200)).body;
+      expect(impact).toMatchObject({ lastAdmin: true, grantedRoles: ['ADMIN'] });
+      const res = await patch(adminEmployee, { status: 'TERMINATED' });
+      expect(res.status).toBe(409);
+      expect(res.body.message).toContain('ADMIN cuối cùng');
+      expect((await http.get('/api/v1/me').set(ADMIN).expect(200)).body.roles).toContain('ADMIN');
+    });
+
+    it('HR nghỉ việc mất HR, có audit và event; khôi phục không tự có lại HR', async () => {
+      const dept = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code !== 'HQ');
+      const pos = (await http.get('/api/v1/positions').set(HR)).body.find((p: any) => p.code !== 'CEO');
+      const code = `E7${String(Date.now() % 10000).padStart(4, '0')}`;
+      const id = (
+        await http
+          .post('/api/v1/employees')
+          .set(HR)
+          .send({ employeeCode: code, fullName: 'Nhân Sự Thử', workEmail: `term-${code.toLowerCase()}@hr.local`, departmentId: dept.id, positionId: pos.id, managerId, hireDate: '2026-11-18' })
+          .expect(201)
+      ).body.id;
+      await http.post('/api/v1/admin/role-assignments').set(ADMIN).send({ employeeId: id, role: 'HR', reason: 'Kiểm thử nghỉ việc' }).expect(201);
+      expect((await http.get(`/api/v1/employees/${id}/termination-impact`).set(HR)).body).toMatchObject({ lastAdmin: false, grantedRoles: ['HR'] });
+      expect((await patch(id, { status: 'TERMINATED' })).status).toBe(200);
+      const [acc] = await db().query(`SELECT id FROM iam.user_account WHERE employee_id = $1`, [id]);
+      expect(await db().query(`SELECT 1 FROM iam.role_assignment WHERE user_id = $1`, [acc.id])).toHaveLength(0);
+      const [audit] = await db().query(
+        `SELECT changed_fields FROM audit.audit_log WHERE action = 'ROLE_REVOKE' AND entity_id = $1 ORDER BY id DESC LIMIT 1`,
+        [acc.id],
+      );
+      expect(audit.changed_fields).toMatchObject({ role: 'HR', reason: 'Nghỉ việc' });
+      const events = (await db().query(`SELECT event_type FROM leave.outbox WHERE aggregate_id = $1 ORDER BY id`, [acc.id])).map((r: any) => r.event_type);
+      expect(events.slice(-2)).toEqual(['RoleRevoked', 'EmployeeTerminated']);
+      expect((await patch(id, { status: 'ACTIVE' })).status).toBe(200);
+      expect(await db().query(`SELECT 1 FROM iam.role_assignment WHERE user_id = $1`, [acc.id])).toHaveLength(0);
+    });
+  });
+
   it('cây tổ chức có 1 gốc loại Công ty, mỗi đơn vị có loại, trưởng, số người (AC-2.2.1, AC-2.2.3)', async () => {
     const tree = (await http.get('/api/v1/departments/tree').set(EMPLOYEE).expect(200)).body;
     expect(tree).toHaveLength(1);

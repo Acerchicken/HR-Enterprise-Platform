@@ -16,7 +16,7 @@
 | Biến | Local | Staging | Thiếu thì sao |
 |---|---|---|---|
 | `FIELD_ENCRYPTION_KEY` | Khóa dev trong code (`ALLOW_DEV_SECRETS=true`) | Secrets Manager `app_secrets:FIELD_ENCRYPTION_KEY` | Production không khởi động |
-| `OIDC_*`, `AUTH_MODE` | Keycloak realm `hr` | Cognito (issuer, JWKS, `cognito:groups`, userInfo) | Không đăng nhập được |
+| `OIDC_*`, `AUTH_MODE` | Keycloak realm `hr` | Cognito (issuer, JWKS, `client_id`, userInfo) | Không đăng nhập được |
 | `DB_*` | `docker-compose.yml` | RDS, mật khẩu trong Secrets Manager | API không khởi động |
 | `PROFILE_STORAGE_BUCKET` | Bucket MinIO `hr-profile-files-local` | `hr-profile-files-staging` (Terraform) | Thao tác file trả 503; phần còn lại chạy (AC-1.10.9) |
 | `RATE_LIMIT_ENABLED`, `RATE_LIMIT_OVERRIDES` | Mặc định trong code (spec mục 7) | Như local; `RATE_LIMIT_OVERRIDES` khi load test | Dùng mặc định |
