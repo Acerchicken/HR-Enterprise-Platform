@@ -449,13 +449,19 @@ export class LeaveService {
   }
 
   /** HR: đơn `PENDING_HR` và đề nghị hủy chỉ HR xác nhận (đơn đã qua HR, đơn của CEO), trừ đơn của chính mình. */
-  pendingHr(actor: AuthUser, q: LeaveRequestQuery): Promise<Page<LeaveRequestView>> {
+  async pendingHr(actor: AuthUser, q: LeaveRequestQuery): Promise<Page<LeaveRequestView>> {
     const me = this.requireEmployee(actor);
+    // Đề nghị hủy đơn của CEO cũng chỉ HR xác nhận (`allowed`), mà đơn CEO có requires_hr_approval = false.
+    const ceo = (await this.employees.ceoIds()).filter((id) => id !== me);
     return this.page(
       (qb) =>
         qb.where('r.employee_id <> :me', { me }).andWhere(
           new Brackets((b) =>
-            b.where(`r.status = 'PENDING_HR'`).orWhere(`r.status = 'APPROVED' AND r.cancel_requested_at IS NOT NULL AND r.requires_hr_approval = true`),
+            b
+              .where(`r.status = 'PENDING_HR'`)
+              .orWhere(`r.status = 'APPROVED' AND r.cancel_requested_at IS NOT NULL AND (r.requires_hr_approval = true OR r.employee_id IN (:...ceo))`, {
+                ceo: ceo.length ? ceo : ['00000000-0000-0000-0000-000000000000'],
+              }),
           ),
         ),
       { ...q, status: undefined } as LeaveRequestQuery,

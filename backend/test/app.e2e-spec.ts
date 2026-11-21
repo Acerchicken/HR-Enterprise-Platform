@@ -755,6 +755,10 @@ describe('HRHelper API (e2e)', () => {
         await http.post(`/api/v1/leave-requests/${r.id}/approve`).set(MANAGER).send({ version: r.version }).expect(403);
         const ok = await http.post(`/api/v1/leave-requests/${r.id}/approve`).set(HR).send({ version: r.version }).expect(200);
         expect(ok.body.status).toBe('APPROVED');
+        // Đề nghị hủy đơn của CEO chỉ HR xác nhận, nên phải hiện trong danh sách chờ HR (review #120).
+        await http.post(`/api/v1/leave-requests/${r.id}/cancel-request`).set(CEO).send({ version: ok.body.version, reason: 'Đổi lịch' }).expect(200);
+        const hrQueue = (await http.get('/api/v1/leave-requests/pending-hr').set(HR).expect(200)).body.items;
+        expect(hrQueue.find((x: any) => x.id === r.id)).toMatchObject({ kind: 'CANCEL_REQUEST' });
       } finally {
         await ds.query('DELETE FROM leave.leave_request_history WHERE request_id = $1', [r.id]);
         await ds.query('DELETE FROM leave.outbox WHERE aggregate_id = $1', [r.id]);
