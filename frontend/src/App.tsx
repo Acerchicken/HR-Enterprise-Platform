@@ -8,6 +8,9 @@ import { ApprovalsPage } from './pages/ApprovalsPage';
 import { ExpiringContractsPage } from './pages/ExpiringContractsPage';
 import { CallbackPage } from './pages/CallbackPage';
 import { DirectoryPage } from './pages/DirectoryPage';
+import { DocumentDetailPage } from './pages/documents/DocumentDetailPage';
+import { DocumentManagePage } from './pages/documents/DocumentManagePage';
+import { DocumentsPage } from './pages/documents/DocumentsPage';
 import { EmployeeFormPage } from './pages/employee/EmployeeFormPage';
 import { ComingSoonPage, HomePage } from './pages/HomePage';
 import { LeaveDetailPage } from './pages/leave/LeaveDetailPage';
@@ -73,6 +76,9 @@ function AppRoutes() {
           <Route path="approvals/delegations" element={<DelegationsPage />} />
           <Route path="approvals/:type/:id" element={<ApprovalsPage />} />
           <Route path="contracts/expiring" element={<ExpiringContractsPage />} />
+          <Route path="documents" element={<DocumentsPage />} />
+          <Route path="documents/manage" element={<DocumentManagePage />} />
+          <Route path="documents/:id" element={<DocumentDetailPage />} />
           <Route path="admin/roles" element={<RolesPage />} />
           <Route path="coming-soon" element={<ComingSoonPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

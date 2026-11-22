@@ -8,7 +8,7 @@
 | Yêu cầu (SRS) | FR-5.1 → FR-5.3 |
 | Quy tắc | [DR-01 → DR-06, DR-08](../../business/document-rules.md), [ADR-13](../../architecture/adr/ADR-13-document-storage.md), [ADR-14](../../architecture/adr/ADR-14-org-unit-types.md) (đơn vị), [ADR-15](../../architecture/adr/ADR-15-service-extraction.md) (event), [ADR-18](../../architecture/adr/ADR-18-authorization.md) (phân quyền) |
 | Mức ưu tiên | M (FR-5.3 là S) |
-| Trạng thái | Đã có API (PR #64, 12/11); giao diện đang làm (`feat/document-ui`); chưa phát event cho tìm kiếm; Terraform bucket đã merge (#70) nhưng chưa apply |
+| Trạng thái | Đã có API (PR #64, 12/11) và giao diện (22/11, nhánh `feat/document-ui`); chưa phát event cho tìm kiếm (`feat/search-service`); Terraform bucket đã merge (#70) nhưng chưa apply |
 | Phiên bản | 1.1 – 22/11/2026 (1.1: kiểm chéo với UC1, UC2, UC3, UC4, UC7, UC8, ADR-14, ADR-15, ADR-18, schema, error-codes; thêm 9.2, 13.2 → 13.4; Duong chốt D1 → D5 theo đề xuất ngày 22/11) |
 
 ## 1. Mô tả ngắn
@@ -137,9 +137,9 @@ sequenceDiagram
 
 | Luồng | Màn hình | API |
 |---|---|---|
-| Chính, A2 | `/documents/manage`, hộp "Đăng tài liệu", "Thêm phiên bản" (chưa có) | `POST /documents`, `POST /documents/{id}/versions`, `POST …/confirm` |
-| A1 | `/documents` (trang "Tra cứu tài liệu", chung với UC6), `/documents/{id}` (chưa có) | `GET /documents`, `GET /documents/{id}`, `GET …/download` |
-| A3, A4, A5 | `/documents/manage` (chưa có) | `PATCH /documents/{id}`, `POST …/hide`, `POST …/restore`, `GET /documents/manage` |
+| Chính, A2 | `/documents/manage`, hộp "Đăng tài liệu", "Thêm phiên bản" | `POST /documents`, `POST /documents/{id}/versions`, `POST …/confirm` |
+| A1 | `/documents` (trang "Tra cứu tài liệu", chung với UC6), `/documents/{id}` | `GET /documents`, `GET /documents/{id}`, `GET …/download` |
+| A3, A4, A5 | `/documents/manage`, hộp "Sửa thông tin, phạm vi" | `PATCH /documents/{id}`, `POST …/hide`, `POST …/restore`, `GET /documents/manage` |
 
 ### 9.1 Bản vẽ giao diện
 
@@ -179,7 +179,7 @@ schema response cho nhóm này. Lỗi theo dạng chung `{code, message, traceId
 | `GET /documents/{id}` | Mọi người | – | Như trên + `versions[]` (chỉ `READY`, mới nhất trước) | 404 (E5) |
 | `GET /documents/{id}/download` | Mọi người | – | File bản `READY` mới nhất; `Content-Disposition: attachment` tên file UTF-8; `Cache-Control: private, no-store` | 404, 503 |
 | `GET /documents/{id}/versions/{versionId}/download` | Mọi người | – | File của phiên bản đó (phải `READY`) | 404, 503 |
-| `GET /documents/manage?type=&page=&size=` | HR | – | Trang `DocumentAdmin`: như trên + `hidden`, `version`, `scope {all, departmentIds, roles}`, `versions[]` mọi trạng thái | 403 |
+| `GET /documents/manage?type=&q=&state=&page=&size=` | HR | `q`: 1–100 ký tự, tìm trong tiêu đề; `state`: `VISIBLE` (chưa ẩn, có bản `READY`), `HIDDEN`, `NOT_READY` (chưa có bản `READY`) | Trang `DocumentAdmin`: như trên + `hidden`, `version`, `scope {all, departmentIds, roles, departments: [{id, name, active}]}`, `versions[]` mọi trạng thái | 400, 403 |
 | `GET /documents/manage/{id}` | HR | – | `DocumentAdmin` (kể cả đã ẩn) | 403, 404 |
 | `POST /documents` | HR | `{title, type, scope {all?, departmentIds?, roles?}, fileName, contentType, sizeBytes}` | 201 `{document: DocumentAdmin, upload: UploadTicket}` | 400 (E2), 403, 503 |
 | `POST /documents/{id}/versions` | HR | `{fileName, contentType, sizeBytes}` | 201 `UploadTicket` `{versionId, versionNo, url…}` | 400, 403, 404, 503 |
@@ -193,6 +193,9 @@ schema response cho nhóm này. Lỗi theo dạng chung `{code, message, traceId
 phạm vi), `DOCUMENT_PUBLISH` (số phiên bản, tên file), `DOCUMENT_UPDATE` (trường đổi), `DOCUMENT_HIDE`, `DOCUMENT_RESTORE`. Thêm
 phiên bản chưa ghi audit cho tới khi xác nhận; phiên bản bị `REJECTED` không ghi audit. Tải xuống không ghi audit (tài liệu chính
 sách không phải dữ liệu nhạy cảm).
+
+Lỗi 400 ở service có `fields` theo tên trường của request (`scope`, `scope.departmentIds`, `fileName`, `contentType`,
+`sizeBytes`), helper chung `common/field-error.ts`.
 
 **Event:** chưa có. Thiết kế ở 13.2.
 
@@ -214,7 +217,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
 | API đăng, phiên bản, phạm vi, tải qua API, ẩn, khôi phục | Đã có (PR #64) | SRS đã cập nhật trạng thái FR-5.x (22/11) |
-| Giao diện kho tài liệu | Đang làm | TV1, nhánh `feat/document-ui`; kèm sửa `fields` ở lỗi 400 (13.3) và chặn đơn vị `INACTIVE` (D3, AC-5.1.9) |
+| Giao diện kho tài liệu; `fields` ở lỗi 400; chặn đơn vị `INACTIVE` (D3) | Đã có (22/11) | – |
 | Event tài liệu cho search service (`document.outbox`) | Chưa có | TV1, đầu nhánh `feat/search-service` (13.2, D1) |
 | Dọn phiên bản `PENDING` bỏ dở | Chưa có | Đánh đổi đã ghi trong ADR-13; đề xuất lifecycle rule ở bucket (deploy.md mục 7) |
 | Local: object storage | Đã có | S3Mock trong docker-compose (PR #68) |
@@ -226,23 +229,24 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 ### 13.1 Giao diện
 
-> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/document-ui`. API đã có; chỉ sửa `fields` ở lỗi 400 (13.3) và
-> chặn đơn vị `INACTIVE` (D3).
+> Đã làm ngày 22/11/2026. Khác đề xuất ban đầu: đăng, sửa, thêm phiên bản là **hộp thoại** trên `/documents/manage` theo bản vẽ
+> uc5-upload, không có trang `/documents/manage/new`, `/documents/manage/:id`. Code: `frontend/src/pages/documents/`,
+> `frontend/src/api/documents.ts`; tải lên, tải về dùng chung `frontend/src/api/transfer.ts` với file hồ sơ UC1.
 
 | Màn hình | Ai | Nội dung | API |
 |---|---|---|---|
 | `/documents` | Mọi người | Ô tìm kiếm (UC6), lọc loại, bảng: tiêu đề, loại, phiên bản mới nhất, ngày cập nhật; phân trang. Rỗng thì ghi "Chưa có tài liệu nào dành cho bạn", không gợi ý gì thêm (DR-08) | `GET /documents?type=&page=` |
 | `/documents/:id` | Mọi người | Tiêu đề, loại, nút tải bản mới nhất, danh sách phiên bản cũ có nút tải. 404 thì hiện "Không tìm thấy tài liệu", giống hệt cho mọi trường hợp | `GET /documents/{id}`, `GET …/download`, `GET …/versions/{versionId}/download` |
-| `/documents/manage` | HR | Mọi tài liệu kể cả đã ẩn, cột trạng thái (hiện, ẩn), phiên bản `PENDING`, `REJECTED` | `GET /documents/manage` |
-| `/documents/manage/new` | HR | Form: tiêu đề, loại, phạm vi (toàn công ty / chọn phòng ban trong cây / chọn vai trò), chọn file. Kiểm đuôi và dung lượng ngay ở trình duyệt; thanh tiến độ khi PUT; xác nhận tự động khi PUT xong | `POST /documents`, PUT presigned URL, `POST …/confirm` |
-| `/documents/manage/:id` | HR | Sửa tiêu đề, loại, phạm vi (gửi `version`); thêm phiên bản; ẩn, khôi phục có hộp xác nhận | `PATCH /documents/{id}`, `POST …/versions`, `POST …/hide`, `POST …/restore` |
+| `/documents/manage` | HR | Mọi tài liệu kể cả đã ẩn; ô tìm tiêu đề, lọc loại, ba tab Đang hiện / Đã ẩn / Chưa có bản sẵn sàng; cột phạm vi (đơn vị đã ngừng hiện xám), trạng thái (Đang hiện, Đã ẩn, Đang tải lên, Lỗi tải lên) | `GET /documents/manage?q=&state=` |
+| Hộp "Đăng tài liệu" | HR | Tiêu đề, loại, phạm vi (toàn công ty / đơn vị chọn theo cây / vai trò), chọn file. Kiểm đuôi và dung lượng ngay ở trình duyệt; thanh tiến độ khi PUT; xác nhận tự động khi PUT xong. Tải lên lỗi sau khi đã tạo tài liệu thì bấm lại sẽ thêm phiên bản cho chính tài liệu đó | `POST /documents`, PUT presigned URL, `POST …/confirm` |
+| Hộp "Sửa thông tin, phạm vi", "Thêm phiên bản" | HR | Sửa tiêu đề, loại, phạm vi (gửi `version`); thêm phiên bản chỉ có phần file; ẩn, khôi phục có hộp xác nhận | `PATCH /documents/{id}`, `POST …/versions`, `POST …/hide`, `POST …/restore` |
 
 Lỗi khi tải lên: PUT thất bại hoặc URL hết hạn (sau 10 phút) thì giao diện báo "Tải lên không thành công" và cho tạo phiên bản
 mới; phiên bản cũ ở `PENDING` được bỏ lại (ADR-13).
 
 Theo giao diện chung: trang `/documents` mở từ ô "Tra cứu tài liệu" ở trang chủ, không đặt trên nav bar (UC6, quyết định
-14/11); `/documents/manage` nằm trong nhóm của HR. Phạm vi đơn vị chọn trong cây đơn vị của UC2 (`GET /departments/tree`, chỉ
-`ACTIVE`). Ô chọn vai trò ghi chú `MANAGER` là "người có cấp dưới trực tiếp" (D4). Không có xem trước, chỉ có nút tải (D5).
+14/11); `/documents/manage` nằm trong nhóm của HR. Phạm vi đơn vị chọn trong danh sách đơn vị của UC2 (`GET /departments`, chỉ
+`ACTIVE`, xếp và thụt lề theo cây). Ô chọn vai trò ghi chú `MANAGER` là "người có cấp dưới trực tiếp" (D4). Không có xem trước, chỉ có nút tải (D5).
 
 ### 13.2 Event cho tìm kiếm (ADR-15)
 
@@ -273,13 +277,13 @@ schema `search` của search service. Sửa cùng nhánh `feat/search-service`.
 
 | # | Ca | Hiện tại | Đề xuất |
 |---|---|---|---|
-| 1 | Lỗi 400 ở service không có `fields` (E2) | Form không biết gắn lỗi vào ô nào (AC-5.1.4, AC-5.1.8) | Dùng `fieldError` như module leave; làm trong `feat/document-ui` |
-| 2 | Phạm vi chọn đơn vị `INACTIVE` (UC2 FR-2.10) | Code nhận đơn vị mọi trạng thái | Chặn theo D3, làm trong `feat/document-ui` |
+| 1 | Lỗi 400 ở service không có `fields` (E2) | Đã sửa 22/11: `common/field-error.ts`, dùng chung với module leave (leave trước đó trả `fields` dạng mảng, sai hợp đồng) | – |
+| 2 | Phạm vi chọn đơn vị `INACTIVE` (UC2 FR-2.10) | Đã chặn theo D3 (22/11) | – |
 | 3 | URL tải lên hết hạn hoặc PUT lỗi | Phiên bản `PENDING` để lại, số phiên bản `READY` nhảy (1 → 3) | Giữ (ADR-13). Nhân viên thấy đúng số "Phiên bản 3"; trang quản lý hiện cả bản `PENDING`, `REJECTED` để HR hiểu vì sao nhảy |
-| 4 | Tài liệu mới tạo nhưng không bao giờ tải file lên | Nằm mãi ở trang quản lý, không xóa được | Chấp nhận cho version 1; HR ẩn đi. Trang quản lý có lọc "Chưa có bản sẵn sàng" |
+| 4 | Tài liệu mới tạo nhưng không bao giờ tải file lên | Nằm mãi ở trang quản lý, không xóa được | Chấp nhận cho version 1; HR ẩn đi. Trang quản lý có tab "Chưa có bản sẵn sàng" (đã làm) |
 | 5 | `canView` (unit test) và `visibleQuery` (SQL thật) là hai bản logic | Sửa một bên quên bên kia thì unit test vẫn xanh | e2e là nguồn đúng; sửa phạm vi thì sửa cả hai trong cùng PR |
 | 6 | `updated_at` đổi cả khi ẩn, khôi phục, sửa tiêu đề | Danh sách "mới cập nhật trước" đẩy tài liệu chỉ sửa tiêu đề lên đầu | Chấp nhận; DR-07 chỉ quy định thứ tự trong tìm kiếm, làm ở UC6 |
-| 7 | e2e nhóm "kho tài liệu" bị bỏ qua khi không có `STORAGE_BUCKET` | CI không chạy nhóm này | Dùng bucket giả trong bộ nhớ như file hồ sơ (`test/fake-storage.ts`) để nhóm này luôn chạy |
+| 7 | e2e nhóm "kho tài liệu" bị bỏ qua khi không có `STORAGE_BUCKET` | Đã sửa 22/11: không đặt `STORAGE_BUCKET` thì dùng bucket giả trong bộ nhớ (`test/fake-storage.ts`) | – |
 
 ### 13.4 Điểm cần quyết
 

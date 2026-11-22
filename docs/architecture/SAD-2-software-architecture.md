@@ -210,7 +210,7 @@ thêm mục mới không phải sửa giao diện.
 | Loại | Phạm vi | Số lượng (dev, 6/11) | Chạy ở |
 |---|---|---|---|
 | Unit | Hàm thuần: state machine, business rule, luật đơn vị, điều chuyển, quyền theo mục, mô tả mục, file, thông tin tự tính, audit theo nhóm, rate limit, mã hóa, cache, email, worker | 111 (18/11) | CI mọi PR |
-| e2e | API thật + database thật, token giả `dev:<email>`: phân quyền, hồ sơ theo mục, yêu cầu cập nhật, file hồ sơ (bucket giả trong bộ nhớ `test/fake-storage.ts`), rate limit, workflow nghỉ phép, audit, outbox | 100 + 6 bỏ qua khi chưa có bucket tài liệu (18/11; 2 ca lỗi đã biết: 409 optimistic locking, 429 lần ghi thứ 31) | Máy dev (cần database) |
+| e2e | API thật + database thật, token giả `dev:<email>`: phân quyền, hồ sơ theo mục, yêu cầu cập nhật, file hồ sơ và kho tài liệu (bucket giả trong bộ nhớ `test/fake-storage.ts`), rate limit, workflow nghỉ phép, audit, outbox | 132 ca (22/11; 2 ca UC1 lỗi sẵn trên `dev`: `contractType` ở summary mức QL, 429 lần ghi thứ 31) | Máy dev (cần database) |
 | Kiểm thử chức năng | Giao diện, theo ca kiểm thử | 21 bước (tuần 7), 22 ca nghỉ phép | TV4, mỗi tuần |
 | Phân quyền | Mỗi dòng ma trận một ca được phép + một ca bị chặn | Tuần 9 | e2e + TV4 |
 

@@ -119,14 +119,15 @@ Gửi lại cùng một quyết định (duyệt đơn đã duyệt) không lỗ
 
 | HTTP | Message | Nguyên nhân |
 |---|---|---|
-| 400 | `Chỉ nhận file PDF hoặc DOCX` | Phần mở rộng khác |
-| 400 | `Loại file không khớp phần mở rộng` | `contentType` không khớp đuôi file |
-| 400 | `File phải từ 1 byte đến 20 MiB` | Khai báo dung lượng sai |
+| 400 | `Chỉ nhận file PDF hoặc DOCX` | Phần mở rộng khác (`fields.fileName`) |
+| 400 | `Loại file không khớp phần mở rộng` | `contentType` không khớp đuôi file (`fields.contentType`) |
+| 400 | `File phải từ 1 byte đến 20 MiB` | Khai báo dung lượng sai (`fields.sizeBytes`) |
 | 400 | `Chưa có file trên kho, hãy tải file lên trước khi xác nhận` | Xác nhận khi chưa upload |
 | 400 | `Dung lượng file không khớp khai báo hoặc vượt 20 MiB` | File thật khác khai báo; phiên bản chuyển `REJECTED` |
 | 400 | `Nội dung file không đúng định dạng PDF/DOCX` | Kiểm tra magic bytes thất bại; phiên bản chuyển `REJECTED` |
-| 400 | `Tài liệu phải có ít nhất một phạm vi xem` | Không chọn toàn công ty, phòng ban hay role |
-| 400 | `Phòng ban không tồn tại` | Phạm vi trỏ tới phòng ban sai |
+| 400 | `Tài liệu phải có ít nhất một phạm vi xem` | Không chọn toàn công ty, đơn vị hay role (`fields.scope`) |
+| 400 | `Đơn vị không tồn tại` | Phạm vi trỏ tới đơn vị sai (`fields["scope.departmentIds"]`) |
+| 400 | `Đơn vị đã ngừng hoạt động, hãy chọn đơn vị khác` | Thêm đơn vị `INACTIVE` vào phạm vi (UC5 D3); đơn vị đã có sẵn trong phạm vi thì vẫn giữ được |
 | 404 | `Không tìm thấy tài liệu` / `Không tìm thấy phiên bản` | Kể cả khi không có quyền xem (không lộ sự tồn tại) |
 | 409 | `Phiên bản này đã bị từ chối, hãy tạo phiên bản mới` | Xác nhận phiên bản `REJECTED` |
 | 409 | `Tài liệu đã được người khác cập nhật, hãy tải lại` | `version` cũ |

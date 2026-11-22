@@ -1,6 +1,7 @@
 import { Download, FileText, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api, ApiError, BASE_URL } from '../api/client';
+import { downloadFromApi, formatSize, MiB, putWithProgress } from '../api/transfer';
 import { getToken } from '../auth/auth';
 import { errorText } from './ui';
 
@@ -16,7 +17,6 @@ export interface FileView {
   createdAt: string;
 }
 
-const MiB = 1024 * 1024;
 const TYPES: Record<string, string> = {
   pdf: 'application/pdf',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -25,23 +25,9 @@ const TYPES: Record<string, string> = {
   png: 'image/png',
 };
 
-export const formatSize = (n: number) => (n >= MiB ? `${(n / MiB).toFixed(1)} MiB` : `${Math.max(1, Math.round(n / 1024))} KiB`);
-
 async function sha256Hex(file: File): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-function putWithProgress(url: string, headers: Record<string, string>, file: File, onProgress: (p: number) => void) {
-  return new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url);
-    for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
-    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(Math.round((e.loaded / e.total) * 100));
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error('Tải file lên storage thất bại')));
-    xhr.onerror = () => reject(new Error('Không kết nối được storage'));
-    xhr.send(file);
-  });
 }
 
 /**
@@ -108,16 +94,9 @@ export function FileUpload({
   );
 }
 
-/** Tải file qua API (có token), lưu bằng link tạm của trình duyệt; không bao giờ mở link storage. */
-export async function downloadFile(employeeId: string, f: { id: string; name: string }) {
-  const res = await fetch(`${BASE_URL}/employees/${employeeId}/files/${f.id}/download`, { headers: { Authorization: `Bearer ${getToken()}` } });
-  if (!res.ok) throw new Error(res.status === 404 ? 'Không tìm thấy file' : res.status === 429 ? 'Bạn tải quá nhiều file, thử lại sau' : 'Không tải được file');
-  const url = URL.createObjectURL(await res.blob());
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = f.name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+/** Tải file hồ sơ qua API (có token); không bao giờ mở link storage. */
+export function downloadFile(employeeId: string, f: { id: string; name: string }) {
+  return downloadFromApi(`/employees/${employeeId}/files/${f.id}/download`, f.name);
 }
 
 const STATUS: Record<string, string> = { PENDING_REVIEW: 'Chờ HR duyệt', DELETED: 'Đã xóa', REJECTED: 'Bị từ chối' };

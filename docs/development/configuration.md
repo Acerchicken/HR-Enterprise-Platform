@@ -145,7 +145,7 @@ Staging đặt trong bước build của `deploy-staging.yml`.
 |---|---|---|
 | Docker local (`docker compose up`) | `docker-compose.yml` | `NODE_ENV=production` + `ALLOW_DEV_SECRETS=true`, Keycloak, RabbitMQ, Mailpit |
 | Chạy từng phần (hot reload) | `backend/.env` (chép từ `.env.example`), `frontend/.env.local` | `NODE_ENV=development` |
-| Test e2e | Biến môi trường của shell; `app.e2e-spec.ts` tự đặt `AUTH_MODE=dev` | Không đặt biến queue thì `none`. Nhóm test kho tài liệu chỉ chạy khi có `STORAGE_BUCKET` |
+| Test e2e | Biến môi trường của shell; `app.e2e-spec.ts` tự đặt `AUTH_MODE=dev` | Không đặt biến queue thì `none`. Nhóm test kho tài liệu chạy với S3Mock khi có `STORAGE_BUCKET`, không có thì dùng bucket giả trong bộ nhớ |
 | Staging AWS | `infra/staging/app_runner.tf`, Secrets Manager, `deploy-staging.yml` | Không có `ALLOW_DEV_SECRETS` |
 
 ## 5. Điểm còn thiếu trên staging (13/11/2026)

@@ -44,7 +44,7 @@ const COMMON: Tile[] = [
   { title: 'Việc cần duyệt', desc: 'Đơn nghỉ, đề nghị hủy của cấp dưới', icon: ClipboardCheck, to: '/approvals?type=leave', who: ['MANAGER'] },
   { title: 'Danh bạ', desc: 'Tra cứu đồng nghiệp', icon: Users, to: '/directory' },
   { title: 'Sơ đồ tổ chức', desc: 'Phòng ban và quản lý', icon: Network, to: '/org' },
-  { title: 'Tra cứu tài liệu', desc: 'Tìm quy chế, chính sách; hỏi trợ lý AI', icon: FileSearch, to: '/coming-soon', ready: false },
+  { title: 'Tra cứu tài liệu', desc: 'Quy chế, chính sách, biểu mẫu dành cho bạn', icon: FileSearch, to: '/documents' },
 ];
 
 /** Nhóm "Chức năng HR" (bản vẽ 10.2); ADMIN không có HR thấy nhóm này với tên "Quản trị". Trang "Việc cần duyệt" có tab (frontend.md 2.4) làm ở tuần 12; tạm dẫn tới trang cũ. */
@@ -55,7 +55,7 @@ const HR_TILES: Tile[] = [
   { title: 'Lịch nghỉ lễ', desc: 'Ngày lễ, nghỉ bù; tính lại đơn', icon: CalendarRange, to: '/leave/holidays', who: ['HR'] },
   { title: 'Quản lý nhân viên', desc: 'Thêm, sửa hồ sơ, nghỉ việc', icon: UserPlus, to: '/employees/new', who: ['HR'] },
   { title: 'Hợp đồng sắp hết hạn', desc: 'Hết hạn trong 30 ngày tới', icon: CalendarClock, to: '/contracts/expiring', who: ['HR'] },
-  { title: 'Đăng tài liệu', desc: 'Quy chế, biểu mẫu, phạm vi xem', icon: Upload, to: '/coming-soon', who: ['HR'], ready: false },
+  { title: 'Đăng tài liệu', desc: 'Quy chế, biểu mẫu, phạm vi xem', icon: Upload, to: '/documents/manage', who: ['HR'] },
   { title: 'Lịch sử thao tác', desc: 'Ai làm gì, lúc nào', icon: History, to: '/coming-soon', who: ['HR', 'ADMIN'], ready: false },
   { title: 'Phân quyền', desc: 'Cấp, thu hồi vai trò HR, ADMIN', icon: ShieldCheck, to: '/admin/roles', who: ['ADMIN'] },
 ];
