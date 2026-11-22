@@ -1,7 +1,7 @@
 # UC5 – Kho tài liệu chính sách: kiểm thử
 
 > Tiêu chí: [requirements.md](requirements.md). Cách chạy chung, tài khoản mẫu: [README](../README.md#kiểm-thử).
-> Ca kiểm thử tay: `test-cases-tuan-10.md` của TV4 (nhánh `docs/test-cases-week10`).
+> Ca kiểm thử tay: [progress tuần 10 của TV4](../../progress/tuan-10/TV4_Duy.md); ca bổ sung ở nhánh `docs/test-cases-uc2-uc5-uc7` (#123).
 
 ## 1. Chiến lược
 
@@ -9,7 +9,7 @@ Rủi ro chính là **lộ tài liệu ngoài phạm vi**, kể cả gián tiế
 đổi đuôi. Vì vậy:
 
 - Unit test kiểm hàm phạm vi và kiểm loại file theo nội dung.
-- e2e chạy với object storage thật (MinIO): đăng, tải lên, xác nhận, tải xuống, ẩn, đổi phòng ban.
+- e2e chạy với object storage S3 tương thích (S3Mock ở local): đăng, tải lên, xác nhận, tải xuống, ẩn, đổi phòng ban.
 - Ca tay bắt buộc có: phòng ban con, nhiều phạm vi theo phép OR, đổi phòng ban rồi tải ngay, tài liệu ẩn, đoán ID tài liệu
   ngoài phạm vi, file đổi đuôi.
 
@@ -26,9 +26,10 @@ Rủi ro chính là **lộ tài liệu ngoài phạm vi**, kể cả gián tiế
 |---|---|---|---|
 | AC-5.1.1, AC-5.1.2 | Hàm `publish` dùng trong mọi test của nhóm | Tuần 10 | Có |
 | AC-5.1.3 | "phạm vi theo vai trò; … chỉ HR quản lý kho" | Tuần 10 | Có |
-| AC-5.1.4 | Unit `document-rules.spec.ts` | Tuần 10 | Có |
+| AC-5.1.4 | Unit `document-rules.spec.ts` | Tuần 10 | Một phần: lỗi kiểm ở service chưa có `fields` (spec 13.3) |
 | AC-5.1.5, AC-5.1.6 | "file sai định dạng hoặc chưa tải lên bị từ chối (DR-01)" | File đổi đuôi | Có |
-| AC-5.1.7 | – | Chạy API không có `STORAGE_BUCKET`, gọi `/documents` | Cần thêm |
+| AC-5.1.7 | – | Chạy API không có `STORAGE_BUCKET`: `GET /documents` phải **200**, `POST /documents` và tải xuống phải 503 | Cần thêm |
+| AC-5.1.9 | – | Chọn đơn vị `INACTIVE` làm phạm vi | Cần thêm (code ở `feat/document-ui`) |
 | AC-5.1.8, AC-5.2.7 | – | – | Chưa có giao diện |
 | AC-5.2.1 | "phạm vi phòng ban gồm phòng ban con…" | Phòng ban con | Có |
 | AC-5.2.2 | Unit "nhiều phạm vi là phép cộng…" | Nhiều phạm vi | Có |
@@ -37,6 +38,8 @@ Rủi ro chính là **lộ tài liệu ngoài phạm vi**, kể cả gián tiế
 | AC-5.2.6 | "… tải qua API đúng nội dung" | – | Có |
 | AC-5.3.1, AC-5.3.2 | "phiên bản mới không ghi đè phiên bản cũ; mặc định tải bản mới nhất (DR-04)" | – | Có |
 | AC-5.3.3 | "sửa metadata cần version đúng (optimistic locking)" | – | Có |
+| AC-5.2.8, AC-5.2.9 | – | Trưởng đơn vị không có cấp dưới; tài khoản ADMIN không hồ sơ | Cần thêm |
+| AC-5.4.1 → AC-5.4.4 | – | – | Chưa có code (spec 13.2) |
 
 ## 4. Dữ liệu và tài khoản
 
@@ -47,15 +50,17 @@ Rủi ro chính là **lộ tài liệu ngoài phạm vi**, kể cả gián tiế
 ## 5. Cách chạy
 
 ```bash
-# MinIO chạy ở localhost:9000 (nhánh chore/minio-local, hoặc tự chạy)
+# S3Mock trong docker-compose ở localhost:9090, bucket hr-documents tạo sẵn
 cd backend
-export STORAGE_BUCKET=hr-documents-test STORAGE_ENDPOINT=http://localhost:9000 \
-       STORAGE_ACCESS_KEY_ID=<user MinIO> STORAGE_SECRET_ACCESS_KEY=<mật khẩu MinIO>
+export STORAGE_BUCKET=hr-documents STORAGE_ENDPOINT=http://localhost:9090 \
+       STORAGE_ACCESS_KEY_ID=test STORAGE_SECRET_ACCESS_KEY=test
 npm test -- document
 npm run test:e2e        # test tự tạo bucket nếu chưa có
 ```
 
 Không đặt `STORAGE_BUCKET` thì e2e vẫn xanh nhưng nhóm "kho tài liệu" bị bỏ qua: biên bản phải ghi rõ đã chạy với storage.
+CI hiện không chạy e2e; đề xuất chuyển nhóm này sang bucket giả trong bộ nhớ (`test/fake-storage.ts`, như file hồ sơ UC1) để
+luôn chạy (spec 13.3 ca 7).
 
 ## 6. Kiểm thử phi chức năng
 

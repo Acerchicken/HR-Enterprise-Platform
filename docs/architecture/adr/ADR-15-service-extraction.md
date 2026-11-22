@@ -14,6 +14,8 @@
 
 - 15/11/2026: bản đề xuất đầu tiên, sau khi đánh giá việc chuyển sang microservice. Duong chọn phương án B trên thẻ quyết
   định của thread "Đánh giá chuyển sang microservice".
+- 22/11/2026: kiểm chéo UC5. Không gửi email khi có tài liệu mới (UC5 D2), nên sửa tiêu chí nghiệm thu về upload tài liệu:
+  notification service nhận event nhưng bỏ qua loại `document.*`. Event tài liệu: [UC5 spec 13.2](../../features/UC5-document-repository/spec.md#132-event-cho-tìm-kiếm-adr-15).
 
 ## Nội dung quyết định
 
@@ -92,8 +94,8 @@ tách audit/employee/leave.
 - `services/notification` và `services/search` không import file nào trong `backend/` (kiểm tra trong CI).
 - DB user `notification_svc`, `search_svc` truy vấn schema khác bị PostgreSQL từ chối.
 - Tắt notification service, duyệt đơn vẫn thành công; bật lại thì email được gửi bù (giữ tiêu chí ADR-03).
-- Upload một tài liệu: cùng một event làm search service cập nhật index và notification service xử lý, hai service không gọi
-  nhau.
+- Upload một tài liệu: cùng một event `DocumentPublished` đến cả hai queue; search service cập nhật index, notification
+  service nhận và bỏ qua (không gửi email, UC5 D2); hai service không gọi nhau.
 - Một trace trên Jaeger (local) và X-Ray (staging) đi từ request duyệt đơn qua outbox, queue tới notification service.
 - AC-6.2.2 và AC-6.2.5 đạt khi tìm kiếm đi qua search service.
 

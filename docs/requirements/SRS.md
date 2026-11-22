@@ -15,6 +15,7 @@
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
+| 1.6 | 22/11/2026 | Kiểm chéo UC5: object storage chỉ dùng presigned URL để tải lên, tải xuống qua API (ADR-13); trạng thái FR-5.1 → 5.3; NFR-5.19 tách hạn URL tải lên (10 phút) và tải xuống (không phát link); NFR-5.23 đổi "20 MB" thành 20 MiB |
 | 1.5 | 18/11/2026 | Cập nhật trạng thái FR-8.1, 8.3, 8.4, 8.6, 8.7 sau ba nhánh code UC8 (`feat/uc8-roles-from-db`, `feat/uc8-role-admin`, `feat/uc8-account-lifecycle`) |
 | 1.4 | 18/11/2026 | Thêm FR-8.7 (ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, theo [ADR-18](../architecture/adr/ADR-18-authorization.md)); nhánh code của FR-8.1, 8.3, 8.4, 8.6 đổi sang `feat/uc8-*` tuần 11 |
 | 1.3 | 17/11/2026 | Thêm UC8 – Đăng nhập và tài khoản (mục 4.8, FR-8.1 → FR-8.6) theo [ADR-17](../architecture/adr/ADR-17-authentication.md); cập nhật trạng thái NFR-5.1 → 5.10; chốt câu hỏi số 2 (MFA) ở mục 8 |
@@ -130,7 +131,7 @@ mình được dùng; chức năng bị chặn ở giao diện vẫn phải bị
 |---|---|---|---|
 | Identity provider | OIDC; API kiểm chữ ký token bằng JWKS | Đồng bộ | Không đăng nhập mới được; token còn hạn vẫn dùng |
 | Dịch vụ email | Queue → worker → SMTP | Bất đồng bộ | Gửi lại, không gửi trùng; trạng thái đơn không đổi (FR-4.6) |
-| Object storage | Presigned URL tải lên/tải xuống | Tải lên đồng bộ | File không đi qua API (FR-5.1) |
+| Object storage | Presigned URL để tải lên; tải xuống qua API, kiểm quyền mỗi lần (ADR-13) | Tải lên đồng bộ | File tải lên không đi qua API (FR-5.1); storage lỗi thì API tài liệu trả 503, chức năng khác vẫn chạy (NFR-3.4) |
 | LLM API | REST có timeout | Đồng bộ | Hết thời gian thì chỉ tới tài liệu gốc (FR-6.3) |
 
 Chi tiết cách tích hợp: [kiến trúc hệ thống mục 2](../architecture/SAD-1-system-architecture.md#2-ngữ-cảnh-hệ-thống-c4-mức-1).
@@ -228,9 +229,9 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-5.1 | HR tải lên tài liệu PDF/DOCX kèm tiêu đề, loại, phạm vi xem (toàn công ty, phòng ban, vai trò) | M | Chỉ HR tải lên được; file không đi qua API mà tải thẳng lên object storage | Kế hoạch tuần 10 |
-| FR-5.2 | Nhân viên chỉ xem, tải tài liệu thuộc phạm vi của mình | M | Tài liệu ngoài phạm vi không hiện trong danh sách và link tải bị từ chối | Kế hoạch tuần 10 |
-| FR-5.3 | Tài liệu có phiên bản; mặc định hiện phiên bản mới nhất | S | Đăng bản mới không mất bản cũ | Kế hoạch tuần 10 |
+| FR-5.1 | HR tải lên tài liệu PDF/DOCX kèm tiêu đề, loại, phạm vi xem (toàn công ty, phòng ban, vai trò) | M | Chỉ HR tải lên được; file không đi qua API mà tải thẳng lên object storage | Có API (#64); giao diện `feat/document-ui` |
+| FR-5.2 | Nhân viên chỉ xem, tải tài liệu thuộc phạm vi của mình | M | Tài liệu ngoài phạm vi không hiện trong danh sách và link tải bị từ chối | Có API (#64); giao diện `feat/document-ui` |
+| FR-5.3 | Tài liệu có phiên bản; mặc định hiện phiên bản mới nhất | S | Đăng bản mới không mất bản cũ | Có API (#64); giao diện `feat/document-ui` |
 
 ### 4.6 UC6 – Tra cứu chung và trợ lý (FR-6.x)
 
@@ -410,7 +411,7 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 | NFR-5.16 | Mã hóa khi lưu | Database, object storage, backup, queue mã hóa bằng khóa KMS | Review Terraform | Một phần: đã khai báo, chưa apply |
 | NFR-5.17 | Mã hóa trường nhạy cảm ở tầng ứng dụng | CCCD, số tài khoản, lương dùng AES-256-GCM; khóa trong secret manager, có quy trình xoay khóa (ADR-08) | Đọc thẳng bảng trong database thấy dữ liệu đã mã hóa | Một phần: mã hóa đã có, khóa ở local còn giá trị mặc định |
 | NFR-5.18 | Không lộ dữ liệu nhạy cảm qua kênh phụ | Không ghi giá trị nhạy cảm, token vào log, audit, email; email không nêu loại phép ốm, thai sản (T-16) | Review log, email mẫu | Một phần |
-| NFR-5.19 | Link tải tài liệu an toàn | Presigned URL hết hạn ≤ 5 phút; bucket chặn truy cập public | Thử dùng lại link sau 5 phút | Kế hoạch tuần 10 |
+| NFR-5.19 | Link tải tài liệu an toàn | Presigned URL **tải lên** hết hạn ≤ 10 phút (đủ cho file 20 MiB trên mạng chậm); **tải xuống không phát link**, file đi qua API sau khi kiểm quyền (ADR-13, DR-06); bucket chặn truy cập public | Thử PUT bằng URL sau 10 phút; mở URL object không chữ ký | Có ở code (#64); staging chờ `terraform apply` |
 
 **d) Bảo mật ứng dụng web**
 
@@ -419,7 +420,7 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 | NFR-5.20 | Kiểm tra đầu vào ở server | Từ chối trường không khai báo; truy vấn database tham số hóa qua ORM, không ghép chuỗi SQL | e2e gửi trường lạ; review code | Đã có |
 | NFR-5.21 | Giới hạn tần suất gọi (chống lạm dụng, T-05, T-11) | 100 request/phút cho mỗi người dùng, 20 request/phút cho tìm kiếm; hồ sơ: 30 lệnh ghi/phút, 10 URL tải lên/giờ, 100 lượt xem nhạy cảm/giờ (UC1 FR-1.14); vượt thì 429 | Load test vượt ngưỡng | Đã có (#85) |
 | NFR-5.22 | Header bảo mật và CORS | CSP, HSTS, `X-Content-Type-Options: nosniff`, chặn nhúng iframe; CORS chỉ cho domain web | Quét header trên staging | Đã có (#85): header API và web |
-| NFR-5.23 | Kiểm soát file tải lên | Tài liệu chính sách (UC5): PDF, DOCX, tối đa 20 MB. File hồ sơ (UC1): PDF, DOCX, JPG, PNG, tối đa 10 MiB, ảnh đại diện 2 MiB. Kiểm tra loại file theo nội dung, không chỉ theo đuôi | Thử tải file `.exe` đổi đuôi | Đã có: tài liệu (UC5), file hồ sơ (#87) |
+| NFR-5.23 | Kiểm soát file tải lên | Tài liệu chính sách (UC5): PDF, DOCX, tối đa 20 MiB. File hồ sơ (UC1): PDF, DOCX, JPG, PNG, tối đa 10 MiB, ảnh đại diện 2 MiB. Kiểm tra loại file theo nội dung, không chỉ theo đuôi | Thử tải file `.exe` đổi đuôi | Đã có: tài liệu (UC5), file hồ sơ (#87) |
 | NFR-5.24 | Thông báo lỗi không lộ thông tin nội bộ | Chỉ trả `{ code, message, traceId }`, không trả stack trace hay câu SQL | e2e test lỗi 500 | Đã có |
 
 **e) Secret và chuỗi cung ứng phần mềm**
