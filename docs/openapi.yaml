@@ -1471,6 +1471,22 @@ paths:
               - FORM
               - NOTICE
             type: string
+        - name: q
+          required: false
+          in: query
+          description: Tìm trong tiêu đề, không phân biệt hoa thường
+          schema:
+            maxLength: 100
+            type: string
+        - name: state
+          required: false
+          in: query
+          schema:
+            enum:
+              - VISIBLE
+              - HIDDEN
+              - NOT_READY
+            type: string
       responses:
         "200":
           description: ""
