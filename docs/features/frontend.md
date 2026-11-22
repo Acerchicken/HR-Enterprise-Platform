@@ -244,7 +244,7 @@ Không thêm thư viện giao diện lớn; dùng React, CSS thuần với biế
 | Nội dung | Hiện tại | Việc còn lại |
 |---|---|---|
 | Nav bar, trang chủ, màu cyan, popup hồ sơ có URL, thẻ xem nhanh, ô tìm đồng nghiệp | Đã có (#80) | Chuông, dải "Việc cần làm" chưa có số |
-| Tra cứu tài liệu | Ô "Tra cứu tài liệu" đỏ "Chưa có" | Trang `/documents` gồm tìm tài liệu, trợ lý AI, danh sách tài liệu (UC5, UC6) |
+| Tra cứu tài liệu | Trang `/documents` có danh sách tài liệu của UC5 (22/11); chưa có ô tìm, trợ lý | Thêm tìm tài liệu, trợ lý AI (UC6) |
 | Trang duyệt | `/approvals` có tab "Sửa hồ sơ" (#86); tab đơn nghỉ, hoàn tất đơn nghỉ vẫn dẫn tới `/leave/approvals`, `/leave/hr` | Gộp hẳn đơn nghỉ vào `/approvals` (mục 2.4), chuyển tiếp link cũ |
 | Đếm việc cần làm | Chưa có API | `GET /me/todo-counts` (đơn chờ duyệt, yêu cầu hồ sơ chờ, yêu cầu bị từ chối) |
 | Lỗi 429 | Khóa nút tới hết `Retry-After` ở form hồ sơ, yêu cầu, duyệt (#85, #86) | Áp cho form đơn nghỉ |

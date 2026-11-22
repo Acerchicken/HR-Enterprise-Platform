@@ -105,6 +105,23 @@ export class DocumentQuery extends PageQuery {
   type?: DocumentType;
 }
 
+/** Tab ở trang quản lý: đang hiện với người trong phạm vi, đã ẩn, chưa có bản sẵn sàng (UC5 spec 13.3 ca 4). */
+export const MANAGE_STATES = ['VISIBLE', 'HIDDEN', 'NOT_READY'] as const;
+export type ManageState = (typeof MANAGE_STATES)[number];
+
+export class ManageDocumentQuery extends DocumentQuery {
+  @ApiPropertyOptional({ description: 'Tìm trong tiêu đề, không phân biệt hoa thường', maxLength: 100 })
+  @IsOptional()
+  @IsString()
+  @Length(1, 100)
+  q?: string;
+
+  @ApiPropertyOptional({ enum: MANAGE_STATES })
+  @IsOptional()
+  @IsIn(MANAGE_STATES)
+  state?: ManageState;
+}
+
 export interface UploadTicket {
   versionId: string;
   versionNo: number;
@@ -138,5 +155,11 @@ export interface DocumentView {
 export interface DocumentAdminView extends DocumentView {
   hidden: boolean;
   version: number;
-  scope: { all: boolean; departmentIds: string[]; roles: string[] };
+  scope: {
+    all: boolean;
+    departmentIds: string[];
+    roles: string[];
+    /** Tên, trạng thái đơn vị để trang quản lý hiện nhãn "Đơn vị đã ngừng hoạt động" (D3). */
+    departments: { id: string; name: string; active: boolean }[];
+  };
 }

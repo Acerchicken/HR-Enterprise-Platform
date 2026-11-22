@@ -18,7 +18,7 @@ Rủi ro chính là **lộ tài liệu ngoài phạm vi**, kể cả gián tiế
 | Mức | File | Nội dung |
 |---|---|---|
 | Unit | `backend/src/modules/document/document-rules.spec.ts` | PDF/DOCX, content type khớp đuôi, 20 MiB; ZIP đổi đuôi bị từ chối; phạm vi toàn công ty, phòng ban con, phép OR, tài liệu ẩn |
-| e2e | `backend/test/app.e2e-spec.ts`, nhóm "kho tài liệu" | **Bị bỏ qua nếu không đặt `STORAGE_BUCKET`**. Liệt kê ở mục 3 |
+| e2e | `backend/test/app.e2e-spec.ts`, nhóm "kho tài liệu" | Đặt `STORAGE_BUCKET` thì chạy với S3Mock; không đặt thì dùng bucket giả trong bộ nhớ (`test/fake-storage.ts`). Liệt kê ở mục 3 |
 
 ## 3. Bảng phủ tiêu chí
 
@@ -26,11 +26,11 @@ Rủi ro chính là **lộ tài liệu ngoài phạm vi**, kể cả gián tiế
 |---|---|---|---|
 | AC-5.1.1, AC-5.1.2 | Hàm `publish` dùng trong mọi test của nhóm | Tuần 10 | Có |
 | AC-5.1.3 | "phạm vi theo vai trò; … chỉ HR quản lý kho" | Tuần 10 | Có |
-| AC-5.1.4 | Unit `document-rules.spec.ts` | Tuần 10 | Một phần: lỗi kiểm ở service chưa có `fields` (spec 13.3) |
+| AC-5.1.4 | Unit `document-rules.spec.ts`; e2e "file sai định dạng hoặc chưa tải lên bị từ chối" (kiểm `fields`) | Tuần 10 | Có |
 | AC-5.1.5, AC-5.1.6 | "file sai định dạng hoặc chưa tải lên bị từ chối (DR-01)" | File đổi đuôi | Có |
-| AC-5.1.7 | – | Chạy API không có `STORAGE_BUCKET`: `GET /documents` phải **200**, `POST /documents` và tải xuống phải 503 | Cần thêm |
-| AC-5.1.9 | – | Chọn đơn vị `INACTIVE` làm phạm vi | Cần thêm (code ở `feat/document-ui`) |
-| AC-5.1.8, AC-5.2.7 | – | – | Chưa có giao diện |
+| AC-5.1.7 | "kho chưa cấu hình: danh sách vẫn 200, API đụng tới file trả 503" (chỉ chạy với bucket giả) | Chạy API không có `STORAGE_BUCKET`: `GET /documents` phải **200**, `POST /documents` và tải xuống phải 503 | Có |
+| AC-5.1.9 | "phạm vi chỉ nhận đơn vị đang hoạt động; đơn vị đã có trong phạm vi thì giữ được" | Chọn đơn vị `INACTIVE` làm phạm vi | Có |
+| AC-5.1.8, AC-5.2.7 | – (e2e "trang quản lý: tìm theo tiêu đề, lọc…" kiểm API của trang quản lý) | Đăng tài liệu trên giao diện, lỗi hiện đúng ô; trang `/documents` lọc loại, mở chi tiết, tải | Có giao diện; TV4 chạy ca tay |
 | AC-5.2.1 | "phạm vi phòng ban gồm phòng ban con…" | Phòng ban con | Có |
 | AC-5.2.2 | Unit "nhiều phạm vi là phép cộng…" | Nhiều phạm vi | Có |
 | AC-5.2.3 | "phạm vi theo vai trò; ngoài phạm vi trả 404 như không tồn tại…" | Đoán ID | Có |

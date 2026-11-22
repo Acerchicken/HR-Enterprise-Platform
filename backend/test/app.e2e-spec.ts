@@ -12,11 +12,14 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap';
 import { loadConfig } from '../src/config/config';
+import { ObjectStorage } from '../src/modules/document/object-storage';
 import { ProfileStorage } from '../src/modules/employee/profile-file.service';
 import { FakeBucket, sha256 } from './fake-storage';
 
-/** Bucket hồ sơ giả trong bộ nhớ (máy chạy e2e không cần MinIO). */
+/** Bucket hồ sơ giả trong bộ nhớ (máy chạy e2e không cần S3Mock). */
 const bucket = new FakeBucket();
+/** Kho tài liệu: đặt STORAGE_BUCKET thì dùng S3 thật (S3Mock, staging); không thì bucket giả để nhóm UC5 luôn chạy. */
+const docBucket = process.env.STORAGE_BUCKET ? null : new FakeBucket('Kho tài liệu chưa được cấu hình (STORAGE_BUCKET)');
 
 const as = (email: string) => ({ Authorization: `Bearer dev:${email}` });
 /** Version hiện tại của hồ sơ (PATCH bắt buộc gửi version, E9). */
@@ -45,7 +48,9 @@ describe('HRHelper API (e2e)', () => {
   };
 
   beforeAll(async () => {
-    const mod = await Test.createTestingModule({ imports: [AppModule] }).overrideProvider(ProfileStorage).useValue(bucket).compile();
+    let builder = Test.createTestingModule({ imports: [AppModule] }).overrideProvider(ProfileStorage).useValue(bucket);
+    if (docBucket) builder = builder.overrideProvider(ObjectStorage).useValue(docBucket);
+    const mod = await builder.compile();
     app = mod.createNestApplication();
     configureApp(app, loadConfig());
     await app.init();
@@ -788,14 +793,22 @@ describe('HRHelper API (e2e)', () => {
   });
 
   /**
-   * Kho tài liệu (UC5, document-rules.md). Cần object storage S3 (MinIO/S3Mock): đặt STORAGE_BUCKET, STORAGE_ENDPOINT…;
-   * không có thì bỏ qua nhóm này.
+   * Kho tài liệu (UC5, document-rules.md). Đặt STORAGE_BUCKET, STORAGE_ENDPOINT… thì chạy với S3 thật (S3Mock); không đặt thì
+   * dùng bucket giả trong bộ nhớ.
    */
-  (process.env.STORAGE_BUCKET ? describe : describe.skip)('kho tài liệu', () => {
+  describe('kho tài liệu', () => {
     let ds: import('typeorm').DataSource;
     let me: any;
     const pdf = (text: string) => Buffer.from(`%PDF-1.4\n${text}\n%%EOF\n`, 'latin1');
     const zip = Buffer.from('PK\x03\x04....photos/1.jpg.....', 'latin1');
+
+    /** PUT file lên URL tải lên như trình duyệt (bucket giả: ghi thẳng vào bộ nhớ). */
+    const putFile = async (up: { url: string; headers: Record<string, string> }, file: Buffer) => {
+      if (docBucket) return docBucket.upload(up.url, file);
+      const put = await fetch(up.url, { method: 'PUT', headers: up.headers, body: file });
+      expect(put.ok).toBe(true);
+    };
+    const fileSpec = (fileName: string, file: Buffer) => ({ fileName, contentType: 'application/pdf', sizeBytes: file.length });
 
     /** HR khai báo file, PUT lên presigned URL như trình duyệt, rồi xác nhận. */
     const publish = async (title: string, scope: object, file = pdf(title), fileName = 'tai-lieu.pdf') => {
@@ -805,8 +818,7 @@ describe('HRHelper API (e2e)', () => {
         .send({ title, type: 'POLICY', scope, fileName, contentType: fileName.endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', sizeBytes: file.length })
         .expect(201);
       const up = created.body.upload;
-      const put = await fetch(up.url, { method: 'PUT', headers: up.headers, body: file });
-      expect(put.ok).toBe(true);
+      await putFile(up, file);
       const confirmed = await http.post(`/api/v1/documents/${created.body.document.id}/versions/${up.versionId}/confirm`).set(HR);
       return { id: created.body.document.id as string, versionId: up.versionId as string, confirmed };
     };
@@ -815,7 +827,8 @@ describe('HRHelper API (e2e)', () => {
       const { DataSource } = await import('typeorm');
       ds = app.get(DataSource);
       me = (await http.get(`/api/v1/employees/${employeeId}/summary`).set(EMPLOYEE)).body;
-      // Storage test (MinIO/S3Mock mới dựng) có thể chưa có bucket.
+      if (docBucket) return;
+      // Storage test (S3Mock mới dựng) có thể chưa có bucket.
       const { S3Client, CreateBucketCommand } = await import('@aws-sdk/client-s3');
       const s3 = new S3Client({
         region: process.env.STORAGE_REGION ?? 'ap-southeast-1',
@@ -869,9 +882,8 @@ describe('HRHelper API (e2e)', () => {
 
     it('phiên bản mới không ghi đè phiên bản cũ; mặc định tải bản mới nhất (DR-04)', async () => {
       const c = await publish('E2E Nội quy', { all: true }, pdf('ban 1'));
-      const v2 = await http.post(`/api/v1/documents/${c.id}/versions`).set(HR)
-        .send({ fileName: 'noi-quy-v2.pdf', contentType: 'application/pdf', sizeBytes: pdf('ban 2').length }).expect(201);
-      await fetch(v2.body.url, { method: 'PUT', headers: v2.body.headers, body: pdf('ban 2') });
+      const v2 = await http.post(`/api/v1/documents/${c.id}/versions`).set(HR).send(fileSpec('noi-quy-v2.pdf', pdf('ban 2'))).expect(201);
+      await putFile(v2.body, pdf('ban 2'));
       await http.post(`/api/v1/documents/${c.id}/versions/${v2.body.versionId}/confirm`).set(HR).expect(200);
 
       const detail = (await http.get(`/api/v1/documents/${c.id}`).set(EMPLOYEE).expect(200)).body;
@@ -892,9 +904,18 @@ describe('HRHelper API (e2e)', () => {
       const big = await http.post('/api/v1/documents').set(HR)
         .send({ title: 'E2E Quá lớn', type: 'FORM', scope: { all: true }, fileName: 'a.pdf', contentType: 'application/pdf', sizeBytes: 21 * 1024 * 1024 });
       expect(big.status).toBe(400);
+      expect(big.body.fields).toHaveProperty('sizeBytes');
+      // AC-5.1.4: lỗi kiểm ở service cũng có `fields` để form gắn lỗi đúng ô.
       const noScope = await http.post('/api/v1/documents').set(HR)
         .send({ title: 'E2E Không phạm vi', type: 'FORM', scope: {}, fileName: 'a.pdf', contentType: 'application/pdf', sizeBytes: 100 });
       expect(noScope.status).toBe(400);
+      expect(noScope.body.fields).toEqual({ scope: 'Tài liệu phải có ít nhất một phạm vi xem' });
+      const png = await http.post('/api/v1/documents').set(HR)
+        .send({ title: 'E2E Ảnh', type: 'FORM', scope: { all: true }, fileName: 'anh.png', contentType: 'image/png', sizeBytes: 100 });
+      expect(png.body.fields).toHaveProperty('fileName');
+      const mismatch = await http.post('/api/v1/documents').set(HR)
+        .send({ title: 'E2E Sai loại', type: 'FORM', scope: { all: true }, fileName: 'a.pdf', contentType: 'application/msword', sizeBytes: 100 });
+      expect(mismatch.body.fields).toHaveProperty('contentType');
 
       const pending = await http.post('/api/v1/documents').set(HR)
         .send({ title: 'E2E Chưa tải', type: 'FORM', scope: { all: true }, fileName: 'a.pdf', contentType: 'application/pdf', sizeBytes: 100 }).expect(201);
@@ -929,6 +950,61 @@ describe('HRHelper API (e2e)', () => {
       await http.patch(`/api/v1/documents/${e.id}`).set(HR).send({ title: 'E2E Đã đổi tên', version: cur.version + 3 }).expect(409);
       const ok = await http.patch(`/api/v1/documents/${e.id}`).set(HR).send({ title: 'E2E Đã đổi tên', version: cur.version }).expect(200);
       expect(ok.body.title).toBe('E2E Đã đổi tên');
+      // Gửi lại phạm vi cũ không đổi gì: không tăng version.
+      const same = await http.patch(`/api/v1/documents/${e.id}`).set(HR).send({ scope: { all: true }, version: ok.body.version }).expect(200);
+      expect(same.body.version).toBe(ok.body.version);
+    });
+
+    it('phạm vi chỉ nhận đơn vị đang hoạt động; đơn vị đã có trong phạm vi thì giữ được (AC-5.1.9, D3)', async () => {
+      const depts = (await http.get('/api/v1/departments').set(HR)).body;
+      const unit = depts.find((x: any) => x.status === 'ACTIVE' && x.id !== me.departmentId && x.parentId);
+      const f = await publish('E2E Phạm vi đơn vị', { departmentIds: [unit.id] });
+      const { OrganizationService } = await import('../src/modules/organization/organization.service');
+      const clearCache = () => (app.get(OrganizationService) as any).deptCache.clear();
+      await ds.query(`UPDATE org.department SET status = 'INACTIVE' WHERE id = $1`, [unit.id]);
+      clearCache();
+      try {
+        const created = await http.post('/api/v1/documents').set(HR)
+          .send({ title: 'E2E Đơn vị ngừng', type: 'FORM', scope: { departmentIds: [unit.id] }, ...fileSpec('a.pdf', pdf('x')) });
+        expect(created.status).toBe(400);
+        expect(Object.keys(created.body.fields)).toEqual(['scope.departmentIds']);
+
+        const cur = (await http.get(`/api/v1/documents/manage/${f.id}`).set(HR).expect(200)).body;
+        expect(cur.scope.departments).toEqual([{ id: unit.id, name: unit.name, active: false }]);
+        await http.patch(`/api/v1/documents/${f.id}`).set(HR).send({ scope: { departmentIds: [unit.id], roles: ['HR'] }, version: cur.version }).expect(200);
+      } finally {
+        await ds.query(`UPDATE org.department SET status = 'ACTIVE' WHERE id = $1`, [unit.id]);
+        clearCache();
+      }
+    });
+
+    it('trang quản lý: tìm theo tiêu đề, lọc đang hiện, đã ẩn, chưa có bản sẵn sàng', async () => {
+      const g = await publish('E2E Lọc 50% đang hiện', { all: true });
+      const pending = (await http.post('/api/v1/documents').set(HR)
+        .send({ title: 'E2E Lọc chưa tải', type: 'FORM', scope: { all: true }, ...fileSpec('a.pdf', pdf('y')) }).expect(201)).body.document;
+      const ids = async (query: string) =>
+        (await http.get(`/api/v1/documents/manage?size=100&${query}`).set(HR).expect(200)).body.items.map((d: any) => d.id);
+
+      expect(await ids('q=50%25')).toEqual([g.id]);
+      expect(await ids(`q=${encodeURIComponent('e2e lọc')}&state=VISIBLE`)).toEqual([g.id]);
+      expect(await ids(`q=${encodeURIComponent('E2E Lọc')}&state=NOT_READY`)).toEqual([pending.id]);
+      await http.post(`/api/v1/documents/${g.id}/hide`).set(HR).expect(200);
+      expect(await ids(`q=${encodeURIComponent('E2E Lọc')}&state=HIDDEN`)).toEqual([g.id]);
+      await http.get('/api/v1/documents/manage?state=OTHER').set(HR).expect(400);
+    });
+
+    it('kho chưa cấu hình: danh sách vẫn 200, API đụng tới file trả 503 (AC-5.1.7)', async () => {
+      if (!docBucket) return;
+      docBucket.enabled = false;
+      try {
+        await http.get('/api/v1/documents').set(EMPLOYEE).expect(200);
+        await http.get('/api/v1/documents/manage').set(HR).expect(200);
+        const r = await http.post('/api/v1/documents').set(HR)
+          .send({ title: 'E2E Không có kho', type: 'FORM', scope: { all: true }, ...fileSpec('a.pdf', pdf('z')) });
+        expect(r.status).toBe(503);
+      } finally {
+        docBucket.enabled = true;
+      }
     });
   });
 

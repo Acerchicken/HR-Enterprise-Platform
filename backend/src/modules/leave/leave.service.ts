@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, EntityManager, In, QueryFailedError, Repository, SelectQueryBuilder } from 'typeorm';
+import { fieldError } from '../../common/field-error';
 import { Page } from '../../common/pagination';
 import { AuditService } from '../audit/audit.service';
 import { EmployeeService, RequestMeta } from '../employee/employee.service';
@@ -48,8 +49,6 @@ const AUDIT_ACTION: Record<LeaveAction, string> = {
 
 /** Thao tác bắt buộc có ghi chú (E12, AC-0.6.3). */
 const NEEDS_COMMENT: LeaveAction[] = ['reject', 'hrReject', 'cancelRequestReject'];
-
-const fieldError = (field: string, message: string) => new BadRequestException({ message, fields: [field] });
 
 @Injectable()
 export class LeaveService {

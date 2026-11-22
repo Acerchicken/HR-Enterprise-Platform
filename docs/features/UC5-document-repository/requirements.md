@@ -15,7 +15,7 @@
 
 ## 2. Tiêu chí chấp nhận
 
-### FR-5.1 HR đăng tài liệu (M, có API, chưa có giao diện)
+### FR-5.1 HR đăng tài liệu (M, đã có)
 
 - **AC-5.1.1** Khi HR tạo tài liệu với tiêu đề, loại, ít nhất một phạm vi, file PDF hoặc DOCX từ 1 byte đến 20 MiB. Thì trả
   tài liệu, phiên bản 1 `PENDING` và URL tải lên hết hạn sau 10 phút; có audit `DOCUMENT_CREATE`.
@@ -23,18 +23,18 @@
   không đi qua API.
 - **AC-5.1.3** Khi vai trò khác HR tạo, sửa, ẩn tài liệu. Thì trả 403.
 - **AC-5.1.4** Khi thiếu tiêu đề, phạm vi rỗng, loại sai, đơn vị không tồn tại, file không phải PDF/DOCX hoặc quá 20 MiB. Thì
-  trả 400 kèm `fields` chỉ đúng ô lỗi. *(Hiện lỗi kiểm ở service chưa có `fields`, sửa trong `feat/document-ui`; spec 13.3.)*
+  trả 400 kèm `fields` chỉ đúng ô lỗi.
 - **AC-5.1.5** Khi xác nhận lúc chưa tải file. Thì trả 400, phiên bản vẫn `PENDING`.
 - **AC-5.1.6** Khi file sai dung lượng khai báo hoặc nội dung không khớp đuôi (ZIP đổi đuôi `.pdf`). Thì phiên bản `REJECTED`,
   file bị xóa, trả 400. Xác nhận lại phiên bản đó thì trả 409. Xác nhận lại phiên bản đã `READY` thì trả
   lại tài liệu, không đổi gì.
 - **AC-5.1.7** Khi chưa cấu hình `STORAGE_BUCKET`. Thì tạo, thêm phiên bản, xác nhận, tải xuống trả 503; danh sách, chi tiết
   vẫn 200; chức năng khác vẫn chạy.
-- **AC-5.1.8** *(chưa có)* HR đăng tài liệu trên giao diện: chọn file, nhập metadata, thấy tiến độ tải lên, lỗi hiện đúng ô.
-- **AC-5.1.9** *(chưa có, D3 chốt 22/11)* Khi HR chọn đơn vị `INACTIVE` làm phạm vi lúc tạo hoặc sửa. Thì trả 400
+- **AC-5.1.8** HR đăng tài liệu trên giao diện: chọn file, nhập metadata, thấy tiến độ tải lên, lỗi hiện đúng ô.
+- **AC-5.1.9** *(D3 chốt 22/11)* Khi HR chọn đơn vị `INACTIVE` làm phạm vi lúc tạo hoặc sửa. Thì trả 400
   `fields.scope.departmentIds`. Phạm vi cũ trỏ tới đơn vị đã ngừng hoạt động vẫn giữ.
 
-### FR-5.2 Nhân viên xem, tải trong phạm vi (M, có API, chưa có giao diện)
+### FR-5.2 Nhân viên xem, tải trong phạm vi (M, đã có)
 
 - **AC-5.2.1** Giả sử tài liệu có phạm vi phòng ban P. Khi nhân viên thuộc phòng ban con của P mở danh sách. Thì thấy tài liệu
   (DR-02).
@@ -50,9 +50,9 @@
   liệu có phạm vi vai trò của họ; trang quản lý của HR vẫn dùng được.
 - **AC-5.2.5** Khi HR ẩn tài liệu. Thì mọi nhân viên nhận 404; HR vẫn thấy ở trang quản lý; khôi phục thì xem lại được (DR-05).
 - **AC-5.2.6** Khi tải. Thì API kiểm lại phạm vi rồi stream file; response không chứa link storage.
-- **AC-5.2.7** *(chưa có)* Trang "Tài liệu": danh sách mới cập nhật trước, lọc theo loại, mở chi tiết, tải bản mới nhất.
+- **AC-5.2.7** Trang "Tra cứu tài liệu": danh sách mới cập nhật trước, lọc theo loại, mở chi tiết, tải bản mới nhất.
 
-### FR-5.3 Phiên bản (S, có API, chưa có giao diện)
+### FR-5.3 Phiên bản (S, đã có)
 
 - **AC-5.3.1** Khi HR thêm phiên bản. Thì số phiên bản tăng 1, bản cũ giữ nguyên, tải mặc định trả bản mới nhất (DR-04).
 - **AC-5.3.2** Khi tải bản cũ qua `versions/{versionId}/download`. Thì nhận đúng nội dung bản cũ.
@@ -80,7 +80,7 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
 | S3Mock trong docker-compose (thay MinIO) | AC-5.1.2 chạy được ở local | TV3 | `chore/minio-local` (đã merge #68) | 10 |
-| Giao diện kho tài liệu (HR và nhân viên); `fields` cho lỗi 400; chặn đơn vị `INACTIVE` (D3) | AC-5.1.4, AC-5.1.8, AC-5.1.9, AC-5.2.7 | TV1 | `feat/document-ui` | 11 |
+| Giao diện kho tài liệu (HR và nhân viên); `fields` cho lỗi 400; chặn đơn vị `INACTIVE` (D3) | AC-5.1.4, AC-5.1.8, AC-5.1.9, AC-5.2.7 | TV1 | Đã làm 22/11 | 11 |
 | Event tài liệu qua `document.outbox`, lệnh đồng bộ lần đầu (D1) | AC-5.4.1 → AC-5.4.4 | TV1 | `feat/search-service` (bước đầu) | 12 |
 | Bucket tài liệu, `STORAGE_*` cho staging; đổi SSE-S3 sang KMS, bỏ `GET`/`HEAD` khỏi CORS | AC-5.1.7 trên staging, NFR-5.16 | TV3 | `infra/documents-email` (đã merge #70), sửa thêm ở nhánh mới | 10 (code), 12 (apply) |
 | Chạy ca kiểm thử UC5 trên staging | Mọi AC-5.x | TV4 | `docs/test-report-uc2-uc5-uc7` | 12 |

@@ -8,10 +8,10 @@ describe('DR-01: file hợp lệ', () => {
   it('chỉ nhận PDF/DOCX, content type khớp phần mở rộng, tối đa 20 MiB', () => {
     expect(checkDeclaredFile('quy-che.pdf', PDF, 4 * 1024 * 1024)).toBeNull();
     expect(checkDeclaredFile('Mau.DOCX', DOCX, 1000)).toBeNull();
-    expect(checkDeclaredFile('anh.png', 'image/png', 1000)).toMatch(/PDF hoặc DOCX/);
-    expect(checkDeclaredFile('a.pdf', DOCX, 1000)).toMatch(/không khớp/);
-    expect(checkDeclaredFile('a.pdf', PDF, MAX_FILE_BYTES + 1)).toMatch(/20 MiB/);
-    expect(checkDeclaredFile('a.pdf', PDF, 0)).toMatch(/20 MiB/);
+    expect(checkDeclaredFile('anh.png', 'image/png', 1000)).toEqual({ field: 'fileName', message: expect.stringMatching(/PDF hoặc DOCX/) });
+    expect(checkDeclaredFile('a.pdf', DOCX, 1000)).toEqual({ field: 'contentType', message: expect.stringMatching(/không khớp/) });
+    expect(checkDeclaredFile('a.pdf', PDF, MAX_FILE_BYTES + 1)).toEqual({ field: 'sizeBytes', message: expect.stringMatching(/20 MiB/) });
+    expect(checkDeclaredFile('a.pdf', PDF, 0)?.field).toBe('sizeBytes');
   });
 
   it('kiểm định dạng thực: file ZIP đổi tên thành .pdf hoặc .docx bị từ chối', () => {

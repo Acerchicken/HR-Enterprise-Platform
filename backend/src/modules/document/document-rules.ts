@@ -14,12 +14,18 @@ export const FILE_KINDS = {
 } as const;
 export type FileKind = keyof typeof FILE_KINDS;
 
+/** Lỗi gắn với một trường của request, để service trả `fields` cho form (E2). */
+export interface FieldProblem {
+  field: 'fileName' | 'contentType' | 'sizeBytes';
+  message: string;
+}
+
 /** DR-01: chỉ PDF/DOCX theo phần mở rộng và content type khai báo; dung lượng 1 byte – 20 MiB. Trả lỗi hoặc null. */
-export function checkDeclaredFile(fileName: string, contentType: string, sizeBytes: number): string | null {
+export function checkDeclaredFile(fileName: string, contentType: string, sizeBytes: number): FieldProblem | null {
   const kind = kindOf(fileName);
-  if (!kind) return 'Chỉ nhận file PDF hoặc DOCX';
-  if (FILE_KINDS[kind].contentType !== contentType) return 'Loại file không khớp phần mở rộng';
-  if (sizeBytes < 1 || sizeBytes > MAX_FILE_BYTES) return 'File phải từ 1 byte đến 20 MiB';
+  if (!kind) return { field: 'fileName', message: 'Chỉ nhận file PDF hoặc DOCX' };
+  if (FILE_KINDS[kind].contentType !== contentType) return { field: 'contentType', message: 'Loại file không khớp phần mở rộng' };
+  if (sizeBytes < 1 || sizeBytes > MAX_FILE_BYTES) return { field: 'sizeBytes', message: 'File phải từ 1 byte đến 20 MiB' };
   return null;
 }
 
@@ -55,7 +61,10 @@ export interface DocumentScopeSpec {
   roles: string[];
 }
 
-/** DR-02: khớp bất kỳ phạm vi nào là được xem; người đã nghỉ việc hoặc chưa gắn hồ sơ thì không. */
+/**
+ * DR-02: khớp bất kỳ phạm vi nào là được xem; người đã nghỉ việc hoặc chưa gắn hồ sơ thì không.
+ * Bản hàm thuần của điều kiện SQL `visibleQuery` trong `document.service.ts`: sửa một bên thì sửa cả bên kia (UC5 spec 13.3).
+ */
 export function canView(viewer: Viewer, doc: DocumentScopeSpec & { hidden: boolean }): boolean {
   if (!viewer.active || doc.hidden) return false;
   if (doc.scopeAll) return true;
