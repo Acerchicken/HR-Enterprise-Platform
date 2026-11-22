@@ -34,7 +34,7 @@ Cập nhật khi kiểm chéo UC5 ngày 22/11/2026.
   [ADR-14](../architecture/adr/ADR-14-org-unit-types.md); "gồm phòng ban con" là mọi đơn vị con cháu.
 - Role `MANAGER` trong DR-02 là người **có cấp dưới trực tiếp** (ADR-10, tính lại mỗi request), không phải trưởng, phó đơn vị
   (UC2 FR-2.9). Trưởng đơn vị không có cấp dưới trực tiếp thì không khớp phạm vi `MANAGER`.
-- "Xem trước" ở DR-05, DR-06, DR-08 chưa có API riêng: hiện chỉ tải về (`Content-Disposition: attachment`). Nếu thêm xem trước
-  thì đi cùng đường tải qua API và kiểm quyền như tải xuống.
-- Ca biên còn mở (đơn vị ngừng hoạt động trong phạm vi, thông báo khi có tài liệu mới): xem
-  [UC5 spec mục 13.4](../features/UC5-document-repository/spec.md#134-điểm-cần-quyết).
+- "Xem trước" ở DR-05, DR-06, DR-08: version 1 không làm, chỉ tải về (`Content-Disposition: attachment`). Nếu thêm sau thì
+  đi cùng đường tải qua API và kiểm quyền như tải xuống.
+- Đã chốt 22/11 ([UC5 spec mục 13.4](../features/UC5-document-repository/spec.md#134-điểm-cần-quyết)): phạm vi chỉ nhận đơn vị
+  `ACTIVE`; không có phạm vi theo trưởng, phó đơn vị; không gửi email khi có tài liệu mới hoặc bản mới.

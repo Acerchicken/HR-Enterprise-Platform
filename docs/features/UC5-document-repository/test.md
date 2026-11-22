@@ -29,7 +29,7 @@ Rủi ro chính là **lộ tài liệu ngoài phạm vi**, kể cả gián tiế
 | AC-5.1.4 | Unit `document-rules.spec.ts` | Tuần 10 | Một phần: lỗi kiểm ở service chưa có `fields` (spec 13.3) |
 | AC-5.1.5, AC-5.1.6 | "file sai định dạng hoặc chưa tải lên bị từ chối (DR-01)" | File đổi đuôi | Có |
 | AC-5.1.7 | – | Chạy API không có `STORAGE_BUCKET`: `GET /documents` phải **200**, `POST /documents` và tải xuống phải 503 | Cần thêm |
-| AC-5.1.9 | – | Chọn đơn vị `INACTIVE` làm phạm vi | Chờ chốt D3 |
+| AC-5.1.9 | – | Chọn đơn vị `INACTIVE` làm phạm vi | Cần thêm (code ở `feat/document-ui`) |
 | AC-5.1.8, AC-5.2.7 | – | – | Chưa có giao diện |
 | AC-5.2.1 | "phạm vi phòng ban gồm phòng ban con…" | Phòng ban con | Có |
 | AC-5.2.2 | Unit "nhiều phạm vi là phép cộng…" | Nhiều phạm vi | Có |

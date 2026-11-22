@@ -9,7 +9,7 @@
 | Quy tắc | [DR-01 → DR-06, DR-08](../../business/document-rules.md), [ADR-13](../../architecture/adr/ADR-13-document-storage.md), [ADR-14](../../architecture/adr/ADR-14-org-unit-types.md) (đơn vị), [ADR-15](../../architecture/adr/ADR-15-service-extraction.md) (event), [ADR-18](../../architecture/adr/ADR-18-authorization.md) (phân quyền) |
 | Mức ưu tiên | M (FR-5.3 là S) |
 | Trạng thái | Đã có API (PR #64, 12/11); giao diện đang làm (`feat/document-ui`); chưa phát event cho tìm kiếm; Terraform bucket đã merge (#70) nhưng chưa apply |
-| Phiên bản | 1.1 – 22/11/2026 (1.1: kiểm chéo với UC1, UC2, UC3, UC4, UC7, UC8, ADR-14, ADR-15, ADR-18, schema, error-codes; thêm 9.2, 13.2 → 13.4) |
+| Phiên bản | 1.1 – 22/11/2026 (1.1: kiểm chéo với UC1, UC2, UC3, UC4, UC7, UC8, ADR-14, ADR-15, ADR-18, schema, error-codes; thêm 9.2, 13.2 → 13.4; Duong chốt D1 → D5 theo đề xuất ngày 22/11) |
 
 ## 1. Mô tả ngắn
 
@@ -128,7 +128,7 @@ sequenceDiagram
 | `title` | Có | 1 → 200 ký tự, bỏ khoảng trắng hai đầu |
 | `type` | Có | `POLICY`, `PROCESS`, `GUIDE`, `FORM`, `NOTICE` |
 | `scope.all` | Một trong ba | `true` là toàn công ty |
-| `scope.departmentIds` | Một trong ba | Tối đa 50 UUID đơn vị (mọi loại, ADR-14); gồm đơn vị con cháu. Đơn vị `INACTIVE`: xem 13.4 (D3) |
+| `scope.departmentIds` | Một trong ba | Tối đa 50 UUID đơn vị `ACTIVE` (mọi loại, ADR-14; D3); gồm đơn vị con cháu |
 | `scope.roles` | Một trong ba | `EMPLOYEE`, `MANAGER`, `HR`, `ADMIN` |
 | `fileName`, `contentType`, `sizeBytes` | Có (khi tạo, thêm phiên bản) | Đuôi `.pdf` với `application/pdf`, hoặc `.docx` với `application/vnd.openxmlformats-officedocument.wordprocessingml.document`; 1 byte → 20 MiB |
 | `version` (khi sửa) | Có | Version hiện tại của tài liệu |
@@ -214,8 +214,8 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
 | API đăng, phiên bản, phạm vi, tải qua API, ẩn, khôi phục | Đã có (PR #64) | SRS đã cập nhật trạng thái FR-5.x (22/11) |
-| Giao diện kho tài liệu | Đang làm | TV1, nhánh `feat/document-ui`; kèm sửa `fields` ở lỗi 400 (13.3) |
-| Event tài liệu cho search service (`document.outbox`) | Chưa có | Chưa có nhánh trong kế hoạch 7.7; đề xuất làm đầu nhánh `feat/search-service` (13.2, D1) |
+| Giao diện kho tài liệu | Đang làm | TV1, nhánh `feat/document-ui`; kèm sửa `fields` ở lỗi 400 (13.3) và chặn đơn vị `INACTIVE` (D3, AC-5.1.9) |
+| Event tài liệu cho search service (`document.outbox`) | Chưa có | TV1, đầu nhánh `feat/search-service` (13.2, D1) |
 | Dọn phiên bản `PENDING` bỏ dở | Chưa có | Đánh đổi đã ghi trong ADR-13; đề xuất lifecycle rule ở bucket (deploy.md mục 7) |
 | Local: object storage | Đã có | S3Mock trong docker-compose (PR #68) |
 | Staging: biến `STORAGE_*`, bucket tài liệu | Terraform đã merge (PR #70), chưa apply | TV3 apply tuần 12; đổi mã hóa sang KMS, bỏ `GET`, `HEAD` khỏi CORS (deploy.md mục 3) |
@@ -226,7 +226,8 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 ### 13.1 Giao diện
 
-> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/document-ui`. API đã có; chỉ sửa `fields` ở lỗi 400 (13.3).
+> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/document-ui`. API đã có; chỉ sửa `fields` ở lỗi 400 (13.3) và
+> chặn đơn vị `INACTIVE` (D3).
 
 | Màn hình | Ai | Nội dung | API |
 |---|---|---|---|
@@ -241,7 +242,7 @@ mới; phiên bản cũ ở `PENDING` được bỏ lại (ADR-13).
 
 Theo giao diện chung: trang `/documents` mở từ ô "Tra cứu tài liệu" ở trang chủ, không đặt trên nav bar (UC6, quyết định
 14/11); `/documents/manage` nằm trong nhóm của HR. Phạm vi đơn vị chọn trong cây đơn vị của UC2 (`GET /departments/tree`, chỉ
-`ACTIVE`).
+`ACTIVE`). Ô chọn vai trò ghi chú `MANAGER` là "người có cấp dưới trực tiếp" (D4). Không có xem trước, chỉ có nút tải (D5).
 
 ### 13.2 Event cho tìm kiếm (ADR-15)
 
@@ -262,7 +263,7 @@ dùng chung cách của `leave.outbox`.
 - Thao tác không đổi gì (xác nhận lại bản `READY`, `PATCH` không đổi trường nào) không phát event.
 - Tài liệu đã `READY` trước khi có event (dữ liệu tuần 10, 11) cần lệnh đồng bộ một lần: ghi `DocumentPublished` cho bản
   `READY` mới nhất của mọi tài liệu, rồi `DocumentHidden` cho tài liệu đã ẩn.
-- Không gửi email cho event tài liệu, trừ khi D2 chốt khác.
+- Không gửi email cho event tài liệu (D2): notification service nhận event nhưng bỏ qua loại `document.*`.
 
 Lệch cần sửa ở UC6: [UC6 spec 13.1](../UC6-self-service-search/spec.md#131-tìm-tài-liệu-fr-62) vẫn ghi cột `text_content`,
 `search_vector` trong `document.document_version` và dùng `visibleQuery` trong API, trong khi ADR-15 và kế hoạch 7.7 đặt index ở
@@ -273,7 +274,7 @@ schema `search` của search service. Sửa cùng nhánh `feat/search-service`.
 | # | Ca | Hiện tại | Đề xuất |
 |---|---|---|---|
 | 1 | Lỗi 400 ở service không có `fields` (E2) | Form không biết gắn lỗi vào ô nào (AC-5.1.4, AC-5.1.8) | Dùng `fieldError` như module leave; làm trong `feat/document-ui` |
-| 2 | Phạm vi chọn đơn vị `INACTIVE` (UC2 FR-2.10) | Code nhận đơn vị mọi trạng thái | Xem D3 |
+| 2 | Phạm vi chọn đơn vị `INACTIVE` (UC2 FR-2.10) | Code nhận đơn vị mọi trạng thái | Chặn theo D3, làm trong `feat/document-ui` |
 | 3 | URL tải lên hết hạn hoặc PUT lỗi | Phiên bản `PENDING` để lại, số phiên bản `READY` nhảy (1 → 3) | Giữ (ADR-13). Nhân viên thấy đúng số "Phiên bản 3"; trang quản lý hiện cả bản `PENDING`, `REJECTED` để HR hiểu vì sao nhảy |
 | 4 | Tài liệu mới tạo nhưng không bao giờ tải file lên | Nằm mãi ở trang quản lý, không xóa được | Chấp nhận cho version 1; HR ẩn đi. Trang quản lý có lọc "Chưa có bản sẵn sàng" |
 | 5 | `canView` (unit test) và `visibleQuery` (SQL thật) là hai bản logic | Sửa một bên quên bên kia thì unit test vẫn xanh | e2e là nguồn đúng; sửa phạm vi thì sửa cả hai trong cùng PR |
@@ -282,10 +283,12 @@ schema `search` của search service. Sửa cùng nhánh `feat/search-service`.
 
 ### 13.4 Điểm cần quyết
 
-| # | Câu hỏi | Đề xuất | Ai quyết |
+Duong chốt cả năm điểm theo đề xuất ngày 22/11/2026.
+
+| # | Câu hỏi | Quyết định | Người chốt |
 |---|---|---|---|
-| D1 | Nhánh nào phát event tài liệu (13.2)? Kế hoạch 7.7 chưa có nhánh này | Làm đầu nhánh `feat/search-service` (TV1), vì search service là consumer duy nhất | Duong |
-| D2 | Có báo nhân viên khi có tài liệu mới hoặc bản mới không? BRD mục 2 nêu "nhân viên không biết bản mới nhất"; tiêu chí nghiệm thu ADR-15 ghi "upload một tài liệu: notification service xử lý"; nhưng FR-5.x không có yêu cầu này | **Không gửi email ở version 1**: người nhận có thể tới ~2.000 người và notification service không được đọc hồ sơ (ADR-15), nên payload phải mang cả danh sách. Sửa câu tiêu chí ADR-15 thành "search service và notification service cùng nhận event, notification bỏ qua `document.*`" để vẫn chứng minh fan-out | Duong, TV2 |
-| D3 | Phạm vi trỏ tới đơn vị `INACTIVE` | Tạo, sửa phạm vi: chỉ nhận đơn vị `ACTIVE`, sai thì 400 `fields.scope.departmentIds`. Phạm vi cũ trỏ tới đơn vị đã ngừng: giữ nguyên (đơn vị ngừng hoạt động không còn người), trang quản lý gắn nhãn "Đơn vị đã ngừng hoạt động" | TV2 |
-| D4 | Phạm vi theo trưởng, phó đơn vị (UC2 FR-2.9) thay cho `MANAGER` | Không thêm ở version 1; form chọn phạm vi ghi rõ `MANAGER` là người có cấp dưới trực tiếp | TV2 |
-| D5 | Xem trước PDF trong trình duyệt (DR-05, DR-06, DR-08 có nhắc "xem trước") | Không làm ở version 1; nếu làm thì thêm `?inline=true` trên cùng API tải, chỉ cho PDF | Duong |
+| D1 | Nhánh nào phát event tài liệu (13.2)? Kế hoạch 7.7 chưa có nhánh này | Làm đầu nhánh `feat/search-service` (TV1), vì search service là consumer duy nhất | Duong, 22/11 |
+| D2 | Có báo nhân viên khi có tài liệu mới hoặc bản mới không? BRD mục 2 nêu "nhân viên không biết bản mới nhất"; tiêu chí nghiệm thu ADR-15 ghi "upload một tài liệu: notification service xử lý"; nhưng FR-5.x không có yêu cầu này | **Không gửi email ở version 1**: người nhận có thể tới ~2.000 người và notification service không được đọc hồ sơ (ADR-15), nên payload phải mang cả danh sách. Sửa câu tiêu chí ADR-15 thành "search service và notification service cùng nhận event, notification bỏ qua `document.*`" để vẫn chứng minh fan-out (đã sửa ADR-15) | Duong, 22/11 |
+| D3 | Phạm vi trỏ tới đơn vị `INACTIVE` | Tạo, sửa phạm vi: chỉ nhận đơn vị `ACTIVE`, sai thì 400 `fields.scope.departmentIds`. Phạm vi cũ trỏ tới đơn vị đã ngừng: giữ nguyên (đơn vị ngừng hoạt động không còn người), trang quản lý gắn nhãn "Đơn vị đã ngừng hoạt động" (AC-5.1.9) | Duong, 22/11 |
+| D4 | Phạm vi theo trưởng, phó đơn vị (UC2 FR-2.9) thay cho `MANAGER` | Không thêm ở version 1; form chọn phạm vi ghi rõ `MANAGER` là người có cấp dưới trực tiếp | Duong, 22/11 |
+| D5 | Xem trước PDF trong trình duyệt (DR-05, DR-06, DR-08 có nhắc "xem trước") | Không làm ở version 1; nếu làm thì thêm `?inline=true` trên cùng API tải, chỉ cho PDF | Duong, 22/11 |

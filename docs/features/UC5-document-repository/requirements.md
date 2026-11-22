@@ -31,7 +31,7 @@
 - **AC-5.1.7** Khi chưa cấu hình `STORAGE_BUCKET`. Thì tạo, thêm phiên bản, xác nhận, tải xuống trả 503; danh sách, chi tiết
   vẫn 200; chức năng khác vẫn chạy.
 - **AC-5.1.8** *(chưa có)* HR đăng tài liệu trên giao diện: chọn file, nhập metadata, thấy tiến độ tải lên, lỗi hiện đúng ô.
-- **AC-5.1.9** *(đề xuất, chờ chốt D3 ở spec 13.4)* Khi HR chọn đơn vị `INACTIVE` làm phạm vi lúc tạo hoặc sửa. Thì trả 400
+- **AC-5.1.9** *(chưa có, D3 chốt 22/11)* Khi HR chọn đơn vị `INACTIVE` làm phạm vi lúc tạo hoặc sửa. Thì trả 400
   `fields.scope.departmentIds`. Phạm vi cũ trỏ tới đơn vị đã ngừng hoạt động vẫn giữ.
 
 ### FR-5.2 Nhân viên xem, tải trong phạm vi (M, có API, chưa có giao diện)
@@ -80,8 +80,8 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
 | S3Mock trong docker-compose (thay MinIO) | AC-5.1.2 chạy được ở local | TV3 | `chore/minio-local` (đã merge #68) | 10 |
-| Giao diện kho tài liệu (HR và nhân viên); `fields` cho lỗi 400 | AC-5.1.4, AC-5.1.8, AC-5.2.7 | TV1 | `feat/document-ui` | 11 |
-| Event tài liệu qua `document.outbox`, lệnh đồng bộ lần đầu | AC-5.4.1 → AC-5.4.4 | TV1 (chờ chốt D1) | đề xuất đầu `feat/search-service` | 12 |
+| Giao diện kho tài liệu (HR và nhân viên); `fields` cho lỗi 400; chặn đơn vị `INACTIVE` (D3) | AC-5.1.4, AC-5.1.8, AC-5.1.9, AC-5.2.7 | TV1 | `feat/document-ui` | 11 |
+| Event tài liệu qua `document.outbox`, lệnh đồng bộ lần đầu (D1) | AC-5.4.1 → AC-5.4.4 | TV1 | `feat/search-service` (bước đầu) | 12 |
 | Bucket tài liệu, `STORAGE_*` cho staging; đổi SSE-S3 sang KMS, bỏ `GET`/`HEAD` khỏi CORS | AC-5.1.7 trên staging, NFR-5.16 | TV3 | `infra/documents-email` (đã merge #70), sửa thêm ở nhánh mới | 10 (code), 12 (apply) |
 | Chạy ca kiểm thử UC5 trên staging | Mọi AC-5.x | TV4 | `docs/test-report-uc2-uc5-uc7` | 12 |
 | Dọn phiên bản `PENDING` bỏ dở | – | – | – | Không làm, đánh đổi ghi ở ADR-13 |
