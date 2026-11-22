@@ -150,8 +150,9 @@ Staging đặt trong bước build của `deploy-staging.yml`.
 
 ## 5. Điểm còn thiếu trên staging (13/11/2026)
 
-- `STORAGE_*` chưa được đặt trong `app_runner.tf` và Terraform chưa có bucket cho tài liệu (TV3 đang làm ở PR #70), nên API kho tài liệu trên staging
-  sẽ trả 503. Ở local, docker-compose đã có `s3mock` (cổng 9090) tự tạo sẵn bucket `hr-documents` và `hr-profile-files-local`.
+- Bucket tài liệu và `STORAGE_BUCKET`, `STORAGE_REGION` trong `app_runner.tf` đã merge (PR #70, 21/11) nhưng **chưa `terraform apply`**
+  (tuần 12), nên API kho tài liệu trên staging còn trả 503. Terraform chưa có bucket file hồ sơ (`PROFILE_STORAGE_BUCKET`); bucket
+  tài liệu đang mã hóa SSE-S3 (`AES256`), chưa dùng khóa KMS như NFR-5.16 (kiểm chéo UC5, 22/11). Ở local, docker-compose đã có `s3mock` (cổng 9090) tự tạo sẵn bucket `hr-documents` và `hr-profile-files-local`.
 - Biến của worker (`SMTP_*`, `QUEUE_DRIVER`, `SQS_QUEUE_URL`) nằm ở task definition ECS, chưa thấy trong Terraform.
 
 **Khi thêm biến mới:** đọc trong `config.ts` (có mặc định cho dev hoặc kiểm tra trong `assertValid`), thêm vào `.env.example`,

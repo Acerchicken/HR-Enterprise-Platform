@@ -25,6 +25,16 @@ file. "Nhân viên đang làm việc" là người dùng đã đăng nhập, g�
 
 ## Đối chiếu với hiện thực hiện tại
 
-- UC5/UC6 và FR-5.1–FR-5.3, FR-6.2 trong [`BRD.md`](BRD.md) đã xác định upload PDF/DOCX, metadata tiêu đề/loại/phạm vi, phiên bản và tìm theo tiêu đề/nội dung có lọc quyền; các DR ở trên cụ thể hóa các lựa chọn còn mở.
-- Kiến trúc hệ thống hiện mô tả presigned URL cho cả tải lên và tải xuống trực tiếp từ object storage trong [`SAD-1-system-architecture.md`](../architecture/SAD-1-system-architecture.md); phương án tải xuống này không đáp ứng DR-06 vì link đã cấp không thể thu hồi ngay khi quyền thay đổi. Module tài liệu cần giữ upload trực tiếp nếu phù hợp nhưng triển khai download qua API proxy hoặc cơ chế thu hồi tương đương; cần cập nhật kiến trúc/ADR liên quan để thống nhất. Hiện chưa có module/API kho tài liệu và tìm kiếm trong [`openapi.yaml`](../openapi.yaml), nên DR-01–DR-08 chưa được thực thi trong code.
-- Khi triển khai, cần kiểm tra phạm vi trên server cho mọi thao tác đọc/tải, lọc quyền trước khi tạo kết quả/snippet/thống kê tìm kiếm, và bảo đảm link tải bị vô hiệu hóa khi nhân viên đổi phòng ban hoặc tài liệu bị ẩn. Cần bổ sung ca kiểm thử cho phòng ban con, nhiều phạm vi theo phép cộng, lịch sử phiên bản, thu hồi quyền và không rò rỉ metadata.
+Cập nhật khi kiểm chéo UC5 ngày 22/11/2026.
+
+- DR-01 → DR-06, DR-08 đã thực thi ở `backend/src/modules/document` (PR #64): tải lên bằng presigned URL PUT, tải xuống qua
+  API, lọc phạm vi trong câu SQL ([ADR-13](../architecture/adr/ADR-13-document-storage.md)). Kiến trúc hệ thống đã sửa theo
+  ADR-13. DR-07 (tìm kiếm) làm ở UC6 qua search service ([ADR-15](../architecture/adr/ADR-15-service-extraction.md)).
+- "Phòng ban" trong DR-02, DR-06 là **đơn vị** mọi loại (Công ty, Trung tâm, Phòng, Nhóm) theo
+  [ADR-14](../architecture/adr/ADR-14-org-unit-types.md); "gồm phòng ban con" là mọi đơn vị con cháu.
+- Role `MANAGER` trong DR-02 là người **có cấp dưới trực tiếp** (ADR-10, tính lại mỗi request), không phải trưởng, phó đơn vị
+  (UC2 FR-2.9). Trưởng đơn vị không có cấp dưới trực tiếp thì không khớp phạm vi `MANAGER`.
+- "Xem trước" ở DR-05, DR-06, DR-08 chưa có API riêng: hiện chỉ tải về (`Content-Disposition: attachment`). Nếu thêm xem trước
+  thì đi cùng đường tải qua API và kiểm quyền như tải xuống.
+- Ca biên còn mở (đơn vị ngừng hoạt động trong phạm vi, thông báo khi có tài liệu mới): xem
+  [UC5 spec mục 13.4](../features/UC5-document-repository/spec.md#134-điểm-cần-quyết).
