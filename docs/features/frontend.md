@@ -337,5 +337,6 @@ Bản vẽ màn hình riêng của từng UC nằm ở mục 9.1 trong `spec.md`
 - **Số ngày tính sẵn ở trình duyệt** trên form đăng ký nghỉ, cùng quy tắc BR-03; backend vẫn là nơi quyết định.
 - **Sơ đồ tổ chức trên điện thoại** đi từng cấp phòng ban thay vì vẽ cây.
 - **Trang "Tra cứu tài liệu" trên điện thoại** chia hai tab Tài liệu và Hỏi trợ lý.
-- **Lịch sử thao tác** chỉ lọc theo các trường API đang có (đối tượng, ID, người thực hiện, khoảng ngày); chưa lọc theo hành động.
+- **Lịch sử thao tác** chỉ lọc theo các trường API đang có (đối tượng, ID, người thực hiện, khoảng ngày); lọc theo hành động
+  đề xuất thêm ở [UC7 spec 13.3](UC7-audit-log/spec.md#133-quyết-định-chờ-duong) (D3), chờ Duong chốt.
 

@@ -663,16 +663,17 @@ Ghi trong cùng transaction với thao tác nghiệp vụ (`AuditService.record(
 |---|---|---|---|
 | `id` | bigserial | PK | |
 | `actor_id` | uuid | ref → `employee.employee.id` | Người thực hiện; NULL với tác vụ hệ thống |
-| `action` | varchar(50) | NN | Ví dụ `CREATE`, `UPDATE`, `VIEW_SENSITIVE`, `LEAVE_SUBMIT`, `DOCUMENT_PUBLISH` |
-| `entity_type` | varchar(50) | NN | Loại đối tượng bị tác động |
+| `action` | varchar(50) | NN | Ví dụ `CREATE`, `UPDATE`, `VIEW_SENSITIVE`, `TRANSFER`, `LEAVE_SUBMIT`, `DOCUMENT_PUBLISH`, `ROLE_GRANT`. Danh sách đủ: [UC7 spec mục 2](../features/UC7-audit-log/spec.md#2-tác-nhân-và-quyền) |
+| `entity_type` | varchar(50) | NN | `employee`, `department`, `position`, `leave_request`, `leave_balance` (`entity_id` là id nhân viên), `holiday` (`entity_id` là ngày), `approval_delegation`, `document`, `user_account`, `role_assignment` |
 | `entity_id` | varchar(64) | NN | Id đối tượng (chuỗi để chứa được cả uuid và số) |
 | `changed_fields` | jsonb | | Trường đã đổi; với trường nhạy cảm chỉ ghi tên, không ghi giá trị |
 | `ip` | varchar(64) | | IP client |
-| `trace_id` | varchar(64) | | Trùng `traceId` trong log và response lỗi, để lần theo một request |
+| `trace_id` | varchar(64) | | Trùng `traceId` trong log và response lỗi, để lần theo một request. NULL với job, worker (và hiện còn thiếu ở Organization, điều chuyển, Identity: UC7 spec 12) |
 | `at` | timestamptz | NN, mặc định `now()` | |
 
 Index: `ix_audit_entity (entity_type, entity_id, at)` – lịch sử một đối tượng; `ix_audit_actor (actor_id, at)` – việc một
-người đã làm.
+người đã làm. Chưa có chỉ mục cho tra cứu chỉ theo thời gian; đề xuất BRIN `ix_audit_at (at)` ở UC7 spec 13.3 (D2). Lưu 5 năm
+(BR-13); worker `identity-sync` và lệnh `grant-admin` ghi bằng SQL thẳng.
 
 ### Schema `document` – kho tài liệu HR (UC5)
 
