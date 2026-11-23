@@ -67,7 +67,7 @@ Cấu trúc bên trong một module (ví dụ `employee`): `*.entity.ts` (bảng
 | Identity | Guard toàn cục, kiểm token, tạo tài khoản lần đầu đăng nhập, gom role, chặn tài khoản gắn hồ sơ `TERMINATED` (403) | `iam`: `user_account`, `role_assignment` | `AuthGuard` (APP_GUARD), `@Roles`, `@CurrentUser` | Employee | – (`GET /me` nằm ở controller Employee) |
 | Employee | Hồ sơ theo mục (`summary`, API từng mục, quyền theo mục gồm quản lý gián tiếp), yêu cầu cập nhật và HR duyệt, mục HR quản lý, thông tin tự tính, file hồ sơ, nhật ký thay đổi, danh bạ, điều chuyển có ngày hiệu lực và quá trình công tác (UC2) | `employee`: `employee`, `employee_sensitive`, `profile_item`, `profile_change_request`, `profile_file`, `employment_assignment` | `EmployeeService` (`managerIdOf`, `directReportIds`, `namesOf`, `contactOf`, `hasDirectReports`, `placementOf`); `TransferService.applyDue` (cho worker) | Organization, Audit, RateLimit | 31 (3 controller: `EmployeeController`, `ProfileChangeController`, `ProfileFileController`) |
 | Organization | Đơn vị có loại (ADR-14), trưởng, phó, ngừng hoạt động; danh mục chức danh; cây tổ chức; cache tham chiếu | `org`: `department`, `department_deputy`, `position` | `OrganizationService` (`lookups`, `descendantIds`, `rolesOf`, `removeRolesOf`, `headRolesBrokenByMove`, `applyMove`) | Audit | 8 |
-| Audit | Ghi log trong transaction của module gọi; tra cứu | `audit`: `audit_log` (trigger chặn sửa/xóa) | `AuditService.record(entry, manager)` | – | 1 |
+| Audit | Ghi log trong transaction của module gọi (tự lấy `traceId`, IP từ request context); tra cứu có lọc theo vai trò (UC7 D1) | `audit`: `audit_log` (trigger chặn sửa/xóa, BRIN theo `at`) | `AuditService.record(entry, manager)` | – | 1 |
 | Leave | Đơn, số dư, ngày lễ, state machine, outbox, publisher | `leave`: `leave_type`, `leave_balance`, `leave_request`, `leave_request_history`, `holiday`, `outbox` | – | Employee, Audit | 12 |
 | Worker (Notification, TransferJob, LeaveJob) | Nhận event, gửi email chung (nghỉ phép BR-15; kết quả yêu cầu hồ sơ, đổi tài khoản ngân hàng, báo HR gộp 1 email/giờ), chống trùng; 5 phút một lần áp dụng điều chuyển đã tới ngày (`TransferJob`); 5 phút một lần hủy đơn của người đã nghỉ việc, nhắc đơn chờ (BR-17), một lần mỗi ngày giờ Việt Nam tính lại số dư phép năm và chuyển phép (`LeaveJob`, khóa advisory nên nhiều worker không chạy trùng, đánh dấu ngày trong `processed_event` sau khi chạy xong) | `notification`: `processed_event` | – | Employee | – |
 | Common: RateLimit | Giới hạn tần suất theo người dùng (`RateLimitInterceptor` toàn cục, `@RateLimit(nhóm)`, `RateLimitService.consume`) | `iam`: `rate_limit_counter` (cửa sổ ngày) | `RateLimitService` | – | – |
@@ -85,7 +85,8 @@ flowchart LR
   worker[Worker] --> employee
 ```
 
-Mũi tên là "gọi service được export". Không có vòng phụ thuộc; Audit không phụ thuộc module nào.
+Mũi tên là "gọi service được export". Không có vòng phụ thuộc; Audit không phụ thuộc module nào (tên người thực hiện khi tra cứu
+đọc thẳng `employee.employee` bằng một câu SQL, không gọi module Employee).
 
 ## 5. Luồng xử lý một request
 

@@ -183,3 +183,26 @@ tr.current { background: var(--primary-soft); }
   .doc-foot { flex-direction: column; align-items: flex-start; }
   .toolbar { flex-wrap: wrap; }
 }
+
+/* UC7 Lịch sử thao tác */
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+.nowrap { white-space: nowrap; }
+.icon-btn.xs { width: 24px; height: 24px; vertical-align: middle; }
+.audit-filters { display: grid; grid-template-columns: 180px 1fr 1fr 150px 150px; gap: 12px; align-items: end; margin-bottom: 12px; }
+.audit-filters select, .audit-filters input { width: 100%; box-sizing: border-box; }
+.audit-filters label, .audit-filters .field-group { margin: 0; }
+.audit-filters .audit-actions { grid-column: 1 / 5; }
+.audit-filters .audit-submit { grid-column: 5; align-self: end; }
+.audit-filters .audit-submit button { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.audit-table tr.sel td { background: var(--primary-soft); }
+.audit-detail td { background: var(--bg, #f8fafc); }
+.audit-fields { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0 0 8px; font-size: 13px; }
+.audit-fields dd { margin: 0; }
+.audit-foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; }
+.audit-foot .pager { margin-top: 0; }
+@media (max-width: 900px) {
+  .audit-filters { grid-template-columns: 1fr 1fr; }
+  .audit-filters .audit-actions, .audit-filters .audit-submit { grid-column: 1 / -1; }
+  .audit-table th:nth-child(5), .audit-table td:nth-child(5) { display: none; }
+  .audit-table td, .audit-table th { padding-left: 8px; padding-right: 8px; }
+}

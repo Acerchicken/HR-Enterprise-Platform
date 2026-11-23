@@ -663,16 +663,17 @@ Ghi trong cùng transaction với thao tác nghiệp vụ (`AuditService.record(
 |---|---|---|---|
 | `id` | bigserial | PK | |
 | `actor_id` | uuid | ref → `employee.employee.id` | Người thực hiện; NULL với tác vụ hệ thống |
-| `action` | varchar(50) | NN | Ví dụ `CREATE`, `UPDATE`, `VIEW_SENSITIVE`, `LEAVE_SUBMIT`, `DOCUMENT_PUBLISH` |
-| `entity_type` | varchar(50) | NN | Loại đối tượng bị tác động |
+| `action` | varchar(50) | NN | Ví dụ `CREATE`, `UPDATE`, `VIEW_SENSITIVE`, `TRANSFER`, `LEAVE_SUBMIT`, `DOCUMENT_PUBLISH`, `ROLE_GRANT`. Danh sách đủ: [UC7 spec mục 2](../features/UC7-audit-log/spec.md#2-tác-nhân-và-quyền) |
+| `entity_type` | varchar(50) | NN | `employee`, `department`, `position`, `leave_request`, `leave_balance` (`entity_id` là id nhân viên), `holiday` (`entity_id` là ngày), `approval_delegation`, `document`, `user_account`, `role_assignment` |
 | `entity_id` | varchar(64) | NN | Id đối tượng (chuỗi để chứa được cả uuid và số) |
 | `changed_fields` | jsonb | | Trường đã đổi; với trường nhạy cảm chỉ ghi tên, không ghi giá trị |
 | `ip` | varchar(64) | | IP client |
-| `trace_id` | varchar(64) | | Trùng `traceId` trong log và response lỗi, để lần theo một request |
+| `trace_id` | varchar(64) | | Trùng `traceId` trong log và response lỗi, để lần theo một request. NULL với job, worker |
 | `at` | timestamptz | NN, mặc định `now()` | |
 
 Index: `ix_audit_entity (entity_type, entity_id, at)` – lịch sử một đối tượng; `ix_audit_actor (actor_id, at)` – việc một
-người đã làm.
+người đã làm. `ix_audit_at` BRIN `(at)` – tra cứu chỉ theo khoảng thời gian (migration `AuditTimeIndex`, UC7 D2). Lưu 5 năm
+(BR-13); worker `identity-sync` và lệnh `grant-admin` ghi bằng SQL thẳng.
 
 ### Schema `document` – kho tài liệu HR (UC5)
 
@@ -830,6 +831,10 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `1732000000000-OrgUnitTypes` | 11 | `org.department`: `unit_type`, `status`, CHECK, index một Công ty; điền loại cho dữ liệu cũ (`feat/org-unit-types`) |
 | `1732100000000-OrgUnitRoles` | 11 | `org.department.head_acting`, `org.department_deputy`, `org.position.active`, `is_system` (`feat/department-admin-ui`) |
 | `1732200000000-EmploymentAssignment` | 11 | `employee.employment_assignment`; mỗi nhân viên đang có một dòng `HIRE` (`feat/employee-transfer`) |
+| `1732300000000-RoleAssignmentAudit` | 11 | `iam.role_assignment`: `granted_by`, `granted_at`, `reason` (UC8 `feat/uc8-role-admin`) |
+| `1732400000000-AccountLifecycle` | 11 | Trạng thái tài khoản trên IdP ở `iam.user_account` (UC8 `feat/uc8-account-lifecycle`) |
+| `1732500000000-LeaveRules` | 11 | Loại phép theo `quota_kind`, seed loại mới, số dư thập phân, phân bổ theo năm, `PENDING_HR`, đề nghị hủy, ngày lễ có loại, duyệt thay (UC3, UC4 `feat/leave-uc3-uc4`) |
+| `1732600000000-AuditTimeIndex` | 12 | Chỉ mục BRIN `audit.ix_audit_at (at)` (UC7 D2, `feat/audit-ui`) |
 
 Lệnh: `npm run migration:run` (dev, ts-node), `npm run migration:run:prod` (bản build, dùng trên staging),
 `npm run migration:revert` (lùi một migration). Dữ liệu mẫu: `npm run seed`.

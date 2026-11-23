@@ -3,8 +3,8 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform – môn Cloud Application Development |
-| Phiên bản tài liệu | 1.7 |
-| Ngày | 17/11/2026 (tuần 11) |
+| Phiên bản tài liệu | 1.8 |
+| Ngày | 23/11/2026 (tuần 12) |
 | Người soạn | TV1 (Dương), tách từ BRD 1.0 |
 | Người review | TV2 (Thanh) nghiệp vụ, TV4 (Duy) khả năng kiểm thử |
 | Trạng thái | Bản nháp, chờ review trên PR |
@@ -15,7 +15,8 @@
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
-| 1.7 | 23/11/2026 | UC6 thu gọn còn trợ lý chính sách (Duong, 22/11): FR-6.1 chuyển về UC2 (AC-2.1.6 → AC-2.1.9), bỏ FR-6.2 (trùng UC5), FR-6.3 nâng lên S theo [ADR-16](../architecture/adr/ADR-16-policy-assistant.md); thêm FR-6.4 (ADMIN chọn nhà cung cấp AI: Claude, Gemini, DeepSeek; dán API key trong ứng dụng); NFR-1.3 tách tìm đồng nghiệp và trợ lý; NFR-5.21 thêm nhóm `assistant`; LLM do ADMIN chọn qua adapter |
+| 1.8 | 23/11/2026 | UC6 thu gọn còn trợ lý chính sách (Duong, 22/11): FR-6.1 chuyển về UC2 (AC-2.1.6 → AC-2.1.9), bỏ FR-6.2 (trùng UC5), FR-6.3 nâng lên S theo [ADR-16](../architecture/adr/ADR-16-policy-assistant.md); thêm FR-6.4 (ADMIN chọn nhà cung cấp AI: Claude, Gemini, DeepSeek; dán API key trong ứng dụng); NFR-1.3 tách tìm đồng nghiệp và trợ lý; NFR-5.21 thêm nhóm `assistant`; LLM do ADMIN chọn qua adapter |
+| 1.7 | 22/11/2026 | Kiểm chéo UC7: FR-7.1 mở rộng theo code (đơn vị, điều chuyển, số dư, ngày lễ, duyệt thay, tài liệu, tài khoản, vai trò); trạng thái FR-7.3; NFR-6.3 = 5 năm theo BR-13 (chốt câu hỏi số 3 mục 8); NFR-5.10 một phần |
 | 1.6 | 22/11/2026 | Kiểm chéo UC5: object storage chỉ dùng presigned URL để tải lên, tải xuống qua API (ADR-13); trạng thái FR-5.1 → 5.3; NFR-5.19 tách hạn URL tải lên (10 phút) và tải xuống (không phát link); NFR-5.23 đổi "20 MB" thành 20 MiB |
 | 1.5 | 18/11/2026 | Cập nhật trạng thái FR-8.1, 8.3, 8.4, 8.6, 8.7 sau ba nhánh code UC8 (`feat/uc8-roles-from-db`, `feat/uc8-role-admin`, `feat/uc8-account-lifecycle`) |
 | 1.4 | 18/11/2026 | Thêm FR-8.7 (ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, theo [ADR-18](../architecture/adr/ADR-18-authorization.md)); nhánh code của FR-8.1, 8.3, 8.4, 8.6 đổi sang `feat/uc8-*` tuần 11 |
@@ -251,9 +252,9 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-7.1 | Ghi audit cho tạo/sửa hồ sơ, đọc trường nhạy cảm, mọi bước của đơn nghỉ | M | Audit ghi cùng giao dịch với thao tác; không ghi giá trị nhạy cảm | Đã có |
+| FR-7.1 | Ghi audit cho tạo/sửa hồ sơ, đọc trường nhạy cảm, mọi bước của đơn nghỉ, thay đổi tổ chức và điều chuyển, số dư phép, ngày lễ, người duyệt thay, kho tài liệu, tài khoản và vai trò (danh sách ở UC7 spec mục 2) | M | Audit ghi cùng giao dịch với thao tác; không ghi giá trị nhạy cảm; có `traceId` của request | Đã có |
 | FR-7.2 | Audit chỉ được thêm, không ai sửa/xóa | M | Lệnh UPDATE/DELETE trên bảng audit bị database chặn | Đã có |
-| FR-7.3 | HR, ADMIN tra cứu audit theo đối tượng, người thực hiện, khoảng thời gian | M | Vai trò khác trả 403 | Một phần: API có, giao diện tuần 10 |
+| FR-7.3 | HR, ADMIN tra cứu audit theo đối tượng, người thực hiện, khoảng thời gian | M | Vai trò khác trả 403 | Đã có (`feat/audit-ui`, 23/11) |
 
 ### 4.8 UC8 – Đăng nhập và tài khoản (FR-8.x)
 
@@ -394,7 +395,7 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 | NFR-5.7 | Giữ token an toàn ở trình duyệt | Token chỉ trong `sessionStorage` (đóng tab là mất), không trong `localStorage`, URL hay log | Review code | Đã có |
 | NFR-5.8 | API kiểm token ở mọi request | Kiểm chữ ký (JWKS), issuer, hạn dùng, client (`azp`/`aud`); sai thì 401 | e2e test token giả, token hết hạn | Đã có |
 | NFR-5.9 | Không tự đăng ký tài khoản | Tài khoản do HR hoặc ADMIN tạo; chỉ liên kết tài khoản với hồ sơ khi email đã xác minh (T-02) | Thử đăng ký trên trang đăng nhập | Một phần: Keycloak đã tắt, Cognito còn cho tự đăng ký. Sửa tuần 10 (`infra/idp-hardening`) |
-| NFR-5.10 | Ghi nhận đăng nhập | Lưu đăng nhập thành công, thất bại, bị khóa và mọi lần cấp, thu hồi vai trò HR, ADMIN (T-03, T-06) | Xem event của IdP và audit | Chưa có. Cách làm theo ADR-17 mục 6; trên Cognito gói Essentials chỉ ghi được lần thành công |
+| NFR-5.10 | Ghi nhận đăng nhập | Lưu đăng nhập thành công, thất bại, bị khóa và mọi lần cấp, thu hồi vai trò HR, ADMIN (T-03, T-06) | Xem event của IdP và audit | Một phần: cấp, thu hồi vai trò có audit (FR-8.7); đăng nhập chưa có, cách làm theo ADR-17 mục 6; trên Cognito gói Essentials chỉ ghi được lần thành công |
 
 **b) Phân quyền**
 
@@ -439,7 +440,7 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 |---|---|---|---|---|
 | NFR-6.1 | Có audit cho thao tác quan trọng | 100% thao tác ghi hồ sơ, đọc trường nhạy cảm, mọi bước của đơn nghỉ; ghi ai, làm gì, đối tượng nào, lúc nào, traceId | e2e test | Đã có |
 | NFR-6.2 | Audit không sửa, không xóa được | Database chặn UPDATE, DELETE trên bảng audit (ADR-09) | e2e test | Đã có |
-| NFR-6.3 | Thời gian lưu audit | Tối thiểu 2 năm (đề xuất, chờ chốt ở mục 8) | Review chính sách lưu trữ | Chưa có |
+| NFR-6.3 | Thời gian lưu audit | 5 năm kể từ lúc ghi, có legal hold (BR-13; mốc nội bộ, HR/pháp chế xác nhận trước production) | Review chính sách lưu trữ | Chưa có quy trình archive; bảng append-only giữ đủ |
 | NFR-6.4 | Mỗi request có mã truy vết | Header `X-Trace-Id` trả về client và có trong mọi dòng log của request | e2e test | Đã có |
 
 ### 6.8 NFR-7 – Chi phí
@@ -572,6 +573,6 @@ Câu hỏi riêng của SRS, cần chốt trước nghiệm thu:
 |---|---|---|---|
 | 1 | SLA với phòng HR | 99,0% trong giờ làm việc, như bảng ở mục 6.13 | NFR-3.1, mục 6.13 |
 | 2 | MFA cho HR, ADMIN có bắt buộc từ version 1 không | **Đã chốt 17/11/2026 (ADR-17):** bắt buộc. Local: Keycloak bắt OTP với role `hr`, `admin`; staging: Cognito bắt buộc mọi tài khoản | NFR-5.4, FR-8.5 |
-| 3 | Thời gian lưu audit | 2 năm | NFR-6.3 |
+| 3 | Thời gian lưu audit | **Đã chốt (TV2, [quy tắc toàn vẹn tổ chức mục 4](../business/org-integrity-rules.md#4-thời-gian-lưu-audit)):** 5 năm theo BR-13 | NFR-6.3 |
 
 Các câu hỏi chưa chốt khác ảnh hưởng tới yêu cầu nằm ở [BRD mục 15](../business/BRD.md#15-vấn-đề-còn-mở-và-quyết-định-đã-chốt). Khi chốt, cập nhật FR hoặc BR liên quan và tăng phiên bản tài liệu này.

@@ -1,12 +1,14 @@
 /**
  * Audit theo nhóm trường (UC1 spec mục 7, AC-1.4.3, NFR-5.18):
- * - Trường tổ chức (phòng ban, chức danh, quản lý, trạng thái, ngày vào làm) và mã nhân viên: ghi giá trị cũ và mới, để dựng
- *   quá trình công tác (FR-1.13) và tra cứu điều chuyển.
+ * - Trường tổ chức (phòng ban, chức danh, quản lý, trạng thái, ngày vào làm): ghi giá trị cũ và mới, để dựng quá trình công
+ *   tác (FR-1.13) và tra cứu điều chuyển.
+ * - Mã nhân viên là mã định danh cá nhân, không phải dữ liệu tổ chức: chỉ ghi tên (quy tắc toàn vẹn tổ chức mục 3, UC7
+ *   AC-7.1.3).
  * - Trường cá nhân (họ tên, email, điện thoại, địa chỉ, ngày sinh) và trường nhạy cảm (CCCD, tài khoản, lương): chỉ ghi tên
  *   trường, giá trị thay bằng `***`.
  */
 export const ORG_FIELDS = ['departmentId', 'positionId', 'managerId', 'status', 'hireDate'] as const;
-const KEEP_VALUE = new Set<string>([...ORG_FIELDS, 'employeeCode']);
+const KEEP_VALUE = new Set<string>(ORG_FIELDS);
 
 export type AuditValue = string | number | null | { from: unknown; to: unknown };
 
