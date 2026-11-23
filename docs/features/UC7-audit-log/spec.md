@@ -8,8 +8,8 @@
 | Yêu cầu (SRS) | FR-7.1 → FR-7.3 |
 | Quy tắc | [ADR-09](../../architecture/adr/ADR-09-append-only-audit.md), ADR-08, ADR-18, [BR-13, BR-14](../../business/leave-rules.md), [quy tắc toàn vẹn tổ chức mục 3, 4](../../business/org-integrity-rules.md) |
 | Mức ưu tiên | M |
-| Trạng thái | Ghi audit đã có ở mọi module; API tra cứu đã có; màn hình tra cứu chưa có (`feat/audit-ui`, trễ so với kế hoạch 20–21/11) |
-| Phiên bản | 1.1 – 23/11/2026 (1.1: kiểm chéo với code UC1 → UC5, UC8, ADR-14, ADR-15, ADR-17, ADR-18, schema, SRS; bảng thao tác đủ theo code; chốt thời gian lưu 5 năm; thêm 12, 13.2, 13.3; Duong chốt D1 → D3 theo đề xuất ngày 23/11) |
+| Trạng thái | Đã code (`feat/audit-ui`, 23/11): ghi audit ở mọi module, API tra cứu, trang `/audit`. Còn audit đăng nhập (AC-7.4.1) |
+| Phiên bản | 1.2 – 23/11/2026 (1.2: code `feat/audit-ui`, mục 12, 13 thành hiện trạng; 1.1: kiểm chéo với code UC1 → UC5, UC8, ADR-14, ADR-15, ADR-17, ADR-18, schema, SRS; bảng thao tác đủ theo code; chốt thời gian lưu 5 năm; thêm 12, 13.2, 13.3; Duong chốt D1 → D3 theo đề xuất ngày 23/11) |
 
 ## 1. Mô tả ngắn
 
@@ -130,12 +130,12 @@ Mỗi bản ghi có:
 
 | Luồng | Màn hình | API |
 |---|---|---|
-| Tra cứu | `/audit` (chưa có, nhánh `feat/audit-ui`) | `GET /audit-logs` |
+| Tra cứu | `/audit` (ô "Lịch sử thao tác" ở trang chủ của HR, ADMIN; link từ hồ sơ và chi tiết đơn của HR) | `GET /audit-logs` |
 | Ghi | Không có màn hình | `AuditService.record` gọi trong cùng giao dịch của từng module |
 
 Response hiện tại: `{ items, page, size, total }`, mỗi item có `id`, `actorId`, `action`, `entityType`, `entityId`,
-`changedFields`, `ip`, `traceId`, `at`. Chưa có tên người thực hiện (mục 13.2). `docs/openapi.yaml` chưa mô tả response, `page`,
-`size` và mã lỗi 400, 403 của API này; cập nhật cùng `feat/audit-ui`.
+`changedFields`, `ip`, `traceId`, `at`, `actorName`. `docs/openapi.yaml` có tham số, danh sách `entity`, `action`; chưa mô tả
+response và mã lỗi (chung cho mọi API, error-codes.md).
 
 ### 9.1 Bản vẽ giao diện
 
@@ -147,7 +147,7 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 
 ![Trang lịch sử thao tác](mockups/uc7-audit.png)
 
-Chỗ bản vẽ khác spec (sửa bản vẽ cùng `feat/audit-ui`):
+Chỗ bản vẽ khác trang đã code (trang theo spec):
 - Dòng `LEAVE_SUBMIT` "Đơn nghỉ 3c8e…" không thể hiện khi đang lọc đối tượng "Nhân viên" (luồng A2).
 - Nhãn vai trò "HR" cạnh tên người thực hiện: audit không lưu vai trò lúc thao tác; bỏ nhãn (mục 13.2).
 - Ô "Tìm đồng nghiệp…" trên nav bar theo quyết định của UC6, không thuộc UC7.
@@ -168,21 +168,21 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
 | Ghi audit cùng giao dịch, chặn sửa xóa | Đã có ở mọi module trong bảng mục 2 | – |
-| API tra cứu | Đã có | Thêm tên người thực hiện, lọc `action` (D3), ADMIN không thấy audit đơn nghỉ, số dư (D1), `entity` sai trả 400 (mục 13.2) |
-| Màn hình tra cứu | Chưa có | TV1, `feat/audit-ui` (kế hoạch 20–21/11, đang trễ) |
-| `traceId`, IP trong audit | **Chưa đạt** ở Organization (đơn vị, chức danh), điều chuyển (`TRANSFER_*`), Identity (`ACCOUNT_INVITE`, `ROLE_GRANT`, `ROLE_REVOKE`): controller không truyền `meta`, cột để `NULL` | TV1, cùng `feat/audit-ui` (AC-7.1.4) |
-| `employeeCode` trong audit | **Chưa đạt**: `employee-audit.ts` còn ghi giá trị, trái quyết định TV2 ở [quy tắc toàn vẹn mục 3](../../business/org-integrity-rules.md#3-nội-dung-audit-theo-nhóm-trường) | TV1, cùng `feat/audit-ui` (AC-7.1.3) |
-| `from`, `to` theo giờ Việt Nam | **Chưa đạt**: `from=2026-11-01` thành 00:00 UTC (07:00 giờ Việt Nam), bỏ mất 7 giờ đầu ngày; `to` không tính mốc | TV1, cùng `feat/audit-ui` (AC-7.3.5) |
-| Tra cứu chỉ theo thời gian (NFR-2.4) | Chưa có chỉ mục theo `at` | Migration mới `ix_audit_at` (BRIN), cùng `feat/audit-ui` (D2) |
+| API tra cứu | Đã có: `actorName`, lọc `action` (D3), ADMIN không thấy audit đơn nghỉ, số dư (D1), `entity`, `action` sai trả 400 | – |
+| Màn hình tra cứu | Đã có: `frontend/src/pages/AuditPage.tsx`, bộ lọc nằm trên URL | – |
+| `traceId`, IP trong audit | Đã có ở mọi module: middleware lưu `traceId`, IP vào request context (`common/request-context.ts`), `AuditService.record` tự lấy khi module không truyền | – |
+| `employeeCode` trong audit | Đã sửa: chỉ ghi tên, giá trị `***` ([quy tắc toàn vẹn mục 3](../../business/org-integrity-rules.md#3-nội-dung-audit-theo-nhóm-trường)). Bản ghi cũ vẫn giữ giá trị (append-only) | – |
+| `from`, `to` theo giờ Việt Nam | Đã sửa (`audit-period.ts`) | – |
+| Tra cứu chỉ theo thời gian (NFR-2.4) | Có chỉ mục BRIN `ix_audit_at` (migration `AuditTimeIndex`) | Đo với 3,75 triệu bản ghi (TV4) |
 | Audit đăng nhập | Chưa có | TV3, `infra/idp-auth-events`, tuần 13 (AC-7.4.1) |
 | Audit cấp, thu hồi vai trò | Đã có (UC8 `feat/uc8-role-admin`) | – (AC-7.4.2) |
 | Thời gian lưu | Đã chốt 5 năm (BR-13) | Quy trình archive, legal hold trước production (ngoài MVP) |
 
-## 13. Thiết kế đề xuất cho phần chưa có
+## 13. Thiết kế màn hình tra cứu và quyết định
 
 ### 13.1 Màn hình tra cứu
 
-> TV1 chốt trong PR `feat/audit-ui`.
+> Đã code ở `feat/audit-ui` (23/11/2026).
 
 - **Route** `/audit`, chỉ hiện trong menu với HR, ADMIN.
 - **Bộ lọc:** loại đối tượng (danh sách ở mục 8, hiện tên tiếng Việt), đối tượng cụ thể (với nhân viên là ô tìm theo danh bạ;
@@ -193,7 +193,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 - **Mở nhanh:** trang hồ sơ nhân viên và chi tiết đơn của HR có link "Lịch sử thao tác" mở `/audit` với bộ lọc điền sẵn.
 - Không có nút sửa, xóa. Không có xuất file, để audit không thành đường lộ dữ liệu (BR-14).
 
-### 13.2 Thay đổi API đi kèm
+### 13.2 Thay đổi API đi kèm (đã code)
 
 Không đổi đường dẫn, không phá client cũ.
 

@@ -250,9 +250,9 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-7.1 | Ghi audit cho tạo/sửa hồ sơ, đọc trường nhạy cảm, mọi bước của đơn nghỉ, thay đổi tổ chức và điều chuyển, số dư phép, ngày lễ, người duyệt thay, kho tài liệu, tài khoản và vai trò (danh sách ở UC7 spec mục 2) | M | Audit ghi cùng giao dịch với thao tác; không ghi giá trị nhạy cảm; có `traceId` của request | Đã có; `traceId` thiếu ở Organization, điều chuyển, Identity |
+| FR-7.1 | Ghi audit cho tạo/sửa hồ sơ, đọc trường nhạy cảm, mọi bước của đơn nghỉ, thay đổi tổ chức và điều chuyển, số dư phép, ngày lễ, người duyệt thay, kho tài liệu, tài khoản và vai trò (danh sách ở UC7 spec mục 2) | M | Audit ghi cùng giao dịch với thao tác; không ghi giá trị nhạy cảm; có `traceId` của request | Đã có |
 | FR-7.2 | Audit chỉ được thêm, không ai sửa/xóa | M | Lệnh UPDATE/DELETE trên bảng audit bị database chặn | Đã có |
-| FR-7.3 | HR, ADMIN tra cứu audit theo đối tượng, người thực hiện, khoảng thời gian | M | Vai trò khác trả 403 | Một phần: API có, giao diện `feat/audit-ui` tuần 11 (trễ) |
+| FR-7.3 | HR, ADMIN tra cứu audit theo đối tượng, người thực hiện, khoảng thời gian | M | Vai trò khác trả 403 | Đã có (`feat/audit-ui`, 23/11) |
 
 ### 4.8 UC8 – Đăng nhập và tài khoản (FR-8.x)
 

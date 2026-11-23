@@ -1330,7 +1330,7 @@ describe('HRHelper API (e2e)', () => {
       const logs = (await http.get(`/api/v1/audit-logs?entity=employee&entityId=${employeeId}`).set(HR)).body.items;
       const up = logs.find((l: any) => l.action === 'PROFILE_FILE_UPLOAD' && l.changedFields.fileId === confirm.body.id);
       expect(up.changedFields).toMatchObject({ section: 'cv', contentType: PDF, sha256: expect.any(String) });
-      expect(JSON.stringify(up)).not.toContain('Trần Thị Nhân');
+      expect(JSON.stringify(up.changedFields)).not.toContain('Trần Thị Nhân'); // tên file gốc; `actorName` là tên người tải, không lưu trong audit
 
       const cr = (await http.post(`/api/v1/employees/${employeeId}/change-requests`).set(EMPLOYEE).set(key()).send({ section: 'cv', action: 'CREATE', fileIds: [confirm.body.id] }).expect(202)).body;
       expect(cr.files[0]).toMatchObject({ id: confirm.body.id, status: 'PENDING_REVIEW' });
@@ -2237,6 +2237,85 @@ describe('HRHelper API (e2e)', () => {
     it('danh sách ngày lễ có loại', async () => {
       const res = await http.get('/api/v1/leave-holidays?year=2026').set(EMPLOYEE).expect(200);
       expect(res.body.find((h: any) => h.date === '2026-04-27')).toMatchObject({ kind: 'COMPENSATORY' });
+    });
+  });
+
+  describe('UC7 tra cứu audit (FR-7.3; AC-7.1.4, AC-7.3.3, AC-7.3.5 → AC-7.3.8)', () => {
+    const logs = (q: string, who = HR) => http.get(`/api/v1/audit-logs?${q}`).set(who);
+
+    it('from=to=ngày: lấy đủ ngày theo giờ Việt Nam, kể cả 0–7 giờ sáng (AC-7.3.5)', async () => {
+      const { DataSource } = await import('typeorm');
+      const ds = app.get(DataSource);
+      const id = `uc7-${Date.now()}`;
+      for (const at of ['2026-10-31T23:59:00+07:00', '2026-11-01T01:00:00+07:00', '2026-11-01T23:59:00+07:00', '2026-11-02T00:00:00+07:00']) {
+        await ds.query(`INSERT INTO audit.audit_log (actor_id, action, entity_type, entity_id, at) VALUES (NULL, 'HOLIDAY_CREATE', 'holiday', $1, $2)`, [id, at]);
+      }
+      const body = (await logs(`entity=holiday&entityId=${id}&from=2026-11-01&to=2026-11-01`).expect(200)).body;
+      expect(body.total).toBe(2);
+      expect(body.items.map((a: any) => new Date(a.at).toISOString())).toEqual(['2026-11-01T16:59:00.000Z', '2026-10-31T18:00:00.000Z']);
+      expect(body.items[0].actorName).toBeNull();
+    });
+
+    it('sai tham số: 400 (AC-7.3.3)', async () => {
+      for (const q of ['from=01/11/2026', 'to=2026-02-30', 'actor=abc', 'size=101', 'entity=employe', 'action=ABC', 'from=2026-11-02&to=2026-11-01']) {
+        await logs(q).expect(400);
+      }
+    });
+
+    it('lọc theo hành động, nhiều giá trị; có tên người thực hiện (AC-7.3.8)', async () => {
+      await http.get(`/api/v1/employees/${employeeId}?include=sensitive`).set(HR).expect(200);
+      const body = (await logs('action=VIEW_SENSITIVE&action=ROLE_GRANT&size=50').expect(200)).body;
+      expect(body.items.length).toBeGreaterThan(0);
+      expect(body.items.every((a: any) => ['VIEW_SENSITIVE', 'ROLE_GRANT'].includes(a.action))).toBe(true);
+      const comma = (await logs('action=VIEW_SENSITIVE,ROLE_GRANT&size=1').expect(200)).body;
+      expect(comma.total).toBe(body.total);
+      const byHr = body.items.find((a: any) => a.action === 'VIEW_SENSITIVE' && a.actorId);
+      expect(typeof byHr.actorName).toBe('string');
+    });
+
+    it('ADMIN không thấy audit đơn nghỉ, số dư phép; HR thấy (AC-7.3.7, D1)', async () => {
+      const hr = (await logs('entity=leave_request&size=1').expect(200)).body;
+      expect(hr.total).toBeGreaterThan(0);
+      expect((await logs('entity=leave_request', ADMIN).expect(200)).body.total).toBe(0);
+      expect((await logs('entity=leave_balance', ADMIN).expect(200)).body.total).toBe(0);
+      const all = (await logs('size=100', ADMIN).expect(200)).body;
+      expect(all.items.some((a: any) => ['leave_request', 'leave_balance'].includes(a.entityType))).toBe(false);
+    });
+
+    it('traceId, IP của request có trong audit của module không truyền meta (AC-7.1.4)', async () => {
+      const hq = (await http.get('/api/v1/departments').set(HR)).body.find((d: any) => d.code === 'HQ');
+      const traceId = `uc7-trace-${Date.now()}`;
+      const dept = (
+        await http
+          .post('/api/v1/departments')
+          .set(HR)
+          .set('X-Trace-Id', traceId)
+          .send({ code: `T7-${Date.now() % 100000}`, name: 'Phòng audit', office: 'Hà Nội', unitType: 'DEPARTMENT', parentId: hq.id })
+          .expect(201)
+      ).body;
+      const items = (await logs(`entity=department&entityId=${dept.id}`).expect(200)).body.items;
+      expect(items[0]).toMatchObject({ action: 'CREATE', traceId });
+      expect(items[0].ip).toBeTruthy();
+    });
+
+    it('employeeCode chỉ ghi tên, không ghi giá trị (AC-7.1.3)', async () => {
+      const positions = (await http.get('/api/v1/positions').set(HR)).body;
+      const me = (await http.get(`/api/v1/employees/${employeeId}`).set(HR)).body;
+      const code = `E7${String(Date.now()).slice(-4)}`;
+      const created = (
+        await http.post('/api/v1/employees').set(HR).send({
+          employeeCode: code,
+          fullName: 'Audit Mã NV',
+          workEmail: `audit-code-${Date.now() % 100000}@hr.local`,
+          departmentId: me.departmentId,
+          positionId: positions.find((p: any) => p.code !== 'CEO').id,
+          managerId,
+          hireDate: '2026-11-01',
+        }).expect(201)
+      ).body;
+      const items = (await logs(`entity=employee&entityId=${created.id}&action=CREATE`).expect(200)).body.items;
+      expect(items[0].changedFields.employeeCode).toBe('***');
+      expect(JSON.stringify(items[0])).not.toContain(code);
     });
   });
 

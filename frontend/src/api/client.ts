@@ -230,6 +230,20 @@ export interface HistoryEntry {
   fields: string[];
 }
 
+/** Một dòng `GET /audit-logs` (UC7). `actorName` null: job, worker hoặc hồ sơ không còn. */
+export interface AuditLog {
+  id: string;
+  actorId: string | null;
+  actorName: string | null;
+  action: string;
+  entityType: string;
+  entityId: string;
+  changedFields: Record<string, unknown> | null;
+  ip: string | null;
+  traceId: string | null;
+  at: string;
+}
+
 export interface Page<T> {
   items: T[];
   page: number;

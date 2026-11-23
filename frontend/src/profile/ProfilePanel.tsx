@@ -224,6 +224,9 @@ function ProfileHome({ s }: { s: ProfileSummary }) {
           <Link className="button primary" to={`/employees/${s.id}/edit`}>Sửa hồ sơ</Link>{' '}
           {me?.roles.includes('HR') && (
             <button type="button" onClick={() => setTransferOpen(true)}>Điều chuyển</button>
+          )}{' '}
+          {me?.roles.includes('HR') && (
+            <Link className="button" to={`/audit?entity=employee&entityId=${s.id}`}>Lịch sử thao tác</Link>
           )}
           {transferOpen && (
             <TransferDialog

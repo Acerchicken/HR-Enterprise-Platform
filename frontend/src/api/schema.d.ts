@@ -1494,10 +1494,15 @@ export interface operations {
     AuditController_search: {
         parameters: {
             query?: {
-                entity?: string;
+                entity?: "employee" | "department" | "position" | "leave_request" | "leave_balance" | "holiday" | "approval_delegation" | "document" | "user_account" | "role_assignment";
                 entityId?: string;
+                /** @description UUID hồ sơ nhân viên của người thực hiện */
                 actor?: string;
+                /** @description Một hoặc nhiều hành động (lặp tham số hoặc ngăn bằng dấu phẩy), UC7 D3 */
+                action?: ("CREATE" | "UPDATE" | "VIEW_SENSITIVE" | "PROFILE_CHANGE_SUBMIT" | "PROFILE_CHANGE_CANCEL" | "PROFILE_CHANGE_APPROVE" | "PROFILE_CHANGE_REJECT" | "PROFILE_ITEM_CREATE" | "PROFILE_ITEM_UPDATE" | "PROFILE_ITEM_DELETE" | "PROFILE_FILE_UPLOAD" | "PROFILE_FILE_DELETE" | "PROFILE_FILE_DOWNLOAD" | "TRANSFER_SCHEDULE" | "TRANSFER_CANCEL" | "TRANSFER" | "TRANSFER_FAIL" | "LEAVE_SUBMIT" | "LEAVE_APPROVE" | "LEAVE_REJECT" | "LEAVE_HR_APPROVE" | "LEAVE_HR_REJECT" | "LEAVE_CANCEL" | "LEAVE_CANCEL_REQUEST" | "LEAVE_CANCEL_APPROVED" | "LEAVE_CANCEL_REQUEST_REJECT" | "LEAVE_COMPLETE" | "LEAVE_SYSTEM_CANCEL" | "LEAVE_RECALCULATE" | "VIEW_LEAVE_REASON" | "LEAVE_BALANCE_ADJUST" | "LEAVE_BALANCE_OVERDRAWN" | "HOLIDAY_CREATE" | "HOLIDAY_DELETE" | "DELEGATION_CREATE" | "DELEGATION_END" | "DOCUMENT_CREATE" | "DOCUMENT_PUBLISH" | "DOCUMENT_UPDATE" | "DOCUMENT_HIDE" | "DOCUMENT_RESTORE" | "ACCOUNT_INVITE" | "ACCOUNT_SYNC_FAILED" | "ROLE_GRANT" | "ROLE_REVOKE")[];
+                /** @description YYYY-MM-DD (00:00 giờ Việt Nam) hoặc ngày giờ ISO 8601; tính cả mốc */
                 from?: string;
+                /** @description YYYY-MM-DD (tính cả ngày, giờ Việt Nam) hoặc ngày giờ ISO 8601; tính cả mốc */
                 to?: string;
             };
             header?: never;
@@ -3062,6 +3067,9 @@ export interface operations {
         parameters: {
             query?: {
                 type?: "POLICY" | "PROCESS" | "GUIDE" | "FORM" | "NOTICE";
+                /** @description Tìm trong tiêu đề, không phân biệt hoa thường */
+                q?: string;
+                state?: "VISIBLE" | "HIDDEN" | "NOT_READY";
             };
             header?: never;
             path?: never;

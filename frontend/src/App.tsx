@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 import { ShellProvider } from './components/shell';
 import { RolesPage } from './pages/admin/RolesPage';
 import { ApprovalsPage } from './pages/ApprovalsPage';
+import { AuditPage } from './pages/AuditPage';
 import { ExpiringContractsPage } from './pages/ExpiringContractsPage';
 import { CallbackPage } from './pages/CallbackPage';
 import { DirectoryPage } from './pages/DirectoryPage';
@@ -80,6 +81,7 @@ function AppRoutes() {
           <Route path="documents/manage" element={<DocumentManagePage />} />
           <Route path="documents/:id" element={<DocumentDetailPage />} />
           <Route path="admin/roles" element={<RolesPage />} />
+          <Route path="audit" element={<AuditPage />} />
           <Route path="coming-soon" element={<ComingSoonPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

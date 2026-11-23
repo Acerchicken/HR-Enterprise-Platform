@@ -56,7 +56,7 @@ const HR_TILES: Tile[] = [
   { title: 'Quản lý nhân viên', desc: 'Thêm, sửa hồ sơ, nghỉ việc', icon: UserPlus, to: '/employees/new', who: ['HR'] },
   { title: 'Hợp đồng sắp hết hạn', desc: 'Hết hạn trong 30 ngày tới', icon: CalendarClock, to: '/contracts/expiring', who: ['HR'] },
   { title: 'Đăng tài liệu', desc: 'Quy chế, biểu mẫu, phạm vi xem', icon: Upload, to: '/documents/manage', who: ['HR'] },
-  { title: 'Lịch sử thao tác', desc: 'Ai làm gì, lúc nào', icon: History, to: '/coming-soon', who: ['HR', 'ADMIN'], ready: false },
+  { title: 'Lịch sử thao tác', desc: 'Ai làm gì, lúc nào', icon: History, to: '/audit', who: ['HR', 'ADMIN'] },
   { title: 'Phân quyền', desc: 'Cấp, thu hồi vai trò HR, ADMIN', icon: ShieldCheck, to: '/admin/roles', who: ['ADMIN'] },
 ];
 
