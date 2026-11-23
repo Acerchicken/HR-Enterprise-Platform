@@ -30,6 +30,8 @@ hiệu năng tra cứu đo với dữ liệu lớn.
 | AC-7.3.4 | – | – | Chưa có giao diện |
 | AC-7.3.5 | – | – | Chưa đạt (`from` theo UTC, `to` không tính ngày kết thúc) |
 | AC-7.3.6 | "tạo → quản lý duyệt → HR hoàn tất …" (lọc `leave_request`) | Cần thêm: lọc `employee` không có bước đơn | Một phần |
+| AC-7.3.7 | – | – | Chưa có (D1) |
+| AC-7.3.8 | – | – | Chưa có (D3) |
 | AC-7.4.1 | – | – | Chưa có tính năng |
 | AC-7.4.2 | "cấp HR: …(AC-8.7.1)", "thu hồi HR: … audit có lý do (AC-8.7.2)", "HR nghỉ việc mất HR, có audit và event …" | – | Có |
 
@@ -58,5 +60,7 @@ npm run test:e2e
 - AC-7.3.1: lọc theo `actor` và khoảng thời gian; AC-7.3.5: bản ghi lúc 01:00 giờ Việt Nam ngày 1/11 và lúc 23:59 phải có khi
   `from=to=2026-11-01`. AC-7.3.3: ngày sai định dạng, `actor=abc`, `size = 101`.
 - AC-7.1.4: `traceId` gửi trong header `X-Trace-Id` có trong audit của `POST /departments`, điều chuyển, cấp vai trò.
-- D1 (nếu chốt): ADMIN lọc `entity=leave_request` nhận rỗng hoặc 403, HR nhận đủ.
+- AC-7.3.7: ADMIN lọc `entity=leave_request` nhận rỗng, không lọc cũng không có bản ghi đơn nghỉ; HR nhận đủ.
+- AC-7.3.8: lọc nhiều `action`; `action=ABC` trả 400.
+- NFR-2.4: `EXPLAIN` truy vấn chỉ theo `from`, `to` dùng `ix_audit_at`.
 - AC-7.1.1 cho thao tác kho tài liệu (`DOCUMENT_*`).

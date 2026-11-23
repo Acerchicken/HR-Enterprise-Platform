@@ -9,7 +9,7 @@
 | Quy tắc | [ADR-09](../../architecture/adr/ADR-09-append-only-audit.md), ADR-08, ADR-18, [BR-13, BR-14](../../business/leave-rules.md), [quy tắc toàn vẹn tổ chức mục 3, 4](../../business/org-integrity-rules.md) |
 | Mức ưu tiên | M |
 | Trạng thái | Ghi audit đã có ở mọi module; API tra cứu đã có; màn hình tra cứu chưa có (`feat/audit-ui`, trễ so với kế hoạch 20–21/11) |
-| Phiên bản | 1.1 – 22/11/2026 (1.1: kiểm chéo với code UC1 → UC5, UC8, ADR-14, ADR-15, ADR-17, ADR-18, schema, SRS; bảng thao tác đủ theo code; chốt thời gian lưu 5 năm; thêm 12, 13.2, 13.3) |
+| Phiên bản | 1.1 – 23/11/2026 (1.1: kiểm chéo với code UC1 → UC5, UC8, ADR-14, ADR-15, ADR-17, ADR-18, schema, SRS; bảng thao tác đủ theo code; chốt thời gian lưu 5 năm; thêm 12, 13.2, 13.3; Duong chốt D1 → D3 theo đề xuất ngày 23/11) |
 
 ## 1. Mô tả ngắn
 
@@ -27,7 +27,7 @@ của UC7 không áp cho API đó.
 | Tác nhân | Được làm gì | Giới hạn theo dữ liệu |
 |---|---|---|
 | HR | Tra cứu audit | Không sửa, không xóa |
-| ADMIN | Tra cứu audit | Như HR. Còn chờ chốt ADMIN có được thấy audit đơn nghỉ, số dư phép không (mục 13.3, D1) |
+| ADMIN | Tra cứu audit | Như HR, **trừ** audit đơn nghỉ và số dư phép (`leave_request`, `leave_balance`): API lọc bỏ khi người gọi không có `HR` (D1, chốt 23/11) |
 | Nhân viên, quản lý | Không truy cập `GET /audit-logs` | Chủ hồ sơ vẫn xem nhật ký hồ sơ của mình qua UC1 FR-1.11 |
 | Hệ thống (các module) | Ghi audit qua `AuditService.record(entry, manager)` trong cùng giao dịch | Không ghi giá trị nhạy cảm, lý do sức khỏe, ghi chú tự do của đơn |
 | Worker, lệnh quản trị | `identity-sync` và `npm run grant-admin` ghi thẳng bằng SQL `INSERT` (không qua `AuditService`), `actor_id` để `NULL` | Chỉ `INSERT`, không có `ip`, `traceId` |
@@ -93,7 +93,7 @@ Mỗi bản ghi có:
 - **A2 (bước 1), tìm theo đơn nghỉ:** `entity = leave_request` và ID đơn, để xem toàn bộ các bước của một đơn. Bộ lọc
   `entity = employee` **không** trả các bước của đơn nghỉ của nhân viên đó (đối tượng khác).
 - **A3, phần ghi khi thao tác thất bại:** giao dịch bị hủy, không có bản ghi audit, không có thay đổi dữ liệu.
-- **A4 (bước 1), chỉ lọc theo thời gian:** không chọn đối tượng, người; cần chỉ mục theo `at` để đạt NFR-2.4 (mục 13.3, D2).
+- **A4 (bước 1), chỉ lọc theo thời gian:** không chọn đối tượng, người; dùng chỉ mục BRIN `ix_audit_at` để đạt NFR-2.4 (mục 13.3, D2).
 
 ## 6. Ngoại lệ
 
@@ -113,7 +113,7 @@ Mỗi bản ghi có:
   hạn chỉ archive bất biến hoặc hủy bằng quy trình có phê duyệt, không phải quyền xóa của ứng dụng. Chưa có quy trình đó.
 - BR-14: không đưa lý do sức khỏe, ghi chú tự do của đơn vào audit; ADMIN không được thấy lý do qua audit.
 - NFR-5.18: không lộ dữ liệu nhạy cảm qua kênh phụ. Loại phép (`leaveType`) trong audit đơn nghỉ là thông tin sức khỏe gián tiếp
-  (ốm, thai sản), xem D1.
+  (ốm, thai sản), nên ADMIN không thấy audit đơn nghỉ, số dư phép (D1).
 
 ## 8. Dữ liệu vào
 
@@ -123,6 +123,7 @@ Mỗi bản ghi có:
 | `entityId` | Không | ID đối tượng (với `leave_balance` là id nhân viên, với `holiday` là ngày) |
 | `actor` | Không | UUID hồ sơ nhân viên của người thực hiện (không phải ID tài khoản) |
 | `from`, `to` | Không | Ngày `YYYY-MM-DD` hoặc ngày giờ ISO 8601. Cả hai tính cả mốc theo giờ Việt Nam: `from=2026-11-01` bắt đầu 00:00 ngày 1/11 giờ Việt Nam, `to=2026-11-01` lấy hết ngày 1/11 |
+| `action` | Không | Một hoặc nhiều hành động trong bảng mục 2 (D3); giá trị lạ trả 400 |
 | `page`, `size` | Không | `page` ≥ 1; `size` 1 → 100, mặc định 20 |
 
 ## 9. Giao diện và API
@@ -167,12 +168,12 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
 | Ghi audit cùng giao dịch, chặn sửa xóa | Đã có ở mọi module trong bảng mục 2 | – |
-| API tra cứu | Đã có | Thêm tên người thực hiện, lọc `action`, `entity` sai trả 400 (mục 13.2) |
+| API tra cứu | Đã có | Thêm tên người thực hiện, lọc `action` (D3), ADMIN không thấy audit đơn nghỉ, số dư (D1), `entity` sai trả 400 (mục 13.2) |
 | Màn hình tra cứu | Chưa có | TV1, `feat/audit-ui` (kế hoạch 20–21/11, đang trễ) |
 | `traceId`, IP trong audit | **Chưa đạt** ở Organization (đơn vị, chức danh), điều chuyển (`TRANSFER_*`), Identity (`ACCOUNT_INVITE`, `ROLE_GRANT`, `ROLE_REVOKE`): controller không truyền `meta`, cột để `NULL` | TV1, cùng `feat/audit-ui` (AC-7.1.4) |
 | `employeeCode` trong audit | **Chưa đạt**: `employee-audit.ts` còn ghi giá trị, trái quyết định TV2 ở [quy tắc toàn vẹn mục 3](../../business/org-integrity-rules.md#3-nội-dung-audit-theo-nhóm-trường) | TV1, cùng `feat/audit-ui` (AC-7.1.3) |
 | `from`, `to` theo giờ Việt Nam | **Chưa đạt**: `from=2026-11-01` thành 00:00 UTC (07:00 giờ Việt Nam), bỏ mất 7 giờ đầu ngày; `to` không tính mốc | TV1, cùng `feat/audit-ui` (AC-7.3.5) |
-| Tra cứu chỉ theo thời gian (NFR-2.4) | Chưa có chỉ mục theo `at` | D2 |
+| Tra cứu chỉ theo thời gian (NFR-2.4) | Chưa có chỉ mục theo `at` | Migration mới `ix_audit_at` (BRIN), cùng `feat/audit-ui` (D2) |
 | Audit đăng nhập | Chưa có | TV3, `infra/idp-auth-events`, tuần 13 (AC-7.4.1) |
 | Audit cấp, thu hồi vai trò | Đã có (UC8 `feat/uc8-role-admin`) | – (AC-7.4.2) |
 | Thời gian lưu | Đã chốt 5 năm (BR-13) | Quy trình archive, legal hold trước production (ngoài MVP) |
@@ -185,7 +186,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 - **Route** `/audit`, chỉ hiện trong menu với HR, ADMIN.
 - **Bộ lọc:** loại đối tượng (danh sách ở mục 8, hiện tên tiếng Việt), đối tượng cụ thể (với nhân viên là ô tìm theo danh bạ;
-  loại khác nhập ID), người thực hiện (ô tìm theo danh bạ, gửi UUID hồ sơ), hành động (nếu D3 chọn có), từ ngày, đến ngày
+  loại khác nhập ID), người thực hiện (ô tìm theo danh bạ, gửi UUID hồ sơ), hành động (chọn nhiều, nhóm theo module, D3), từ ngày, đến ngày
   (tính cả hai ngày).
 - **Bảng:** thời điểm (giờ Việt Nam), người thực hiện (tên, "Hệ thống" khi `actorId` NULL), hành động, đối tượng (link tới hồ
   sơ, đơn, tài liệu nếu người xem có quyền), `traceId` (nút sao chép), nút mở `changedFields`.
@@ -200,11 +201,14 @@ Không đổi đường dẫn, không phá client cũ.
   Không thêm vai trò vì audit không lưu vai trò lúc thao tác.
 - `entity` ngoài danh sách mục 8 trả 400 thay vì rỗng, để lỗi gõ không bị hiểu là "không có ai làm gì".
 - `from`, `to` nhận `YYYY-MM-DD` là ngày theo giờ Việt Nam (`Asia/Ho_Chi_Minh`), `to` cộng một ngày rồi so `<`.
-- Lọc `action` (một hoặc nhiều giá trị) nếu D3 chọn có.
+- Lọc `action` (một hoặc nhiều giá trị, D3).
+- Người gọi chỉ có `ADMIN` (không có `HR`): truy vấn luôn thêm `entity_type NOT IN ('leave_request', 'leave_balance')`; lọc
+  `entity=leave_request` hoặc `leave_balance` trả rỗng (D1). Dropdown đối tượng của ADMIN không có hai loại này.
+- Migration mới: `CREATE INDEX ix_audit_at ON audit.audit_log USING brin (at)` (D2).
 
-### 13.3 Quyết định chờ Duong
+### 13.3 Quyết định đã chốt (Duong, 23/11/2026, theo đề xuất)
 
-| Mã | Câu hỏi | Đề xuất | Lý do |
+| Mã | Câu hỏi | Chốt | Lý do |
 |---|---|---|---|
 | D1 | ADMIN có được thấy audit đơn nghỉ, số dư phép (`leave_request`, `leave_balance`) không? Audit có `leaveType` (`SICK`, `MATERNITY`), số ngày | **Không.** API lọc bỏ hai loại đối tượng này với người chỉ có `ADMIN`; HR thấy đủ | BR-14, NFR-5.18 cấm lộ loại phép ốm, thai sản qua kênh phụ (email đã che); ADMIN là vai trò kỹ thuật, không xử lý đơn (authorization.md). ADMIN vẫn thấy `VIEW_SENSITIVE` của HR để giám sát HR |
 | D2 | Thêm chỉ mục cho tra cứu chỉ theo thời gian? | **Có**, migration mới `CREATE INDEX ix_audit_at ON audit.audit_log USING brin (at)` | Hai chỉ mục hiện có đều bắt đầu bằng `entity_type` hoặc `actor_id`; lọc chỉ theo ngày phải quét cả bảng 3,75 triệu dòng, khó đạt NFR-2.4. BRIN nhỏ, hợp bảng chỉ thêm theo thời gian |

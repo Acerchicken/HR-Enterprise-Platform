@@ -32,7 +32,7 @@
 
 ### FR-7.3 Tra cứu (M, có API, chưa có giao diện)
 
-> Đề xuất thêm chờ Duong chốt (spec 13.3): D1 ADMIN không thấy audit đơn nghỉ, số dư phép; D3 lọc theo hành động.
+> Duong chốt 23/11 (spec 13.3): D1 ADMIN không thấy audit đơn nghỉ, số dư phép; D2 chỉ mục theo thời gian; D3 lọc theo hành động.
 
 - **AC-7.3.1** Khi HR hoặc ADMIN lọc theo `entity`, `entityId`, `actor`, `from`, `to`. Thì chỉ trả bản ghi khớp, mới nhất
   trước, có phân trang.
@@ -43,6 +43,9 @@
 - **AC-7.3.5** *(chưa đạt)* Khi lọc `from=2026-11-01&to=2026-11-01`. Thì trả mọi bản ghi từ 00:00 đến hết ngày 1/11 theo
   giờ Việt Nam (`from` hiện tính theo UTC nên bỏ mất 0–7 giờ sáng; `to` không tính ngày kết thúc).
 - **AC-7.3.6** Khi `entity=leave_request` và ID đơn. Thì trả đủ các bước của đơn; lọc `entity=employee` không trả bước của đơn.
+- **AC-7.3.7** *(chưa có)* Khi người chỉ có `ADMIN` tra cứu. Thì không có bản ghi `leave_request`, `leave_balance`; HR thấy đủ (D1,
+  BR-14, NFR-5.18).
+- **AC-7.3.8** *(chưa có)* Khi lọc `action=VIEW_SENSITIVE&action=ROLE_GRANT`. Thì chỉ trả hai hành động đó; hành động lạ trả 400 (D3).
 
 ### NFR-5.10 Ghi đăng nhập và cấp quyền
 
@@ -61,7 +64,7 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| Màn hình tra cứu; `from`, `to` theo giờ Việt Nam; `actorName`; `traceId` ở mọi module; bỏ giá trị `employeeCode`; D1 → D3 sau khi chốt | AC-7.1.3, AC-7.1.4, AC-7.3.4, AC-7.3.5 | TV1 | `feat/audit-ui` | 11 (trễ) |
+| Màn hình tra cứu; `from`, `to` theo giờ Việt Nam; `actorName`; `traceId` ở mọi module; bỏ giá trị `employeeCode`; D1 → D3 (lọc ADMIN, `ix_audit_at`, lọc `action`) | AC-7.1.3, AC-7.1.4, AC-7.3.4, AC-7.3.5, AC-7.3.7, AC-7.3.8 | TV1 | `feat/audit-ui` | 11 (trễ) |
 | ~~Chốt thời gian lưu audit~~: đã chốt 5 năm (BR-13), SRS NFR-6.3 sửa theo | – | TV2 | `docs/org-integrity-rules` | Xong |
 | Ca kiểm thử lọc theo `actor`, thời gian; audit không chứa giá trị nhạy cảm; thao tác lỗi không sinh audit; `traceId` | AC-7.1.2, AC-7.1.3, AC-7.1.4, AC-7.3.1, AC-7.3.6 | TV4 | `docs/test-cases-uc2-uc5-uc7` | 11 |
 | Đo NFR-2.4 với 3,75 triệu bản ghi giả | – | TV4 | trong load test tuần 11 | 11 |

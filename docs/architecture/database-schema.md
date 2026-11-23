@@ -672,7 +672,7 @@ Ghi trong cùng transaction với thao tác nghiệp vụ (`AuditService.record(
 | `at` | timestamptz | NN, mặc định `now()` | |
 
 Index: `ix_audit_entity (entity_type, entity_id, at)` – lịch sử một đối tượng; `ix_audit_actor (actor_id, at)` – việc một
-người đã làm. Chưa có chỉ mục cho tra cứu chỉ theo thời gian; đề xuất BRIN `ix_audit_at (at)` ở UC7 spec 13.3 (D2). Lưu 5 năm
+người đã làm. Chưa có chỉ mục cho tra cứu chỉ theo thời gian; thêm BRIN `ix_audit_at (at)` ở `feat/audit-ui` (UC7 spec 13.3, D2 chốt 23/11). Lưu 5 năm
 (BR-13); worker `identity-sync` và lệnh `grant-admin` ghi bằng SQL thẳng.
 
 ### Schema `document` – kho tài liệu HR (UC5)
