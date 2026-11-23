@@ -11,7 +11,7 @@
 | Web | Đang làm (nhánh `feat/document-ui`) |
 | Database | Schema `document` (`document`, `document_scope`, `document_version`); migration `1731300000000-Documents` |
 | Dịch vụ ngoài | Object storage: S3Mock (local), S3 (staging) |
-| Queue (sau ADR-15) | Event `document.*` qua `document.outbox` cho assistant service của UC6 (spec 13.2, ADR-16, chưa có) |
+| Queue (sau ADR-15) | Event `document.*` qua outbox chung cho assistant service của UC6 (spec 13.2, ADR-16, `feat/assistant-service`); lần đầu chạy `npm run assistant:sync` |
 
 ## 2. Biến môi trường
 

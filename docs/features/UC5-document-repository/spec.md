@@ -118,7 +118,7 @@ sequenceDiagram
 - [ADR-18](../../architecture/adr/ADR-18-authorization.md): lớp 1 `@Roles('HR')` ở controller cho thao tác quản lý; lớp 3 điều
   kiện phạm vi trong `WHERE` (`visibleQuery` trong `document.service.ts`). Hàm thuần `canView` trong `document-rules.ts` chỉ dùng
   cho unit test, nên phải giữ cùng logic với câu SQL (13.3).
-- [ADR-15](../../architecture/adr/ADR-15-service-extraction.md): module document phát event qua `document.outbox` cho assistant
+- [ADR-15](../../architecture/adr/ADR-15-service-extraction.md): module document phát event qua outbox chung cho assistant
   service (13.2).
 
 ## 8. Dữ liệu vào
@@ -218,7 +218,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 |---|---|---|
 | API đăng, phiên bản, phạm vi, tải qua API, ẩn, khôi phục | Đã có (PR #64) | SRS đã cập nhật trạng thái FR-5.x (22/11) |
 | Giao diện kho tài liệu; `fields` ở lỗi 400; chặn đơn vị `INACTIVE` (D3) | Đã có (22/11) | – |
-| Event tài liệu cho assistant service (`document.outbox`) | Chưa có | TV1, đầu nhánh `feat/assistant-service` (13.2, D1) |
+| Event tài liệu cho assistant service (outbox chung) | Đã có (`feat/assistant-service`) | TV1 (13.2, D1) |
 | Dọn phiên bản `PENDING` bỏ dở | Chưa có | Đánh đổi đã ghi trong ADR-13; đề xuất lifecycle rule ở bucket (deploy.md mục 7) |
 | Local: object storage | Đã có | S3Mock trong docker-compose (PR #68) |
 | Staging: biến `STORAGE_*`, bucket tài liệu | Terraform đã merge (PR #70), chưa apply | TV3 apply tuần 12; đổi mã hóa sang KMS, bỏ `GET`, `HEAD` khỏi CORS (deploy.md mục 3) |
@@ -254,9 +254,10 @@ Theo giao diện chung: trang `/documents` mở từ ô "Tra cứu tài liệu" 
 > tìm tài liệu theo từ khóa.
 
 Assistant service của UC6 không đọc schema `document`, nên phải nhận đủ dữ liệu qua event. Module document ghi event vào
-`document.outbox` **trong cùng transaction** với thay đổi (quy tắc 3 của
-[event-contract](../../architecture/event-contract.md#6-quy-tắc-khi-đổi-hợp-đồng)), routing key `document.<Event>`, publisher
-dùng chung cách của `leave.outbox`.
+outbox chung `leave.outbox` **trong cùng transaction** với thay đổi (như module identity, employee; xem quy tắc 3 của
+[event-contract](../../architecture/event-contract.md#6-quy-tắc-khi-đổi-hợp-đồng)), routing key `document.<Event>`, cùng
+publisher. Code: `backend/src/modules/document/document-events.ts` (`feat/assistant-service`; ban đầu thiết kế
+`document.outbox` riêng, đổi để không phải thêm publisher thứ hai).
 
 | Event (`type`) | Phát khi | Payload |
 |---|---|---|
@@ -269,7 +270,8 @@ dùng chung cách của `leave.outbox`.
 - Phạm vi trong event là phạm vi **sau** thay đổi, gửi cả bộ: consumer ghi đè, không cần ghép. Thứ tự giữ theo `id` outbox.
 - Thao tác không đổi gì (xác nhận lại bản `READY`, `PATCH` không đổi trường nào) không phát event.
 - Tài liệu đã `READY` trước khi có event (dữ liệu tuần 10, 11) cần lệnh đồng bộ một lần: ghi `DocumentPublished` cho bản
-  `READY` mới nhất của mọi tài liệu, rồi `DocumentHidden` cho tài liệu đã ẩn.
+  `READY` mới nhất của mọi tài liệu, rồi `DocumentHidden` cho tài liệu đã ẩn: `npm run assistant:sync` (local) hoặc
+  `node dist/database/sync-document-events.js` (container API). Chạy lại an toàn.
 - Không gửi email cho event tài liệu (D2): notification service nhận event nhưng bỏ qua loại `document.*`.
 
 Lệch với UC6 ghi ngày 22/11 đã sửa ngày 23/11 (nhánh `docs/adr-16-policy-assistant`): index nằm ở schema `assistant` của

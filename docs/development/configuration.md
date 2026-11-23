@@ -75,6 +75,7 @@ Dùng cho outbox publisher (trong API) và notification worker. Chi tiết: [h�
 | `RABBITMQ_URL` | (không có) | (không dùng) | **Có** khi `rabbitmq` | API, Worker | Ví dụ `amqp://hr:hr@localhost:5672` |
 | `SQS_QUEUE_URL` | (không có) | URL queue `hr-platform-staging-leave-notifications` | **Có** khi `sqs` | API, Worker | Quyền gửi/nhận lấy từ IAM role, không cần access key |
 | `AWS_REGION` | (không có) | `var.aws_region` (ví dụ `ap-southeast-1`) | **Có** khi `sqs` | API, Worker | Region của SQS; cũng là region mặc định cho kho tài liệu |
+| `SQS_ASSISTANT_QUEUE_URL` | (không có) | URL queue `assistant.document` (Terraform, nhánh `infra/llm-secrets-cost`) | Không | API, Assistant service | Queue nhận event tài liệu (UC6). API thiếu biến này thì bỏ qua event tài liệu khi dùng SQS; assistant service dùng nó khi `QUEUE_DRIVER=sqs` |
 
 ### Email (notification worker)
 
@@ -125,6 +126,22 @@ Web: `VITE_IDLE_TIMEOUT_MINUTES` (mặc định `30`) là số phút không thao
 | Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
 |---|---|---|---|---|---|
 | `SEED_EMPLOYEES` | `2000` | (mặc định) | Không | CLI seed | Số nhân viên mẫu được sinh |
+
+## 2a. Assistant service (`services/assistant/`, UC6)
+
+Service riêng, đọc cấu hình bằng code của nó (không import `backend/`). Thiếu biến bắt buộc thì không khởi động.
+
+| Biến | Mặc định | Staging | Bắt buộc | Ý nghĩa |
+|---|---|---|---|---|
+| `PORT` | `3100` | `3100` | Không | HTTP nội bộ (`/health`) |
+| `ASSISTANT_DB_URL` | (không có) | `postgres://assistant_svc:<secret>@<rds>/hr` | **Có** | Chỉ có quyền trên schema `assistant` (ADR-16). Local dùng user `hr` |
+| `DB_SSL`, `DB_SSL_CA_FILE` | `off` | `verify` + CA của RDS | Không | Như backend |
+| `QUEUE_DRIVER` | Suy ra: có `SQS_ASSISTANT_QUEUE_URL` → `sqs`, không thì `rabbitmq` | `sqs` | Không | |
+| `RABBITMQ_URL` | (không có) | (không dùng) | **Có** khi `rabbitmq` | Nghe queue `assistant.document` |
+| `SQS_ASSISTANT_QUEUE_URL`, `AWS_REGION` | (không có), `ap-southeast-1` | URL queue, region | **Có** khi `sqs` | |
+| `STORAGE_BUCKET`, `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` | Như backend | Bucket tài liệu, IAM chỉ đọc | `STORAGE_BUCKET` **có** | Đọc file để trích văn bản, tối đa 20 MiB |
+| `ASSISTANT_EMBEDDING_MODEL` | `embeddinggemma-300m` | `embeddinggemma-300m` | Không | `id` trong registry embedder (ADR-16 mục 4); `hash-256` chỉ để test. `id` lạ thì không khởi động |
+| `ASSISTANT_MODEL_DIR` | `./.model-cache` (Docker: `/app/.model-cache`) | Như Docker | Không | Thư mục model đã tải sẵn lúc build image; service không tải model khi chạy |
 
 ## 3. Frontend (Vite, đọc lúc build)
 

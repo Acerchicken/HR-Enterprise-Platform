@@ -31,7 +31,7 @@
 - Câu trả lời chỉ được dựa trên tài liệu người hỏi được xem (DR-02, DR-08). Phạm vi tính lại ở mỗi lần hỏi (DR-06).
 - Quy mô: 500 tài liệu, 2.000 nhân viên (NFR-1.3). Timeout gọi LLM 10 giây (NFR-3.5).
 - Ngân sách AWS: dự toán 56,80 USD/tháng, hạn mức thẻ 60 USD, chỉ dư khoảng 3 USD (ADR-12).
-- ADR-15 đã có service tách riêng nhận event tài liệu qua `document.outbox` ([UC5 spec 13.2](../../features/UC5-document-repository/spec.md#132-event-cho-trợ-lý-adr-15)).
+- ADR-15 đã có service tách riêng nhận event tài liệu qua outbox (thực tế dùng outbox chung `leave.outbox`) ([UC5 spec 13.2](../../features/UC5-document-repository/spec.md#132-event-cho-trợ-lý-adr-15)).
   Khi bỏ tìm tài liệu, service này chỉ còn phục vụ trợ lý.
 - Feature freeze 2/12/2026, chỉ TV1 code (ADR-11).
 
@@ -207,7 +207,9 @@ Bedrock Knowledge Bases, dịch vụ embedding trả phí, tìm tài liệu theo
   thay vì 1 GB, tính embedding chậm hơn (vẫn nhỏ so với thời gian chờ LLM). Thêm 1 GB cho một task Fargate chạy 24/7 tốn khoảng
   3 USD/tháng, sát hạn mức thẻ. Giảm thiểu: TV3 đo RAM thật; nếu vượt thì dùng bản q4, hoặc chỉ bật task assistant trong giờ
   làm việc và lúc demo.
-- Image PostgreSQL local đổi sang `pgvector/pgvector:pg16`; RDS phải bật extension `vector` (RDS PostgreSQL 16 có sẵn).
+- Image PostgreSQL local build từ `infra/postgres-pgvector` (postgres:16-alpine thêm pgvector, giữ volume cũ; image Debian
+  `pgvector/pgvector:pg16` có thể lệch collation với dữ liệu cũ); RDS phải bật extension `vector` (RDS PostgreSQL 16 có sẵn).
+  Migration schema `assistant` nằm ở backend (`1732700000000-AssistantSchema`) vì chỉ user migration tạo được extension, role.
 - Index trễ vài giây sau khi đăng tài liệu (eventual consistency, giống ADR-15). Phạm vi vẫn tính đồng bộ nên không lộ dữ liệu.
 - Phần pgvector là phần dễ trễ nhất. Phương án cắt: nếu thứ Sáu 27/11 chưa xong thì giao bản chỉ dùng full-text (giải pháp B),
   vẫn đạt AC-6.3.1 → AC-6.3.4; bảng `chunk_embedding` thêm sau.

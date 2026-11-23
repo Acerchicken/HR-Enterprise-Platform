@@ -74,7 +74,7 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
 | ADR-16 và sửa tài liệu UC6 sau khi thu gọn | AC-6.3.5 | TV1 | `docs/adr-16-policy-assistant` | 12 |
-| Event tài liệu qua `document.outbox`, lệnh đồng bộ lần đầu (UC5 13.2) | AC-5.4.1 → AC-5.4.4 | TV1 | `feat/assistant-service` (bước đầu) | 12 |
+| Event tài liệu qua outbox chung, lệnh đồng bộ lần đầu (UC5 13.2) | AC-5.4.1 → AC-5.4.4 | TV1 | `feat/assistant-service` (bước đầu) | 12 |
 | `services/assistant`: nhận event, trích văn bản, chia đoạn, index full-text và vector | AC-6.3.7 | TV1 | `feat/assistant-service` | 12 |
 | API hỏi đáp, adapter `openai-compatible` (DeepSeek), trích dẫn, fallback, giới hạn tần suất, khung trợ lý trên `/documents` | AC-6.3.1 → AC-6.3.4, AC-6.3.6 | TV1 | `feat/policy-assistant` | 12 |
 | Trang "Cấu hình trợ lý", lưu khóa mã hóa, audit; adapter `anthropic`, `google` | AC-6.4.1 → AC-6.4.7 | TV1 | `feat/assistant-config` | 12–13 |

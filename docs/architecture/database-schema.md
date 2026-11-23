@@ -13,7 +13,9 @@
 
 - **Một PostgreSQL 16, mỗi module một schema** (ADR-01 modular monolith, ADR-02 data ownership). Chạy local bằng
   docker-compose, staging dùng Amazon RDS.
-- Extension: `pgcrypto` (hàm `gen_random_uuid()` sinh khóa uuid), `pg_trgm` (index trigram cho tìm kiếm danh bạ).
+- Extension: `pgcrypto` (hàm `gen_random_uuid()` sinh khóa uuid), `pg_trgm` (index trigram cho tìm kiếm danh bạ), `vector`
+  (pgvector, embedding của trợ lý UC6), `unaccent` (full-text không dấu). Local dùng image `infra/postgres-pgvector`
+  (postgres:16-alpine thêm pgvector).
 - Bảng tạo và đổi **chỉ qua migration** TypeORM (`npm run migration:run`), xem [mục 11](#11-lịch-sử-migration).
 
 | Schema | Module sở hữu (`backend/src/modules/`) | Bảng | Tạo ở migration |
@@ -25,6 +27,7 @@
 | `notification` | `worker` (notification worker) | `processed_event` | LeaveOutbox |
 | `audit` | `audit` | `audit_log` | InitSchemas |
 | `document` | `document` | `document`, `document_scope`, `document_version` | Documents |
+| `assistant` | Assistant service (`services/assistant/`, ngoài backend) | `document`, `chunk`, `chunk_embedding`, `processed_event` | AssistantSchema |
 
 ## 2. Quy tắc thiết kế
 
@@ -754,6 +757,51 @@ Index: `ix_document_scope_value (kind, value)` – lọc tài liệu người d�
 | `created_at` | timestamptz | NN, mặc định `now()` | |
 | `ready_at` | timestamptz | | Thời điểm chuyển `READY` |
 
+### Schema `assistant` – index của trợ lý chính sách (UC6)
+
+Thuộc assistant service (ADR-15, ADR-16), backend không đọc, ghi. Migration nằm ở backend vì chỉ user migration tạo được
+extension và role. Service kết nối bằng role `assistant_svc` (tạo `NOLOGIN`, staging đặt mật khẩu ngoài migration), chỉ có
+`SELECT, INSERT, UPDATE, DELETE` trên bảng của schema này. Dữ liệu ghi theo event tài liệu (UC5 spec 13.2), dựng lại được bằng
+`npm run assistant:sync` ở backend.
+
+**`assistant.document`** – bản sao metadata và phạm vi xem của tài liệu UC5, ghi đè theo event.
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| `id` | uuid | PK | Trùng `document.document.id` (không FK, khác chủ sở hữu) |
+| `title`, `type` | text, varchar(20) | NN | |
+| `version_id`, `version_no` | uuid, int | | Phiên bản `READY` đang index; event phiên bản nhỏ hơn bị bỏ qua |
+| `hidden` | boolean | NN | Tài liệu ẩn không dùng để trả lời |
+| `scope_all`, `scope_department_ids`, `scope_roles` | boolean, uuid[], text[] | NN | Phạm vi xem (DR-06) |
+| `index_status` | varchar(10) | CHECK `PENDING`, `INDEXED`, `FAILED` | `FAILED`: file không trích được chữ |
+| `updated_at` | timestamptz | NN | |
+
+**`assistant.chunk`** – đoạn văn bản của phiên bản đang index, khoảng 1.500 ký tự, không vượt ranh giới mục, điều.
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| `id` | bigserial | PK | |
+| `document_id` | uuid | NN, FK → `assistant.document` `ON DELETE CASCADE`; UQ `(document_id, ord)` | |
+| `version_id` | uuid | NN | |
+| `ord` | int | NN | Thứ tự trong tài liệu |
+| `heading` | text | NN | Mục, điều hoặc trang, dùng để trích dẫn |
+| `content` | text | NN | |
+| `tsv` | tsvector | NN, GIN `ix_chunk_tsv` | `to_tsvector('simple', unaccent(heading ‖ ' ' ‖ content))`, tính lúc ghi |
+
+**`assistant.chunk_embedding`** – vector theo model; cột `vector` không cố định số chiều để đổi model không phải sửa cột.
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| `chunk_id` | bigint | PK `(chunk_id, model)`, FK → `assistant.chunk` `ON DELETE CASCADE` | |
+| `model` | varchar(64) | | `id` của embedder, ví dụ `embeddinggemma-300m` |
+| `embedding` | vector | NN | Đã chuẩn hóa độ dài 1 |
+
+Mỗi model một chỉ mục HNSW một phần trên biểu thức ép kiểu, ví dụ
+`ix_chunk_embedding_gemma USING hnsw ((embedding::vector(768)) vector_cosine_ops) WHERE model = 'embeddinggemma-300m'`.
+Truy vấn phải viết đúng biểu thức và điều kiện đó thì mới dùng chỉ mục.
+
+**`assistant.processed_event`** – `event_id` (PK), `event_type`, `processed_at`: chống xử lý trùng (queue giao ít nhất một lần).
+
 ## 9. Tham chiếu logic chéo schema
 
 Không có foreign key, nên **service của module sở hữu cột** phải kiểm tra đối tượng tồn tại (qua service được `exports` của
@@ -835,6 +883,7 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `1732400000000-AccountLifecycle` | 11 | Trạng thái tài khoản trên IdP ở `iam.user_account` (UC8 `feat/uc8-account-lifecycle`) |
 | `1732500000000-LeaveRules` | 11 | Loại phép theo `quota_kind`, seed loại mới, số dư thập phân, phân bổ theo năm, `PENDING_HR`, đề nghị hủy, ngày lễ có loại, duyệt thay (UC3, UC4 `feat/leave-uc3-uc4`) |
 | `1732600000000-AuditTimeIndex` | 12 | Chỉ mục BRIN `audit.ix_audit_at (at)` (UC7 D2, `feat/audit-ui`) |
+| `1732700000000-AssistantSchema` | 12 | Extension `vector`, `unaccent`; schema `assistant` (4 bảng), HNSW cho EmbeddingGemma, role `assistant_svc` (UC6 `feat/assistant-service`) |
 
 Lệnh: `npm run migration:run` (dev, ts-node), `npm run migration:run:prod` (bản build, dùng trên staging),
 `npm run migration:revert` (lùi một migration). Dữ liệu mẫu: `npm run seed`.

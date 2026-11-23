@@ -4,12 +4,15 @@
 #   Keycloak: http://localhost:8080   (admin / admin)
 #   RabbitMQ: http://localhost:15672  (hr / hr)
 #   Mailpit:  http://localhost:8025   (hộp thư giả lập)
+#   Trợ lý:   http://localhost:3100/health (assistant service, UC6)
 # Trên cloud, db và keycloak được thay bằng managed PostgreSQL và managed identity provider (ADR-00).
 name: hr-platform
 
 services:
   db:
-    image: postgres:16-alpine
+    # postgres:16-alpine thêm pgvector cho trợ lý chính sách (UC6); xem infra/postgres-pgvector/Dockerfile.
+    build: ./infra/postgres-pgvector
+    image: hr-platform-db:16-pgvector
     environment:
       POSTGRES_USER: hr
       POSTGRES_PASSWORD: hr
@@ -180,6 +183,33 @@ services:
       api:
         condition: service_healthy
     restart: "no"
+
+  # Trợ lý chính sách (UC6): nhận event tài liệu qua queue assistant.document, trích văn bản, index vào schema assistant.
+  # Dùng user hr ở local cho gọn; staging dùng user riêng assistant_svc chỉ có quyền trên schema assistant (ADR-16).
+  # Build lần đầu tải model EmbeddingGemma (~300 MB) vào image.
+  assistant:
+    build: ./services/assistant
+    environment:
+      PORT: 3100
+      ASSISTANT_DB_URL: postgres://hr:hr@db:5432/hr
+      DB_SSL: "off"
+      QUEUE_DRIVER: rabbitmq
+      RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
+      STORAGE_BUCKET: hr-documents
+      STORAGE_ENDPOINT: http://s3mock:9090
+      STORAGE_ACCESS_KEY_ID: test
+      STORAGE_SECRET_ACCESS_KEY: test
+      ASSISTANT_EMBEDDING_MODEL: embeddinggemma-300m
+    ports:
+      - "3100:3100"
+    depends_on:
+      api:
+        condition: service_healthy   # API chạy migration tạo schema assistant
+      rabbitmq:
+        condition: service_healthy
+      s3mock:
+        condition: service_started
+    restart: unless-stopped
 
   web:
     build:

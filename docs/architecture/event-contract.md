@@ -159,6 +159,8 @@ interface `EventBus` (publish) và `EventConsumer` (consume) trong `backend/src/
 | Routing key | `leave.<type>` | ví dụ `leave.LeaveApproved` |
 | Queue của worker | `notification.leave` | durable, bind `leave.*`, dead letter → `notification.leave.dlq` |
 | Dead letter queue | `notification.leave.dlq` | durable |
+| Routing key tài liệu | `document.<type>` | ví dụ `document.DocumentPublished` (UC5 13.2, từ `feat/assistant-service`) |
+| Queue của assistant service | `assistant.document` | durable, bind `document.*`, dead letter → `assistant.document.dlq`; service tự khai báo khi kết nối (UC6) |
 
 - Publisher dùng **confirm channel**: `publish()` chỉ xong khi broker xác nhận đã nhận.
 - Worker `prefetch(10)`; xử lý xong thì `ack`, lỗi thì `nack` không requeue → message vào DLQ ngay.
@@ -177,6 +179,9 @@ interface `EventBus` (publish) và `EventConsumer` (consume) trong `backend/src/
 - Xử lý xong thì xóa message; lỗi thì **không xóa**, message hiện lại sau visibility timeout.
 - Nếu đổi sang queue FIFO (URL đuôi `.fifo`), code tự đặt `MessageGroupId = leave` và `MessageDeduplicationId` = id event.
 - Quyền gửi/nhận lấy từ IAM role của App Runner (API) và ECS task (worker), không dùng access key.
+- Event tài liệu (`Document*`) gửi vào queue riêng `SQS_ASSISTANT_QUEUE_URL` (`backend/src/messaging/routing.ts`); chưa đặt
+  biến này thì API bỏ qua event tài liệu (đánh dấu đã gửi, ghi log cảnh báo). FIFO: `MessageGroupId = document`. Chưa có SNS
+  fan-out (mục 7): mỗi loại event đi đúng một queue.
 
 ## 5. Bảo đảm giao nhận và chống trùng
 
@@ -205,7 +210,9 @@ hai. Chấp nhận được với email thông báo.
 2. **Đổi tên, xóa trường hoặc đổi kiểu**: không sửa tại chỗ. Thêm event mới (ví dụ `LeaveApprovedV2`) hoặc thêm trường mới,
    chạy song song đến khi worker cũ không còn, rồi mới bỏ cái cũ. Lý do: lúc deploy, outbox và queue có thể còn event dạng cũ.
 3. **Thêm loại event mới**: thêm vào `LeaveEventType`, routing key theo dạng `<module>.<Event>`; thêm consumer nếu cần.
-   Module khác phát event thì dùng outbox của schema mình (ví dụ `document.outbox`), không ghi vào `leave.outbox`.
+   Thực tế (23/11/2026): mọi module đang ghi chung `leave.outbox` cùng một publisher (identity, employee, và document từ
+   `feat/assistant-service`), routing key theo module (`leave.*`, `document.*`) do `messaging/routing.ts` quyết định. Tách
+   outbox theo schema là **nợ kỹ thuật**, làm khi tách publisher; không tạo outbox thứ hai trước đó vì cần thêm publisher.
 4. Đổi tên exchange/queue phải sửa đồng thời code (`rabbitmq.ts`), Terraform (`sqs_worker.tf`) và file này.
 
 ## 7. Thay đổi dự kiến theo ADR-15 (chưa áp dụng)
@@ -216,8 +223,8 @@ cùng PR code và cập nhật lại các mục ở trên:
 | Thay đổi | Theo quy tắc | Ghi chú |
 |---|---|---|
 | Thêm `recipientEmail`, `recipientName` vào payload event gửi email | Quy tắc 1 (thêm trường) | Notification service không còn đọc `employee.*`, `iam.*` |
-| Thêm `document.outbox` và event `document.<Event>` (phiên bản `READY`, ẩn tài liệu, đổi phạm vi) | Quy tắc 3 | Assistant service (UC6, ADR-16) nhận để cập nhật index. Tên event, payload: [UC5 spec 13.2](../features/UC5-document-repository/spec.md#132-event-cho-trợ-lý-adr-15) |
-| Thêm queue `assistant.document` bind vào `hr.events` (local); SNS topic `hr-events` trước các queue SQS (AWS) | Quy tắc 4 | Fan-out: một event đến nhiều consumer; sửa `rabbitmq.ts`, Terraform và file này |
+| ~~Thêm `document.outbox`~~ **Đã làm** (`feat/assistant-service`): event `document.<Event>` ghi vào `leave.outbox` chung (quy tắc 3) | Quy tắc 3 | Assistant service (UC6, ADR-16) nhận để cập nhật index. Tên event, payload: [UC5 spec 13.2](../features/UC5-document-repository/spec.md#132-event-cho-trợ-lý-adr-15) |
+| Queue `assistant.document` bind `document.*` vào `hr.events` (local): **đã làm** (mục 4). SNS topic `hr-events` trước các queue SQS (AWS): chưa, hiện API gửi thẳng vào hai queue | Quy tắc 4 | Fan-out: một event đến nhiều consumer; sửa Terraform và file này |
 | Thêm `traceparent` (W3C Trace Context) vào header RabbitMQ và message attribute SQS | Quy tắc 1 | Truy vết OpenTelemetry xuyên qua queue |
 
 ## 8. Event nghỉ phép dự kiến cho UC3, UC4 (thiết kế 18/11/2026, chưa áp dụng)

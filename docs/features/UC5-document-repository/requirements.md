@@ -60,7 +60,7 @@
 
 ### Event cho trợ lý (ADR-15, ADR-16, phục vụ UC6 FR-6.3; chưa có)
 
-- **AC-5.4.1** Khi phiên bản thành `READY`. Thì có đúng một dòng `DocumentPublished` trong `document.outbox` cùng transaction,
+- **AC-5.4.1** Khi phiên bản thành `READY`. Thì có đúng một dòng `DocumentPublished` trong outbox (`leave.outbox`) cùng transaction,
   payload có phạm vi hiện tại của tài liệu (spec 13.2). Xác nhận lại bản đã `READY` không tạo event mới.
 - **AC-5.4.2** Khi HR đổi tiêu đề, loại hoặc phạm vi. Thì có `DocumentUpdated` mang cả bộ phạm vi mới; `PATCH` không đổi gì thì
   không có event.
@@ -81,7 +81,7 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 |---|---|---|---|---|
 | S3Mock trong docker-compose (thay MinIO) | AC-5.1.2 chạy được ở local | TV3 | `chore/minio-local` (đã merge #68) | 10 |
 | Giao diện kho tài liệu (HR và nhân viên); `fields` cho lỗi 400; chặn đơn vị `INACTIVE` (D3) | AC-5.1.4, AC-5.1.8, AC-5.1.9, AC-5.2.7 | TV1 | Đã làm 22/11 | 11 |
-| Event tài liệu qua `document.outbox`, lệnh đồng bộ lần đầu (D1) | AC-5.4.1 → AC-5.4.4 | TV1 | `feat/assistant-service` (bước đầu) | 12 |
+| Event tài liệu qua outbox, lệnh đồng bộ lần đầu (D1) | AC-5.4.1 → AC-5.4.4 | TV1 | `feat/assistant-service` (bước đầu) | 12 |
 | Bucket tài liệu, `STORAGE_*` cho staging; đổi SSE-S3 sang KMS, bỏ `GET`/`HEAD` khỏi CORS | AC-5.1.7 trên staging, NFR-5.16 | TV3 | `infra/documents-email` (đã merge #70), sửa thêm ở nhánh mới | 10 (code), 12 (apply) |
 | Chạy ca kiểm thử UC5 trên staging | Mọi AC-5.x | TV4 | `docs/test-report-uc2-uc5-uc7` | 12 |
 | Dọn phiên bản `PENDING` bỏ dở | – | – | – | Không làm, đánh đổi ghi ở ADR-13 |
