@@ -52,6 +52,10 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 | 2 | | Lọc nhân viên khác `TERMINATED`, tìm theo tên, email, mã; sắp xếp ổn định; tối đa 100 dòng mỗi trang |
 | 3 | Xem danh sách, bấm vào một người | Mở hồ sơ ở mức danh bạ (UC1, luồng A1) |
 
+Ô tìm đồng nghiệp trên nav bar (AC-2.1.6 → AC-2.1.9): gõ từ 2 ký tự, chờ 300 ms rồi gọi
+`GET /employees?q=&size=5`, hiện tối đa 5 người; chọn một người thì mở thẻ xem nhanh
+([giao diện chung 4.1](../frontend.md#41-thẻ-xem-nhanh)); Enter thì mở `/directory?q=`.
+
 ### 4.2 Xem sơ đồ tổ chức (FR-2.2, FR-2.3)
 
 | Bước | Tác nhân | Hệ thống |
@@ -167,7 +171,7 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 
 | Luồng | Màn hình | API (chi tiết ở 9.2) |
 |---|---|---|
-| 4.1 | `/directory` | `GET /employees` |
+| 4.1 | `/directory`; ô tìm đồng nghiệp trên nav bar | `GET /employees` |
 | 4.2 | `/org`, `/org/{id}` | `GET /departments/tree`, `GET /departments/{id}`, `GET /departments/{id}/members`, `GET /employees/{id}/direct-reports` |
 | 4.3, 4.5, 4.6 | `/org/{id}`: nút "Thêm đơn vị", "Sửa đơn vị", "Ngừng hoạt động" (chỉ HR, ADMIN thấy) | `POST /departments`, `PATCH /departments/{id}` |
 | 4.4 | Nút "Điều chuyển" trong popup hồ sơ (chế độ HR); mục "Quá trình công tác" (UC1) | `POST /employees/{id}/transfers`, `GET /employees/{id}/transfers`, `DELETE /employees/{id}/transfers/{transferId}`, `GET /employees/{id}/profile/career-history` |

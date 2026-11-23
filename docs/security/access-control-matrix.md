@@ -43,6 +43,15 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 | Vai trò được cấp | Cấp | `POST /api/v1/admin/role-assignments` | — | — | — | ✓ | Không cho chính mình (403); người chưa có tài khoản, đã nghỉ (400); đã có (409); audit `ROLE_GRANT`, event `RoleGranted` cùng giao dịch | AC-8.7.1, 8.7.3, 8.7.6, 8.7.7 |
 | Vai trò được cấp | Thu hồi | `DELETE /api/v1/admin/role-assignments/{userId}/{role}` | — | — | — | ✓ | ADMIN cuối cùng còn hoạt động (409, kiểm trước); của chính mình (403); không có dòng (404); audit `ROLE_REVOKE` có lý do | AC-8.7.2, 8.7.4 |
 
+### Cấu hình trợ lý (UC6 FR-6.4, ADR-16; chưa có)
+
+| Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |
+|---|---|---|---:|---:|---:|---:|---|---|
+| Trợ lý chính sách | Hỏi | `POST /api/v1/assistant/questions` | ✓ | ✓ | ✓ | ✓ | Chỉ dùng đoạn văn của tài liệu khớp phạm vi như "Xem danh sách" tài liệu, lọc trong SQL trước khi gửi LLM; tài khoản không có hồ sơ đang làm việc luôn nhận "không tìm thấy"; 10 câu/phút, 100 câu/ngày | DR-02, DR-06, DR-08, ADR-16, `feat/policy-assistant` |
+| Cấu hình nhà cung cấp AI | Xem | `GET /api/v1/admin/assistant-config` | — | — | — | ✓ | Chỉ trả 4 ký tự cuối của API key | `feat/assistant-config` |
+| Cấu hình nhà cung cấp AI | Sửa | `PUT /api/v1/admin/assistant-config` | — | — | — | ✓ | Đổi nhà cung cấp phải nhập khóa mới; `version` cũ 409; audit `ASSISTANT_CONFIG_UPDATE` không chứa khóa | `feat/assistant-config` |
+| Cấu hình nhà cung cấp AI | Tải danh sách model, kiểm tra kết nối | `POST /api/v1/admin/assistant-config/models`, `POST /api/v1/admin/assistant-config/test` | — | — | — | ✓ | Không lưu khóa gửi kèm; audit `ASSISTANT_CONFIG_TEST` | `feat/assistant-config` |
+
 ### Tài khoản đăng nhập của nhân viên (UC8 FR-8.6)
 
 | Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |
@@ -150,7 +159,8 @@ Các mục dưới đây ghi nhận quyết định nghiệp vụ đã thống n
    gửi được yêu cầu (403); cũng chưa có kiểm "không tự duyệt". Cần quyết định và sửa ở một nhánh riêng.
 6. **UC5 (kho tài liệu):** đã có trong `docs/openapi.yaml` và ở mục "Kho tài liệu" phía trên (11 operation, PR #64). Ô "Xem"
    của mọi vai trò cần tài khoản gắn hồ sơ chưa nghỉ việc; tài khoản chỉ có vai trò ADMIN, không hồ sơ, nhận danh sách rỗng.
-   API tìm kiếm (UC6) bổ sung khi `feat/search-service` merge.
+   API trợ lý `POST /assistant/questions` (UC6) đã ghi ở mục "Cấu hình trợ lý" phía trên, theo thiết kế; kiểm lại khi
+   `feat/policy-assistant` merge.
 
 ## Phạm vi đối chiếu
 

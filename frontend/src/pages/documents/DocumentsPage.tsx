@@ -12,8 +12,8 @@ const PAGE_SIZE = 20;
 
 /**
  * Trang "Tra cứu tài liệu" `/documents` (UC5 A1, AC-5.2.7; bản vẽ uc56-documents). Chỉ có tài liệu trong phạm vi của người
- * xem, mới cập nhật trước; không hiện số lượng hay gợi ý gì về tài liệu ngoài phạm vi (DR-08). Ô tìm và trợ lý của UC6 thêm
- * vào trang này ở nhánh `feat/search-service`.
+ * xem, mới cập nhật trước; không hiện số lượng hay gợi ý gì về tài liệu ngoài phạm vi (DR-08). Khung trợ lý của UC6 thêm
+ * vào trang này ở nhánh `feat/policy-assistant` (ADR-16).
  */
 export function DocumentsPage() {
   const me = useOutletContext<Me | null>();

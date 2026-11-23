@@ -86,7 +86,7 @@ flowchart LR
 | UC3 Tạo đơn nghỉ | Nhân viên tạo, gửi, hủy đơn | MT-2 |
 | UC4 Duyệt đơn | Quản lý trực tiếp duyệt/từ chối, HR hoàn tất | MT-2 |
 | UC5 Kho tài liệu | HR đăng tài liệu chính sách, phân phạm vi xem | MT-4 |
-| UC6 Tra cứu chung và trợ lý | Ô tìm đồng nghiệp trên mọi trang; trang "Tra cứu tài liệu" gồm tìm tài liệu và trợ lý chính sách (mở rộng) | MT-4 |
+| UC6 Trợ lý chính sách | Nhân viên hỏi đáp bằng câu tự nhiên, câu trả lời kèm trích dẫn tài liệu mình được xem (thu gọn 22/11/2026) | MT-4 |
 | UC7 Lịch sử thao tác | Audit log append-only, tra cứu cho HR/Admin | MT-3 |
 
 ### 4.2 Ngoài phạm vi version 1
@@ -143,7 +143,7 @@ nhận và trạng thái trên `dev`.
 | UC3 Tạo đơn nghỉ | FR-3.1 → FR-3.7 |
 | UC4 Duyệt đơn | FR-4.1 → FR-4.8 |
 | UC5 Kho tài liệu chính sách | FR-5.1 → FR-5.3 |
-| UC6 Tra cứu chung và trợ lý | FR-6.1 → FR-6.3 |
+| UC6 Trợ lý chính sách | FR-6.3, FR-6.4 |
 | UC7 Lịch sử thao tác | FR-7.1 → FR-7.3 |
 
 ## 8. Business rule
@@ -191,7 +191,7 @@ truy vết, chi phí, vận hành, bảo trì, khả dụng, tuân thủ; kèm S
 | Chi phí cloud vượt hạn mức thẻ | Tài khoản bị khóa, mất staging | AWS Budgets cảnh báo; tắt tài nguyên ngoài giờ demo; phương án dự phòng Azure |
 | Lộ dữ liệu nhạy cảm | Vi phạm quy định, mất uy tín | Mã hóa tầng ứng dụng, phân quyền hai lớp, audit, threat model |
 | Biên bản kiểm thử không phản ánh lần chạy thật | Lỗi lọt tới demo | Quy tắc chỉ ghi kết quả đã chạy, có ngày và commit; review trước khi merge |
-| Phạm vi tuần 10–12 lớn (tài liệu, tìm kiếm, AI) | Không kịp tuần 13 | Ưu tiên M trước; FR-6.3 (C) có thể cắt |
+| Phạm vi tuần 10–12 lớn (tài liệu, AI) | Không kịp tuần 13 | Ưu tiên M trước; UC6 bỏ tìm tài liệu theo từ khóa (22/11); trợ lý có bản cắt chỉ dùng full-text (ADR-16) |
 
 ## 13. Tiêu chí nghiệm thu version 1
 

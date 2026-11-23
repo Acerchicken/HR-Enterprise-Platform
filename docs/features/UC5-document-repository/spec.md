@@ -4,11 +4,11 @@
 |---|---|
 | Mục tiêu kinh doanh | MT-4 (nhân viên tự phục vụ, biết bản chính sách mới nhất) |
 | Tác nhân chính | HR (đăng, quản lý tài liệu); nhân viên (xem, tải) |
-| Tác nhân phụ, hệ thống ngoài | Object storage (S3Mock ở local, S3 trên AWS); search service của UC6 nhận event tài liệu (ADR-15) |
+| Tác nhân phụ, hệ thống ngoài | Object storage (S3Mock ở local, S3 trên AWS); assistant service của UC6 nhận event tài liệu (ADR-15, ADR-16) |
 | Yêu cầu (SRS) | FR-5.1 → FR-5.3 |
 | Quy tắc | [DR-01 → DR-06, DR-08](../../business/document-rules.md), [ADR-13](../../architecture/adr/ADR-13-document-storage.md), [ADR-14](../../architecture/adr/ADR-14-org-unit-types.md) (đơn vị), [ADR-15](../../architecture/adr/ADR-15-service-extraction.md) (event), [ADR-18](../../architecture/adr/ADR-18-authorization.md) (phân quyền) |
 | Mức ưu tiên | M (FR-5.3 là S) |
-| Trạng thái | Đã có API (PR #64, 12/11) và giao diện (22/11, nhánh `feat/document-ui`); chưa phát event cho tìm kiếm (`feat/search-service`); Terraform bucket đã merge (#70) nhưng chưa apply |
+| Trạng thái | Đã có API (PR #64, 12/11) và giao diện (22/11, nhánh `feat/document-ui`); chưa phát event cho trợ lý UC6 (`feat/assistant-service`); Terraform bucket đã merge (#70) nhưng chưa apply |
 | Phiên bản | 1.1 – 22/11/2026 (1.1: kiểm chéo với UC1, UC2, UC3, UC4, UC7, UC8, ADR-14, ADR-15, ADR-18, schema, error-codes; thêm 9.2, 13.2 → 13.4; Duong chốt D1 → D5 theo đề xuất ngày 22/11) |
 
 ## 1. Mô tả ngắn
@@ -118,7 +118,7 @@ sequenceDiagram
 - [ADR-18](../../architecture/adr/ADR-18-authorization.md): lớp 1 `@Roles('HR')` ở controller cho thao tác quản lý; lớp 3 điều
   kiện phạm vi trong `WHERE` (`visibleQuery` trong `document.service.ts`). Hàm thuần `canView` trong `document-rules.ts` chỉ dùng
   cho unit test, nên phải giữ cùng logic với câu SQL (13.3).
-- [ADR-15](../../architecture/adr/ADR-15-service-extraction.md): module document phát event qua `document.outbox` cho search
+- [ADR-15](../../architecture/adr/ADR-15-service-extraction.md): module document phát event qua `document.outbox` cho assistant
   service (13.2).
 
 ## 8. Dữ liệu vào
@@ -218,7 +218,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 |---|---|---|
 | API đăng, phiên bản, phạm vi, tải qua API, ẩn, khôi phục | Đã có (PR #64) | SRS đã cập nhật trạng thái FR-5.x (22/11) |
 | Giao diện kho tài liệu; `fields` ở lỗi 400; chặn đơn vị `INACTIVE` (D3) | Đã có (22/11) | – |
-| Event tài liệu cho search service (`document.outbox`) | Chưa có | TV1, đầu nhánh `feat/search-service` (13.2, D1) |
+| Event tài liệu cho assistant service (`document.outbox`) | Chưa có | TV1, đầu nhánh `feat/assistant-service` (13.2, D1) |
 | Dọn phiên bản `PENDING` bỏ dở | Chưa có | Đánh đổi đã ghi trong ADR-13; đề xuất lifecycle rule ở bucket (deploy.md mục 7) |
 | Local: object storage | Đã có | S3Mock trong docker-compose (PR #68) |
 | Staging: biến `STORAGE_*`, bucket tài liệu | Terraform đã merge (PR #70), chưa apply | TV3 apply tuần 12; đổi mã hóa sang KMS, bỏ `GET`, `HEAD` khỏi CORS (deploy.md mục 3) |
@@ -248,9 +248,12 @@ Theo giao diện chung: trang `/documents` mở từ ô "Tra cứu tài liệu" 
 14/11); `/documents/manage` nằm trong nhóm của HR. Phạm vi đơn vị chọn trong danh sách đơn vị của UC2 (`GET /departments`, chỉ
 `ACTIVE`, xếp và thụt lề theo cây). Ô chọn vai trò ghi chú `MANAGER` là "người có cấp dưới trực tiếp" (D4). Không có xem trước, chỉ có nút tải (D5).
 
-### 13.2 Event cho tìm kiếm (ADR-15)
+### 13.2 Event cho trợ lý (ADR-15)
 
-Search service của UC6 không đọc schema `document`, nên phải nhận đủ dữ liệu qua event. Module document ghi event vào
+> Tên mục giữ nguyên để không gãy link. Từ 22/11/2026 consumer là **assistant service** của trợ lý UC6 (ADR-16); UC6 không còn
+> tìm tài liệu theo từ khóa.
+
+Assistant service của UC6 không đọc schema `document`, nên phải nhận đủ dữ liệu qua event. Module document ghi event vào
 `document.outbox` **trong cùng transaction** với thay đổi (quy tắc 3 của
 [event-contract](../../architecture/event-contract.md#6-quy-tắc-khi-đổi-hợp-đồng)), routing key `document.<Event>`, publisher
 dùng chung cách của `leave.outbox`.
@@ -261,7 +264,7 @@ dùng chung cách của `leave.outbox`.
 | `DocumentUpdated` | `PATCH` đổi tiêu đề, loại hoặc phạm vi | `documentId`, `title`, `type`, `scope`, `occurredAt` |
 | `DocumentHidden`, `DocumentRestored` | Ẩn, khôi phục | `documentId`, `occurredAt` |
 
-- Search service giữ bản sao **phạm vi của tài liệu**, không giữ đơn vị của nhân viên; khi tìm, API tính đơn vị, vai trò hiện
+- Assistant service giữ bản sao **phạm vi của tài liệu**, không giữ đơn vị của nhân viên; khi tìm, API tính đơn vị, vai trò hiện
   tại của người dùng rồi gửi kèm (ADR-15 mục 2), nên DR-06 vẫn có hiệu lực ngay.
 - Phạm vi trong event là phạm vi **sau** thay đổi, gửi cả bộ: consumer ghi đè, không cần ghép. Thứ tự giữ theo `id` outbox.
 - Thao tác không đổi gì (xác nhận lại bản `READY`, `PATCH` không đổi trường nào) không phát event.
@@ -269,9 +272,9 @@ dùng chung cách của `leave.outbox`.
   `READY` mới nhất của mọi tài liệu, rồi `DocumentHidden` cho tài liệu đã ẩn.
 - Không gửi email cho event tài liệu (D2): notification service nhận event nhưng bỏ qua loại `document.*`.
 
-Lệch cần sửa ở UC6: [UC6 spec 13.1](../UC6-self-service-search/spec.md#131-tìm-tài-liệu-fr-62) vẫn ghi cột `text_content`,
-`search_vector` trong `document.document_version` và dùng `visibleQuery` trong API, trong khi ADR-15 và kế hoạch 7.7 đặt index ở
-schema `search` của search service. Sửa cùng nhánh `feat/search-service`.
+Lệch với UC6 ghi ngày 22/11 đã sửa ngày 23/11 (nhánh `docs/adr-16-policy-assistant`): index nằm ở schema `assistant` của
+assistant service ([UC6 spec 13.1](../UC6-policy-assistant/spec.md#131-dữ-liệu-schema-assistant)), không thêm cột vào
+`document.document_version`.
 
 ### 13.3 Ca biên phát hiện khi kiểm chéo (22/11/2026)
 
@@ -291,7 +294,7 @@ Duong chốt cả năm điểm theo đề xuất ngày 22/11/2026.
 
 | # | Câu hỏi | Quyết định | Người chốt |
 |---|---|---|---|
-| D1 | Nhánh nào phát event tài liệu (13.2)? Kế hoạch 7.7 chưa có nhánh này | Làm đầu nhánh `feat/search-service` (TV1), vì search service là consumer duy nhất | Duong, 22/11 |
+| D1 | Nhánh nào phát event tài liệu (13.2)? Kế hoạch 7.7 chưa có nhánh này | Làm đầu nhánh `feat/search-service` (TV1), vì search service là consumer duy nhất. Từ 23/11 nhánh đổi tên `feat/assistant-service` (ADR-16) | Duong, 22/11 |
 | D2 | Có báo nhân viên khi có tài liệu mới hoặc bản mới không? BRD mục 2 nêu "nhân viên không biết bản mới nhất"; tiêu chí nghiệm thu ADR-15 ghi "upload một tài liệu: notification service xử lý"; nhưng FR-5.x không có yêu cầu này | **Không gửi email ở version 1**: người nhận có thể tới ~2.000 người và notification service không được đọc hồ sơ (ADR-15), nên payload phải mang cả danh sách. Sửa câu tiêu chí ADR-15 thành "search service và notification service cùng nhận event, notification bỏ qua `document.*`" để vẫn chứng minh fan-out (đã sửa ADR-15) | Duong, 22/11 |
 | D3 | Phạm vi trỏ tới đơn vị `INACTIVE` | Tạo, sửa phạm vi: chỉ nhận đơn vị `ACTIVE`, sai thì 400 `fields.scope.departmentIds`. Phạm vi cũ trỏ tới đơn vị đã ngừng: giữ nguyên (đơn vị ngừng hoạt động không còn người), trang quản lý gắn nhãn "Đơn vị đã ngừng hoạt động" (AC-5.1.9) | Duong, 22/11 |
 | D4 | Phạm vi theo trưởng, phó đơn vị (UC2 FR-2.9) thay cho `MANAGER` | Không thêm ở version 1; form chọn phạm vi ghi rõ `MANAGER` là người có cấp dưới trực tiếp | Duong, 22/11 |

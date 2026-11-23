@@ -43,7 +43,7 @@ flowchart TB
 
   idp[Identity provider OIDC]
   mail[Dịch vụ gửi email]
-  llm[LLM API]
+  llm[LLM API: Claude, Gemini, DeepSeek]
   payroll[Hệ thống Payroll<br/>ngoài phạm vi v1]
 
   emp & mgr & hr & adm -- trình duyệt, HTTPS --> sys
@@ -58,7 +58,7 @@ flowchart TB
 | Identity provider (OIDC) | Redirect đăng nhập + kiểm chữ ký token bằng khóa công khai (JWKS) | Đồng bộ | Không đăng nhập mới được; token còn hạn vẫn dùng |
 | Dịch vụ gửi email | Queue → worker gọi SMTP | Bất đồng bộ | Gửi lại; lỗi đưa vào hàng đợi chết (DLQ); trạng thái đơn không đổi |
 | Object storage | Tải lên bằng link ký sẵn (presigned URL); tải xuống qua API để kiểm quyền mỗi lần (ADR-13) | Tải lên đồng bộ, xử lý sau bất đồng bộ | Metadata "pending" tới khi file có thật |
-| LLM API | REST có timeout | Đồng bộ | Hết thời gian thì chỉ tới tài liệu gốc |
+| LLM API do ADMIN chọn: Claude, Google Gemini, DeepSeek ([ADR-16](adr/ADR-16-policy-assistant.md)) | REST có timeout 10 s, gọi từ assistant service qua adapter | Đồng bộ | Hết thời gian, lỗi hoặc thiếu khóa thì trả danh sách tài liệu liên quan |
 | Payroll | File CSV hằng đêm | Batch | Chạy lại được, idempotent theo ngày |
 
 Chi tiết: [integration và xử lý lỗi tuần 6](../progress/tuan-06/TV4_Duy.md).
@@ -306,4 +306,4 @@ worker ngoài giờ demo. Con số chốt khi ADR-12 được merge.
 | Dịch vụ gửi email trên cloud | Nhà cung cấp SMTP, xác thực domain gửi | Tuần 9–10 |
 | Web application firewall | Bật ở staging hay chỉ production | Tuần 10 |
 | Logging & metrics | Dashboard, ngưỡng cảnh báo cụ thể | Tuần 10–11 |
-| LLM API và nơi lưu vector | Nhà cung cấp LLM; pgvector trên PostgreSQL hay dịch vụ riêng | Tuần 12 |
+| ~~LLM API và nơi lưu vector~~ | Đã chốt 23/11 ở [ADR-16](adr/ADR-16-policy-assistant.md): pgvector trong PostgreSQL, LLM do ADMIN chọn qua adapter (demo DeepSeek), embedding EmbeddingGemma | Tuần 12 |

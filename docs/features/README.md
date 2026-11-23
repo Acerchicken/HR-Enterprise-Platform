@@ -25,6 +25,7 @@ miền nghiệp vụ, không cố cho đều. Quyết định 14/11/2026: giữ 
 công tác, trưởng/phó phòng); UC6 là "Tra cứu chung và trợ lý", danh bạ vẫn thuộc UC2, kho tài liệu vẫn thuộc UC5. Sửa cùng ngày:
 ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp; tìm tài liệu và trợ lý AI ở trang riêng "Tra cứu tài liệu". Thêm 17/11/2026:
 UC8 "Đăng nhập và tài khoản" ([ADR-17](../architecture/adr/ADR-17-authentication.md)); yêu cầu bảo mật dùng chung vẫn là NFR-5.
+Thu gọn 22/11/2026: UC6 đổi tên "Trợ lý chính sách", chỉ còn hỏi đáp AI và cấu hình nhà cung cấp AI.
 
 ## Danh sách
 
@@ -35,7 +36,7 @@ UC8 "Đăng nhập và tài khoản" ([ADR-17](../architecture/adr/ADR-17-authen
 | UC3 – Tạo đơn nghỉ | [requirements](UC3-create-leave-request/requirements.md) | [spec](UC3-create-leave-request/spec.md) | [deploy](UC3-create-leave-request/deploy.md) | [test](UC3-create-leave-request/test.md) | FR-3.1 → 3.7 | Đã có; tạo đơn hộ chưa có |
 | UC4 – Duyệt đơn nghỉ | [requirements](UC4-approve-leave-request/requirements.md) | [spec](UC4-approve-leave-request/spec.md) | [deploy](UC4-approve-leave-request/deploy.md) | [test](UC4-approve-leave-request/test.md) | FR-4.1 → 4.8 | Đã có; người duyệt thay, email chung, ẩn lý do ốm chưa có |
 | UC5 – Kho tài liệu | [requirements](UC5-document-repository/requirements.md) | [spec](UC5-document-repository/spec.md) | [deploy](UC5-document-repository/deploy.md) | [test](UC5-document-repository/test.md) | FR-5.1 → 5.3 | Đã có API; chưa có giao diện; staging chưa có bucket |
-| UC6 – Tra cứu chung và trợ lý | [requirements](UC6-self-service-search/requirements.md) | [spec](UC6-self-service-search/spec.md) | [deploy](UC6-self-service-search/deploy.md) | [test](UC6-self-service-search/test.md) | FR-6.1 → 6.3 | Tìm đồng nghiệp đã có; tìm tài liệu, trợ lý chưa có |
+| UC6 – Trợ lý chính sách | [requirements](UC6-policy-assistant/requirements.md) | [spec](UC6-policy-assistant/spec.md) | [deploy](UC6-policy-assistant/deploy.md) | [test](UC6-policy-assistant/test.md) | FR-6.3, 6.4 | Chưa có (tuần 12, ADR-16); FR-6.1 chuyển về UC2, FR-6.2 bỏ (22/11) |
 | UC7 – Lịch sử thao tác | [requirements](UC7-audit-log/requirements.md) | [spec](UC7-audit-log/spec.md) | [deploy](UC7-audit-log/deploy.md) | [test](UC7-audit-log/test.md) | FR-7.1 → 7.3 | Đã code (`feat/audit-ui`, 23/11); còn audit đăng nhập (AC-7.4.1) |
 | UC8 – Đăng nhập và tài khoản (thêm 17/11) | [requirements](UC8-authentication/requirements.md) | [spec](UC8-authentication/spec.md) | [deploy](UC8-authentication/deploy.md) | [test](UC8-authentication/test.md) | FR-8.1 → 8.7 | Đăng nhập local đã có; thiết kế đủ (sơ đồ luồng, bản vẽ, API) 18/11; code tuần 11 theo 3 nhánh `feat/uc8-*` |
 
