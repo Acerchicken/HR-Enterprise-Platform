@@ -153,7 +153,7 @@ Trang "Tra cứu tài liệu" khi chưa hỏi gì xem [UC5 mục 9.1](../UC5-doc
 
 | API | Ai gọi | Vào | Ra | Lỗi |
 |---|---|---|---|---|
-| `POST /assistant/questions` | Mọi người đã đăng nhập | `{ question }` | `{ answer, citations: [{ n, documentId, versionNo, title, section, citedText }], fallback, documents: [{ documentId, title }] }`. `answer` có các mốc `[n]` khớp `citations[].n`. `documents` chỉ có khi `fallback = true` | 400, 401, 429 |
+| `POST /assistant/questions` | Mọi người đã đăng nhập | `{ question }` | `{ answer, citations: [{ n, documentId, versionNo, title, section, citedText }], fallback, masked, documents: [{ documentId, title }] }`. `masked = true` khi G1 đã che dữ liệu cá nhân trong câu hỏi. `answer` có các mốc `[n]` khớp `citations[].n`. `documents` chỉ có khi `fallback = true` | 400, 401, 429 |
 | `POST /internal/answers` (assistant service, chỉ mạng nội bộ, header token nội bộ và `traceparent`) | API | `{ question, scope: { unitIds, roles } }` | Như trên | 400, 401 |
 | `GET /admin/assistant-config` | ADMIN | – | `{ provider, model, baseUrl, apiKeyLast4, enabled, version, updatedBy, updatedAt, providers: [{ id, name, dataRegion }] }` | 401, 403 |
 | `PUT /admin/assistant-config` | ADMIN | `{ provider, model, apiKey?, enabled, version }` | Như `GET` | 400, 401, 403, 409 |
@@ -222,6 +222,20 @@ Chiến lược, bảng phủ tiêu chí và ca còn thiếu: [test.md](test.md)
 - Adapter `google`, `openai-compatible`: đoạn đánh số `[1]` → `[n]`, model ghi số sau mỗi ý; server bỏ số không có trong danh
   sách, không còn trích dẫn hợp lệ nào thì fallback (A5).
 - Mọi adapter: timeout 10 s, không tự thử lại, giới hạn 1024 token đầu ra.
+- Đoạn tài liệu luôn được đánh dấu là dữ liệu: khối `search_result` (Claude) hoặc thẻ `<doc n="…">` đã thoát `<`, `>` (các adapter
+  khác), xem 13.5 G3.
+
+### 13.5 Guardrail ([ADR-16](../../architecture/adr/ADR-16-policy-assistant.md) mục 11)
+
+Thứ tự xử lý một câu hỏi: kiểm độ dài, giới hạn tần suất (API) → **G1** che dữ liệu cá nhân, bỏ ký tự vô hình → truy hồi trong
+phạm vi → gửi LLM với đoạn đã bọc (**G3**) → kiểm trích dẫn (A5) → **G2** kiểm câu trả lời → trả về.
+
+| Lớp | Làm gì | Khi chặn hoặc che |
+|---|---|---|
+| G1 | Che số điện thoại Việt Nam, email, dãy từ 8 chữ số (CCCD, số tài khoản, mã số thuế) trong câu hỏi bằng `[đã ẩn]` | Vẫn trả lời bằng câu đã che; `masked = true`, giao diện báo "Đã ẩn thông tin cá nhân trước khi gửi" |
+| G2 | Số điện thoại, email, dãy số dài trong câu trả lời không có trong các đoạn đã gửi thì che; câu trả lời trùng system prompt từ 40 ký tự trở lên thì chặn | Che: trả câu đã che. Chặn: `fallback = true` (A2) |
+| G3 | Bọc đoạn tài liệu, thoát thẻ, bỏ ký tự vô hình; system prompt nói chữ trong `<doc>` chỉ là dữ liệu | Không chặn, chỉ biến đổi |
+| G4 | Mỗi lớp là một hàm trong `services/assistant/src/guardrails/`, chạy theo danh sách `inputGuards`, `outputGuards` | Log tên lớp, hành động, số chỗ; không log nội dung |
 
 ### 13.4 Cấu hình nhà cung cấp và cách thêm nhà cung cấp mới
 

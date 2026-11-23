@@ -243,7 +243,7 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 |---|---|---|---|---|
 | FR-6.1 | *(Bỏ khỏi UC6 ngày 22/11/2026)* | – | – | – |
 | FR-6.2 | *(Bỏ ngày 22/11/2026, trùng UC5)* Tìm tài liệu theo từ khóa trong tiêu đề và nội dung | – | – | Không làm |
-| FR-6.3 | Trợ lý trả lời câu hỏi về chính sách HR, có trích dẫn tài liệu nguồn ([ADR-16](../architecture/adr/ADR-16-policy-assistant.md)) | S | Chỉ dùng tài liệu người hỏi được xem; không có đáp án thì nói không tìm thấy; LLM lỗi thì trả danh sách tài liệu liên quan | Kế hoạch tuần 12 |
+| FR-6.3 | Trợ lý trả lời câu hỏi về chính sách HR, có trích dẫn tài liệu nguồn ([ADR-16](../architecture/adr/ADR-16-policy-assistant.md)) | S | Chỉ dùng tài liệu người hỏi được xem; không có đáp án thì nói không tìm thấy; LLM lỗi thì trả danh sách tài liệu liên quan; che dữ liệu cá nhân trong câu hỏi trước khi gửi nhà cung cấp AI (guardrail) | Kế hoạch tuần 12 |
 | FR-6.4 | ADMIN chọn nhà cung cấp AI (trước mắt Claude, Google Gemini, DeepSeek), model và dán API key trong ứng dụng; kiểm tra kết nối; thêm nhà cung cấp mới chỉ cần thêm adapter | S | Khóa mã hóa, không bao giờ trả lại (chỉ 4 ký tự cuối); có audit mỗi lần đổi; đổi có hiệu lực không cần deploy | Kế hoạch tuần 12–13 |
 
 ### 4.7 UC7 – Lịch sử thao tác (FR-7.x)

@@ -34,6 +34,12 @@ Khung hỏi trợ lý nằm trên trang "Tra cứu tài liệu" (`/documents`) c
   (NFR-5.21). Câu hỏi rỗng hoặc dài quá 500 ký tự thì trả 400 kèm `fields.question`.
 - **AC-6.3.7** Giả sử nhân viên vừa đổi đơn vị, hoặc tài liệu vừa bị ẩn. Khi hỏi lại. Thì câu trả lời theo phạm vi mới, không
   dùng tài liệu đã ẩn (DR-06). Giả sử HR vừa đăng bản mới. Khi index xong (vài giây). Thì trích dẫn ghi phiên bản mới.
+- **AC-6.3.8** Khi câu hỏi có số điện thoại, email, số CCCD hoặc số tài khoản. Thì phần đó được thay bằng `[đã ẩn]` trước khi
+  gửi nhà cung cấp AI, giao diện báo "Đã ẩn thông tin cá nhân trước khi gửi"; ngày tháng, số điều khoản, số ngày phép không bị
+  che (ADR-16 mục 11, G1).
+- **AC-6.3.9** Khi câu trả lời của LLM có số điện thoại, email, dãy số dài không có trong tài liệu được trích. Thì phần đó bị che;
+  số có trong tài liệu (ví dụ hotline HR) giữ nguyên. Khi câu trả lời lặp lại system prompt, hoặc làm theo lệnh cài trong nội
+  dung tài liệu. Thì trả `fallback = true` (G2, G3).
 
 Không lưu câu hỏi, câu trả lời vào database, audit hay log; lịch sử hỏi chỉ nằm trong trang đang mở.
 
