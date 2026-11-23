@@ -13,11 +13,13 @@ liệu ngoài phạm vi chứa đúng đáp án, để chứng minh lọc phạm
 | Chia đoạn, ánh xạ trích dẫn | Unit: chia đoạn theo tiêu đề, độ dài, chồng đoạn; trích dẫn có nguồn lạ bị bỏ |
 | Truy hồi theo phạm vi | Integration với PostgreSQL thật: phạm vi toàn công ty, đơn vị (gồm đơn vị con), vai trò; tài liệu ẩn; đổi đơn vị |
 | API hỏi đáp | e2e với LLM giả (trả nhanh, trả chậm hơn 10 s, lỗi, từ chối); 400, 429; không lưu câu hỏi |
-| Chất lượng câu trả lời | Bộ câu hỏi đánh giá có đáp án (TV2), chạy bằng script với Claude thật, chấm tự động và chấm tay |
+| Adapter nhà cung cấp | Unit mỗi adapter với HTTP giả: dựng request đúng, đọc trích dẫn, lỗi 401, 429, timeout; trích dẫn qua prompt bỏ số lạ; thêm adapter giả chỉ bằng một mục registry |
+| Cấu hình (FR-6.4) | e2e: chỉ ADMIN; khóa không bao giờ trả lại; đổi nhà cung cấp phải nhập khóa mới; audit không chứa khóa; database chỉ có bản mã hóa |
+| Chất lượng câu trả lời | Bộ câu hỏi đánh giá có đáp án (TV2), chạy bằng script với nhà cung cấp thật (từng nhà cung cấp định demo), chấm tự động và chấm tay |
 
 ## 2. Test tự động đã có
 
-Chưa có: tính năng chưa làm. PR `feat/assistant-service` và `feat/policy-assistant` phải thêm test vào bảng dưới.
+Chưa có: tính năng chưa làm. PR `feat/assistant-service`, `feat/policy-assistant`, `feat/assistant-config` phải thêm test vào bảng dưới.
 
 ## 3. Bảng phủ tiêu chí
 
@@ -29,6 +31,8 @@ Chưa có: tính năng chưa làm. PR `feat/assistant-service` và `feat/policy-
 | AC-6.3.5 | Script bộ đánh giá | `docs/assistant-eval-report` | Chưa |
 | AC-6.3.6 | e2e giới hạn tần suất nhóm `assistant`; 400 khi câu hỏi rỗng, quá 500 ký tự | `docs/test-cases-uc6` | Chưa |
 | AC-6.3.7 | Integration: event `DocumentHidden`, đổi đơn vị người hỏi, `DocumentPublished` bản mới | `docs/test-cases-uc6` | Chưa |
+| AC-6.4.1, AC-6.4.2 | Unit adapter với HTTP giả (`listModels`, `testConnection`) | Ca tay với khóa thật của ba nhà cung cấp | Chưa |
+| AC-6.4.3 → AC-6.4.7 | e2e trong `feat/assistant-config` | `docs/test-cases-uc6` | Chưa |
 
 ## 4. Dữ liệu và tài khoản
 
@@ -42,15 +46,16 @@ Chưa có: tính năng chưa làm. PR `feat/assistant-service` và `feat/policy-
 ## 5. Cách chạy
 
 Như [UC5 test](../UC5-document-repository/test.md#5-cách-chạy), thêm assistant service. Test tự động dùng LLM giả, không cần
-khóa. Bộ đánh giá chạy tay bằng lệnh chốt trong `feat/policy-assistant`, cần `ANTHROPIC_API_KEY`; không chạy trong CI để không tốn
-chi phí.
+khóa. Bộ đánh giá chạy tay bằng lệnh chốt trong `feat/policy-assistant`, nhận nhà cung cấp, model, khóa qua tham số dòng lệnh;
+không chạy trong CI để không tốn chi phí.
 
 ## 6. Kiểm thử phi chức năng
 
-- NFR-1.3: trợ lý p95 ≤ 6 s khi Claude bình thường; đo riêng thời gian truy hồi với 500 tài liệu.
-- NFR-3.5: Claude quá 10 s thì trả danh sách tài liệu.
+- NFR-1.3: trợ lý p95 ≤ 6 s khi LLM bình thường; đo riêng thời gian truy hồi với 500 tài liệu.
+- NFR-3.5: LLM quá 10 s thì trả danh sách tài liệu.
 - NFR-7.1: chi phí mỗi câu hỏi (từ số token trong log), ghi vào báo cáo tuần 12.
 - NFR-11.1: grep log, audit, database sau khi chạy bộ đánh giá, không có nội dung câu hỏi.
+- NFR-5.17, NFR-5.18: đọc thẳng `assistant.llm_config` chỉ thấy bản mã hóa; grep log, audit, response không thấy API key.
 
 ## 7. Ca còn thiếu (TV4)
 

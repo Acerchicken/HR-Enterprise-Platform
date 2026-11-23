@@ -39,6 +39,7 @@ $frames = [ordered]@{
   'uc4-holidays' = '1280,780'
   'uc56-documents' = '1280,820'
   'uc6-assistant' = '1280,780'
+  'uc6-config' = '1280,760'
   'uc5-detail' = '1280,680'
   'uc5-manage' = '1280,700'
   'uc5-upload' = '1280,800'

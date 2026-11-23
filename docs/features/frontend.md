@@ -53,6 +53,7 @@ Từ trên xuống:
 | Quản lý nhân viên | `/employees/new`, danh bạ ở chế độ HR | HR | UC1 |
 | Đăng tài liệu | `/documents/manage` | HR | UC5 |
 | Lịch sử thao tác | `/audit` | HR, ADMIN | UC7 |
+| Cấu hình trợ lý | `/admin/assistant`: chọn nhà cung cấp AI, model, API key | ADMIN | UC6 |
 
 Lưới: 4 cột trên màn hình rộng, 3 cột trên máy tính bảng, 2 cột trên điện thoại. Thứ tự cố định như bảng, để người dùng nhớ
 vị trí.
@@ -324,7 +325,7 @@ Bản vẽ màn hình riêng của từng UC nằm ở mục 9.1 trong `spec.md`
 | UC3 | Đăng ký nghỉ, đơn nghỉ của tôi và chi tiết; form và hủy đơn trên điện thoại; đề nghị hủy đơn đã duyệt, nghỉ theo sự kiện, HR chỉnh số dư `/leave/balances` (18/11) | [UC3 spec 9.1](UC3-create-leave-request/spec.md#91-bản-vẽ-giao-diện) |
 | UC4 | Quản lý duyệt (không có tab), HR duyệt thêm, HR hoàn tất, phân công duyệt thay; duyệt trên điện thoại; đề nghị hủy trong tab Đơn nghỉ, lịch nghỉ lễ `/leave/holidays` (18/11) | [UC4 spec 9.1](UC4-approve-leave-request/spec.md#91-bản-vẽ-giao-diện) |
 | UC5 | Trang "Tra cứu tài liệu", chi tiết và phiên bản, quản lý tài liệu, đăng tài liệu; điện thoại | [UC5 spec 9.1](UC5-document-repository/spec.md#91-bản-vẽ-giao-diện) |
-| UC6 | Trợ lý chính sách có trích dẫn, câu hỏi ngoài phạm vi | [UC6 spec 9.1](UC6-policy-assistant/spec.md#91-bản-vẽ-giao-diện) |
+| UC6 | Trợ lý chính sách có trích dẫn, câu hỏi ngoài phạm vi; trang cấu hình trợ lý cho ADMIN | [UC6 spec 9.1](UC6-policy-assistant/spec.md#91-bản-vẽ-giao-diện) |
 | UC7 | Lịch sử thao tác: bộ lọc, bảng, chi tiết một dòng | [UC7 spec 9.1](UC7-audit-log/spec.md#91-bản-vẽ-giao-diện) |
 
 Điểm cần duyệt trong bản vẽ (đề xuất, chưa có trong spec):

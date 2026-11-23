@@ -15,6 +15,7 @@ Từ 22/11/2026 UC6 chỉ còn trợ lý hỏi đáp. Hai yêu cầu cũ đã b�
 | Mã | Là | Tôi muốn | Để | FR |
 |---|---|---|---|---|
 | US-6.3 | Nhân viên | Hỏi trợ lý bằng câu tự nhiên trên trang "Tra cứu tài liệu" và nhận câu trả lời có trích dẫn | Có câu trả lời nhanh mà không phải hỏi HR, kiểm lại được ở tài liệu gốc | FR-6.3 |
+| US-6.4 | ADMIN | Chọn nhà cung cấp AI, model và dán API key ngay trong ứng dụng | Đổi nhà cung cấp hoặc khóa mà không phải sửa cấu hình máy chủ, deploy lại | FR-6.4 |
 
 ## 2. Tiêu chí chấp nhận
 
@@ -39,9 +40,28 @@ Khung hỏi trợ lý nằm trên trang "Tra cứu tài liệu" (`/documents`) c
 
 Không lưu câu hỏi, câu trả lời vào database, audit hay log; lịch sử hỏi chỉ nằm trong trang đang mở.
 
+### FR-6.4 Cấu hình nhà cung cấp AI (S, chưa có, tuần 12; thêm 23/11/2026)
+
+Trang "Cấu hình trợ lý" (`/admin/assistant`) chỉ cho ADMIN. Trước mắt có ba nhà cung cấp: Claude (Anthropic), Google Gemini,
+DeepSeek. Cách làm và cách thêm nhà cung cấp mới: [ADR-16](../../architecture/adr/ADR-16-policy-assistant.md) mục 6, 7.
+
+- **AC-6.4.1** Khi ADMIN chọn nhà cung cấp, dán API key và bấm "Tải danh sách model". Thì danh sách model lấy từ API của nhà cung
+  cấp đó; khóa sai thì báo "Khóa không hợp lệ", không lưu gì.
+- **AC-6.4.2** Khi ADMIN bấm "Kiểm tra kết nối". Thì hệ thống gửi một câu hỏi ngắn tới model đã chọn và báo thành công kèm độ trễ,
+  hoặc lỗi dễ hiểu (khóa sai, model không tồn tại, hết hạn mức, quá thời gian). Có audit `ASSISTANT_CONFIG_TEST`.
+- **AC-6.4.3** Khi ADMIN lưu cấu hình. Thì câu hỏi kế tiếp của nhân viên dùng nhà cung cấp và model mới, không cần deploy hay khởi
+  động lại; có audit `ASSISTANT_CONFIG_UPDATE` ghi nhà cung cấp, model cũ và mới, 4 ký tự cuối của khóa.
+- **AC-6.4.4** Khi xem lại trang cấu hình, gọi `GET` cấu hình, hoặc đọc audit, log. Thì không bao giờ thấy khóa đầy đủ, chỉ 4 ký
+  tự cuối. Trong database khóa ở dạng mã hóa (ADR-08).
+- **AC-6.4.5** Khi đổi sang nhà cung cấp khác. Thì phải nhập khóa mới mới lưu được (400 `fields.apiKey`). Giữ nguyên nhà cung
+  cấp, chỉ đổi model thì không cần nhập lại khóa.
+- **AC-6.4.6** Khi người không phải ADMIN (kể cả HR) gọi API cấu hình. Thì trả 403. Khi gửi `version` cũ thì trả 409.
+- **AC-6.4.7** Giả sử chưa có cấu hình, hoặc ADMIN tắt trợ lý. Khi nhân viên hỏi. Thì nhận `fallback = true` kèm danh sách tài
+  liệu liên quan (như AC-6.3.4).
+
 ## 3. Yêu cầu phi chức năng liên quan
 
-NFR-1.3 (trợ lý p95 ≤ 6 s khi LLM bình thường, với 500 tài liệu); NFR-3.5 (timeout gọi LLM ≤ 10 s); NFR-5.21 (10 câu/phút,
+NFR-1.3 (trợ lý p95 ≤ 6 s khi LLM bình thường, với 500 tài liệu); NFR-5.17, NFR-5.18 (khóa API mã hóa, không lộ qua log, audit); NFR-3.5 (timeout gọi LLM ≤ 10 s); NFR-5.21 (10 câu/phút,
 100 câu/ngày mỗi người); NFR-7.1 (chi phí LLM trong ngân sách); NFR-11.1 (không giữ dữ liệu cá nhân ngoài mục đích).
 
 ## 4. Việc còn lại
@@ -53,7 +73,8 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 | ADR-16 và sửa tài liệu UC6 sau khi thu gọn | AC-6.3.5 | TV1 | `docs/adr-16-policy-assistant` | 12 |
 | Event tài liệu qua `document.outbox`, lệnh đồng bộ lần đầu (UC5 13.2) | AC-5.4.1 → AC-5.4.4 | TV1 | `feat/assistant-service` (bước đầu) | 12 |
 | `services/assistant`: nhận event, trích văn bản, chia đoạn, index full-text và vector | AC-6.3.7 | TV1 | `feat/assistant-service` | 12 |
-| API hỏi đáp, gọi Claude, trích dẫn, fallback, giới hạn tần suất, khung trợ lý trên `/documents` | AC-6.3.1 → AC-6.3.4, AC-6.3.6 | TV1 | `feat/policy-assistant` | 12 |
-| Bộ câu hỏi đánh giá có đáp án (ít nhất 30 câu) | AC-6.3.1 → AC-6.3.3, AC-6.3.5 | TV2 | `docs/assistant-eval-set` | 12 |
-| Khóa Claude API trong Secrets Manager, RDS bật `vector`, cấu hình task assistant | NFR-7.1 | TV3 | `infra/llm-secrets-cost` | 12 |
+| API hỏi đáp, adapter `anthropic`, trích dẫn, fallback, giới hạn tần suất, khung trợ lý trên `/documents` | AC-6.3.1 → AC-6.3.4, AC-6.3.6 | TV1 | `feat/policy-assistant` | 12 |
+| Trang "Cấu hình trợ lý", lưu khóa mã hóa, audit; adapter `google`, `openai-compatible` (DeepSeek) | AC-6.4.1 → AC-6.4.7 | TV1 | `feat/assistant-config` | 12–13 |
+| Bộ câu hỏi đánh giá có đáp án (ít nhất 30 câu), chạy được với mọi nhà cung cấp | AC-6.3.1 → AC-6.3.3, AC-6.3.5 | TV2 | `docs/assistant-eval-set` | 12 |
+| Khóa mã hóa cấu hình (`ASSISTANT_CONFIG_KEY`) trong Secrets Manager, RDS bật `vector`, task assistant, cho phép gọi ra API của ba nhà cung cấp | NFR-7.1 | TV3 | `infra/llm-secrets-cost` | 12 |
 | Chạy bộ đánh giá, đo độ trễ và chi phí mỗi câu | AC-6.3.x | TV4 | `docs/assistant-eval-report` | 13 |

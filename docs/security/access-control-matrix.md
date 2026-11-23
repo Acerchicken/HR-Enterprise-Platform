@@ -43,6 +43,14 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 | Vai trò được cấp | Cấp | `POST /api/v1/admin/role-assignments` | — | — | — | ✓ | Không cho chính mình (403); người chưa có tài khoản, đã nghỉ (400); đã có (409); audit `ROLE_GRANT`, event `RoleGranted` cùng giao dịch | AC-8.7.1, 8.7.3, 8.7.6, 8.7.7 |
 | Vai trò được cấp | Thu hồi | `DELETE /api/v1/admin/role-assignments/{userId}/{role}` | — | — | — | ✓ | ADMIN cuối cùng còn hoạt động (409, kiểm trước); của chính mình (403); không có dòng (404); audit `ROLE_REVOKE` có lý do | AC-8.7.2, 8.7.4 |
 
+### Cấu hình trợ lý (UC6 FR-6.4, ADR-16; chưa có)
+
+| Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |
+|---|---|---|---:|---:|---:|---:|---|---|
+| Cấu hình nhà cung cấp AI | Xem | `GET /api/v1/admin/assistant-config` | — | — | — | ✓ | Chỉ trả 4 ký tự cuối của API key | `feat/assistant-config` |
+| Cấu hình nhà cung cấp AI | Sửa | `PUT /api/v1/admin/assistant-config` | — | — | — | ✓ | Đổi nhà cung cấp phải nhập khóa mới; `version` cũ 409; audit `ASSISTANT_CONFIG_UPDATE` không chứa khóa | `feat/assistant-config` |
+| Cấu hình nhà cung cấp AI | Tải danh sách model, kiểm tra kết nối | `POST /api/v1/admin/assistant-config/models`, `POST /api/v1/admin/assistant-config/test` | — | — | — | ✓ | Không lưu khóa gửi kèm; audit `ASSISTANT_CONFIG_TEST` | `feat/assistant-config` |
+
 ### Tài khoản đăng nhập của nhân viên (UC8 FR-8.6)
 
 | Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |

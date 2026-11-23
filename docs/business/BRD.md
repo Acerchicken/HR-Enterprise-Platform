@@ -143,7 +143,7 @@ nhận và trạng thái trên `dev`.
 | UC3 Tạo đơn nghỉ | FR-3.1 → FR-3.7 |
 | UC4 Duyệt đơn | FR-4.1 → FR-4.8 |
 | UC5 Kho tài liệu chính sách | FR-5.1 → FR-5.3 |
-| UC6 Trợ lý chính sách | FR-6.3 (FR-6.1 chuyển về UC2, FR-6.2 bỏ) |
+| UC6 Trợ lý chính sách | FR-6.3, FR-6.4 (FR-6.1 chuyển về UC2, FR-6.2 bỏ) |
 | UC7 Lịch sử thao tác | FR-7.1 → FR-7.3 |
 
 ## 8. Business rule

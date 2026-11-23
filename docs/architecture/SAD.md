@@ -43,4 +43,4 @@ Mỗi ADR là một file trong [`adr/`](adr/README.md) (mẫu, trạng thái, qu
 | ADR-12 | Cloud provider | Hệ thống | Đã chấp nhận | [ADR-12-cloud-provider.md](adr/ADR-12-cloud-provider.md) |
 | ADR-13 | Kho tài liệu: tải lên trực tiếp, tải xuống qua API, lọc phạm vi trong truy vấn | Phần mềm | Đã chấp nhận | [ADR-13-document-storage.md](adr/ADR-13-document-storage.md) |
 | ADR-15 | Tách Notification và Search (nay là Assistant) thành service riêng qua event | Cả hai | Đề xuất | [ADR-15-service-extraction.md](adr/ADR-15-service-extraction.md) |
-| ADR-16 | Trợ lý chính sách: truy hồi lai full-text và pgvector, Claude API | Cả hai | Đề xuất | [ADR-16-policy-assistant.md](adr/ADR-16-policy-assistant.md) |
+| ADR-16 | Trợ lý chính sách: truy hồi lai full-text và pgvector, LLM chọn được trong ứng dụng qua adapter | Cả hai | Đề xuất | [ADR-16-policy-assistant.md](adr/ADR-16-policy-assistant.md) |

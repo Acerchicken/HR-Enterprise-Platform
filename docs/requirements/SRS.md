@@ -15,7 +15,7 @@
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
-| 1.7 | 23/11/2026 | UC6 thu gọn còn trợ lý chính sách (Duong, 22/11): FR-6.1 chuyển về UC2 (AC-2.1.6 → AC-2.1.9), bỏ FR-6.2 (trùng UC5), FR-6.3 nâng lên S theo [ADR-16](../architecture/adr/ADR-16-policy-assistant.md); NFR-1.3 tách tìm đồng nghiệp và trợ lý; NFR-5.21 thêm nhóm `assistant`; LLM API là Claude API |
+| 1.7 | 23/11/2026 | UC6 thu gọn còn trợ lý chính sách (Duong, 22/11): FR-6.1 chuyển về UC2 (AC-2.1.6 → AC-2.1.9), bỏ FR-6.2 (trùng UC5), FR-6.3 nâng lên S theo [ADR-16](../architecture/adr/ADR-16-policy-assistant.md); thêm FR-6.4 (ADMIN chọn nhà cung cấp AI: Claude, Gemini, DeepSeek; dán API key trong ứng dụng); NFR-1.3 tách tìm đồng nghiệp và trợ lý; NFR-5.21 thêm nhóm `assistant`; LLM do ADMIN chọn qua adapter |
 | 1.6 | 22/11/2026 | Kiểm chéo UC5: object storage chỉ dùng presigned URL để tải lên, tải xuống qua API (ADR-13); trạng thái FR-5.1 → 5.3; NFR-5.19 tách hạn URL tải lên (10 phút) và tải xuống (không phát link); NFR-5.23 đổi "20 MB" thành 20 MiB |
 | 1.5 | 18/11/2026 | Cập nhật trạng thái FR-8.1, 8.3, 8.4, 8.6, 8.7 sau ba nhánh code UC8 (`feat/uc8-roles-from-db`, `feat/uc8-role-admin`, `feat/uc8-account-lifecycle`) |
 | 1.4 | 18/11/2026 | Thêm FR-8.7 (ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, theo [ADR-18](../architecture/adr/ADR-18-authorization.md)); nhánh code của FR-8.1, 8.3, 8.4, 8.6 đổi sang `feat/uc8-*` tuần 11 |
@@ -79,7 +79,7 @@ phạm vi (tính lương, chấm công, tuyển dụng, ứng dụng di động,
 
 HRHelper là ứng dụng web nội bộ chạy trên cloud, thay cho Excel và email (hiện trạng ở [BRD mục 2](../business/BRD.md#2-bối-cảnh-và-vấn-đề)).
 Hệ thống làm việc với các hệ thống ngoài: identity provider (đăng nhập OIDC), dịch vụ gửi email, object storage (file tài liệu),
-LLM API (Claude API cho trợ lý chính sách, tuần 12, ADR-16) và hệ thống Payroll (ngoài phạm vi version 1). Sơ đồ ngữ cảnh:
+LLM API (Claude, Google Gemini hoặc DeepSeek do ADMIN chọn, cho trợ lý chính sách, tuần 12, ADR-16) và hệ thống Payroll (ngoài phạm vi version 1). Sơ đồ ngữ cảnh:
 [kiến trúc hệ thống mục 2](../architecture/SAD-1-system-architecture.md#2-ngữ-cảnh-hệ-thống-c4-mức-1).
 
 ### 2.2 Chức năng chính
@@ -91,7 +91,7 @@ LLM API (Claude API cho trợ lý chính sách, tuần 12, ADR-16) và hệ th�
 | UC3 Tạo đơn nghỉ | Xem số dư, tạo, hủy đơn, đề nghị hủy đơn đã duyệt, tạo đơn hộ, HR chỉnh hạn mức | FR-3.1 → FR-3.8 |
 | UC4 Duyệt đơn | Duyệt, từ chối, duyệt thay, HR duyệt thêm theo loại phép, HR hoàn tất, email thông báo, HR cập nhật lịch lễ | FR-4.1 → FR-4.9 |
 | UC5 Kho tài liệu | Đăng tài liệu theo phạm vi xem, phiên bản | FR-5.1 → FR-5.3 |
-| UC6 Trợ lý chính sách | Hỏi đáp bằng câu tự nhiên trên trang "Tra cứu tài liệu", trả lời kèm trích dẫn, chỉ dựa trên tài liệu người hỏi được xem | FR-6.3 |
+| UC6 Trợ lý chính sách | Hỏi đáp bằng câu tự nhiên trên trang "Tra cứu tài liệu", trả lời kèm trích dẫn, chỉ dựa trên tài liệu người hỏi được xem; ADMIN chọn nhà cung cấp AI | FR-6.3, FR-6.4 |
 | UC7 Lịch sử thao tác | Audit append-only, tra cứu audit | FR-7.1 → FR-7.3 |
 | UC8 Đăng nhập và tài khoản | Đăng nhập, đăng xuất qua identity provider, quên mật khẩu, MFA, tạo và khóa tài khoản theo hồ sơ, cấp và thu hồi vai trò | FR-8.1 → FR-8.7 |
 
@@ -133,7 +133,7 @@ mình được dùng; chức năng bị chặn ở giao diện vẫn phải bị
 | Identity provider | OIDC; API kiểm chữ ký token bằng JWKS | Đồng bộ | Không đăng nhập mới được; token còn hạn vẫn dùng |
 | Dịch vụ email | Queue → worker → SMTP | Bất đồng bộ | Gửi lại, không gửi trùng; trạng thái đơn không đổi (FR-4.6) |
 | Object storage | Presigned URL để tải lên; tải xuống qua API, kiểm quyền mỗi lần (ADR-13) | Tải lên đồng bộ | File tải lên không đi qua API (FR-5.1); storage lỗi thì API tài liệu trả 503, chức năng khác vẫn chạy (NFR-3.4) |
-| Claude API (ADR-16) | REST có timeout | Đồng bộ | Hết thời gian thì trả danh sách tài liệu liên quan (FR-6.3) |
+| LLM API do ADMIN chọn (ADR-16) | REST có timeout | Đồng bộ | Hết thời gian thì trả danh sách tài liệu liên quan (FR-6.3) |
 
 Chi tiết cách tích hợp: [kiến trúc hệ thống mục 2](../architecture/SAD-1-system-architecture.md#2-ngữ-cảnh-hệ-thống-c4-mức-1).
 
@@ -243,6 +243,7 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-6.1 | *(Chuyển về UC2 ngày 22/11/2026)* Ô tìm đồng nghiệp trên nav bar, nay là AC-2.1.6 → AC-2.1.9 của FR-2.1 | – | – | Đã có |
 | FR-6.2 | *(Bỏ ngày 22/11/2026, trùng UC5)* Tìm tài liệu theo từ khóa trong tiêu đề và nội dung | – | – | Không làm |
 | FR-6.3 | Trợ lý trả lời câu hỏi về chính sách HR, có trích dẫn tài liệu nguồn ([ADR-16](../architecture/adr/ADR-16-policy-assistant.md)) | S | Chỉ dùng tài liệu người hỏi được xem; không có đáp án thì nói không tìm thấy; LLM lỗi thì trả danh sách tài liệu liên quan | Kế hoạch tuần 12 |
+| FR-6.4 | ADMIN chọn nhà cung cấp AI (trước mắt Claude, Google Gemini, DeepSeek), model và dán API key trong ứng dụng; kiểm tra kết nối; thêm nhà cung cấp mới chỉ cần thêm adapter | S | Khóa mã hóa, không bao giờ trả lại (chỉ 4 ký tự cuối); có audit mỗi lần đổi; đổi có hiệu lực không cần deploy | Kế hoạch tuần 12–13 |
 
 ### 4.7 UC7 – Lịch sử thao tác (FR-7.x)
 
@@ -557,7 +558,7 @@ Chiều xuôi: mục tiêu (BRD) → yêu cầu (SRS) → thiết kế (SAD) →
 | MT-1 | UC1, UC2 | FR-1.1 → FR-1.14, FR-2.1 → FR-2.5 | Quy tắc hồ sơ, issue #21, #22 | Module Employee, Organization, Identity; ADR-10 | e2e `app.e2e-spec.ts`; biên bản kiểm thử tuần 7 |
 | MT-2 | UC3, UC4 | FR-3.1 → FR-3.8, FR-4.1 → FR-4.9 | BR-01 → BR-19 | Module Leave, Worker; outbox + queue (ADR-03) | 22 ca kiểm thử `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
 | MT-3 | UC1, UC7 | FR-1.3, FR-1.4, FR-7.1 → FR-7.3 | ADR-08, ADR-09 | Module Employee (`FieldCrypto`, ADR-08), Audit (ADR-09) | e2e audit, `VIEW_SENSITIVE`; ma trận phân quyền |
-| MT-4 | UC5, UC6 | FR-5.1 → FR-5.3, FR-6.3 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13); assistant service (ADR-15, ADR-16) | Kế hoạch kiểm thử tuần 10, 12 |
+| MT-4 | UC5, UC6 | FR-5.1 → FR-5.3, FR-6.3, FR-6.4 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13); assistant service (ADR-15, ADR-16) | Kế hoạch kiểm thử tuần 10, 12 |
 | MT-3 | UC8 | FR-8.1 → FR-8.7, NFR-5.1 → NFR-5.13 | Threat model T-02, T-03, T-06 | Module Identity, Keycloak/Cognito, outbox + SNS/SQS (ADR-17, ADR-18) | `test.md` UC8; ca kiểm thử bảo mật |
 
 Thiết kế chi tiết từng module: [kiến trúc phần mềm mục 4](../architecture/SAD-2-software-architecture.md#4-danh-mục-module).

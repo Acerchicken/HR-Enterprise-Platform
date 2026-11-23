@@ -1447,6 +1447,33 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
   <div class="note" style="top:520px;left:960px;max-width:280px">Lịch sử hỏi chỉ giữ trong phiên trang, không lưu <code>localStorage</code> (frontend 6).</div>
 </div>
 
+<div class="frame desk" id="uc6-config" style="height:760px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>2</i></span><span class="av alt">QT</span></div>
+  </div>
+  <div class="page">
+    <div class="crumb">Trang chủ › Quản trị › Cấu hình trợ lý</div>
+    <div class="hdr"><h1 style="display:flex;align-items:center;gap:10px"><svg class="i" style="width:24px;height:24px;color:var(--primary)"><use href="#spark"/></svg>Cấu hình trợ lý</h1></div>
+    <div class="box" style="max-width:820px;margin-top:16px;padding:20px 24px">
+      <div style="display:flex;align-items:center;gap:10px;font-weight:600"><span style="width:40px;height:22px;border-radius:999px;background:var(--primary);position:relative;display:inline-block"><span style="position:absolute;right:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff"></span></span>Bật trợ lý cho nhân viên<span class="mut" style="font-weight:400;font-size:13px">(tắt thì nhân viên chỉ nhận danh sách tài liệu liên quan)</span></div>
+      <label class="l">Nhà cung cấp *</label>
+      <div class="seg"><span class="on">Claude (Anthropic)</span><span>Google Gemini</span><span>DeepSeek</span></div>
+      <div class="mut" style="font-size:12.5px;margin-top:6px">Câu hỏi và đoạn tài liệu được gửi tới máy chủ của nhà cung cấp tại Mỹ. DeepSeek: Trung Quốc.</div>
+      <label class="l">API key *</label>
+      <div class="input" style="color:var(--muted)">••••••••••••••••••••7Q2a<span style="margin-left:auto;color:var(--primary);font-weight:600;font-size:13px">Thay khóa</span></div>
+      <label class="l">Model *</label>
+      <div style="display:flex;gap:10px;align-items:center"><div class="input f" style="flex:1">claude-haiku-5-5<span class="dn" style="margin-left:auto">▾</span></div><span class="btn o" style="margin-top:4px">Tải danh sách model</span></div>
+      <div class="alert s" style="margin-top:16px"><svg class="i"><use href="#check"/></svg><span>Kết nối thành công · 840 ms · claude-haiku-5-5</span></div>
+      <div style="display:flex;gap:10px;margin-top:18px"><span class="btn o">Kiểm tra kết nối</span><span class="btn p">Lưu</span><span style="margin-left:auto;align-self:center;font-size:13px" class="mut">Sửa lần cuối: Phạm Quang Tùng · 23/11/2026 09:20</span></div>
+    </div>
+  </div>
+  <div class="note" style="top:150px;left:900px;max-width:340px">Chỉ ADMIN (FR-6.4); HR cũng bị 403. Danh sách nhà cung cấp lấy từ API (registry adapter), thêm nhà cung cấp mới không phải sửa trang này.</div>
+  <div class="note" style="top:330px;left:900px;max-width:340px">Không bao giờ hiện lại khóa, chỉ 4 ký tự cuối (AC-6.4.4). Đổi sang nhà cung cấp khác thì ô khóa trống, bắt nhập khóa mới (AC-6.4.5).</div>
+  <div class="note" style="top:490px;left:900px;max-width:340px">"Tải danh sách model" gọi API của nhà cung cấp bằng khóa vừa dán (AC-6.4.1). "Kiểm tra kết nối" gửi một câu ngắn, báo độ trễ hoặc lỗi dễ hiểu (AC-6.4.2). Lưu có audit, không chứa khóa (AC-6.4.3).</div>
+</div>
+
 <div class="frame desk" id="uc5-detail" style="height:680px">
   <div class="nav">
     <div class="logo"><b>H</b>HRHelper</div>

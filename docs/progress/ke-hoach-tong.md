@@ -152,7 +152,7 @@ UC nào cũng dở. Từ nay:
 | `feat/notification-service` | TV1 Duong | ADR-15 bước 1: tách worker thành `services/notification/`, payload outbox mang sẵn người nhận, driver `MAIL_DRIVER=smtp\|ses` (thay nhánh `feat/mail-driver-ses` đã lên kế hoạch 14/11) | Tiêu chí ADR-15, worker gửi được email trên staging | CN (22/11) | T2 (23/11) | TV3, TV4 |
 | (không có nhánh) | TV3 Bảo | `terraform apply` staging theo `docs/aws-rollout-plan`, gồm bucket tài liệu, bucket hồ sơ, hạ tầng ADR-15; chạy Deploy Staging với seed | `deploy.md` mục 5 của các UC đã dev xong | T3 (24/11) xong | – | TV1 |
 | `feat/tracing-otel` | TV1 Duong | ADR-15 bước 4: OpenTelemetry cho API và hai service, `traceparent` qua outbox và queue; Jaeger local, X-Ray staging | Tiêu chí ADR-15 | T6 (27/11) | T7 (28/11) | TV3 |
-| `infra/llm-secrets-cost` | TV3 Bảo | Khóa Claude API trong Secrets Manager (credit trả trước là trần chi phí); RDS bật extension `vector`; task Fargate assistant đủ khoảng 1 GB RAM (ADR-16, sửa 23/11) | NFR-7.1 | T4 (25/11), 21:00 | T5 (26/11) | TV1 |
+| `infra/llm-secrets-cost` | TV3 Bảo | Khóa mã hóa cấu hình trợ lý `ASSISTANT_CONFIG_KEY` trong Secrets Manager; cho phép gọi HTTPS ra API của Claude, Gemini, DeepSeek; RDS bật extension `vector`; task Fargate assistant đủ khoảng 1 GB RAM (ADR-16, sửa 23/11) | NFR-7.1 | T4 (25/11), 21:00 | T5 (26/11) | TV1 |
 
 PR đang mở của TV3: #68 (MinIO local) đang conflict và Request changes; #70 (Terraform tài liệu, email SES API) đã sửa 15/11, chờ
 TV1 review lại; #69 đã merge 16/11. TV3 sửa #68 trước T3 (17/11), 21:00 (đổi image S3 cả nhóm pull được, rebase `dev`). `apply`
@@ -200,7 +200,7 @@ UC2. Search service của ADR-15 đổi thành assistant service; cách làm the
 
 | Nhánh | Người | Việc | Tiêu chí | Mở PR | Merge | Review |
 |---|---|---|---|---|---|---|
-| `docs/adr-16-policy-assistant` | TV1 Duong | ADR-16: truy hồi lai full-text và pgvector, Claude API, ngưỡng đánh giá; sửa UC6, SRS, ADR-15 sau khi thu gọn UC6 | AC-6.3.5 | T2 (23/11) | T3 (24/11) | TV2, TV3 |
+| `docs/adr-16-policy-assistant` | TV1 Duong | ADR-16: truy hồi lai full-text và pgvector, adapter nhiều nhà cung cấp LLM do ADMIN chọn, ngưỡng đánh giá; sửa UC6, SRS, ADR-15 sau khi thu gọn UC6 | AC-6.3.5 | T2 (23/11) | T3 (24/11) | TV2, TV3 |
 | `docs/assistant-eval-set` | TV2 Thanh | Bộ ≥ 30 câu hỏi có đáp án, tài liệu nguồn; có câu ngoài tài liệu, câu prompt injection | AC-6.3.1 → 6.3.3 | T3 (24/11), 21:00 | T4 (25/11) | TV1, TV4 |
 | `docs/test-cases-uc6` | TV4 Duy | Ca trợ lý (trong và ngoài phạm vi, đổi đơn vị, tài liệu ẩn, fallback, giới hạn tần suất); ca ADR-15 (tắt notification service vẫn duyệt được đơn) | AC-6.3.x | T3 (24/11), 21:00 | T4 (25/11) | TV2, TV1 |
 | `feat/idp-account-lifecycle` | TV1 Duong | UC8 (ADR-17): event `employee.created`/`terminated`/`reinstated`, consumer `identity-sync`, driver Keycloak/Cognito, `idp_status`, gửi lại lời mời, tự đăng xuất sau 30 phút không thao tác (thêm 17/11) | AC-8.1.6, AC-8.3.x, AC-8.4.2, 8.4.3, AC-8.6.x | T4 (25/11) | T5 (26/11) | TV3, TV4 |
@@ -208,6 +208,7 @@ UC2. Search service của ADR-15 đổi thành assistant service; cách làm the
 | `docs/test-cases-uc8` | TV4 Duy | Ca kiểm thử UC8 theo `test.md` (thêm 17/11) | AC-8.x.y | T5 (26/11), 21:00 | T6 (27/11) | TV1, TV3 |
 | `feat/assistant-service` (trước là `feat/search-service`) | TV1 Duong | ADR-15 bước 2, ADR-16: trước hết module document phát event qua `document.outbox` và lệnh đồng bộ lần đầu (UC5 13.2, D1, AC-5.4.1 → 5.4.4); `services/assistant/` nhận event tài liệu, trích văn bản PDF/DOCX, chia đoạn, index full-text và pgvector trong schema `assistant` | AC-5.4.x, AC-6.3.7 | T3 (24/11) | T4 (25/11) | TV2, TV4 |
 | `feat/policy-assistant` | TV1 Duong | API `POST /assistant/questions` (BFF tính phạm vi), gọi Claude Haiku 5.5, trích dẫn, fallback 10 s, giới hạn 10 câu/phút; khung trợ lý trên `/documents`. Nếu phần vector chưa xong T6 (27/11) thì giao bản chỉ full-text (ADR-16) | AC-6.3.1 → 6.3.4, AC-6.3.6 | T5 (26/11) | T6 (27/11) | TV2, TV4 |
+| `feat/assistant-config` | TV1 Duong | Trang "Cấu hình trợ lý" cho ADMIN, lưu khóa mã hóa, audit; adapter `google`, `openai-compatible` (DeepSeek); thêm 23/11 theo yêu cầu của Duong. Trễ thì giao `anthropic` trước, hai adapter còn lại tuần 13 | AC-6.4.1 → 6.4.7 | T6 (27/11) | T7 (28/11) | TV3, TV4 |
 | `docs/test-report-uc6` | TV4 Duy | Chạy ca UC6 trên staging | `test.md` UC6 | T2 (30/11), 21:00 | T3 (1/12) | TV1 |
 | `docs/assistant-eval-report` | TV4 Duy | Chạy bộ đánh giá: tỉ lệ đúng, có trích dẫn, độ trễ, chi phí mỗi câu (chỉ khi trợ lý đã merge) | AC-6.3.5 | T2 (30/11), 21:00 | T3 (1/12) | TV1, TV2 |
 
