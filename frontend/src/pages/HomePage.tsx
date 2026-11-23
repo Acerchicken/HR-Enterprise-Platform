@@ -16,6 +16,7 @@ import {
   UserPlus,
   UserRound,
   Users,
+  Sparkles,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api, LeaveBalance, Role } from '../api/client';
@@ -58,6 +59,7 @@ const HR_TILES: Tile[] = [
   { title: 'Đăng tài liệu', desc: 'Quy chế, biểu mẫu, phạm vi xem', icon: Upload, to: '/documents/manage', who: ['HR'] },
   { title: 'Lịch sử thao tác', desc: 'Ai làm gì, lúc nào', icon: History, to: '/audit', who: ['HR', 'ADMIN'] },
   { title: 'Phân quyền', desc: 'Cấp, thu hồi vai trò HR, ADMIN', icon: ShieldCheck, to: '/admin/roles', who: ['ADMIN'] },
+  { title: 'Cấu hình trợ lý', desc: 'Nhà cung cấp AI, model, API key', icon: Sparkles, to: '/admin/assistant', who: ['ADMIN'] },
 ];
 
 const DAY = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
