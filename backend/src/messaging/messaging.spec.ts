@@ -99,6 +99,35 @@ describe('SqsEventBus', () => {
   });
 });
 
+describe('Event tài liệu (UC6, ADR-15)', () => {
+  const docEvent = { id: 'evt-9', type: 'DocumentPublished', payload: { documentId: 'd-1' }, createdAt: new Date('2026-11-23T00:00:00Z') };
+
+  it('RabbitMQ: routing key document.<event>, queue notification.leave (bind leave.*) không nhận', async () => {
+    await new RabbitMqEventBus('amqp://x').publish(docEvent);
+    expect(amqpMock.__channel.publish).toHaveBeenCalledWith('hr.events', 'document.DocumentPublished', expect.any(Buffer), expect.objectContaining({ messageId: 'evt-9' }));
+  });
+
+  it('SQS: vào queue của assistant service; event nghỉ phép vẫn vào queue notification', async () => {
+    const sqs = fakeSqs();
+    const bus = new SqsEventBus(sqs as any, 'https://sqs/hr-worker', 'https://sqs/hr-assistant');
+    await bus.publish(docEvent);
+    await bus.publish(event);
+    expect((sqs.sent[0] as SendMessageCommand).input.QueueUrl).toBe('https://sqs/hr-assistant');
+    expect((sqs.sent[1] as SendMessageCommand).input.QueueUrl).toBe('https://sqs/hr-worker');
+  });
+
+  it('SQS chưa có queue assistant: bỏ qua event tài liệu, không gửi nhầm cho notification', async () => {
+    const sqs = fakeSqs();
+    await new SqsEventBus(sqs as any, 'https://sqs/hr-worker').publish(docEvent);
+    expect(sqs.sent).toHaveLength(0);
+  });
+
+  it('SQS_ASSISTANT_QUEUE_URL đọc từ cấu hình', () => {
+    const cfg = loadConfig({ QUEUE_DRIVER: 'sqs', SQS_QUEUE_URL: 'https://sqs/a', SQS_ASSISTANT_QUEUE_URL: 'https://sqs/b', AWS_REGION: 'ap-southeast-1' });
+    expect(cfg.queue.sqsAssistantQueueUrl).toBe('https://sqs/b');
+  });
+});
+
 describe('SqsEventConsumer', () => {
   const msg = (id: string) => ({
     MessageId: 'sqs-' + id,

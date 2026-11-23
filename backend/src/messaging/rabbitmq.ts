@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
-import { EVENTS_EXCHANGE, LeaveEventType, routingKey } from '../modules/leave/outbox/leave-events';
+import { EVENTS_EXCHANGE } from '../modules/leave/outbox/leave-events';
+import { routingKeyOf } from './routing';
 import { BusEvent, EventBus, EventConsumer, EventHandler } from './event-bus';
 
 export const QUEUE = 'notification.leave';
@@ -19,7 +20,7 @@ export class RabbitMqEventBus implements EventBus {
   async publish(event: BusEvent): Promise<void> {
     try {
       const channel = await this.ensureChannel();
-      channel.publish(EVENTS_EXCHANGE, routingKey(event.type as LeaveEventType), Buffer.from(JSON.stringify(event.payload)), {
+      channel.publish(EVENTS_EXCHANGE, routingKeyOf(event.type), Buffer.from(JSON.stringify(event.payload)), {
         messageId: event.id,
         type: event.type,
         persistent: true,

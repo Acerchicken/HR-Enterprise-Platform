@@ -22,6 +22,7 @@ import {
   VersionView,
 } from './document.dto';
 import { DocumentEntity, DocumentScope, DocumentVersion } from './document.entity';
+import { writeDocumentEvent } from './document-events';
 import { ObjectStorage } from './object-storage';
 
 type Scope = { all: boolean; departmentIds: string[]; roles: string[] };
@@ -149,6 +150,20 @@ export class DocumentService {
     await this.ds.transaction(async (m) => {
       await m.getRepository(DocumentVersion).update({ id: v.id }, { status: 'READY', readyAt: new Date() });
       await m.query('UPDATE document.document SET updated_at = now() WHERE id = $1', [id]);
+      const doc = await m.getRepository(DocumentEntity).findOneByOrFail({ id });
+      // UC5 13.2: assistant service index phiên bản mới (UC6).
+      await writeDocumentEvent(m, 'DocumentPublished', {
+        documentId: id,
+        versionId: v.id,
+        versionNo: v.versionNo,
+        objectKey: v.objectKey,
+        contentType: v.contentType,
+        title: doc.title,
+        type: doc.type,
+        scope: await this.scopeOf(m, doc),
+        hidden: doc.hidden,
+        occurredAt: new Date().toISOString(),
+      });
       await this.audit.record(
         { actorId: actor.employeeId, action: 'DOCUMENT_PUBLISH', entityType: 'document', entityId: id, changedFields: { versionNo: v.versionNo, fileName: v.fileName }, ...meta },
         m,
@@ -184,6 +199,13 @@ export class DocumentService {
       }
       if (!Object.keys(changes).length) return;
       await repo.save(doc);
+      await writeDocumentEvent(m, 'DocumentUpdated', {
+        documentId: id,
+        title: doc.title,
+        type: doc.type,
+        scope: await this.scopeOf(m, doc),
+        occurredAt: new Date().toISOString(),
+      });
       await this.audit.record({ actorId: actor.employeeId, action: 'DOCUMENT_UPDATE', entityType: 'document', entityId: id, changedFields: changes, ...meta }, m);
     });
     return this.manageGet(id);
@@ -194,6 +216,7 @@ export class DocumentService {
     await this.ds.transaction(async (m) => {
       const res = await m.getRepository(DocumentEntity).update({ id }, { hidden });
       if (!res.affected) throw new NotFoundException('Không tìm thấy tài liệu');
+      await writeDocumentEvent(m, hidden ? 'DocumentHidden' : 'DocumentRestored', { documentId: id, occurredAt: new Date().toISOString() });
       await this.audit.record({ actorId: actor.employeeId, action: hidden ? 'DOCUMENT_HIDE' : 'DOCUMENT_RESTORE', entityType: 'document', entityId: id, ...meta }, m);
     });
     return this.manageGet(id);
@@ -249,6 +272,16 @@ export class DocumentService {
       throw fieldError('scope.departmentIds', 'Đơn vị đã ngừng hoạt động, hãy chọn đơn vị khác');
     }
     return scope;
+  }
+
+  /** Phạm vi hiện tại của tài liệu, cho payload event (assistant service không đọc schema `document`). */
+  private async scopeOf(m: EntityManager, doc: DocumentEntity): Promise<Scope> {
+    const rows = await m.getRepository(DocumentScope).findBy({ documentId: doc.id });
+    return {
+      all: doc.scopeAll,
+      departmentIds: rows.filter((s) => s.kind === 'DEPARTMENT').map((s) => s.value),
+      roles: rows.filter((s) => s.kind === 'ROLE').map((s) => s.value),
+    };
   }
 
   private async saveScope(m: EntityManager, documentId: string, s: { departmentIds: string[]; roles: string[] }) {

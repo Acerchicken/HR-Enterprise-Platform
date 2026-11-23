@@ -7,29 +7,35 @@ import {
   SQSClient,
 } from '@aws-sdk/client-sqs';
 import { BusEvent, EventBus, EventConsumer, EventHandler } from './event-bus';
+import { destinationOf } from './routing';
 
-/** Gửi event vào SQS. Queue FIFO (URL đuôi .fifo) thì dùng id outbox làm MessageDeduplicationId. */
+/**
+ * Gửi event vào SQS. Queue FIFO (URL đuôi .fifo) thì dùng id outbox làm MessageDeduplicationId.
+ * Event tài liệu đi vào queue của assistant service (`SQS_ASSISTANT_QUEUE_URL`); chưa cấu hình queue đó thì bỏ qua event
+ * (không có ai nhận), để notification service không nhận nhầm.
+ */
 export class SqsEventBus implements EventBus {
-  private readonly fifo: boolean;
-
   constructor(
     private readonly client: Pick<SQSClient, 'send' | 'destroy'>,
     private readonly queueUrl: string,
-  ) {
-    this.fifo = queueUrl.endsWith('.fifo');
-  }
+    private readonly assistantQueueUrl: string | null = null,
+  ) {}
 
   async publish(event: BusEvent): Promise<void> {
+    const dest = destinationOf(event.type);
+    const url = dest === 'assistant' ? this.assistantQueueUrl : this.queueUrl;
+    if (!url) return;
+    const fifo = url.endsWith('.fifo');
     await this.client.send(
       new SendMessageCommand({
-        QueueUrl: this.queueUrl,
+        QueueUrl: url,
         MessageBody: JSON.stringify(event.payload),
         MessageAttributes: {
           messageId: { DataType: 'String', StringValue: event.id },
           type: { DataType: 'String', StringValue: event.type },
           createdAt: { DataType: 'String', StringValue: event.createdAt.toISOString() },
         },
-        ...(this.fifo ? { MessageGroupId: 'leave', MessageDeduplicationId: event.id } : {}),
+        ...(fifo ? { MessageGroupId: dest === 'assistant' ? 'document' : 'leave', MessageDeduplicationId: event.id } : {}),
       }),
     );
   }
