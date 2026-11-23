@@ -8,7 +8,7 @@
     "start": "node dist/main.js",
     "start:dev": "ts-node --transpile-only src/main.ts",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
     "reindex-embeddings": "ts-node --transpile-only src/cli/reindex-embeddings.ts",
     "download-model": "node dist/cli/download-model.js"
   },

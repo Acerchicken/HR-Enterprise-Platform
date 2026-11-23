@@ -1,6 +1,6 @@
 /**
  * Assistant service (UC6, ADR-15, ADR-16):  npm run start:dev (dev) · node dist/main.js (Docker)
- * Nạp model embedding, nghe queue `assistant.document`, phục vụ HTTP nội bộ (`/health`).
+ * Nạp model embedding, nghe queue `assistant.document`, phục vụ HTTP nội bộ (`/health`, `POST /internal/answers`).
  */
 import { loadConfig } from './config';
 import { createPool } from './db';
@@ -10,6 +10,10 @@ import { errorText, log } from './log';
 import { createConsumer } from './messaging/consumer';
 import { createEmbedder } from './rag/embedders/registry';
 import { S3FileReader } from './storage';
+import { Answerer } from './answer/answerer';
+import { answerRoute } from './answer/route';
+import { EnvConfigSource } from './llm/config-source';
+import { Retriever } from './rag/retriever';
 
 async function main() {
   const cfg = loadConfig();
@@ -23,7 +27,9 @@ async function main() {
   const consumer = createConsumer(cfg.queue);
   await consumer.start((e) => indexer.handle(e).then(() => undefined));
 
+  const answerer = new Answerer(new Retriever(pool, embedder), new EnvConfigSource(), cfg.llmTimeoutMs);
   const server = createHttpServer({
+    'POST /internal/answers': answerRoute(answerer, cfg.internalToken),
     'GET /health': async () => {
       await pool.query('SELECT 1');
       return { status: 200, body: { status: 'ok', embeddingModel: embedder.id } };
