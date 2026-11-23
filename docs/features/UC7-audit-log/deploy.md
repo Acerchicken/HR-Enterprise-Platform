@@ -8,13 +8,13 @@
 | Thành phần | Phần của UC7 |
 |---|---|
 | API | `backend/src/modules/audit` (`AuditService.record` gọi trong giao dịch của từng module; `GET /audit-logs`) |
-| Web | Chưa có (nhánh `feat/audit-ui`) |
-| Database | `audit.audit_log`, chỉ mục `ix_audit_entity`, `ix_audit_actor`, hàm `audit.forbid_change` và trigger `trg_audit_append_only`; migration `InitSchemas`. Thêm `ix_audit_at` (BRIN theo `at`, migration mới ở `feat/audit-ui`, D2 chốt 23/11) |
+| Web | `frontend/src/pages/AuditPage.tsx`, route `/audit` |
+| Database | `audit.audit_log`, chỉ mục `ix_audit_entity`, `ix_audit_actor`, hàm `audit.forbid_change` và trigger `trg_audit_append_only`; migration `InitSchemas`. `ix_audit_at` (BRIN theo `at`, migration `AuditTimeIndex`, D2) |
 | Worker, lệnh | `backend/src/worker/identity-sync.ts` (`ACCOUNT_SYNC_FAILED`) và `backend/src/database/grant-admin.ts` (`ROLE_GRANT`) ghi bằng SQL `INSERT` thẳng; tài khoản database của worker cần quyền `INSERT` trên `audit.audit_log` |
 
 ## 2. Biến môi trường
 
-Không có biến riêng. `traceId` lấy từ header `X-Trace-Id` (NFR-6.4).
+Không có biến riêng. `traceId` lấy từ header `X-Trace-Id` (NFR-6.4). IP là `req.ip`: sau ALB cần `trust proxy` để là IP client, không phải IP của ALB.
 
 ## 3. Hạ tầng
 

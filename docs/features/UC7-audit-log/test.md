@@ -21,17 +21,17 @@ hiệu năng tra cứu đo với dữ liệu lớn.
 |---|---|---|---|
 | AC-7.1.1 | "HR xem trường nhạy cảm (đã giải mã) và lượt xem được audit", "tạo → quản lý duyệt → HR hoàn tất sau ngày kết thúc; số dư, lịch sử, audit, outbox đúng", "nghỉ việc gỡ vai trò trưởng, phó trong cùng giao dịch, có audit (AC-2.9.8)", "cấp HR: … audit, event (AC-8.7.1)" | – | Có cho UC1, UC2, UC3, UC4, UC8; UC5 (`DOCUMENT_*`), `HOLIDAY_*`, `DELEGATION_*` cần thêm |
 | AC-7.1.2 | – | Cần thêm | Chưa |
-| AC-7.1.3 | "HR cập nhật lương: audit chỉ ghi tên trường, không ghi giá trị", "từ chối bắt buộc lý do …; lý do không vào audit (BR-14)" | Cần thêm CCCD; `employeeCode` | Một phần; `employeeCode` chưa đạt |
-| AC-7.1.4 | – | Cần thêm: `traceId` của audit khớp `X-Trace-Id` cho đơn vị, điều chuyển, cấp vai trò | Chưa đạt |
+| AC-7.1.3 | "HR cập nhật lương: audit chỉ ghi tên trường, không ghi giá trị", "từ chối bắt buộc lý do …; lý do không vào audit (BR-14)", "employeeCode chỉ ghi tên, không ghi giá trị (AC-7.1.3)"; unit `employee-audit.spec.ts` | Cần thêm CCCD | Có |
+| AC-7.1.4 | "traceId, IP của request có trong audit của module không truyền meta (AC-7.1.4)" | – | Có |
 | AC-7.2.1 | "audit_log là append-only ở mức database" | – | Có |
 | AC-7.3.1 | Lọc theo `entity`, `entityId` trong test VIEW_SENSITIVE | Cần thêm `actor`, `from`, `to` | Một phần |
 | AC-7.3.2 | "nhân viên không xem được audit log", "audit log: HR, ADMIN xem được; MANAGER bị chặn" | SEC-03, SEC-04 | Có |
-| AC-7.3.3 | – | Cần thêm | Chưa |
-| AC-7.3.4 | – | – | Chưa có giao diện |
-| AC-7.3.5 | – | – | Chưa đạt (`from` theo UTC, `to` không tính ngày kết thúc) |
+| AC-7.3.3 | "sai tham số: 400 (AC-7.3.3)" | – | Có |
+| AC-7.3.4 | – | Mở `/audit` bằng HR, ADMIN; lọc, mở chi tiết, sao chép `traceId` | Ca tay |
+| AC-7.3.5 | "from=to=ngày: lấy đủ ngày theo giờ Việt Nam, kể cả 0–7 giờ sáng (AC-7.3.5)"; unit `audit-period.spec.ts` | – | Có |
 | AC-7.3.6 | "tạo → quản lý duyệt → HR hoàn tất …" (lọc `leave_request`) | Cần thêm: lọc `employee` không có bước đơn | Một phần |
-| AC-7.3.7 | – | – | Chưa có (D1) |
-| AC-7.3.8 | – | – | Chưa có (D3) |
+| AC-7.3.7 | "ADMIN không thấy audit đơn nghỉ, số dư phép; HR thấy (AC-7.3.7, D1)" | – | Có |
+| AC-7.3.8 | "lọc theo hành động, nhiều giá trị; có tên người thực hiện (AC-7.3.8)"; unit `audit-catalog.spec.ts` (mọi hành động trong code có trong danh mục) | – | Có |
 | AC-7.4.1 | – | – | Chưa có tính năng |
 | AC-7.4.2 | "cấp HR: …(AC-8.7.1)", "thu hồi HR: … audit có lý do (AC-8.7.2)", "HR nghỉ việc mất HR, có audit và event …" | – | Có |
 
@@ -57,10 +57,6 @@ npm run test:e2e
 
 - AC-7.1.2: thao tác lỗi (ví dụ duyệt với `version` cũ) không sinh audit.
 - AC-7.1.3: audit không chứa CCCD, số tài khoản, lý do nghỉ ốm.
-- AC-7.3.1: lọc theo `actor` và khoảng thời gian; AC-7.3.5: bản ghi lúc 01:00 giờ Việt Nam ngày 1/11 và lúc 23:59 phải có khi
-  `from=to=2026-11-01`. AC-7.3.3: ngày sai định dạng, `actor=abc`, `size = 101`.
-- AC-7.1.4: `traceId` gửi trong header `X-Trace-Id` có trong audit của `POST /departments`, điều chuyển, cấp vai trò.
-- AC-7.3.7: ADMIN lọc `entity=leave_request` nhận rỗng, không lọc cũng không có bản ghi đơn nghỉ; HR nhận đủ.
-- AC-7.3.8: lọc nhiều `action`; `action=ABC` trả 400.
-- NFR-2.4: `EXPLAIN` truy vấn chỉ theo `from`, `to` dùng `ix_audit_at`.
+- AC-7.3.1: lọc theo `actor`.
+- NFR-2.4: `EXPLAIN` truy vấn chỉ theo `from`, `to` dùng `ix_audit_at` với 3,75 triệu bản ghi.
 - AC-7.1.1 cho thao tác kho tài liệu (`DOCUMENT_*`).
