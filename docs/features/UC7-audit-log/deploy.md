@@ -9,7 +9,8 @@
 |---|---|
 | API | `backend/src/modules/audit` (`AuditService.record` gọi trong giao dịch của từng module; `GET /audit-logs`) |
 | Web | Chưa có (nhánh `feat/audit-ui`) |
-| Database | `audit.audit_log`, chỉ mục `ix_audit_entity`, `ix_audit_actor`, hàm `audit.forbid_change` và trigger `trg_audit_append_only`; migration `InitSchemas` |
+| Database | `audit.audit_log`, chỉ mục `ix_audit_entity`, `ix_audit_actor`, hàm `audit.forbid_change` và trigger `trg_audit_append_only`; migration `InitSchemas`. Thêm `ix_audit_at` (BRIN theo `at`, migration mới ở `feat/audit-ui`, D2 chốt 23/11) |
+| Worker, lệnh | `backend/src/worker/identity-sync.ts` (`ACCOUNT_SYNC_FAILED`) và `backend/src/database/grant-admin.ts` (`ROLE_GRANT`) ghi bằng SQL `INSERT` thẳng; tài khoản database của worker cần quyền `INSERT` trên `audit.audit_log` |
 
 ## 2. Biến môi trường
 
@@ -39,11 +40,12 @@ Không có biến riêng. `traceId` lấy từ header `X-Trace-Id` (NFR-6.4).
 ## 6. Rollback và sự cố
 
 - Rollback image không ảnh hưởng audit. Không revert `InitSchemas` trên môi trường có dữ liệu.
-- Bảng audit lớn dần (~1,25 triệu bản ghi mỗi năm): theo dõi dung lượng RDS; archive chờ chốt thời gian lưu (BR-13 hay NFR-6.3).
+- Bảng audit lớn dần (~1,25 triệu bản ghi mỗi năm, 5 năm ~6,25 triệu): theo dõi dung lượng RDS. Thời gian lưu đã chốt 5 năm
+  (BR-13, NFR-6.3); quy trình archive, legal hold làm trước production.
 
 ## 7. Còn thiếu
 
 - Audit đăng nhập và cấp, thu hồi vai trò (NFR-5.10) cần lấy event từ Keycloak và Cognito; tuần 13 nếu còn thời gian.
-- Chưa có quy trình archive theo thời gian lưu.
+- Chưa có quy trình archive sau 5 năm (BR-13).
 - `TRUNCATE` vượt qua trigger append-only. Đề xuất: tài khoản database của ứng dụng trên staging không có quyền `TRUNCATE`
   bảng audit (NFR-5.14), chỉ tài khoản quản trị chạy seed `--reset`.

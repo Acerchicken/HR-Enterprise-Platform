@@ -33,7 +33,7 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 
 | Tài nguyên | Thao tác | API | EMPLOYEE | MANAGER | HR | ADMIN | Điều kiện theo dữ liệu | Nguồn |
 |---|---|---|---:|---:|---:|---:|---|---|
-| Audit log | Tìm kiếm/xem | `GET /api/v1/audit-logs` | — | — | ✓ | ✓ | Có thể lọc theo loại đối tượng, ID đối tượng, người thao tác, thời gian; phân trang. Log chỉ được thêm, không có API sửa/xóa. | UC7, ADR-09 |
+| Audit log | Tìm kiếm/xem | `GET /api/v1/audit-logs` | — | — | ✓ | ✓ | Có thể lọc theo loại đối tượng, ID đối tượng, người thao tác, hành động, thời gian; phân trang. Log chỉ được thêm, không có API sửa/xóa. Người chỉ có `ADMIN` không thấy audit `leave_request`, `leave_balance` (UC7 D1, BR-14; chưa code) | UC7, ADR-09 |
 
 ### Vai trò (UC8 FR-8.7, ADR-18)
 
