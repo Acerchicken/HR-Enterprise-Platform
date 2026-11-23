@@ -1,30 +1,6 @@
-import { createServer, Server } from 'http';
-import { AddressInfo } from 'net';
+import { fakeServer } from '../test-support/fake-server';
 import { OpenAiCompatibleProvider } from './openai-compatible';
 import { LlmError } from './provider';
-
-/** Máy chủ giả kiểu OpenAI: ghi lại request, trả theo `reply`. */
-function fakeServer(reply: (path: string, body: any) => { status: number; body: unknown; delayMs?: number }) {
-  const calls: Array<{ path: string; auth: string; body: any }> = [];
-  const server: Server = createServer((req, res) => {
-    let raw = '';
-    req.on('data', (c) => (raw += c));
-    req.on('end', () => {
-      const body = raw ? JSON.parse(raw) : undefined;
-      calls.push({ path: req.url!, auth: String(req.headers.authorization), body });
-      const r = reply(req.url!, body);
-      setTimeout(() => {
-        res.writeHead(r.status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(r.body));
-      }, r.delayMs ?? 0);
-    });
-  });
-  return {
-    calls,
-    start: () => new Promise<string>((ok) => server.listen(0, '127.0.0.1', () => ok(`http://127.0.0.1:${(server.address() as AddressInfo).port}/v1`))),
-    stop: () => new Promise<void>((ok) => server.close(() => ok())),
-  };
-}
 
 const passage = { n: 1, chunkId: '1', documentId: 'd', versionNo: 1, title: 'Quy chế', section: 'Điều 5', content: 'Kết hôn nghỉ 3 ngày' };
 

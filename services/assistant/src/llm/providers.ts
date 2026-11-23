@@ -1,3 +1,5 @@
+import { AnthropicProvider } from './anthropic';
+import { GOOGLE_BASE_URL, GoogleProvider } from './google';
 import { OpenAiCompatibleProvider } from './openai-compatible';
 import { LlmProvider } from './provider';
 
@@ -15,6 +17,20 @@ export interface ProviderEntry {
 }
 
 const ENTRIES: ProviderEntry[] = [
+  {
+    id: 'anthropic',
+    name: 'Claude (Anthropic)',
+    dataRegion: 'Hoa Kỳ',
+    defaultBaseUrl: null,
+    adapter: new AnthropicProvider(),
+  },
+  {
+    id: 'google',
+    name: 'Google Gemini',
+    dataRegion: 'Hoa Kỳ',
+    defaultBaseUrl: GOOGLE_BASE_URL,
+    adapter: new GoogleProvider(),
+  },
   {
     id: 'deepseek',
     name: 'DeepSeek',
