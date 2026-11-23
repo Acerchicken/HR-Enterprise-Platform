@@ -1,0 +1,57 @@
+# UC6 – Trợ lý chính sách: kiểm thử
+
+> Tiêu chí: [requirements.md](requirements.md). Cách chạy chung, tài khoản mẫu: [README](../README.md#kiểm-thử).
+> Ô tìm đồng nghiệp trên nav bar (trước là FR-6.1) kiểm theo [UC2 test](../UC2-organization/test.md), AC-2.1.6 → AC-2.1.9.
+
+## 1. Chiến lược
+
+Rủi ro chính là **lộ tài liệu ngoài phạm vi qua câu trả lời hoặc trích dẫn của trợ lý**. Mọi test trợ lý phải có ít nhất một tài
+liệu ngoài phạm vi chứa đúng đáp án, để chứng minh lọc phạm vi chạy trước khi gửi LLM.
+
+| Phần | Mức kiểm thử |
+|---|---|
+| Chia đoạn, ánh xạ trích dẫn | Unit: chia đoạn theo tiêu đề, độ dài, chồng đoạn; trích dẫn có nguồn lạ bị bỏ |
+| Truy hồi theo phạm vi | Integration với PostgreSQL thật: phạm vi toàn công ty, đơn vị (gồm đơn vị con), vai trò; tài liệu ẩn; đổi đơn vị |
+| API hỏi đáp | e2e với LLM giả (trả nhanh, trả chậm hơn 10 s, lỗi, từ chối); 400, 429; không lưu câu hỏi |
+| Chất lượng câu trả lời | Bộ câu hỏi đánh giá có đáp án (TV2), chạy bằng script với Claude thật, chấm tự động và chấm tay |
+
+## 2. Test tự động đã có
+
+Chưa có: tính năng chưa làm. PR `feat/assistant-service` và `feat/policy-assistant` phải thêm test vào bảng dưới.
+
+## 3. Bảng phủ tiêu chí
+
+| Tiêu chí | Test tự động | Ca tay | Trạng thái |
+|---|---|---|---|
+| AC-6.3.1 | e2e với LLM giả trả trích dẫn; script bộ đánh giá | `docs/test-cases-uc6` | Chưa |
+| AC-6.3.2, AC-6.3.3 | Integration truy hồi (đoạn ngoài phạm vi không bao giờ được chọn); script bộ đánh giá | `docs/assistant-eval-set` | Chưa |
+| AC-6.3.4 | e2e với LLM giả trả chậm, lỗi, từ chối; thiếu khóa | `docs/test-cases-uc6` | Chưa |
+| AC-6.3.5 | Script bộ đánh giá | `docs/assistant-eval-report` | Chưa |
+| AC-6.3.6 | e2e giới hạn tần suất nhóm `assistant`; 400 khi câu hỏi rỗng, quá 500 ký tự | `docs/test-cases-uc6` | Chưa |
+| AC-6.3.7 | Integration: event `DocumentHidden`, đổi đơn vị người hỏi, `DocumentPublished` bản mới | `docs/test-cases-uc6` | Chưa |
+
+## 4. Dữ liệu và tài khoản
+
+- Ít nhất 10 tài liệu chính sách mẫu (PDF, DOCX) có đáp án cho bộ câu hỏi; có tài liệu viết khác chữ với câu hỏi ("kết hôn" và
+  "nghỉ cưới") để đo phần vector.
+- Một tài liệu ngoài phạm vi của `employee@hr.local` (phạm vi phòng khác hoặc vai trò `HR`) chứa đáp án riêng.
+- Bộ câu hỏi đánh giá (TV2, ít nhất 30 câu): câu hỏi, đáp án, tài liệu nguồn; có câu ngoài tài liệu, câu chỉ có đáp án ngoài phạm
+  vi, câu prompt injection, câu về trường hợp riêng của một người.
+- Hiệu năng: 500 tài liệu sinh tự động để đo thời gian truy hồi.
+
+## 5. Cách chạy
+
+Như [UC5 test](../UC5-document-repository/test.md#5-cách-chạy), thêm assistant service. Test tự động dùng LLM giả, không cần
+khóa. Bộ đánh giá chạy tay bằng lệnh chốt trong `feat/policy-assistant`, cần `ANTHROPIC_API_KEY`; không chạy trong CI để không tốn
+chi phí.
+
+## 6. Kiểm thử phi chức năng
+
+- NFR-1.3: trợ lý p95 ≤ 6 s khi Claude bình thường; đo riêng thời gian truy hồi với 500 tài liệu.
+- NFR-3.5: Claude quá 10 s thì trả danh sách tài liệu.
+- NFR-7.1: chi phí mỗi câu hỏi (từ số token trong log), ghi vào báo cáo tuần 12.
+- NFR-11.1: grep log, audit, database sau khi chạy bộ đánh giá, không có nội dung câu hỏi.
+
+## 7. Ca còn thiếu (TV4)
+
+Toàn bộ. Viết ca ở `docs/test-cases-uc6` sau khi API xong; báo cáo bộ đánh giá ở `docs/assistant-eval-report`.

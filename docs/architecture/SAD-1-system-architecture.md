@@ -43,7 +43,7 @@ flowchart TB
 
   idp[Identity provider OIDC]
   mail[Dịch vụ gửi email]
-  llm[LLM API]
+  llm[Claude API]
   payroll[Hệ thống Payroll<br/>ngoài phạm vi v1]
 
   emp & mgr & hr & adm -- trình duyệt, HTTPS --> sys
@@ -58,7 +58,7 @@ flowchart TB
 | Identity provider (OIDC) | Redirect đăng nhập + kiểm chữ ký token bằng khóa công khai (JWKS) | Đồng bộ | Không đăng nhập mới được; token còn hạn vẫn dùng |
 | Dịch vụ gửi email | Queue → worker gọi SMTP | Bất đồng bộ | Gửi lại; lỗi đưa vào hàng đợi chết (DLQ); trạng thái đơn không đổi |
 | Object storage | Tải lên bằng link ký sẵn (presigned URL); tải xuống qua API để kiểm quyền mỗi lần (ADR-13) | Tải lên đồng bộ, xử lý sau bất đồng bộ | Metadata "pending" tới khi file có thật |
-| LLM API | REST có timeout | Đồng bộ | Hết thời gian thì chỉ tới tài liệu gốc |
+| Claude API (LLM, [ADR-16](adr/ADR-16-policy-assistant.md)) | REST có timeout 10 s, gọi từ assistant service | Đồng bộ | Hết thời gian, lỗi hoặc thiếu khóa thì trả danh sách tài liệu liên quan |
 | Payroll | File CSV hằng đêm | Batch | Chạy lại được, idempotent theo ngày |
 
 Chi tiết: [integration và xử lý lỗi tuần 6](../progress/tuan-06/TV4_Duy.md).

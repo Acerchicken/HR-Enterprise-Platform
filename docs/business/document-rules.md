@@ -2,9 +2,9 @@
 
 > Phụ lục của [BRD](BRD.md): business rule kho tài liệu và tra cứu. Bộ tài liệu: [`docs/README.md`](../README.md).
 
-Tài liệu này chốt quy tắc nghiệp vụ cho kho tài liệu chính sách và tìm kiếm tài liệu theo UC5–UC6 trong
+Tài liệu này chốt quy tắc nghiệp vụ cho kho tài liệu chính sách (UC5) và trợ lý chính sách (UC6) trong
 [`BRD.md`](BRD.md), làm cơ sở cho TV1 triển khai và TV4 viết ca kiểm thử. Các quy tắc truy cập áp dụng đồng nhất cho
-danh sách, chi tiết, tìm kiếm, xem trước và tải xuống.
+danh sách, chi tiết, xem trước, tải xuống và đoạn văn bản trợ lý dùng để trả lời.
 
 **Thuật ngữ thống nhất:** "tài liệu" là một mục nghiệp vụ có tiêu đề, loại, phạm vi xem và một hoặc nhiều phiên bản
 file. "Nhân viên đang làm việc" là người dùng đã đăng nhập, gắn với hồ sơ nhân viên chưa ở trạng thái `TERMINATED`.
@@ -29,7 +29,9 @@ Cập nhật khi kiểm chéo UC5 ngày 22/11/2026.
 
 - DR-01 → DR-06, DR-08 đã thực thi ở `backend/src/modules/document` (PR #64): tải lên bằng presigned URL PUT, tải xuống qua
   API, lọc phạm vi trong câu SQL ([ADR-13](../architecture/adr/ADR-13-document-storage.md)). Kiến trúc hệ thống đã sửa theo
-  ADR-13. DR-07 (tìm kiếm) làm ở UC6 qua search service ([ADR-15](../architecture/adr/ADR-15-service-extraction.md)).
+  ADR-13. DR-07 (tìm kiếm theo từ khóa) **không làm** từ 22/11/2026: UC6 thu gọn còn trợ lý; trợ lý truy hồi đoạn văn bản theo
+  [ADR-16](../architecture/adr/ADR-16-policy-assistant.md), vẫn chỉ trên tài liệu người hỏi được xem (DR-02, DR-08). Giữ DR-07 để
+  tham chiếu nếu sau này thêm ô tìm.
 - "Phòng ban" trong DR-02, DR-06 là **đơn vị** mọi loại (Công ty, Trung tâm, Phòng, Nhóm) theo
   [ADR-14](../architecture/adr/ADR-14-org-unit-types.md); "gồm phòng ban con" là mọi đơn vị con cháu.
 - Role `MANAGER` trong DR-02 là người **có cấp dưới trực tiếp** (ADR-10, tính lại mỗi request), không phải trưởng, phó đơn vị

@@ -29,6 +29,15 @@
   (như phạm vi tài liệu UC5); `includeChildren=false` thì chỉ đơn vị đó.
 - **AC-2.1.4** Khi gửi `size` lớn hơn 100. Thì trả 400.
 
+Ô tìm đồng nghiệp trên nav bar ([giao diện chung 2.1](../frontend.md#21-nav-bar-thanh-trên-cùng-mọi-trang)) dùng lại tìm kiếm
+này. Trước 22/11/2026 là FR-6.1 của UC6; chuyển về đây khi UC6 thu gọn còn trợ lý (đã có trong code, `SearchBox.tsx`).
+
+- **AC-2.1.6** Khi gõ từ 2 ký tự vào ô trên nav bar, dừng 300 ms. Thì gợi ý tối đa 5 đồng nghiệp; một lần gõ chỉ gọi
+  `GET /employees?q=&size=5` một lần, không gọi API tài liệu (frontend AC-0.1.2).
+- **AC-2.1.7** Khi nhấn Enter. Thì mở Danh bạ `/directory?q=` với từ khóa đó.
+- **AC-2.1.8** Gợi ý tuân theo AC-2.1.1 → AC-2.1.4 (không có người đã nghỉ việc).
+- **AC-2.1.9** Khi chọn một gợi ý. Thì mở thẻ xem nhanh người đó, chỉ gọi `GET /employees/{id}/summary`.
+
 ### FR-2.2 Cây tổ chức (M, đã có)
 
 - **AC-2.2.1** Khi mở cây tổ chức. Thì cây có đúng một gốc và chứa mọi phòng ban, không cần nhập mã phòng ban (issue #21).

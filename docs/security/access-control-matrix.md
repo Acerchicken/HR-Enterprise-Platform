@@ -150,7 +150,8 @@ Các mục dưới đây ghi nhận quyết định nghiệp vụ đã thống n
    gửi được yêu cầu (403); cũng chưa có kiểm "không tự duyệt". Cần quyết định và sửa ở một nhánh riêng.
 6. **UC5 (kho tài liệu):** đã có trong `docs/openapi.yaml` và ở mục "Kho tài liệu" phía trên (11 operation, PR #64). Ô "Xem"
    của mọi vai trò cần tài khoản gắn hồ sơ chưa nghỉ việc; tài khoản chỉ có vai trò ADMIN, không hồ sơ, nhận danh sách rỗng.
-   API tìm kiếm (UC6) bổ sung khi `feat/search-service` merge.
+   API trợ lý `POST /assistant/questions` (UC6, mọi người đã đăng nhập, phạm vi như Xem tài liệu) bổ sung khi
+   `feat/policy-assistant` merge.
 
 ## Phạm vi đối chiếu
 

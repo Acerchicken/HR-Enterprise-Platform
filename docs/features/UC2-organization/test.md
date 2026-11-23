@@ -25,6 +25,7 @@ thuật toán chặn vòng; e2e kiểm cây, quy tắc một quản lý; ca SEC 
 | AC-2.1.4 | – | Cần thêm (`size = 101`) | Chưa |
 | AC-2.2.1, AC-2.2.3 | "cây tổ chức có 1 gốc loại Công ty, mỗi đơn vị có loại, trưởng, số người" | – | Có |
 | AC-2.1.5 | "lọc danh bạ theo đơn vị mặc định gồm đơn vị con" | – | Có |
+| AC-2.1.6 → AC-2.1.9 | – (ô tìm trên nav bar, frontend AC-0.1.2; trước là UC6 FR-6.1) | Ca tay: gợi ý 5 người, Enter, thẻ xem nhanh | Ca tay |
 | AC-2.4.8, AC-2.4.9 | "luật loại cha, loại con"; unit test `organization.service.spec.ts` | – | Có |
 | AC-2.9.4 | "chi tiết đơn vị có đường dẫn từ gốc và trưởng"; phó ở "trưởng, phó thuộc đơn vị…" | Xem giao diện | Có |
 | AC-2.9.1, AC-2.9.5, AC-2.9.6 | "trưởng, phó thuộc đơn vị hoặc đơn vị cha, đang làm việc, không quá số phó" | – | Có |

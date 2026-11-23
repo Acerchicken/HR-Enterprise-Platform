@@ -125,7 +125,7 @@ sequenceDiagram
   `Retry-After`.
 - **Header bảo mật** (`SecurityHeadersMiddleware`): `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, CSP
   `default-src 'none'` (riêng Swagger nới cho script của nó), HSTS khi `NODE_ENV=production`.
-- **Giới hạn tần suất** theo người dùng (NFR-5.21, UC1 FR-1.14): `global` 100/phút, `search` 20/phút, `profile-write` 30/phút
+- **Giới hạn tần suất** theo người dùng (NFR-5.21, UC1 FR-1.14): `global` 100/phút, `search` 20/phút, `assistant` 10/phút và 100/ngày (UC6, ADR-16, chưa có), `profile-write` 30/phút
   và 300/ngày, `profile-upload` 10/giờ và 30/ngày, `avatar-upload` 5/ngày, `profile-download` 60/giờ, `sensitive-view` 100/giờ.
   Phút, giờ đếm trong bộ nhớ; ngày đếm ở `iam.rate_limit_counter`. Ngưỡng đổi được qua `RATE_LIMIT_OVERRIDES`.
 
