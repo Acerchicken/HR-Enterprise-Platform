@@ -69,6 +69,16 @@ export interface AppConfig {
    * Bucket riêng cho file hồ sơ (UC1 FR-1.10): chặn public, SSE-KMS, lifecycle xóa object gắn tag `deleted=true` sau 30
    * ngày. Dùng chung endpoint và khóa của `storage`. Để trống thì thao tác file hồ sơ trả 503 (AC-1.10.9).
    */
+  /**
+   * Assistant service của trợ lý chính sách (UC6, ADR-16). `url` rỗng thì `POST /assistant/questions` trả `fallback = true`
+   * ("Trợ lý tạm thời không dùng được"), không lỗi 5xx (E5).
+   */
+  assistant: {
+    url: string | null;
+    internalToken: string | null;
+    /** Chờ assistant service tối đa (lớn hơn timeout LLM 10 s của service). */
+    timeoutMs: number;
+  };
   profileStorage: { bucket: string | null };
   /**
    * Giới hạn tần suất (NFR-5.21, UC1 FR-1.14). `overrides`: đổi ngưỡng của từng nhóm, ví dụ
@@ -145,6 +155,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
       secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY || null,
     },
     profileStorage: { bucket: env.PROFILE_STORAGE_BUCKET || null },
+    assistant: {
+      url: env.ASSISTANT_URL ? env.ASSISTANT_URL.replace(/\/+$/, '') : null,
+      internalToken: env.ASSISTANT_INTERNAL_TOKEN || null,
+      timeoutMs: Number(env.ASSISTANT_TIMEOUT_MS ?? 15000),
+    },
     rateLimit: {
       enabled: env.RATE_LIMIT_ENABLED !== 'false',
       overrides: parseOverrides(env.RATE_LIMIT_OVERRIDES),
@@ -186,6 +201,9 @@ function assertValid(cfg: AppConfig, env: NodeJS.ProcessEnv, needsAuth: boolean)
   if (idp.driver === 'keycloak' && !idp.keycloak.clientSecret) problems.push('IDP_ADMIN_DRIVER=keycloak cần KEYCLOAK_ADMIN_CLIENT_SECRET');
   if (idp.driver === 'cognito' && !idp.cognito.userPoolId) problems.push('IDP_ADMIN_DRIVER=cognito cần COGNITO_USER_POOL_ID');
 
+  if (cfg.assistant.url && (!cfg.assistant.internalToken || cfg.assistant.internalToken.length < 16)) {
+    problems.push('ASSISTANT_URL cần ASSISTANT_INTERNAL_TOKEN dài ít nhất 16 ký tự');
+  }
   if (cfg.nodeEnv === 'production' && env.ALLOW_DEV_SECRETS !== 'true') {
     if (!env.FIELD_ENCRYPTION_KEY) problems.push('thiếu FIELD_ENCRYPTION_KEY');
     else if (env.FIELD_ENCRYPTION_KEY === DEV_FIELD_ENCRYPTION_KEY) problems.push('FIELD_ENCRYPTION_KEY đang là khóa dev');

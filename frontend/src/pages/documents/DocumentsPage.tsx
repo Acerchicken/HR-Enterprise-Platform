@@ -6,14 +6,15 @@ import { DOCUMENT_TYPES, documentsApi, DocumentType, TYPE_LABEL } from '../../ap
 import { useApi } from '../../api/useApi';
 import { ErrorBox } from '../../components/ErrorBox';
 import { EmptyState, formatDate, Pager, Skeleton } from '../../components/ui';
+import { AssistantPanel } from './AssistantPanel';
 import { DownloadButton, FileBadge } from './doc-ui';
 
 const PAGE_SIZE = 20;
 
 /**
  * Trang "Tra cứu tài liệu" `/documents` (UC5 A1, AC-5.2.7; bản vẽ uc56-documents). Chỉ có tài liệu trong phạm vi của người
- * xem, mới cập nhật trước; không hiện số lượng hay gợi ý gì về tài liệu ngoài phạm vi (DR-08). Khung trợ lý của UC6 thêm
- * vào trang này ở nhánh `feat/policy-assistant` (ADR-16).
+ * xem, mới cập nhật trước; không hiện số lượng hay gợi ý gì về tài liệu ngoài phạm vi (DR-08). Bên phải là khung hỏi trợ lý
+ * của UC6 (spec 9.1); màn hình hẹp thì xếp dưới danh sách.
  */
 export function DocumentsPage() {
   const me = useOutletContext<Me | null>();
@@ -42,6 +43,7 @@ export function DocumentsPage() {
         ))}
       </div>
       <ErrorBox error={list.error} />
+      <div className="docs-layout">
       <section className="card flush doc-list">
         {list.loading && !list.data && <Skeleton lines={4} />}
         {list.data?.items.length === 0 && (
@@ -71,6 +73,8 @@ export function DocumentsPage() {
           </div>
         )}
       </section>
+      <AssistantPanel />
+      </div>
     </>
   );
 }

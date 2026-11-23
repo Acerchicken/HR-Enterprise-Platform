@@ -15,6 +15,7 @@ export const RATE_GROUPS = {
   'avatar-upload': { label: 'lần đổi ảnh đại diện', limits: { day: 5 } },
   'profile-download': { label: 'lượt tải file hồ sơ', limits: { hour: 60 } },
   'sensitive-view': { label: 'lượt xem thông tin nhạy cảm', limits: { hour: 100 } },
+  assistant: { label: 'câu hỏi trợ lý', limits: { minute: 10, day: 100 } },
 } as const satisfies Record<string, { label: string; limits: Partial<Record<RateWindow, number>> }>;
 
 export type RateGroup = keyof typeof RATE_GROUPS;

@@ -130,7 +130,7 @@ sequenceDiagram
 
 | Luồng | Màn hình | API |
 |---|---|---|
-| 4.1, A1 → A5 | Trang "Tra cứu tài liệu" `/documents`, khung "Hỏi trợ lý chính sách" bên phải danh sách (điện thoại: tab "Hỏi trợ lý") | `POST /assistant/questions` (chưa có, nhánh `feat/policy-assistant`) |
+| 4.1, A1 → A5 | Trang "Tra cứu tài liệu" `/documents`, khung "Hỏi trợ lý chính sách" bên phải danh sách (màn hình hẹp: xếp dưới danh sách) | `POST /assistant/questions` (`feat/policy-assistant`) |
 | 4.2, A6 | `/admin/assistant` (ADMIN): chọn nhà cung cấp, model, ô API key (kiểu mật khẩu, hiện `••••abcd`), nút "Tải danh sách model", "Kiểm tra kết nối", công tắc bật trợ lý, dòng ghi nước nhận dữ liệu | `GET`, `PUT /admin/assistant-config`, `POST …/models`, `POST …/test` (chưa có, nhánh `feat/assistant-config`) |
 
 ### 9.1 Bản vẽ giao diện
@@ -149,7 +149,9 @@ Trang "Tra cứu tài liệu" khi chưa hỏi gì xem [UC5 mục 9.1](../UC5-doc
 
 ![Cấu hình trợ lý](mockups/uc6-config.png)
 
-### 9.2 Hợp đồng API (đề xuất, chốt trong `feat/policy-assistant`)
+### 9.2 Hợp đồng API
+
+Hai API hỏi đáp đã chốt trong `feat/policy-assistant` ([openapi.yaml](../../openapi.yaml), tag `assistant`); bốn API cấu hình chốt trong `feat/assistant-config`.
 
 | API | Ai gọi | Vào | Ra | Lỗi |
 |---|---|---|---|---|
@@ -184,7 +186,7 @@ Chiến lược, bảng phủ tiêu chí và ca còn thiếu: [test.md](test.md)
 |---|---|---|
 | Event tài liệu qua outbox chung `leave.outbox`, lệnh `assistant:sync` | Có (`feat/assistant-service`) | – |
 | Assistant service: ingest, chia đoạn, index full-text và vector (EmbeddingGemma) | Có (`feat/assistant-service`) | Đo RAM, thời gian index thật trên staging (TV3) |
-| API hỏi đáp, adapter `openai-compatible` (DeepSeek), trích dẫn, fallback, giới hạn tần suất, khung trợ lý | Chưa có | TV1, `feat/policy-assistant`. Nếu thứ Sáu 27/11 chưa xong phần vector thì giao bản chỉ full-text (ADR-16) |
+| API hỏi đáp, truy hồi lai, adapter `openai-compatible` (DeepSeek), trích dẫn, guardrail G1–G4, fallback, giới hạn tần suất, khung trợ lý | Có (`feat/policy-assistant`) | Chỉnh ngưỡng liên quan (`rag/settings.ts`) theo bộ đánh giá của TV2. Trước khi có `feat/assistant-config`, nhà cung cấp, khóa đặt bằng biến môi trường tạm (chỉ local) |
 | Trang "Cấu hình trợ lý", khóa mã hóa, adapter `anthropic`, `google` | Chưa có | TV1, `feat/assistant-config` |
 | Bộ câu hỏi đánh giá | Chưa có | TV2, `docs/assistant-eval-set` |
 

@@ -108,6 +108,8 @@ services:
       STORAGE_PUBLIC_ENDPOINT: http://localhost:9090
       STORAGE_ACCESS_KEY_ID: test
       STORAGE_SECRET_ACCESS_KEY: test
+      ASSISTANT_URL: http://assistant:3100
+      ASSISTANT_INTERNAL_TOKEN: dev-only-assistant-internal-token   # chỉ dùng local
     ports:
       - "3000:3000"
     depends_on:
@@ -200,6 +202,13 @@ services:
       STORAGE_ACCESS_KEY_ID: test
       STORAGE_SECRET_ACCESS_KEY: test
       ASSISTANT_EMBEDDING_MODEL: embeddinggemma-300m
+      ASSISTANT_INTERNAL_TOKEN: dev-only-assistant-internal-token   # chỉ dùng local, khớp api
+      # Tạm thời tới khi có trang "Cấu hình trợ lý": đặt trong file .env cạnh docker-compose.yml (không commit), ví dụ
+      #   ASSISTANT_LLM_PROVIDER=deepseek  ASSISTANT_LLM_MODEL=deepseek-chat  ASSISTANT_LLM_API_KEY=sk-...
+      # Không đặt thì trợ lý trả danh sách tài liệu liên quan thay cho câu trả lời.
+      ASSISTANT_LLM_PROVIDER: ${ASSISTANT_LLM_PROVIDER:-}
+      ASSISTANT_LLM_MODEL: ${ASSISTANT_LLM_MODEL:-}
+      ASSISTANT_LLM_API_KEY: ${ASSISTANT_LLM_API_KEY:-}
     ports:
       - "3100:3100"
     depends_on:

@@ -206,3 +206,31 @@ tr.current { background: var(--primary-soft); }
   .audit-table th:nth-child(5), .audit-table td:nth-child(5) { display: none; }
   .audit-table td, .audit-table th { padding-left: 8px; padding-right: 8px; }
 }
+
+/* ----- UC6: khung hỏi trợ lý trên /documents ----- */
+.docs-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); gap: 16px; align-items: start; }
+@media (max-width: 960px) { .docs-layout { grid-template-columns: 1fr; } }
+.assistant { display: flex; flex-direction: column; gap: 10px; padding: 16px; position: sticky; top: 16px; }
+.assistant-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.assistant-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; }
+.assistant-head h2 svg { color: var(--primary); }
+.assistant-log { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; }
+.assistant-q { align-self: flex-end; max-width: 90%; margin: 0; background: var(--primary); color: #fff; border-radius: 10px; padding: 8px 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.assistant-answer { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; }
+.assistant-answer p { margin: 0 0 6px; }
+.assistant-answer ul { margin: 0 0 6px; padding-left: 20px; }
+.cite-mark { display: inline-block; min-width: 14px; margin-left: 2px; padding: 0 3px; border-radius: 4px; background: var(--primary-soft-2); color: var(--primary); font-size: 11px; line-height: 14px; text-align: center; }
+.cite-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.cite-list li { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 14px; }
+.cite-list li svg { color: #b42318; flex: none; }
+.cite-n { font-weight: 700; color: var(--primary); }
+.cite-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assistant-wait { display: flex; gap: 4px; margin: 0; padding: 8px 12px; }
+.assistant-wait span { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: assistant-dot 1s infinite ease-in-out; }
+.assistant-wait span:nth-child(2) { animation-delay: 0.15s; }
+.assistant-wait span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes assistant-dot { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .assistant-wait span { animation: none; } }
+.assistant-form { display: flex; gap: 8px; align-items: flex-end; }
+.assistant-form textarea { flex: 1; resize: vertical; min-height: 44px; }
+.assistant-meta { margin: 0; text-align: right; }

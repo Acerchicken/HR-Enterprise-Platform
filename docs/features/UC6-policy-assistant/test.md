@@ -32,19 +32,31 @@ Phần index (`feat/assistant-service`). Chạy: `cd services/assistant && npm t
 | `backend/src/messaging/messaging.spec.ts` | Event `Document*` đi routing key `document.*`, SQS queue riêng, bỏ qua khi chưa cấu hình |
 | `backend/test/app.e2e-spec.ts` ("event tài liệu cho trợ lý") | Đăng bản `READY`, sửa, ẩn, khôi phục ghi đúng event vào outbox; thao tác không đổi gì không ghi |
 
-`feat/policy-assistant`, `feat/assistant-config` thêm test vào bảng này.
+Phần hỏi đáp (`feat/policy-assistant`):
+
+| File | Phủ |
+|---|---|
+| `services/assistant/src/guardrails/guards.spec.ts` | G1 bảng câu có, không có dữ liệu cá nhân (số điện thoại có dấu cách, `+84`, email, CCCD, số tài khoản có dấu chấm; ngày, "Điều 115", "12 ngày" không bị che); G2 giữ số có trong tài liệu, che số lạ, chặn lộ system prompt; log không có nội dung |
+| `services/assistant/src/llm/prompt.spec.ts` | G3 thoát `</doc>` trong nội dung, bỏ ký tự vô hình; trích dẫn qua prompt bỏ số lạ |
+| `services/assistant/src/llm/openai-compatible.spec.ts` | Adapter DeepSeek với HTTP giả: request đúng, timeout không thử lại, 401 không lộ khóa, câu trả lời rỗng, `listModels` |
+| `services/assistant/src/answer/route.spec.ts` | `POST /internal/answers`: token nội bộ, 1–500 ký tự, phạm vi phải là uuid, `traceparent` |
+| `services/assistant/src/answer/answerer.int.spec.ts` | PostgreSQL + LLM giả: chỉ gửi đoạn trong phạm vi (đơn vị, vai trò, tài liệu ẩn), không có đoạn thì không gọi LLM, fallback khi lỗi, quá giờ, tắt, chưa cấu hình, trích dẫn sai; G1, G2 trong luồng thật |
+| `backend/src/modules/assistant/assistant.service.spec.ts` | BFF: không hồ sơ thì "không tìm thấy" và không gọi service; phạm vi, token, `traceparent`; service tắt, chậm, lỗi thì fallback (E5) |
+| `backend/test/app.e2e-spec.ts` ("UC6 hỏi trợ lý") | Phạm vi gửi đi gồm đơn vị của người hỏi; 400 `fields.question`; 401; câu thứ 11 trong phút nhận 429 kèm `Retry-After` |
+
+`feat/assistant-config` thêm test vào bảng này.
 
 ## 3. Bảng phủ tiêu chí
 
 | Tiêu chí | Test tự động | Ca tay | Trạng thái |
 |---|---|---|---|
 | AC-6.3.1 | e2e với LLM giả trả trích dẫn; script bộ đánh giá | `docs/test-cases-uc6` | Chưa |
-| AC-6.3.2, AC-6.3.3 | Integration truy hồi (đoạn ngoài phạm vi không bao giờ được chọn); script bộ đánh giá | `docs/assistant-eval-set` | Chưa |
-| AC-6.3.4 | e2e với LLM giả trả chậm, lỗi, từ chối; thiếu khóa | `docs/test-cases-uc6` | Chưa |
+| AC-6.3.2, AC-6.3.3 | Integration truy hồi (đoạn ngoài phạm vi không bao giờ được chọn); script bộ đánh giá | `docs/assistant-eval-set` | Integration có (`answerer.int.spec.ts`); bộ đánh giá chưa |
+| AC-6.3.4 | e2e với LLM giả trả chậm, lỗi, từ chối; thiếu khóa | `docs/test-cases-uc6` | Có (`answerer.int.spec.ts`, `assistant.service.spec.ts`) |
 | AC-6.3.5 | Script bộ đánh giá | `docs/assistant-eval-report` | Chưa |
-| AC-6.3.6 | e2e giới hạn tần suất nhóm `assistant`; 400 khi câu hỏi rỗng, quá 500 ký tự | `docs/test-cases-uc6` | Chưa |
-| AC-6.3.7 | Integration: event `DocumentHidden`, đổi đơn vị người hỏi, `DocumentPublished` bản mới | `docs/test-cases-uc6` | Một phần: phía index có (`indexer.int.spec.ts`); phía truy hồi, đổi đơn vị trong `feat/policy-assistant` |
-| AC-6.3.8, AC-6.3.9 | Unit guardrail; e2e với LLM giả ghi request và trả số lạ, trả lại system prompt; script bộ đánh giá (câu chứa dữ liệu cá nhân, tài liệu cài lệnh) | `docs/test-cases-uc6` | Chưa |
+| AC-6.3.6 | e2e giới hạn tần suất nhóm `assistant`; 400 khi câu hỏi rỗng, quá 500 ký tự | `docs/test-cases-uc6` | Có (e2e "UC6 hỏi trợ lý") |
+| AC-6.3.7 | Integration: event `DocumentHidden`, đổi đơn vị người hỏi, `DocumentPublished` bản mới | `docs/test-cases-uc6` | Có: index (`indexer.int.spec.ts`), truy hồi theo phạm vi tính mỗi câu (`answerer.int.spec.ts`, e2e) |
+| AC-6.3.8, AC-6.3.9 | Unit guardrail; e2e với LLM giả ghi request và trả số lạ, trả lại system prompt; script bộ đánh giá (câu chứa dữ liệu cá nhân, tài liệu cài lệnh) | `docs/test-cases-uc6` | Unit, integration có; bộ đánh giá chưa |
 | AC-6.4.1, AC-6.4.2 | Unit adapter với HTTP giả (`listModels`, `testConnection`) | Ca tay với khóa thật của ba nhà cung cấp | Chưa |
 | AC-6.4.3 → AC-6.4.7 | e2e trong `feat/assistant-config` | `docs/test-cases-uc6` | Chưa |
 
