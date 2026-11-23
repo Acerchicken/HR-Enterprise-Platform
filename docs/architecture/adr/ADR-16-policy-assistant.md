@@ -12,8 +12,8 @@
 
 ## Lịch sử thay đổi
 
-- 22/11/2026: Duong thu gọn UC6 chỉ còn trợ lý hỏi đáp. Ô tìm đồng nghiệp (FR-6.1 cũ) trùng UC2, tìm tài liệu theo từ khóa
-  (FR-6.2 cũ) trùng UC5. Đề xuất các hướng triển khai trong thread "Thu gọn UC6 thành hỏi đáp AI".
+- 22/11/2026: Duong thu gọn UC6 chỉ còn trợ lý hỏi đáp. Bỏ FR-6.1, FR-6.2 vì trùng tính năng
+  đã có. Đề xuất các hướng triển khai trong thread "Thu gọn UC6 thành hỏi đáp AI".
 - 23/11/2026: Duong chọn phương án A trên thẻ quyết định ("Full-text + pgvector, Claude API").
 - 23/11/2026: Duong muốn ADMIN tự chọn nhà cung cấp, model và dán API key ngay trong ứng dụng; trước mắt Claude, Google Gemini,
   DeepSeek, code sao cho dễ thêm nhà cung cấp khác. Đổi phần nhà cung cấp sang P3 (adapter, cấu hình trong ứng dụng), thêm FR-6.4.
@@ -152,7 +152,8 @@ Bedrock Knowledge Bases, dịch vụ embedding trả phí, tìm tài liệu theo
 - Câu hỏi và các đoạn tài liệu được gửi tới nhà cung cấp ADMIN chọn, ra ngoài hạ tầng AWS của nhóm và có thể ra nước ngoài
   (Mỹ với Claude, Gemini; Trung Quốc với DeepSeek). Nếu câu hỏi có dữ liệu cá nhân thì đó là chuyển dữ liệu ra nước ngoài theo
   Nghị định 13/2023/NĐ-CP. Giảm thiểu: chỉ gửi đoạn đã lọc phạm vi, không gửi thông tin hồ sơ, nhắc người dùng không nhập dữ liệu
-  cá nhân, trang cấu hình ghi nước nhận dữ liệu. Production thật cần đánh giá tác động chuyển dữ liệu trước khi bật.
+  cá nhân, trang cấu hình ghi nước nhận dữ liệu. Production thật cần đánh giá tác động chuyển dữ liệu trước khi bật. Đồ án demo bằng
+  tài liệu giả, ưu tiên DeepSeek vì rẻ nhất (Duong, 23/11).
 - Khóa API nằm trong database thay vì chỉ trong Secrets Manager, và ADMIN là người nhập. Giảm thiểu: mã hóa AES-256-GCM bằng
   khóa riêng của assistant service, không bao giờ trả lại khóa, audit mỗi lần đổi, chỉ ADMIN có quyền.
 - Trích dẫn qua prompt (Gemini, DeepSeek) kém chắc chắn hơn trích dẫn có cấu trúc của Claude. Giảm thiểu: kiểm số đoạn ở server,

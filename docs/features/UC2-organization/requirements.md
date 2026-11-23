@@ -30,7 +30,7 @@
 - **AC-2.1.4** Khi gửi `size` lớn hơn 100. Thì trả 400.
 
 Ô tìm đồng nghiệp trên nav bar ([giao diện chung 2.1](../frontend.md#21-nav-bar-thanh-trên-cùng-mọi-trang)) dùng lại tìm kiếm
-này. Trước 22/11/2026 là FR-6.1 của UC6; chuyển về đây khi UC6 thu gọn còn trợ lý (đã có trong code, `SearchBox.tsx`).
+này (đã có trong code, `SearchBox.tsx`).
 
 - **AC-2.1.6** Khi gõ từ 2 ký tự vào ô trên nav bar, dừng 300 ms. Thì gợi ý tối đa 5 đồng nghiệp; một lần gõ chỉ gọi
   `GET /employees?q=&size=5` một lần, không gọi API tài liệu (frontend AC-0.1.2).

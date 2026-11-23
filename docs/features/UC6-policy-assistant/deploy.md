@@ -42,7 +42,7 @@ dán trên trang "Cấu hình trợ lý", lưu mã hóa trong `assistant.llm_con
 2. Tạo API key ở nhà cung cấp định dùng, nạp credit trả trước hoặc đặt giới hạn chi tiêu ở đó. ADMIN dán khóa trên
    `/admin/assistant`, bấm "Kiểm tra kết nối" rồi lưu.
 3. Sau khi deploy assistant service: chạy lệnh đồng bộ lần đầu (UC5 13.2) để index tài liệu đã đăng trước đó.
-4. Chạy bộ đánh giá của TV2 trên staging với từng nhà cung cấp định demo, ghi tỉ lệ đúng, độ trễ, chi phí mỗi câu vào báo cáo
+4. Chạy bộ đánh giá của TV2 trên staging với từng nhà cung cấp định demo (ưu tiên DeepSeek, dữ liệu giả), ghi tỉ lệ đúng, độ trễ, chi phí mỗi câu vào báo cáo
    tuần 12.
 
 ## 5. Kiểm tra sau deploy

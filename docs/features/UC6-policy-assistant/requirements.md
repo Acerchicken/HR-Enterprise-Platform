@@ -4,11 +4,8 @@
 > Quy tắc: [document-rules.md](../../business/document-rules.md) (DR-02, DR-06, DR-08), [ADR-16](../../architecture/adr/ADR-16-policy-assistant.md) (cách làm), [ADR-15](../../architecture/adr/ADR-15-service-extraction.md) (assistant service).
 > Mỗi tiêu chí `AC-x.y.z` là một ca kiểm thử.
 
-Từ 22/11/2026 UC6 chỉ còn trợ lý hỏi đáp. Hai yêu cầu cũ đã bỏ vì trùng tính năng có sẵn:
-
-- FR-6.1 (ô tìm đồng nghiệp trên nav bar): chuyển về UC2 ([AC-2.1.6 → AC-2.1.9](../UC2-organization/requirements.md#fr-21-danh-bạ-m-đã-có)),
-  đã có trong code.
-- FR-6.2 (tìm tài liệu theo từ khóa trong tiêu đề và nội dung): bỏ, nhân viên xem danh sách tài liệu của UC5. Số FR không dùng lại.
+Từ 22/11/2026 UC6 chỉ còn trợ lý hỏi đáp (FR-6.3) và cấu hình nhà cung cấp AI (FR-6.4). FR-6.1, FR-6.2 đã bỏ, số FR không
+dùng lại.
 
 ## 1. User story
 

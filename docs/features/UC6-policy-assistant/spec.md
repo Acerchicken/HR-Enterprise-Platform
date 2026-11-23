@@ -5,11 +5,11 @@
 | Mục tiêu kinh doanh | MT-4 (giảm câu hỏi phải gửi HR) |
 | Tác nhân chính | Nhân viên (mọi vai trò có hồ sơ đang làm việc) |
 | Tác nhân phụ, hệ thống ngoài | Nhà cung cấp LLM do ADMIN chọn: Claude, Google Gemini, DeepSeek (sinh câu trả lời); assistant service nhận event tài liệu của UC5 (ADR-15); object storage (đọc file để trích văn bản) |
-| Yêu cầu (SRS) | FR-6.3, FR-6.4 (FR-6.1 chuyển về UC2, FR-6.2 bỏ, ngày 22/11/2026) |
+| Yêu cầu (SRS) | FR-6.3, FR-6.4 |
 | Quy tắc | [DR-02, DR-06, DR-08](../../business/document-rules.md), [ADR-13](../../architecture/adr/ADR-13-document-storage.md), [ADR-15](../../architecture/adr/ADR-15-service-extraction.md), [ADR-16](../../architecture/adr/ADR-16-policy-assistant.md), [ADR-18](../../architecture/adr/ADR-18-authorization.md) |
 | Mức ưu tiên | S |
 | Trạng thái | Chưa có; kế hoạch tuần 12 |
-| Phiên bản | 2.1 – 23/11/2026 (2.1: ADMIN chọn nhà cung cấp, model, API key trong ứng dụng, FR-6.4, luồng 4.2. 2.0: thu gọn còn trợ lý; ô tìm đồng nghiệp chuyển về UC2 AC-2.1.6 → AC-2.1.9; bỏ tìm tài liệu theo từ khóa; cách làm theo ADR-16. 1.2 – 14/11/2026: ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp) |
+| Phiên bản | 2.1 – 23/11/2026 (2.1: ADMIN chọn nhà cung cấp, model, API key trong ứng dụng, FR-6.4, luồng 4.2. 2.0: thu gọn còn trợ lý hỏi đáp, cách làm theo ADR-16) |
 
 ## 1. Mô tả ngắn
 
@@ -20,7 +20,7 @@ Khung hỏi nằm trên trang "Tra cứu tài liệu" (`/documents`), cạnh dan
 ADMIN chọn nhà cung cấp AI (Claude, Google Gemini, DeepSeek), model và dán API key trên trang "Cấu hình trợ lý"
 (`/admin/assistant`); đổi có hiệu lực ngay, không cần deploy (FR-6.4).
 
-Tìm đồng nghiệp (ô trên nav bar) thuộc UC2; xem và lọc tài liệu thuộc UC5. UC6 không có tìm kiếm theo từ khóa cho người dùng.
+UC6 chỉ có trợ lý hỏi đáp; xem và lọc tài liệu thuộc UC5. UC6 không có tìm kiếm theo từ khóa cho người dùng.
 
 ## 2. Tác nhân và quyền
 
@@ -225,5 +225,6 @@ Chiến lược, bảng phủ tiêu chí và ca còn thiếu: [test.md](test.md)
 - Thêm nhà cung cấp tương thích OpenAI (OpenAI, Groq, Ollama…): chỉ thêm một mục registry. Nhà cung cấp có API riêng: viết một
   file adapter cài `LlmProvider` (`answer`, `testConnection`, `listModels`) rồi thêm mục registry. Không sửa API, giao diện,
   truy hồi; giao diện lấy danh sách nhà cung cấp từ `GET /admin/assistant-config`.
-- Mỗi nhà cung cấp mới phải chạy bộ đánh giá (AC-6.3.5) trước khi dùng để demo.
+- Mỗi nhà cung cấp mới phải chạy bộ đánh giá (AC-6.3.5) trước khi dùng để demo. Demo ưu tiên DeepSeek vì rẻ nhất, dùng tài liệu
+  giả (Duong, 23/11).
 - Biến môi trường: xem [deploy.md](deploy.md#2-biến-môi-trường).

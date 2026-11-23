@@ -25,8 +25,7 @@ miền nghiệp vụ, không cố cho đều. Quyết định 14/11/2026: giữ 
 công tác, trưởng/phó phòng); UC6 là "Tra cứu chung và trợ lý", danh bạ vẫn thuộc UC2, kho tài liệu vẫn thuộc UC5. Sửa cùng ngày:
 ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp; tìm tài liệu và trợ lý AI ở trang riêng "Tra cứu tài liệu". Thêm 17/11/2026:
 UC8 "Đăng nhập và tài khoản" ([ADR-17](../architecture/adr/ADR-17-authentication.md)); yêu cầu bảo mật dùng chung vẫn là NFR-5.
-Thu gọn 22/11/2026: UC6 đổi tên "Trợ lý chính sách", chỉ còn hỏi đáp AI; ô tìm đồng nghiệp chuyển về UC2, tìm tài liệu theo từ khóa
-bỏ vì trùng UC5.
+Thu gọn 22/11/2026: UC6 đổi tên "Trợ lý chính sách", chỉ còn hỏi đáp AI và cấu hình nhà cung cấp AI.
 
 ## Danh sách
 

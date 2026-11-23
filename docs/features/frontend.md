@@ -23,7 +23,7 @@ thì người làm một tính năng phải đọc cả file dài. Hai tầng gi
 | Vị trí | Thành phần | Hành vi | Trạng thái |
 |---|---|---|---|
 | Trái | Logo HRHelper | Bấm về trang chủ `/` | Đã có (#80) |
-| Giữa | Ô tìm đồng nghiệp | **Chỉ tìm đồng nghiệp** theo tên, email, mã (UC2 AC-2.1.6 → AC-2.1.9; trước 22/11 là UC6 FR-6.1); không tìm tài liệu. Gõ từ 2 ký tự, chờ 300 ms sau phím cuối mới gọi `GET /employees?q=&size=5`. Phím tắt `/` hoặc `Ctrl+K` để vào ô. Chọn một đồng nghiệp thì mở thẻ xem nhanh (mục 4.1). Enter thì sang Danh bạ `/directory?q=`. Trợ lý AI nằm ở trang "Tra cứu tài liệu" (mục 2.2), không có trên nav bar | Đã có (`SearchBox.tsx`) |
+| Giữa | Ô tìm đồng nghiệp | **Chỉ tìm đồng nghiệp** theo tên, email, mã (UC2 AC-2.1.6 → AC-2.1.9); không tìm tài liệu. Gõ từ 2 ký tự, chờ 300 ms sau phím cuối mới gọi `GET /employees?q=&size=5`. Phím tắt `/` hoặc `Ctrl+K` để vào ô. Chọn một đồng nghiệp thì mở thẻ xem nhanh (mục 4.1). Enter thì sang Danh bạ `/directory?q=`. Trợ lý AI nằm ở trang "Tra cứu tài liệu" (mục 2.2), không có trên nav bar | Đã có (`SearchBox.tsx`) |
 | Phải | Chuông thông báo | Số việc đang chờ mình: đơn chờ duyệt (quản lý), yêu cầu cập nhật hồ sơ chờ duyệt (HR), yêu cầu của mình bị từ chối. Bấm mở danh sách ngắn, mỗi dòng dẫn tới trang xử lý | **Chưa có** |
 | Phải | Ảnh đại diện | Bấm mở menu: tên, vai trò; "Hồ sơ của tôi" (mở popup hồ sơ của mình); "Đăng xuất". Chưa có ảnh thì hiện chữ cái đầu | **Chưa có** (hiện là tên, nhãn vai trò, nút Đăng xuất) |
 

@@ -5,7 +5,7 @@ import { api, DirectoryEntry, Page } from '../api/client';
 import { Avatar, errorText } from './ui';
 
 /**
- * Ô tìm đồng nghiệp trên nav bar (frontend.md 2.1, UC2 AC-2.1.6 → AC-2.1.9; trước là UC6 FR-6.1): chỉ tìm đồng nghiệp, không tìm tài liệu.
+ * Ô tìm đồng nghiệp trên nav bar (frontend.md 2.1, UC2 AC-2.1.6 → AC-2.1.9): chỉ tìm đồng nghiệp, không tìm tài liệu.
  * Gõ từ 2 ký tự, chờ 300 ms sau phím cuối mới gọi API. `/` hoặc Ctrl+K để vào ô. Enter mở Danh bạ với từ khóa.
  */
 export function SearchBox({ onPick }: { onPick: (id: string) => void }) {

@@ -1,7 +1,6 @@
 # UC6 – Trợ lý chính sách: kiểm thử
 
 > Tiêu chí: [requirements.md](requirements.md). Cách chạy chung, tài khoản mẫu: [README](../README.md#kiểm-thử).
-> Ô tìm đồng nghiệp trên nav bar (trước là FR-6.1) kiểm theo [UC2 test](../UC2-organization/test.md), AC-2.1.6 → AC-2.1.9.
 
 ## 1. Chiến lược
 

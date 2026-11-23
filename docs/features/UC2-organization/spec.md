@@ -52,7 +52,7 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 | 2 | | Lọc nhân viên khác `TERMINATED`, tìm theo tên, email, mã; sắp xếp ổn định; tối đa 100 dòng mỗi trang |
 | 3 | Xem danh sách, bấm vào một người | Mở hồ sơ ở mức danh bạ (UC1, luồng A1) |
 
-Ô tìm đồng nghiệp trên nav bar (AC-2.1.6 → AC-2.1.9, trước là UC6 FR-6.1): gõ từ 2 ký tự, chờ 300 ms rồi gọi
+Ô tìm đồng nghiệp trên nav bar (AC-2.1.6 → AC-2.1.9): gõ từ 2 ký tự, chờ 300 ms rồi gọi
 `GET /employees?q=&size=5`, hiện tối đa 5 người; chọn một người thì mở thẻ xem nhanh
 ([giao diện chung 4.1](../frontend.md#41-thẻ-xem-nhanh)); Enter thì mở `/directory?q=`.
 

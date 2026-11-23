@@ -15,7 +15,7 @@
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
-| 1.8 | 23/11/2026 | UC6 thu gọn còn trợ lý chính sách (Duong, 22/11): FR-6.1 chuyển về UC2 (AC-2.1.6 → AC-2.1.9), bỏ FR-6.2 (trùng UC5), FR-6.3 nâng lên S theo [ADR-16](../architecture/adr/ADR-16-policy-assistant.md); thêm FR-6.4 (ADMIN chọn nhà cung cấp AI: Claude, Gemini, DeepSeek; dán API key trong ứng dụng); NFR-1.3 tách tìm đồng nghiệp và trợ lý; NFR-5.21 thêm nhóm `assistant`; LLM do ADMIN chọn qua adapter |
+| 1.8 | 23/11/2026 | UC6 thu gọn còn trợ lý chính sách (Duong, 22/11): bỏ FR-6.1, FR-6.2, FR-6.3 nâng lên S (Duong chốt 23/11) theo [ADR-16](../architecture/adr/ADR-16-policy-assistant.md); thêm FR-6.4 (ADMIN chọn nhà cung cấp AI: Claude, Gemini, DeepSeek; dán API key trong ứng dụng); NFR-1.3 tách tìm đồng nghiệp và trợ lý; NFR-5.21 thêm nhóm `assistant`; LLM do ADMIN chọn qua adapter |
 | 1.7 | 22/11/2026 | Kiểm chéo UC7: FR-7.1 mở rộng theo code (đơn vị, điều chuyển, số dư, ngày lễ, duyệt thay, tài liệu, tài khoản, vai trò); trạng thái FR-7.3; NFR-6.3 = 5 năm theo BR-13 (chốt câu hỏi số 3 mục 8); NFR-5.10 một phần |
 | 1.6 | 22/11/2026 | Kiểm chéo UC5: object storage chỉ dùng presigned URL để tải lên, tải xuống qua API (ADR-13); trạng thái FR-5.1 → 5.3; NFR-5.19 tách hạn URL tải lên (10 phút) và tải xuống (không phát link); NFR-5.23 đổi "20 MB" thành 20 MiB |
 | 1.5 | 18/11/2026 | Cập nhật trạng thái FR-8.1, 8.3, 8.4, 8.6, 8.7 sau ba nhánh code UC8 (`feat/uc8-roles-from-db`, `feat/uc8-role-admin`, `feat/uc8-account-lifecycle`) |
@@ -241,7 +241,7 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-6.1 | *(Chuyển về UC2 ngày 22/11/2026)* Ô tìm đồng nghiệp trên nav bar, nay là AC-2.1.6 → AC-2.1.9 của FR-2.1 | – | – | Đã có |
+| FR-6.1 | *(Bỏ khỏi UC6 ngày 22/11/2026)* | – | – | – |
 | FR-6.2 | *(Bỏ ngày 22/11/2026, trùng UC5)* Tìm tài liệu theo từ khóa trong tiêu đề và nội dung | – | – | Không làm |
 | FR-6.3 | Trợ lý trả lời câu hỏi về chính sách HR, có trích dẫn tài liệu nguồn ([ADR-16](../architecture/adr/ADR-16-policy-assistant.md)) | S | Chỉ dùng tài liệu người hỏi được xem; không có đáp án thì nói không tìm thấy; LLM lỗi thì trả danh sách tài liệu liên quan | Kế hoạch tuần 12 |
 | FR-6.4 | ADMIN chọn nhà cung cấp AI (trước mắt Claude, Google Gemini, DeepSeek), model và dán API key trong ứng dụng; kiểm tra kết nối; thêm nhà cung cấp mới chỉ cần thêm adapter | S | Khóa mã hóa, không bao giờ trả lại (chỉ 4 ký tự cuối); có audit mỗi lần đổi; đổi có hiệu lực không cần deploy | Kế hoạch tuần 12–13 |

@@ -195,8 +195,7 @@ staging T3 (24/11) cần #70, `infra/profile-files`, `infra/service-extraction` 
 
 ### 7.7 Bước 5 – UC6 trợ lý chính sách (T2 23/11 → T6 27/11)
 
-**Cập nhật 23/11:** UC6 chỉ còn trợ lý hỏi đáp (Duong, 22/11). Bỏ tìm tài liệu theo từ khóa (FR-6.2), ô tìm đồng nghiệp chuyển về
-UC2. Search service của ADR-15 đổi thành assistant service; cách làm theo ADR-16 (Duong chọn 23/11).
+**Cập nhật 23/11:** UC6 chỉ còn trợ lý hỏi đáp (Duong, 22/11). Bỏ FR-6.1, FR-6.2. Search service của ADR-15 đổi thành assistant service; cách làm theo ADR-16 (Duong chọn 23/11).
 
 | Nhánh | Người | Việc | Tiêu chí | Mở PR | Merge | Review |
 |---|---|---|---|---|---|---|
