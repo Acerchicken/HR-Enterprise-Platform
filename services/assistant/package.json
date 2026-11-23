@@ -1,0 +1,49 @@
+{
+  "name": "hr-assistant-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HRHelper assistant service (UC6, ADR-15, ADR-16): nhận event tài liệu, trích văn bản, chia đoạn, index full-text và vector",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "start:dev": "ts-node --transpile-only src/main.ts",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "reindex-embeddings": "ts-node --transpile-only src/cli/reindex-embeddings.ts",
+    "download-model": "node dist/cli/download-model.js"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.8",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.19.43",
+    "@types/pg": "^8.23.1",
+    "jest": "^29.7.0",
+    "jszip": "^3.10.2",
+    "ts-jest": "^29.4.15",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "testEnvironment": "node",
+    "testTimeout": 30000
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1175.0",
+    "@aws-sdk/client-sqs": "^3.1175.0",
+    "@huggingface/transformers": "^3.8.1",
+    "amqplib": "^0.10.9",
+    "mammoth": "^1.13.0",
+    "pdfjs-dist": "^4.10.38",
+    "pg": "^8.23.1"
+  }
+}
