@@ -210,13 +210,13 @@ hai. Chấp nhận được với email thông báo.
 
 ## 7. Thay đổi dự kiến theo ADR-15 (chưa áp dụng)
 
-[ADR-15](adr/ADR-15-service-extraction.md) tách Notification và Search thành service riêng. Khi làm, các thay đổi sau đi
+[ADR-15](adr/ADR-15-service-extraction.md) tách Notification và Assistant (trước gọi là Search, đổi theo [ADR-16](adr/ADR-16-policy-assistant.md)) thành service riêng. Khi làm, các thay đổi sau đi
 cùng PR code và cập nhật lại các mục ở trên:
 
 | Thay đổi | Theo quy tắc | Ghi chú |
 |---|---|---|
 | Thêm `recipientEmail`, `recipientName` vào payload event gửi email | Quy tắc 1 (thêm trường) | Notification service không còn đọc `employee.*`, `iam.*` |
-| Thêm `document.outbox` và event `document.<Event>` (phiên bản `READY`, ẩn tài liệu, đổi phạm vi) | Quy tắc 3 | Assistant service (UC6, ADR-16) nhận để cập nhật index. Tên event, payload: [UC5 spec 13.2](../features/UC5-document-repository/spec.md#132-event-cho-tìm-kiếm-adr-15) |
+| Thêm `document.outbox` và event `document.<Event>` (phiên bản `READY`, ẩn tài liệu, đổi phạm vi) | Quy tắc 3 | Assistant service (UC6, ADR-16) nhận để cập nhật index. Tên event, payload: [UC5 spec 13.2](../features/UC5-document-repository/spec.md#132-event-cho-trợ-lý-adr-15) |
 | Thêm queue `assistant.document` bind vào `hr.events` (local); SNS topic `hr-events` trước các queue SQS (AWS) | Quy tắc 4 | Fan-out: một event đến nhiều consumer; sửa `rabbitmq.ts`, Terraform và file này |
 | Thêm `traceparent` (W3C Trace Context) vào header RabbitMQ và message attribute SQS | Quy tắc 1 | Truy vết OpenTelemetry xuyên qua queue |
 

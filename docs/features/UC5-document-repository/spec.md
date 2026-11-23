@@ -248,7 +248,7 @@ Theo giao diện chung: trang `/documents` mở từ ô "Tra cứu tài liệu" 
 14/11); `/documents/manage` nằm trong nhóm của HR. Phạm vi đơn vị chọn trong danh sách đơn vị của UC2 (`GET /departments`, chỉ
 `ACTIVE`, xếp và thụt lề theo cây). Ô chọn vai trò ghi chú `MANAGER` là "người có cấp dưới trực tiếp" (D4). Không có xem trước, chỉ có nút tải (D5).
 
-### 13.2 Event cho tìm kiếm (ADR-15)
+### 13.2 Event cho trợ lý (ADR-15)
 
 > Tên mục giữ nguyên để không gãy link. Từ 22/11/2026 consumer là **assistant service** của trợ lý UC6 (ADR-16); UC6 không còn
 > tìm tài liệu theo từ khóa.

@@ -65,7 +65,7 @@ sequenceDiagram
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
 | 1 | Gõ câu hỏi, ví dụ "nghỉ cưới được mấy ngày", bấm gửi | Kiểm 1–500 ký tự; kiểm giới hạn 10 câu/phút, 100 câu/ngày |
-| 2 | | API tính phạm vi của người hỏi ở thời điểm hỏi: đơn vị hiện tại và mọi đơn vị cha (ADR-14), vai trò (ADR-18) |
+| 2 | | API tính phạm vi của người hỏi ở thời điểm hỏi: đơn vị hiện tại và mọi đơn vị cha (ADR-14), vai trò (ADR-18). Không có hồ sơ đang làm việc thì đi A1 ngay, không gọi assistant service (DR-02: không xem được cả tài liệu toàn công ty) |
 | 3 | | Assistant service lấy đoạn văn bản theo full-text và theo vector, **chỉ trong tài liệu khớp phạm vi**, gộp thứ hạng, lấy tối đa 6 đoạn (ADR-16) |
 | 4 | | Đọc cấu hình đang dùng, gửi câu hỏi và các đoạn qua adapter của nhà cung cấp đó, timeout 10 giây. Mỗi đoạn kèm tài liệu, phiên bản, mục để trích dẫn (ADR-16 mục 6) |
 | 5 | Đọc câu trả lời, bấm trích dẫn để mở tài liệu gốc | Trả câu trả lời; mỗi ý có số trích dẫn dẫn về tài liệu, phiên bản (`/documents/{id}`) |
@@ -82,15 +82,15 @@ sequenceDiagram
 ## 5. Luồng thay thế
 
 - **A1 (4.1 bước 3), không có đoạn nào đủ liên quan:** trả "Mình không tìm thấy nội dung này trong các tài liệu bạn được xem" và gợi ý
-  liên hệ HR; không gọi LLM. Phạm vi rỗng cũng đi nhánh này.
+  liên hệ HR; không gọi LLM. Người hỏi không có hồ sơ đang làm việc cũng đi nhánh này (bước 2).
 - **A2 (4.1 bước 4), LLM quá 10 giây, lỗi, từ chối, khóa sai, chưa cấu hình hoặc ADMIN đã tắt trợ lý:** trả `fallback = true` và danh sách tài liệu của các
   đoạn tìm được ("Trợ lý đang bận, đây là các tài liệu liên quan").
 - **A3 (4.1 bước 4), câu hỏi về trường hợp riêng của một người** (lương, kỷ luật, sức khỏe của ai đó): trợ lý trả lời theo quy định
   chung nếu có và gợi ý hỏi HR cho trường hợp cụ thể.
+- **A4, hỏi tiếp:** mỗi câu hỏi độc lập, không gửi câu hỏi trước cho LLM. Giao diện giữ các câu đã hỏi trong trang đang mở.
 - **A5 (4.1 bước 4), nhà cung cấp không trả trích dẫn hợp lệ** (trích dẫn qua prompt, ADR-16 mục 6): coi như không trả lời
   được, đi nhánh A2.
 - **A6 (4.2 bước 4), đổi sang nhà cung cấp khác mà không nhập khóa mới:** 400 `fields.apiKey`. Chỉ đổi model thì giữ khóa cũ.
-- **A4, hỏi tiếp:** mỗi câu hỏi độc lập, không gửi câu hỏi trước cho LLM. Giao diện giữ các câu đã hỏi trong trang đang mở.
 
 ## 6. Ngoại lệ
 
@@ -100,9 +100,11 @@ sequenceDiagram
 | E2 | Câu hỏi rỗng hoặc dài quá 500 ký tự | 400 `BAD_REQUEST` kèm `fields.question` |
 | E3 | Quá 10 câu/phút hoặc 100 câu/ngày | 429 kèm `Retry-After` (NFR-5.21) |
 | E4 | Câu hỏi cố lừa trợ lý bỏ qua phân quyền (prompt injection) | Không ảnh hưởng, vì đoạn văn bản đã lọc phạm vi trước khi gửi LLM |
+| E5 | Assistant service không chạy (kể cả lúc task staging đang tắt, [deploy 4a](deploy.md#4a-bật-tắt-khi-demo-tiết-kiệm-chi-phí)) | API trả `fallback = true`, danh sách rỗng, câu "Trợ lý tạm thời không dùng được"; không lỗi 5xx |
 | E6 | Không phải ADMIN gọi API cấu hình | 403 `FORBIDDEN` |
 | E7 | Lưu cấu hình với `version` cũ | 409 `CONFLICT` |
-| E5 | Assistant service không chạy | API trả `fallback = true`, danh sách rỗng, câu "Trợ lý tạm thời không dùng được"; không lỗi 5xx |
+| E8 | "Tải danh sách model", "Kiểm tra kết nối" mà khóa sai | 400 `BAD_REQUEST`, `fields.apiKey` "Khóa không hợp lệ"; không lưu gì (AC-6.4.1) |
+| E9 | Nhà cung cấp không phản hồi khi tải danh sách model | 503 (`HTTP_503`, như [error-codes](../../development/error-codes.md)), "Nhà cung cấp AI không phản hồi, thử lại sau" |
 
 ## 7. Quy tắc áp dụng
 
@@ -152,11 +154,11 @@ Trang "Tra cứu tài liệu" khi chưa hỏi gì xem [UC5 mục 9.1](../UC5-doc
 | API | Ai gọi | Vào | Ra | Lỗi |
 |---|---|---|---|---|
 | `POST /assistant/questions` | Mọi người đã đăng nhập | `{ question }` | `{ answer, citations: [{ n, documentId, versionNo, title, section, citedText }], fallback, documents: [{ documentId, title }] }`. `answer` có các mốc `[n]` khớp `citations[].n`. `documents` chỉ có khi `fallback = true` | 400, 401, 429 |
-| `POST /internal/answers` (assistant service, chỉ mạng nội bộ, header token nội bộ) | API | `{ question, scope: { unitIds, roles }, traceparent }` | Như trên | 400, 401 |
+| `POST /internal/answers` (assistant service, chỉ mạng nội bộ, header token nội bộ và `traceparent`) | API | `{ question, scope: { unitIds, roles } }` | Như trên | 400, 401 |
 | `GET /admin/assistant-config` | ADMIN | – | `{ provider, model, baseUrl, apiKeyLast4, enabled, version, updatedBy, updatedAt, providers: [{ id, name, dataRegion }] }` | 401, 403 |
 | `PUT /admin/assistant-config` | ADMIN | `{ provider, model, apiKey?, enabled, version }` | Như `GET` | 400, 401, 403, 409 |
-| `POST /admin/assistant-config/models` | ADMIN | `{ provider, apiKey? }` (không gửi khóa thì dùng khóa đã lưu, chỉ khi cùng nhà cung cấp) | `{ models: [{ id, name }] }` | 400, 401, 403, 502 |
-| `POST /admin/assistant-config/test` | ADMIN | `{ provider, model, apiKey? }` | `{ ok, latencyMs, error? }` | 400, 401, 403 |
+| `POST /admin/assistant-config/models` | ADMIN | `{ provider, apiKey? }` (không gửi khóa thì dùng khóa đã lưu, chỉ khi cùng nhà cung cấp) | `{ models: [{ id, name }] }` | 400 (E8), 401, 403, 503 (E9) |
+| `POST /admin/assistant-config/test` | ADMIN | `{ provider, model, apiKey? }` | `{ ok, latencyMs, error? }`: lỗi của nhà cung cấp (khóa sai, model không tồn tại, hết hạn mức, quá thời gian) nằm trong `error`, HTTP vẫn 200 | 400, 401, 403 |
 
 API cấu hình nằm ở API (BFF, kiểm vai trò ADMIN, ghi audit), chuyển tiếp sang endpoint nội bộ `/internal/config` của assistant
 service; chỉ assistant service giữ và giải mã khóa (ADR-16 mục 7).
@@ -164,7 +166,8 @@ service; chỉ assistant service giữ và giải mã khóa (ADR-16 mục 7).
 ## 10. Yêu cầu phi chức năng liên quan
 
 - NFR-1.3: trợ lý p95 ≤ 6 s khi LLM chạy bình thường, với 500 tài liệu.
-- NFR-3.5: gọi LLM có timeout ≤ 10 s, quá thì fallback.
+- NFR-3.5: gọi LLM có timeout ≤ 10 s, quá thì fallback. **Không thử lại** dù NFR-3.5 cho thử lại tối đa 3 lần: người dùng
+  đang chờ, thử lại sẽ vượt 10 s; thử lại của NFR-3.5 áp dụng cho việc chạy nền (email, event, ingest tài liệu).
 - NFR-5.21: 10 câu/phút, 100 câu/ngày mỗi người.
 - NFR-7.1: chi phí LLM nằm trong credit trả trước hoặc giới hạn chi tiêu đặt ở nhà cung cấp; ghi chi phí mỗi câu vào báo cáo tuần 12.
 - NFR-11.1: không lưu câu hỏi, câu trả lời; log chỉ có nhà cung cấp, model, số đoạn, độ trễ, số token, lý do fallback. Trang
@@ -181,8 +184,8 @@ Chiến lược, bảng phủ tiêu chí và ca còn thiếu: [test.md](test.md)
 |---|---|---|
 | Event tài liệu `document.outbox` | Chưa có | TV1, đầu nhánh `feat/assistant-service` (UC5 13.2) |
 | Assistant service: ingest, chia đoạn, index full-text và vector | Chưa có | TV1, `feat/assistant-service` |
-| API hỏi đáp, adapter `anthropic`, trích dẫn, fallback, giới hạn tần suất, khung trợ lý | Chưa có | TV1, `feat/policy-assistant`. Nếu thứ Sáu 27/11 chưa xong phần vector thì giao bản chỉ full-text (ADR-16) |
-| Trang "Cấu hình trợ lý", khóa mã hóa, adapter `google`, `deepseek` | Chưa có | TV1, `feat/assistant-config` |
+| API hỏi đáp, adapter `openai-compatible` (DeepSeek), trích dẫn, fallback, giới hạn tần suất, khung trợ lý | Chưa có | TV1, `feat/policy-assistant`. Nếu thứ Sáu 27/11 chưa xong phần vector thì giao bản chỉ full-text (ADR-16) |
+| Trang "Cấu hình trợ lý", khóa mã hóa, adapter `anthropic`, `google` | Chưa có | TV1, `feat/assistant-config` |
 | Bộ câu hỏi đánh giá | Chưa có | TV2, `docs/assistant-eval-set` |
 
 ## 13. Thiết kế đề xuất cho phần chưa có
@@ -224,6 +227,9 @@ Chiến lược, bảng phủ tiêu chí và ca còn thiếu: [test.md](test.md)
 
 - Bảng `assistant.llm_config` (một dòng đang dùng): `provider`, `model`, `base_url`, `api_key_ciphertext`, `api_key_last4`,
   `enabled`, `version`, `updated_by`, `updated_at`. Khóa mã hóa AES-256-GCM bằng `ASSISTANT_CONFIG_KEY` (ADR-16 mục 7).
+- Audit (module audit của API, [UC7 spec mục 2](../UC7-audit-log/spec.md)): `entityType` `assistant_config`, hành động
+  `ASSISTANT_CONFIG_UPDATE` (nhà cung cấp, model cũ và mới, 4 ký tự cuối của khóa, bật, tắt), `ASSISTANT_CONFIG_TEST` (nhà
+  cung cấp, model, kết quả, độ trễ). Không có khóa.
 - Registry nhà cung cấp trong `services/assistant/src/llm/providers.ts`: mỗi mục có `id`, tên hiển thị, adapter, `baseUrl` mặc
   định (nếu có), nước nhận dữ liệu. Ba mục đầu: `anthropic` (adapter Claude), `google` (adapter Gemini), `deepseek` (adapter
   `openai-compatible`, `baseUrl` của DeepSeek).

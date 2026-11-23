@@ -15,7 +15,7 @@
 - 15/11/2026: bản đề xuất đầu tiên, sau khi đánh giá việc chuyển sang microservice. Duong chọn phương án B trên thẻ quyết
   định của thread "Đánh giá chuyển sang microservice".
 - 22/11/2026: kiểm chéo UC5. Không gửi email khi có tài liệu mới (UC5 D2), nên sửa tiêu chí nghiệm thu về upload tài liệu:
-  notification service nhận event nhưng bỏ qua loại `document.*`. Event tài liệu: [UC5 spec 13.2](../../features/UC5-document-repository/spec.md#132-event-cho-tìm-kiếm-adr-15).
+  notification service nhận event nhưng bỏ qua loại `document.*`. Event tài liệu: [UC5 spec 13.2](../../features/UC5-document-repository/spec.md#132-event-cho-trợ-lý-adr-15).
 - 23/11/2026: UC6 thu gọn còn trợ lý (Duong, 22/11), bỏ tìm tài liệu theo từ khóa (FR-6.2). Search service đổi tên thành
   **assistant service** (`services/assistant/`, schema `assistant`, DB user `assistant_svc`, queue `assistant.document`); index
   là đoạn văn bản có full-text và vector theo [ADR-16](ADR-16-policy-assistant.md). Phương án B và các tiêu chí khác giữ nguyên.

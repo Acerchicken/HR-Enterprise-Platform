@@ -306,4 +306,4 @@ worker ngoài giờ demo. Con số chốt khi ADR-12 được merge.
 | Dịch vụ gửi email trên cloud | Nhà cung cấp SMTP, xác thực domain gửi | Tuần 9–10 |
 | Web application firewall | Bật ở staging hay chỉ production | Tuần 10 |
 | Logging & metrics | Dashboard, ngưỡng cảnh báo cụ thể | Tuần 10–11 |
-| LLM API và nơi lưu vector | Nhà cung cấp LLM; pgvector trên PostgreSQL hay dịch vụ riêng | Tuần 12 |
+| ~~LLM API và nơi lưu vector~~ | Đã chốt 23/11 ở [ADR-16](adr/ADR-16-policy-assistant.md): pgvector trong PostgreSQL, LLM do ADMIN chọn qua adapter (demo DeepSeek), embedding EmbeddingGemma | Tuần 12 |

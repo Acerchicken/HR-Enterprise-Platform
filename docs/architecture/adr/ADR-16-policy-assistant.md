@@ -29,7 +29,7 @@
 - Câu trả lời chỉ được dựa trên tài liệu người hỏi được xem (DR-02, DR-08). Phạm vi tính lại ở mỗi lần hỏi (DR-06).
 - Quy mô: 500 tài liệu, 2.000 nhân viên (NFR-1.3). Timeout gọi LLM 10 giây (NFR-3.5).
 - Ngân sách AWS: dự toán 56,80 USD/tháng, hạn mức thẻ 60 USD, chỉ dư khoảng 3 USD (ADR-12).
-- ADR-15 đã có service tách riêng nhận event tài liệu qua `document.outbox` ([UC5 spec 13.2](../../features/UC5-document-repository/spec.md#132-event-cho-tìm-kiếm-adr-15)).
+- ADR-15 đã có service tách riêng nhận event tài liệu qua `document.outbox` ([UC5 spec 13.2](../../features/UC5-document-repository/spec.md#132-event-cho-trợ-lý-adr-15)).
   Khi bỏ tìm tài liệu, service này chỉ còn phục vụ trợ lý.
 - Feature freeze 2/12/2026, chỉ TV1 code (ADR-11).
 
@@ -114,7 +114,9 @@ Cụ thể:
      mà không sửa code.
 5. **Truy hồi khi hỏi:**
    - API (vai trò BFF, ADR-15) tính phạm vi hiện tại của người hỏi: đơn vị hiện tại và mọi đơn vị cha (ADR-14), vai trò
-     (ADR-18). Người không có hồ sơ đang làm việc có phạm vi rỗng.
+     (ADR-18). Người không có hồ sơ đang làm việc (ví dụ tài khoản chỉ có vai trò ADMIN) **không được xem tài liệu nào**
+     (DR-02, kể cả tài liệu "toàn công ty"): API trả "không tìm thấy" ngay, không gọi assistant service. Nếu chỉ gửi phạm vi
+     rỗng thì điều kiện `scope_all` vẫn khớp và lộ tài liệu toàn công ty.
    - API gọi nội bộ assistant service kèm câu hỏi và phạm vi.
    - Service lấy 20 đoạn theo full-text (`unaccent`, cấu hình `simple`) và 20 đoạn theo vector, cả hai câu đều có điều kiện
      `NOT hidden AND (scope_all OR scope_department_ids && $units OR scope_roles && $roles)`; gộp bằng Reciprocal Rank Fusion,
@@ -128,11 +130,11 @@ Cụ thể:
      ký; không sửa phần truy hồi, API hay giao diện.
    - Ba adapter đầu tiên:
 
-     | `id` | Nhà cung cấp | Cách gọi | Trích dẫn |
+     | Nhà cung cấp (`id` trong registry) | Adapter | Cách gọi | Trích dẫn |
      |---|---|---|---|
-     | `anthropic` | Claude API | SDK `@anthropic-ai/sdk` | Khối `search_result` bật `citations`: API trả trích dẫn có cấu trúc |
-     | `google` | Google Gemini API | SDK chính thức của Google | Trích dẫn qua prompt (bên dưới) |
-     | `openai-compatible` | DeepSeek (cấu hình sẵn `baseUrl` của DeepSeek) | API kiểu OpenAI Chat Completions | Trích dẫn qua prompt |
+     | DeepSeek (`deepseek`) | `openai-compatible`, cấu hình sẵn `baseUrl` của DeepSeek | API kiểu OpenAI Chat Completions | Trích dẫn qua prompt (bên dưới) |
+     | Claude (`anthropic`) | `anthropic` | SDK `@anthropic-ai/sdk` | Khối `search_result` bật `citations`: API trả trích dẫn có cấu trúc |
+     | Google Gemini (`google`) | `google` | SDK chính thức của Google | Trích dẫn qua prompt |
 
      Adapter `openai-compatible` nhận `baseUrl`, nên sau này thêm OpenAI, Groq, Ollama chạy local hay nhà cung cấp tương thích
      khác chỉ là thêm một mục cấu hình sẵn, không cần code mới.
@@ -180,8 +182,8 @@ Bedrock Knowledge Bases, dịch vụ embedding trả phí, tìm tài liệu theo
   khóa riêng của assistant service, không bao giờ trả lại khóa, audit mỗi lần đổi, chỉ ADMIN có quyền.
 - Trích dẫn qua prompt (Gemini, DeepSeek) kém chắc chắn hơn trích dẫn có cấu trúc của Claude. Giảm thiểu: kiểm số đoạn ở server,
   không có trích dẫn hợp lệ thì fallback; chạy bộ đánh giá cho từng nhà cung cấp trước khi dùng để demo.
-- Thêm khoảng 2–3 ngày công cho TV1 (trang cấu hình, ba adapter). Giảm thiểu: làm `anthropic` trước, `google` và
-  `openai-compatible` sau; trễ thì giao trước một adapter, các adapter còn lại vào tuần 13.
+- Thêm khoảng 2–3 ngày công cho TV1 (trang cấu hình, ba adapter). Giảm thiểu: làm `openai-compatible` (DeepSeek, nhà cung cấp
+  dùng để demo) trước, `anthropic` và `google` sau; trễ thì giao trước DeepSeek, hai adapter còn lại vào tuần 13.
 - EmbeddingGemma lớn hơn e5-small khoảng 2,5 lần: image lớn thêm khoảng 300 MB (bản q8), task assistant cần khoảng 2 GB RAM
   thay vì 1 GB, tính embedding chậm hơn (vẫn nhỏ so với thời gian chờ LLM). Thêm 1 GB cho một task Fargate chạy 24/7 tốn khoảng
   3 USD/tháng, sát hạn mức thẻ. Giảm thiểu: TV3 đo RAM thật; nếu vượt thì dùng bản q4, hoặc chỉ bật task assistant trong giờ

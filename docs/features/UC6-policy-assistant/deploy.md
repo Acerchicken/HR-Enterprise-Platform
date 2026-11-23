@@ -46,6 +46,22 @@ dán trên trang "Cấu hình trợ lý", lưu mã hóa trong `assistant.llm_con
 4. Chạy bộ đánh giá của TV2 trên staging với từng nhà cung cấp định demo (ưu tiên DeepSeek, dữ liệu giả), ghi tỉ lệ đúng, độ trễ, chi phí mỗi câu vào báo cáo
    tuần 12.
 
+## 4a. Bật, tắt khi demo (tiết kiệm chi phí)
+
+Staging chỉ cần trợ lý lúc duyệt tính năng, thử nghiệm (khoảng 1 giờ) và demo (khoảng 30 phút). Một task 0,5 vCPU, 2 GB tốn
+khoảng 3–4 cent USD mỗi giờ (ước lượng, TV3 kiểm lại theo bảng giá Fargate của region staging), nên chỉ bật khi dùng.
+
+| Việc | Cách làm | Ghi chú |
+|---|---|---|
+| Mặc định | Service assistant trên ECS để `desiredCount = 0` (khai báo trong `infra/staging/`) | Không tốn tiền compute khi tắt |
+| Bật | `aws ecs update-service --cluster <cluster> --service assistant --desired-count 1`, chờ task `RUNNING` và health check đạt | Mất khoảng 1–2 phút vì nạp model embedding. Bật trước giờ demo ít nhất 5 phút |
+| Kiểm nhanh | Hỏi một câu mẫu trên `/documents`; trang `/admin/assistant` bấm "Kiểm tra kết nối" | Lúc task chưa lên, API trả `fallback = true` (E5), không lỗi 5xx |
+| Tắt | `aws ecs update-service ... --desired-count 0` ngay sau khi dùng | Index nằm trong RDS, bật lại dùng được ngay, không phải tính lại |
+| Tài liệu đăng lúc tắt | Event chờ trong SQS `assistant.document`, task bật lên thì xử lý | Queue đặt thời gian giữ message 14 ngày (tối đa của SQS); DLQ như ADR-15 |
+| NAT | Nếu NAT gateway chỉ tạo để gọi API nhà cung cấp LLM thì cũng tạo khi demo, xóa sau khi dùng (NAT tính tiền theo giờ khi còn tồn tại); dùng NAT có sẵn thì không thêm gì | TV3 chốt trong `infra/llm-secrets-cost` |
+
+Không dùng auto scaling theo lịch: lịch demo không cố định, bật tay rẻ và dễ kiểm hơn.
+
 ## 5. Kiểm tra sau deploy
 
 1. Hỏi một câu có trong tài liệu được xem: có câu trả lời và trích dẫn đúng tài liệu, phiên bản.
@@ -70,3 +86,12 @@ dán trên trang "Cấu hình trợ lý", lưu mã hóa trong `assistant.llm_con
 ## 7. Còn thiếu
 
 Toàn bộ UC6 chưa có trên `dev`. Cập nhật file này trong PR `feat/assistant-service`, `feat/policy-assistant`, `feat/assistant-config`.
+Các tài liệu chỉ mô tả code hiện có nên cập nhật cùng PR code, không cập nhật trước:
+
+- [database-schema.md](../../architecture/database-schema.md): schema `assistant` (`document`, `chunk`, `chunk_embedding`,
+  `llm_config`), extension `vector`, `unaccent`, migration.
+- [configuration.md](../../development/configuration.md): biến `ASSISTANT_*` ở mục 2.
+- [openapi.yaml](../../openapi.yaml): API ở spec 9.2.
+- [error-codes.md](../../development/error-codes.md): 503 khi nhà cung cấp AI không phản hồi (spec E9).
+- [event-contract.md](../../architecture/event-contract.md) mục 7: chuyển phần `document.outbox`, queue `assistant.document` thành
+  hợp đồng chính thức.

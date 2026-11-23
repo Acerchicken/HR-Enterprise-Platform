@@ -70,8 +70,8 @@ Lịch làm theo [kế hoạch hoàn thành từng chức năng](../../progress/
 | ADR-16 và sửa tài liệu UC6 sau khi thu gọn | AC-6.3.5 | TV1 | `docs/adr-16-policy-assistant` | 12 |
 | Event tài liệu qua `document.outbox`, lệnh đồng bộ lần đầu (UC5 13.2) | AC-5.4.1 → AC-5.4.4 | TV1 | `feat/assistant-service` (bước đầu) | 12 |
 | `services/assistant`: nhận event, trích văn bản, chia đoạn, index full-text và vector | AC-6.3.7 | TV1 | `feat/assistant-service` | 12 |
-| API hỏi đáp, adapter `anthropic`, trích dẫn, fallback, giới hạn tần suất, khung trợ lý trên `/documents` | AC-6.3.1 → AC-6.3.4, AC-6.3.6 | TV1 | `feat/policy-assistant` | 12 |
-| Trang "Cấu hình trợ lý", lưu khóa mã hóa, audit; adapter `google`, `openai-compatible` (DeepSeek) | AC-6.4.1 → AC-6.4.7 | TV1 | `feat/assistant-config` | 12–13 |
+| API hỏi đáp, adapter `openai-compatible` (DeepSeek), trích dẫn, fallback, giới hạn tần suất, khung trợ lý trên `/documents` | AC-6.3.1 → AC-6.3.4, AC-6.3.6 | TV1 | `feat/policy-assistant` | 12 |
+| Trang "Cấu hình trợ lý", lưu khóa mã hóa, audit; adapter `anthropic`, `google` | AC-6.4.1 → AC-6.4.7 | TV1 | `feat/assistant-config` | 12–13 |
 | Bộ câu hỏi đánh giá có đáp án (ít nhất 30 câu), chạy được với mọi nhà cung cấp | AC-6.3.1 → AC-6.3.3, AC-6.3.5 | TV2 | `docs/assistant-eval-set` | 12 |
 | Khóa mã hóa cấu hình (`ASSISTANT_CONFIG_KEY`) trong Secrets Manager, RDS bật `vector`, task assistant, cho phép gọi ra API của ba nhà cung cấp | NFR-7.1 | TV3 | `infra/llm-secrets-cost` | 12 |
 | Chạy bộ đánh giá, đo độ trễ và chi phí mỗi câu | AC-6.3.x | TV4 | `docs/assistant-eval-report` | 13 |
