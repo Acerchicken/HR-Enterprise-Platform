@@ -13,6 +13,7 @@ export const AUDIT_ENTITY_TYPES = [
   'document',
   'user_account',
   'role_assignment',
+  'assistant_config',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -66,6 +67,9 @@ export const AUDIT_ACTIONS = [
   'ACCOUNT_SYNC_FAILED',
   'ROLE_GRANT',
   'ROLE_REVOKE',
+  // Trợ lý chính sách (UC6 FR-6.4)
+  'ASSISTANT_CONFIG_UPDATE',
+  'ASSISTANT_CONFIG_TEST',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

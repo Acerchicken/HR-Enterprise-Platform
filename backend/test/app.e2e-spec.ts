@@ -2358,9 +2358,28 @@ describe('HRHelper API (e2e)', () => {
     const ds = app.get(DataSource);
     await expect(ds.query('DELETE FROM audit.audit_log')).rejects.toThrow(/append-only/);
   });
-  describe('UC6 hỏi trợ lý chính sách: API BFF (AC-6.3.4, AC-6.3.6, AC-6.3.7)', () => {
+  describe('UC6 trợ lý chính sách: API BFF hỏi đáp (AC-6.3.4, 6.3.6, 6.3.7) và cấu hình (FR-6.4)', () => {
     const calls: any[] = [];
     let server: import('http').Server;
+    const ANSWER = { answer: 'Nghỉ 3 ngày [1].', citations: [{ n: 1, documentId: 'd', versionNo: 1, title: 'T', section: 'S', citedText: 'x' }], fallback: false, masked: false };
+    const PROVIDERS = [{ id: 'deepseek', name: 'DeepSeek', dataRegion: 'Trung Quốc' }];
+    /** Cấu hình giả của assistant service (luật thật kiểm ở services/assistant config-store.int.spec.ts). */
+    let stored: any = null;
+    const fakeConfig = (method: string, url: string, body: any): [number, unknown] => {
+      if (method === 'GET') return [200, { config: stored, providers: PROVIDERS }];
+      if (method === 'PUT') {
+        if ((stored?.version ?? 0) !== body.version) return [409, { code: 'CONFLICT', message: 'Cấu hình vừa được người khác sửa, tải lại trang' }];
+        if (!body.apiKey && stored?.provider !== body.provider) return [400, { code: 'BAD_REQUEST', message: 'Đổi nhà cung cấp phải nhập API key mới', fields: { apiKey: 'Nhập API key của nhà cung cấp này' } }];
+        const before = stored;
+        stored = { provider: body.provider, model: body.model, apiKeyLast4: body.apiKey ? body.apiKey.slice(-4) : stored.apiKeyLast4, enabled: body.enabled, version: (stored?.version ?? 0) + 1, updatedBy: body.updatedBy, updatedAt: new Date().toISOString() };
+        return [200, { before, after: stored }];
+      }
+      if (url === '/internal/config/models') {
+        if (body.apiKey === 'sk-wrong-key-000') return [400, { code: 'BAD_REQUEST', message: 'Khóa không hợp lệ', fields: { apiKey: 'Khóa không hợp lệ' } }];
+        return [200, { models: [{ id: 'deepseek-chat', name: 'deepseek-chat' }] }];
+      }
+      return [200, { ok: false, latencyMs: 12, error: { kind: 'auth', message: 'Khóa không hợp lệ hoặc không có quyền' } }];
+    };
 
     beforeAll(async () => {
       const { createServer } = await import('http');
@@ -2368,9 +2387,11 @@ describe('HRHelper API (e2e)', () => {
         let raw = '';
         req.on('data', (c) => (raw += c));
         req.on('end', () => {
-          calls.push({ auth: req.headers.authorization, body: JSON.parse(raw) });
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ answer: 'Nghỉ 3 ngày [1].', citations: [{ n: 1, documentId: 'd', versionNo: 1, title: 'T', section: 'S', citedText: 'x' }], fallback: false, masked: false }));
+          const body = raw ? JSON.parse(raw) : undefined;
+          calls.push({ method: req.method, url: req.url, auth: req.headers.authorization, body });
+          const [status, out] = req.url!.startsWith('/internal/config') ? fakeConfig(req.method!, req.url!, body) : [200, ANSWER];
+          res.writeHead(status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(out));
         });
       });
       await new Promise<void>((ok) => server.listen(FAKE_ASSISTANT_PORT, '127.0.0.1', () => ok()));
@@ -2404,6 +2425,56 @@ describe('HRHelper API (e2e)', () => {
       for (let i = 0; i < 11; i++) last = await http.post('/api/v1/assistant/questions').set(MANAGER).send({ question: `câu ${i}` });
       expect(last!.status).toBe(429);
       expect(last!.headers['retry-after']).toBeDefined();
+    });
+
+    it('cấu hình trợ lý: chỉ ADMIN, HR và nhân viên bị 403 (AC-6.4.6, E6)', async () => {
+      await http.get('/api/v1/admin/assistant-config').set(HR).expect(403);
+      await http.put('/api/v1/admin/assistant-config').set(EMPLOYEE).send({ provider: 'deepseek', model: 'm', enabled: true, version: 0 }).expect(403);
+      await http.post('/api/v1/admin/assistant-config/test').set(HR).send({ provider: 'deepseek', model: 'm' }).expect(403);
+      const res = await http.get('/api/v1/admin/assistant-config').set(ADMIN).expect(200);
+      expect(res.body).toMatchObject({ provider: null, version: 0, enabled: false, providers: PROVIDERS });
+    });
+
+    it('lưu cấu hình: khóa chuyển cho assistant service, không trả lại, audit không chứa khóa (AC-6.4.3, 6.4.4)', async () => {
+      const KEY = 'sk-e2e-secret-key-9876';
+      calls.length = 0;
+      const res = await http.put('/api/v1/admin/assistant-config').set(ADMIN).send({ provider: 'deepseek', model: 'deepseek-chat', apiKey: KEY, enabled: true, version: 0 }).expect(200);
+      expect(res.body).toMatchObject({ provider: 'deepseek', model: 'deepseek-chat', apiKeyLast4: '9876', enabled: true, version: 1 });
+      expect(res.body.updatedByName).toEqual(expect.any(String));
+      expect(JSON.stringify(res.body)).not.toContain(KEY);
+      const put = calls.find((c) => c.method === 'PUT');
+      expect(put.auth).toBe('Bearer e2e-internal-token-0001');
+      expect(put.body).toMatchObject({ apiKey: KEY, version: 0 });
+
+      const audit = await app.get((await import('typeorm')).DataSource).query(
+        `SELECT action, changed_fields FROM audit.audit_log WHERE entity_type = 'assistant_config' ORDER BY at DESC, id DESC LIMIT 1`,
+      );
+      expect(audit[0].action).toBe('ASSISTANT_CONFIG_UPDATE');
+      expect(audit[0].changed_fields).toMatchObject({ provider: { from: null, to: 'deepseek' }, model: { to: 'deepseek-chat' }, apiKeyLast4: '9876', keyChanged: true });
+      expect(JSON.stringify(audit[0].changed_fields)).not.toContain(KEY);
+    });
+
+    it('version cũ 409 (E7); đổi nhà cung cấp không nhập khóa 400 fields.apiKey (A6); ô khóa trống nghĩa là giữ khóa', async () => {
+      await http.put('/api/v1/admin/assistant-config').set(ADMIN).send({ provider: 'deepseek', model: 'deepseek-chat', enabled: true, version: 0 }).expect(409);
+      const a6 = await http.put('/api/v1/admin/assistant-config').set(ADMIN).send({ provider: 'google', model: 'gemini', apiKey: '', enabled: true, version: 1 }).expect(400);
+      expect(a6.body.fields).toHaveProperty('apiKey');
+      const keep = await http.put('/api/v1/admin/assistant-config').set(ADMIN).send({ provider: 'deepseek', model: 'deepseek-reasoner', apiKey: '  ', enabled: false, version: 1 }).expect(200);
+      expect(keep.body).toMatchObject({ model: 'deepseek-reasoner', apiKeyLast4: '9876', enabled: false, version: 2 });
+    });
+
+    it('tải danh sách model: khóa sai 400 fields.apiKey (E8); kiểm tra kết nối lỗi vẫn 200 và có audit (AC-6.4.1, 6.4.2)', async () => {
+      const ok = await http.post('/api/v1/admin/assistant-config/models').set(ADMIN).send({ provider: 'deepseek', apiKey: 'sk-good-key-000' }).expect(200);
+      expect(ok.body.models).toEqual([{ id: 'deepseek-chat', name: 'deepseek-chat' }]);
+      const bad = await http.post('/api/v1/admin/assistant-config/models').set(ADMIN).send({ provider: 'deepseek', apiKey: 'sk-wrong-key-000' }).expect(400);
+      expect(bad.body.fields.apiKey).toBe('Khóa không hợp lệ');
+
+      const test = await http.post('/api/v1/admin/assistant-config/test').set(ADMIN).send({ provider: 'deepseek', model: 'deepseek-chat', apiKey: 'sk-test-key-4321' }).expect(200);
+      expect(test.body).toMatchObject({ ok: false, error: { kind: 'auth' } });
+      const audit = await app.get((await import('typeorm')).DataSource).query(
+        `SELECT changed_fields FROM audit.audit_log WHERE action = 'ASSISTANT_CONFIG_TEST' ORDER BY at DESC, id DESC LIMIT 1`,
+      );
+      expect(audit[0].changed_fields).toMatchObject({ provider: 'deepseek', model: 'deepseek-chat', ok: false, error: 'auth', newKey: true });
+      expect(JSON.stringify(audit[0].changed_fields)).not.toContain('sk-test-key-4321');
     });
   });
 });
