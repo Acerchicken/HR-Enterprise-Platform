@@ -23,6 +23,7 @@ dán trên trang "Cấu hình trợ lý", lưu mã hóa trong `assistant.llm_con
 | Biến | Nơi đọc | Local | Staging | Thiếu thì sao |
 |---|---|---|---|---|
 | `ASSISTANT_CONFIG_KEY` | Assistant service | Chuỗi 32 byte base64 trong `.env` cá nhân | Secrets Manager | Service không khởi động (không mã hóa, giải mã được khóa API) |
+| `ASSISTANT_EMBEDDING_MODEL` | Assistant service | `embeddinggemma-300m` | `embeddinggemma-300m` | Dùng mặc định; `id` lạ thì service không khởi động |
 | `ASSISTANT_LLM_TIMEOUT_MS` | Assistant service | `10000` | `10000` | Dùng mặc định |
 | `ASSISTANT_URL`, `ASSISTANT_INTERNAL_TOKEN` | API | `http://localhost:3100`, chuỗi bất kỳ | URL nội bộ, Secrets Manager | API trả `fallback = true`, câu "Trợ lý tạm thời không dùng được" |
 | `ASSISTANT_DB_URL` | Assistant service | User `assistant_svc` | User `assistant_svc` | Service không chạy |
@@ -34,7 +35,7 @@ dán trên trang "Cấu hình trợ lý", lưu mã hóa trong `assistant.llm_con
 | Môi trường | Tài nguyên | File |
 |---|---|---|
 | Local | PostgreSQL đổi image sang `pgvector/pgvector:pg16`; RabbitMQ thêm queue `assistant.document`; S3Mock như UC5 | `docker-compose.yml` |
-| Staging | RDS bật extension `vector`; SQS `assistant.document` + DLQ, subscription SNS lọc `document.*`; task Fargate assistant khoảng 1 GB RAM (model embedding); secret `ASSISTANT_CONFIG_KEY`; security group, NAT cho phép gọi HTTPS ra API của ba nhà cung cấp | `infra/staging/` (nhánh `infra/llm-secrets-cost`) |
+| Staging | RDS bật extension `vector`; SQS `assistant.document` + DLQ, subscription SNS lọc `document.*`; task Fargate assistant khoảng 2 GB RAM (EmbeddingGemma q8; đo thật, vượt thì dùng q4); secret `ASSISTANT_CONFIG_KEY`; security group, NAT cho phép gọi HTTPS ra API của ba nhà cung cấp | `infra/staging/` (nhánh `infra/llm-secrets-cost`) |
 
 ## 4. Các bước
 
@@ -62,6 +63,8 @@ dán trên trang "Cấu hình trợ lý", lưu mã hóa trong `assistant.llm_con
 - Chi phí bất thường hoặc lộ khóa: ADMIN tắt trợ lý trên `/admin/assistant` và thu hồi khóa ở trang của nhà cung cấp; trợ lý tự
   lùi về danh sách tài liệu (A2 trong spec).
 - Mất `ASSISTANT_CONFIG_KEY`: không giải mã được khóa đã lưu; tạo khóa mới, ADMIN dán lại API key.
+- Đổi model embedding: chạy `reindex-embeddings --model <id>` (trợ lý vẫn chạy bằng model cũ), đổi `ASSISTANT_EMBEDDING_MODEL`,
+  deploy, kiểm câu hỏi mẫu, rồi xóa vector model cũ. Rollback: đặt lại biến cũ trước khi xóa.
 - Phần vector gây lỗi hoặc chậm: tắt nhánh vector bằng cấu hình, chỉ dùng full-text (phương án cắt của ADR-16).
 
 ## 7. Còn thiếu

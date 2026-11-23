@@ -194,13 +194,18 @@ Chiến lược, bảng phủ tiêu chí và ca còn thiếu: [test.md](test.md)
 - `assistant.document`: `id` (bằng ID tài liệu UC5), `title`, `type`, `version_id`, `version_no`, `hidden`, `scope_all`,
   `scope_department_ids uuid[]`, `scope_roles text[]`, `updated_at`. Ghi đè theo event (UC5 13.2).
 - `assistant.chunk`: `id`, `document_id`, `version_id`, `ord`, `heading`, `content`, `tsv tsvector` (cấu hình `simple` kèm
-  `unaccent`), `embedding vector(384)`. Chỉ mục GIN trên `tsv`, HNSW cosine trên `embedding`.
+  `unaccent`). Chỉ mục GIN trên `tsv`.
+- `assistant.chunk_embedding`: `chunk_id`, `model` (ví dụ `embeddinggemma-300m`), `embedding vector` (không cố định số chiều).
+  Mỗi model một chỉ mục HNSW cosine riêng trên `(embedding::vector(n))` kèm `WHERE model = '<id>'` ([ADR-16](../../architecture/adr/ADR-16-policy-assistant.md) mục 2, 4).
 - Không có bảng lưu câu hỏi.
 
 ### 13.2 Ingest
 
 - `DocumentPublished`: đọc file của phiên bản từ storage, trích văn bản (PDF theo trang, DOCX theo đoạn và tiêu đề), chia đoạn
-  khoảng 1.500 ký tự, chồng 200 ký tự, giữ mục hoặc trang làm `heading`; tính embedding; thay toàn bộ đoạn cũ trong một transaction.
+  khoảng 1.500 ký tự, chồng 200 ký tự, giữ mục hoặc trang làm `heading`; tính embedding bằng model đang chọn (`ASSISTANT_EMBEDDING_MODEL`, mặc định
+  EmbeddingGemma 768 chiều); thay toàn bộ đoạn và vector cũ trong một transaction.
+- Đổi model embedding: lệnh `reindex-embeddings --model <id>` tính vector mới song song vector cũ, đổi biến môi trường rồi xóa
+  vector cũ; không đọc lại file, không chia lại đoạn.
 - `DocumentUpdated`, `DocumentHidden`, `DocumentRestored`: chỉ cập nhật `assistant.document`, không tính lại đoạn.
 - Lệnh đồng bộ lần đầu cho tài liệu đã `READY` trước khi có event (UC5 13.2).
 - Trích lỗi: ghi log, tài liệu không có đoạn; trợ lý không dùng tài liệu đó cho tới khi có bản mới.

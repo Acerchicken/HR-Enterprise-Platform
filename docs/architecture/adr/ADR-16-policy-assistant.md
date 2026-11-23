@@ -17,6 +17,8 @@
 - 23/11/2026: Duong chọn phương án A trên thẻ quyết định ("Full-text + pgvector, Claude API").
 - 23/11/2026: Duong muốn ADMIN tự chọn nhà cung cấp, model và dán API key ngay trong ứng dụng; trước mắt Claude, Google Gemini,
   DeepSeek, code sao cho dễ thêm nhà cung cấp khác. Đổi phần nhà cung cấp sang P3 (adapter, cấu hình trong ứng dụng), thêm FR-6.4.
+- 23/11/2026: Duong chốt model embedding EmbeddingGemma (768 chiều) thay `multilingual-e5-small`, và muốn phần RAG dễ thay đổi:
+  thêm adapter embedding + registry, vector lưu ở bảng riêng theo model, lệnh tính lại vector khi đổi model (mục 2, 4).
 
 ## Nội dung quyết định
 
@@ -83,13 +85,33 @@ Cụ thể:
    - Bảng `assistant.document`: `id`, `title`, `type`, `version_id`, `version_no`, `hidden`, phạm vi (`scope_all`,
      `scope_department_ids uuid[]`, `scope_roles text[]`). Event ghi đè cả bộ.
    - Bảng `assistant.chunk`: `document_id`, `version_id`, `ord`, `heading` (mục, điều, trang để trích dẫn), `content`,
-     `tsv tsvector`, `embedding vector(384)`. Chỉ giữ đoạn của phiên bản `READY` mới nhất.
-   - Chỉ mục GIN cho `tsv`, HNSW (cosine) cho `embedding`.
+     `tsv tsvector`. Chỉ giữ đoạn của phiên bản `READY` mới nhất. Chỉ mục GIN cho `tsv`.
+   - Bảng `assistant.chunk_embedding`: `chunk_id`, `model`, `embedding vector` (không cố định số chiều trên cột). Mỗi model có
+     một chỉ mục HNSW (cosine) riêng trên biểu thức ép kiểu, chỉ cho các dòng của model đó, ví dụ
+     `USING hnsw ((embedding::vector(768)) vector_cosine_ops) WHERE model = 'embeddinggemma-300m'`. Câu truy vấn dùng đúng biểu
+     thức và điều kiện đó. Vì vậy đổi model không phải sửa cột, chỉ thêm một chỉ mục.
 3. **Ingest:** khi nhận `DocumentPublished`, service đọc file từ storage bằng quyền chỉ đọc, trích văn bản PDF, DOCX, chia đoạn
-   khoảng 1.500 ký tự theo tiêu đề và đoạn văn (chồng 200 ký tự), tính embedding rồi thay toàn bộ đoạn của tài liệu trong một
+   khoảng 1.500 ký tự theo tiêu đề và đoạn văn (chồng 200 ký tự), tính embedding bằng model đang chọn rồi thay toàn bộ đoạn của tài liệu trong một
    transaction. Trích lỗi thì ghi log, tài liệu không có đoạn (trợ lý không dùng được tài liệu đó, không ảnh hưởng UC5).
-4. **Embedding:** model đa ngôn ngữ nhỏ chạy ngay trong service (đề xuất `multilingual-e5-small`, 384 chiều, bản ONNX qua
-   `@huggingface/transformers`), đóng sẵn vào image. Không gọi dịch vụ ngoài, không tốn tiền theo lượt, local và staging như nhau.
+4. **Embedding và RAG thay được (Duong chốt 23/11):**
+   - Model: **EmbeddingGemma 300M** của Google (`embeddinggemma-300m`), đa ngôn ngữ, 768 chiều, tối đa 2.048 token mỗi đoạn; bản
+     ONNX lượng tử hóa q8 (`onnx-community/embeddinggemma-300m-ONNX`) chạy bằng CPU qua `@huggingface/transformers`, đóng sẵn vào
+     image. Không gọi dịch vụ ngoài, không tốn tiền theo lượt, local và staging như nhau. Giấy phép Gemma Terms of Use (dùng
+     được cho đồ án; nếu kho model yêu cầu chấp nhận điều khoản thì bước build cần token Hugging Face).
+   - Mọi lời gọi model embedding đi qua giao diện `Embedder` trong `services/assistant/src/rag/embedders/`: `id`, `dimensions`,
+     `embedQuery(text)`, `embedDocuments([{ heading, text }])`. Mỗi adapter tự lo tiền tố riêng của model; với EmbeddingGemma là
+     `task: search result | query: ` cho câu hỏi và `title: {heading hoặc none} | text: ` cho đoạn văn. Sai tiền tố làm kết quả kém
+     đi rõ, nên tiền tố không nằm rải ở chỗ khác.
+   - Adapter đăng ký vào registry theo `id`, model đang dùng chọn bằng biến `ASSISTANT_EMBEDDING_MODEL`. Thêm model = viết một
+     file adapter, thêm một dòng đăng ký và một migration tạo chỉ mục HNSW cho số chiều của nó; không sửa phần truy hồi hay API.
+     Sau này muốn dùng API embedding trả phí (Gemini, OpenAI…) cũng chỉ là một adapter khác.
+   - Đổi model: lệnh `reindex-embeddings --model <id>` tính vector cho mọi đoạn bằng model mới, ghi thêm vào
+     `chunk_embedding` song song model cũ (trợ lý vẫn trả lời trong lúc chạy); xong thì đổi `ASSISTANT_EMBEDDING_MODEL`, deploy,
+     rồi xóa vector của model cũ. Không phải đọc lại file hay chia lại đoạn. Đổi cách chia đoạn thì chạy lệnh đồng bộ lần đầu
+     (UC5 13.2) để dựng lại cả đoạn lẫn vector.
+   - Các bước truy hồi tách rời (full-text, vector, gộp RRF, ngưỡng) và các tham số (độ dài đoạn, độ chồng, số đoạn mỗi nhánh,
+     số đoạn gửi LLM, ngưỡng liên quan, bật tắt nhánh vector) nằm trong một file cấu hình của service, chỉnh theo bộ đánh giá
+     mà không sửa code.
 5. **Truy hồi khi hỏi:**
    - API (vai trò BFF, ADR-15) tính phạm vi hiện tại của người hỏi: đơn vị hiện tại và mọi đơn vị cha (ADR-14), vai trò
      (ADR-18). Người không có hồ sơ đang làm việc có phạm vi rỗng.
@@ -160,11 +182,14 @@ Bedrock Knowledge Bases, dịch vụ embedding trả phí, tìm tài liệu theo
   không có trích dẫn hợp lệ thì fallback; chạy bộ đánh giá cho từng nhà cung cấp trước khi dùng để demo.
 - Thêm khoảng 2–3 ngày công cho TV1 (trang cấu hình, ba adapter). Giảm thiểu: làm `anthropic` trước, `google` và
   `openai-compatible` sau; trễ thì giao trước một adapter, các adapter còn lại vào tuần 13.
-- Image assistant lớn thêm khoảng 120 MB vì có model embedding, cần khoảng 1 GB RAM. TV3 tính lại cấu hình task Fargate.
+- EmbeddingGemma lớn hơn e5-small khoảng 2,5 lần: image lớn thêm khoảng 300 MB (bản q8), task assistant cần khoảng 2 GB RAM
+  thay vì 1 GB, tính embedding chậm hơn (vẫn nhỏ so với thời gian chờ LLM). Thêm 1 GB cho một task Fargate chạy 24/7 tốn khoảng
+  3 USD/tháng, sát hạn mức thẻ. Giảm thiểu: TV3 đo RAM thật; nếu vượt thì dùng bản q4, hoặc chỉ bật task assistant trong giờ
+  làm việc và lúc demo.
 - Image PostgreSQL local đổi sang `pgvector/pgvector:pg16`; RDS phải bật extension `vector` (RDS PostgreSQL 16 có sẵn).
 - Index trễ vài giây sau khi đăng tài liệu (eventual consistency, giống ADR-15). Phạm vi vẫn tính đồng bộ nên không lộ dữ liệu.
 - Phần pgvector là phần dễ trễ nhất. Phương án cắt: nếu thứ Sáu 27/11 chưa xong thì giao bản chỉ dùng full-text (giải pháp B),
-  vẫn đạt AC-6.3.1 → AC-6.3.4; cột `embedding` thêm sau.
+  vẫn đạt AC-6.3.1 → AC-6.3.4; bảng `chunk_embedding` thêm sau.
 
 **Tiêu chí nghiệm thu:**
 
@@ -176,7 +201,8 @@ Bedrock Knowledge Bases, dịch vụ embedding trả phí, tìm tài liệu theo
   liệu, không lỗi 5xx.
 - Đổi nhà cung cấp trên trang cấu hình (Claude → Gemini → DeepSeek): câu hỏi kế tiếp dùng nhà cung cấp mới, không deploy lại; có
   audit `ASSISTANT_CONFIG_UPDATE` không chứa khóa; `GET` cấu hình chỉ trả 4 ký tự cuối.
-- Thêm một adapter giả trong test chỉ bằng một file và một dòng đăng ký (chứng minh dễ mở rộng).
+- Thêm một adapter LLM giả và một `Embedder` giả (số chiều khác 768) trong test chỉ bằng một file và một dòng đăng ký (chứng minh
+  dễ mở rộng); chạy `reindex-embeddings` sang model giả trong lúc vẫn hỏi được, rồi đổi model và trợ lý dùng vector mới.
 - Ngưỡng bộ đánh giá ở trên áp dụng cho từng nhà cung cấp dùng để demo.
 - DB user `assistant_svc` truy vấn schema khác bị từ chối; `services/assistant` không import file nào trong `backend/`.
 - Câu hỏi không xuất hiện trong log, audit, database (kiểm bằng grep log sau khi chạy bộ đánh giá).

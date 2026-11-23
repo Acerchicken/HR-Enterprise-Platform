@@ -10,6 +10,7 @@ liệu ngoài phạm vi chứa đúng đáp án, để chứng minh lọc phạm
 | Phần | Mức kiểm thử |
 |---|---|
 | Chia đoạn, ánh xạ trích dẫn | Unit: chia đoạn theo tiêu đề, độ dài, chồng đoạn; trích dẫn có nguồn lạ bị bỏ |
+| Embedder | Unit: adapter EmbeddingGemma thêm đúng tiền tố câu hỏi, đoạn văn, trả 768 chiều; registry từ chối `id` lạ. Integration: `Embedder` giả số chiều khác, `reindex-embeddings` chạy trong lúc vẫn hỏi được, đổi model thì truy vấn dùng chỉ mục mới |
 | Truy hồi theo phạm vi | Integration với PostgreSQL thật: phạm vi toàn công ty, đơn vị (gồm đơn vị con), vai trò; tài liệu ẩn; đổi đơn vị |
 | API hỏi đáp | e2e với LLM giả (trả nhanh, trả chậm hơn 10 s, lỗi, từ chối); 400, 429; không lưu câu hỏi |
 | Adapter nhà cung cấp | Unit mỗi adapter với HTTP giả: dựng request đúng, đọc trích dẫn, lỗi 401, 429, timeout; trích dẫn qua prompt bỏ số lạ; thêm adapter giả chỉ bằng một mục registry |
