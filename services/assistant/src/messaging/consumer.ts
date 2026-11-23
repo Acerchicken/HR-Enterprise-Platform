@@ -39,9 +39,22 @@ export class RabbitMqConsumer implements EventConsumer {
     private readonly retryMs = 5000,
   ) {}
 
-  async start(handler: EventHandler): Promise<void> {
+  /**
+   * Kết nối lần đầu, thử lại tới `startAttempts` lần: lúc docker compose khởi động, healthcheck của RabbitMQ có thể đạt trước
+   * khi cổng AMQP nhận kết nối.
+   */
+  async start(handler: EventHandler, startAttempts = 12): Promise<void> {
     this.closing = false;
-    await this.connect(handler);
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await this.connect(handler);
+        return;
+      } catch (e) {
+        if (attempt >= startAttempts || this.closing) throw e;
+        log.warn('Chưa kết nối được RabbitMQ, thử lại', { attempt, retryMs: this.retryMs, error: errorText(e) });
+        await new Promise((r) => setTimeout(r, this.retryMs));
+      }
+    }
   }
 
   async close(): Promise<void> {
