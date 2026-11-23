@@ -131,7 +131,7 @@ sequenceDiagram
 | Luồng | Màn hình | API |
 |---|---|---|
 | 4.1, A1 → A5 | Trang "Tra cứu tài liệu" `/documents`, khung "Hỏi trợ lý chính sách" bên phải danh sách (màn hình hẹp: xếp dưới danh sách) | `POST /assistant/questions` (`feat/policy-assistant`) |
-| 4.2, A6 | `/admin/assistant` (ADMIN): chọn nhà cung cấp, model, ô API key (kiểu mật khẩu, hiện `••••abcd`), nút "Tải danh sách model", "Kiểm tra kết nối", công tắc bật trợ lý, dòng ghi nước nhận dữ liệu | `GET`, `PUT /admin/assistant-config`, `POST …/models`, `POST …/test` (chưa có, nhánh `feat/assistant-config`) |
+| 4.2, A6 | `/admin/assistant` (ADMIN): chọn nhà cung cấp, model, ô API key (kiểu mật khẩu, hiện `••••abcd`), nút "Tải danh sách model", "Kiểm tra kết nối", công tắc bật trợ lý, dòng ghi nước nhận dữ liệu | `GET`, `PUT /admin/assistant-config`, `POST …/models`, `POST …/test` |
 
 ### 9.1 Bản vẽ giao diện
 
@@ -151,7 +151,7 @@ Trang "Tra cứu tài liệu" khi chưa hỏi gì xem [UC5 mục 9.1](../UC5-doc
 
 ### 9.2 Hợp đồng API
 
-Hai API hỏi đáp đã chốt trong `feat/policy-assistant` ([openapi.yaml](../../openapi.yaml), tag `assistant`); bốn API cấu hình chốt trong `feat/assistant-config`.
+Hai API hỏi đáp đã chốt trong `feat/policy-assistant` ([openapi.yaml](../../openapi.yaml), tag `assistant`); bốn API cấu hình chốt trong `feat/assistant-config` (tag `admin`).
 
 | API | Ai gọi | Vào | Ra | Lỗi |
 |---|---|---|---|---|
@@ -186,8 +186,8 @@ Chiến lược, bảng phủ tiêu chí và ca còn thiếu: [test.md](test.md)
 |---|---|---|
 | Event tài liệu qua outbox chung `leave.outbox`, lệnh `assistant:sync` | Có (`feat/assistant-service`) | – |
 | Assistant service: ingest, chia đoạn, index full-text và vector (EmbeddingGemma) | Có (`feat/assistant-service`) | Đo RAM, thời gian index thật trên staging (TV3) |
-| API hỏi đáp, truy hồi lai, adapter `openai-compatible` (DeepSeek), trích dẫn, guardrail G1–G4, fallback, giới hạn tần suất, khung trợ lý | Có (`feat/policy-assistant`) | Chỉnh ngưỡng liên quan (`rag/settings.ts`) theo bộ đánh giá của TV2. Trước khi có `feat/assistant-config`, nhà cung cấp, khóa đặt bằng biến môi trường tạm (chỉ local) |
-| Trang "Cấu hình trợ lý", khóa mã hóa, adapter `anthropic`, `google` | Chưa có | TV1, `feat/assistant-config` |
+| API hỏi đáp, truy hồi lai, adapter `openai-compatible` (DeepSeek), trích dẫn, guardrail G1–G4, fallback, giới hạn tần suất, khung trợ lý | Có (`feat/policy-assistant`) | Chỉnh ngưỡng liên quan (`rag/settings.ts`) theo bộ đánh giá của TV2 |
+| Trang "Cấu hình trợ lý", khóa mã hóa, adapter `anthropic`, `google` | Có (`feat/assistant-config`) | Ca tay với khóa thật của ba nhà cung cấp (test.md mục 3) |
 | Bộ câu hỏi đánh giá | Chưa có | TV2, `docs/assistant-eval-set` |
 
 ## 13. Thiết kế đề xuất cho phần chưa có
@@ -246,6 +246,11 @@ phạm vi → gửi LLM với đoạn đã bọc (**G3**) → kiểm trích dẫ
 - Audit (module audit của API, [UC7 spec mục 2](../UC7-audit-log/spec.md)): `entityType` `assistant_config`, hành động
   `ASSISTANT_CONFIG_UPDATE` (nhà cung cấp, model cũ và mới, 4 ký tự cuối của khóa, bật, tắt), `ASSISTANT_CONFIG_TEST` (nhà
   cung cấp, model, kết quả, độ trễ). Không có khóa.
+- Adapter `anthropic` dùng SDK chính thức `@anthropic-ai/sdk`: đoạn tài liệu gửi dạng khối `search_result` bật `citations`, Claude trả
+  trích dẫn có cấu trúc nên service không đọc `[n]` trong chữ; không gửi `temperature`, không thử lại. Adapter `google` gọi REST
+  `generateContent`, khóa ở header `x-goog-api-key`; Gemini báo khóa sai bằng 400 `API_KEY_INVALID`, adapter đổi thành lỗi khóa.
+- API (BFF) không giữ, không log khóa: nhận khóa từ trang cấu hình rồi chuyển cho assistant service qua `/internal/config*`; service
+  mã hóa, lưu, giải mã mỗi câu hỏi. Mất `ASSISTANT_CONFIG_KEY` thì coi như chưa cấu hình (log `LLM_CONFIG_DECRYPT_FAILED`).
 - Registry nhà cung cấp trong `services/assistant/src/llm/providers.ts`: mỗi mục có `id`, tên hiển thị, adapter, `baseUrl` mặc
   định (nếu có), nước nhận dữ liệu. Ba mục đầu: `anthropic` (adapter Claude), `google` (adapter Gemini), `deepseek` (adapter
   `openai-compatible`, `baseUrl` của DeepSeek).

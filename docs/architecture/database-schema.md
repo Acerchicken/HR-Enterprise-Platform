@@ -802,6 +802,20 @@ Truy vấn phải viết đúng biểu thức và điều kiện đó thì mới
 
 **`assistant.processed_event`** – `event_id` (PK), `event_type`, `processed_at`: chống xử lý trùng (queue giao ít nhất một lần).
 
+**`assistant.llm_config`** – nhà cung cấp AI đang dùng, ADMIN chọn trên `/admin/assistant` (UC6 FR-6.4). Một dòng duy nhất.
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| `id` | smallint | PK, CHECK `id = 1` | |
+| `provider`, `model` | varchar(30), varchar(100) | NN | `id` trong registry nhà cung cấp (`services/assistant/src/llm/providers.ts`), model do ADMIN chọn |
+| `base_url` | text | | Dự phòng cho nhà cung cấp tương thích OpenAI tự host; hiện luôn NULL (dùng URL mặc định của registry) |
+| `api_key_ciphertext` | text | NN | `v1:` + base64(iv, tag, bản mã) AES-256-GCM bằng `ASSISTANT_CONFIG_KEY`, AAD là `provider` (ADR-08) |
+| `api_key_last4` | varchar(4) | NN | Để hiển thị `••••abcd` (AC-6.4.4) |
+| `enabled` | boolean | NN | Tắt thì nhân viên chỉ nhận danh sách tài liệu (AC-6.4.7) |
+| `version` | int | NN | Tăng mỗi lần lưu; gửi `version` cũ thì 409 |
+| `updated_by` | uuid | | `employee.employee.id` của ADMIN (không FK) |
+| `updated_at` | timestamptz | NN | |
+
 ## 9. Tham chiếu logic chéo schema
 
 Không có foreign key, nên **service của module sở hữu cột** phải kiểm tra đối tượng tồn tại (qua service được `exports` của
@@ -884,6 +898,7 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `1732500000000-LeaveRules` | 11 | Loại phép theo `quota_kind`, seed loại mới, số dư thập phân, phân bổ theo năm, `PENDING_HR`, đề nghị hủy, ngày lễ có loại, duyệt thay (UC3, UC4 `feat/leave-uc3-uc4`) |
 | `1732600000000-AuditTimeIndex` | 12 | Chỉ mục BRIN `audit.ix_audit_at (at)` (UC7 D2, `feat/audit-ui`) |
 | `1732700000000-AssistantSchema` | 12 | Extension `vector`, `unaccent`; schema `assistant` (4 bảng), HNSW cho EmbeddingGemma, role `assistant_svc` (UC6 `feat/assistant-service`) |
+| `1732800000000-AssistantLlmConfig` | 12 | Bảng `assistant.llm_config`: nhà cung cấp AI, khóa API đã mã hóa (UC6 FR-6.4, `feat/assistant-config`) |
 
 Lệnh: `npm run migration:run` (dev, ts-node), `npm run migration:run:prod` (bản build, dùng trên staging),
 `npm run migration:revert` (lùi một migration). Dữ liệu mẫu: `npm run seed`.
