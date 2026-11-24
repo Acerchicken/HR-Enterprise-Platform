@@ -20,6 +20,10 @@ export interface AssistantConfig {
   embeddingModel: string;
   /** Thư mục chứa model đã tải sẵn khi build image. */
   modelCacheDir: string;
+  /** Token API dùng khi gọi `POST /internal/answers` (header `Authorization: Bearer`). */
+  internalToken: string;
+  /** Timeout gọi LLM (NFR-3.5, mặc định 10 s, không thử lại). */
+  llmTimeoutMs: number;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AssistantConfig {
@@ -52,7 +56,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AssistantConfi
     },
     embeddingModel: env.ASSISTANT_EMBEDDING_MODEL || 'embeddinggemma-300m',
     modelCacheDir: env.ASSISTANT_MODEL_DIR || `${process.cwd()}/.model-cache`,
+    internalToken: need('ASSISTANT_INTERNAL_TOKEN'),
+    llmTimeoutMs: Number(env.ASSISTANT_LLM_TIMEOUT_MS || 10_000),
   };
+  if (cfg.internalToken && cfg.internalToken.length < 16) problems.push('ASSISTANT_INTERNAL_TOKEN phải dài ít nhất 16 ký tự');
+  if (!Number.isInteger(cfg.llmTimeoutMs) || cfg.llmTimeoutMs < 1000 || cfg.llmTimeoutMs > 60_000) problems.push('ASSISTANT_LLM_TIMEOUT_MS phải từ 1000 đến 60000');
   if (problems.length) throw new Error(`Cấu hình assistant service sai: ${problems.join('; ')}`);
   return cfg;
 }

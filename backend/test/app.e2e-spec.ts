@@ -5,6 +5,10 @@
 process.env.AUTH_MODE = 'dev';
 // Cả bộ e2e gọi API rất nhanh bằng vài tài khoản: nới giới hạn chung, giữ nguyên giới hạn hồ sơ để kiểm AC-1.14.x.
 process.env.RATE_LIMIT_OVERRIDES = JSON.stringify({ global: { minute: 100000 }, 'profile-write': { minute: 100000 } });
+// Assistant service giả (UC6) chạy trong test ở cổng này.
+const FAKE_ASSISTANT_PORT = 39181;
+process.env.ASSISTANT_URL = `http://127.0.0.1:${FAKE_ASSISTANT_PORT}`;
+process.env.ASSISTANT_INTERNAL_TOKEN = 'e2e-internal-token-0001';
 
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -2353,5 +2357,53 @@ describe('HRHelper API (e2e)', () => {
     const { DataSource } = await import('typeorm');
     const ds = app.get(DataSource);
     await expect(ds.query('DELETE FROM audit.audit_log')).rejects.toThrow(/append-only/);
+  });
+  describe('UC6 hỏi trợ lý chính sách: API BFF (AC-6.3.4, AC-6.3.6, AC-6.3.7)', () => {
+    const calls: any[] = [];
+    let server: import('http').Server;
+
+    beforeAll(async () => {
+      const { createServer } = await import('http');
+      server = createServer((req, res) => {
+        let raw = '';
+        req.on('data', (c) => (raw += c));
+        req.on('end', () => {
+          calls.push({ auth: req.headers.authorization, body: JSON.parse(raw) });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ answer: 'Nghỉ 3 ngày [1].', citations: [{ n: 1, documentId: 'd', versionNo: 1, title: 'T', section: 'S', citedText: 'x' }], fallback: false, masked: false }));
+        });
+      });
+      await new Promise<void>((ok) => server.listen(FAKE_ASSISTANT_PORT, '127.0.0.1', () => ok()));
+    });
+    afterAll(() => new Promise<void>((ok) => server.close(() => ok())));
+
+    it('gửi phạm vi hiện tại của người hỏi (đơn vị và đơn vị cha, vai trò) kèm token nội bộ', async () => {
+      calls.length = 0;
+      const res = await http.post('/api/v1/assistant/questions').set(EMPLOYEE).send({ question: '  Nghỉ cưới được mấy ngày? ' }).expect(200);
+      expect(res.body).toMatchObject({ answer: 'Nghỉ 3 ngày [1].', fallback: false, masked: false });
+      expect(calls[0].auth).toBe('Bearer e2e-internal-token-0001');
+      expect(calls[0].body.question).toBe('Nghỉ cưới được mấy ngày?');
+      const me = (await http.get(`/api/v1/employees/${employeeId}`).set(HR)).body;
+      expect(calls[0].body.scope.unitIds).toContain(me.departmentId);
+      expect(calls[0].body.scope.roles).toContain('EMPLOYEE');
+    });
+
+    it('câu hỏi rỗng hoặc quá 500 ký tự: 400 kèm fields.question (E2)', async () => {
+      const empty = await http.post('/api/v1/assistant/questions').set(EMPLOYEE).send({ question: '   ' }).expect(400);
+      expect(empty.body.fields).toHaveProperty('question');
+      await http.post('/api/v1/assistant/questions').set(EMPLOYEE).send({ question: 'x'.repeat(501) }).expect(400);
+    });
+
+    it('chưa đăng nhập: 401', async () => {
+      await http.post('/api/v1/assistant/questions').send({ question: 'q' }).expect(401);
+    });
+
+    it('quá 10 câu/phút: 429 kèm Retry-After (E3)', async () => {
+      await app.get((await import('typeorm')).DataSource).query(`DELETE FROM iam.rate_limit_counter WHERE key LIKE '%:assistant:%'`);
+      let last;
+      for (let i = 0; i < 11; i++) last = await http.post('/api/v1/assistant/questions').set(MANAGER).send({ question: `câu ${i}` });
+      expect(last!.status).toBe(429);
+      expect(last!.headers['retry-after']).toBeDefined();
+    });
   });
 });

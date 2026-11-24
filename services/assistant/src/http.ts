@@ -1,8 +1,9 @@
 import { createServer, IncomingMessage, Server, ServerResponse } from 'http';
+import { errorText, log } from './log';
 
 /**
- * HTTP nội bộ của assistant service (chỉ mạng nội bộ, ADR-15). Bước này chỉ có `/health`; API hỏi đáp
- * (`POST /internal/answers`) và cấu hình thêm ở `feat/policy-assistant`, `feat/assistant-config`.
+ * HTTP nội bộ của assistant service (chỉ mạng nội bộ, ADR-15): `/health`, `POST /internal/answers`; cấu hình thêm ở
+ * `feat/assistant-config`. Lỗi 500 không trả chi tiết (có thể chứa nội dung).
  */
 export type Route = (req: IncomingMessage, body: unknown) => Promise<{ status: number; body: unknown }>;
 
@@ -39,6 +40,7 @@ export function createHttpServer(routes: Record<string, Route>): Server {
       .then((r) => json(res, r.status, r.body))
       .catch((e) => {
         const status = typeof e?.status === 'number' ? e.status : 500;
+        if (status === 500) log.error('Lỗi xử lý request', { route: key, error: errorText(e) });
         json(res, status, { code: status === 500 ? 'INTERNAL' : 'BAD_REQUEST', message: status === 500 ? 'Lỗi hệ thống' : String(e.message) });
       });
   });

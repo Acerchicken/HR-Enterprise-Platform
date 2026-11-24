@@ -224,7 +224,11 @@ export class DocumentService {
 
   // ---------- Nội bộ ----------
 
-  /** Người xem tính lại mỗi lần (DR-06): phòng ban hiện tại, các phòng ban cha, vai trò hiện tại. */
+  /** Người xem tính lại mỗi lần (DR-06): phòng ban hiện tại, các phòng ban cha, vai trò hiện tại. Trợ lý UC6 dùng chung. */
+  async viewerOf(actor: AuthUser): Promise<Viewer> {
+    return this.viewer(actor);
+  }
+
   private async viewer(actor: AuthUser): Promise<Viewer> {
     const place = actor.employeeId ? await this.employees.placementOf(actor.employeeId) : null;
     if (!place || place.status === 'TERMINATED') return { active: false, departmentChain: [], roles: [] };

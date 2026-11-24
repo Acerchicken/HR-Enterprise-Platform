@@ -1707,6 +1707,31 @@ paths:
           description: ""
       tags: *a15
       security: *a16
+  /api/v1/assistant/questions:
+    post:
+      operationId: AssistantController_ask
+      summary: Hỏi trợ lý chính sách (UC6)
+      description: Không lưu câu hỏi. Giới hạn 10 câu/phút, 100 câu/ngày.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AskQuestionDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantAnswer"
+        "429":
+          description: Quá 10 câu/phút hoặc 100 câu/ngày (E3)
+      tags:
+        - assistant
+      security:
+        - bearer: []
 info:
   title: HRHelper API (HR Enterprise Platform)
   description: "REST API /api/v1. Xác thực: Bearer JWT do Keycloak (OIDC) cấp.
@@ -2482,3 +2507,77 @@ components:
           $ref: "#/components/schemas/DocumentScopeDto"
       required:
         - version
+    AskQuestionDto:
+      type: object
+      properties:
+        question:
+          type: string
+          example: Nghỉ cưới được mấy ngày?
+          minLength: 1
+          maxLength: 500
+      required:
+        - question
+    AssistantCitation:
+      type: object
+      properties:
+        n:
+          type: number
+          description: Số trích dẫn, khớp mốc [n] trong answer
+        documentId:
+          type: string
+          format: uuid
+        versionNo:
+          type: number
+        title:
+          type: string
+        section:
+          type: string
+          description: Mục, điều hoặc trang
+        citedText:
+          type: string
+          description: Đoạn trích (tối đa ~200 ký tự)
+      required:
+        - n
+        - documentId
+        - versionNo
+        - title
+        - section
+        - citedText
+    AssistantDocumentRef:
+      type: object
+      properties:
+        documentId:
+          type: string
+          format: uuid
+        title:
+          type: string
+      required:
+        - documentId
+        - title
+    AssistantAnswer:
+      type: object
+      properties:
+        answer:
+          type: string
+          description: Câu trả lời có các mốc [n]; hoặc câu "không tìm thấy", "trợ lý đang
+            bận"
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantCitation"
+        fallback:
+          type: boolean
+          description: "true: không có câu trả lời của AI, xem documents (A2, E5)"
+        masked:
+          type: boolean
+          description: "true: đã che dữ liệu cá nhân trong câu hỏi trước khi gửi (G1)"
+        documents:
+          description: Chỉ có khi fallback = true
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantDocumentRef"
+      required:
+        - answer
+        - citations
+        - fallback
+        - masked

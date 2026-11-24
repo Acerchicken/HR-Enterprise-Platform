@@ -107,7 +107,7 @@ Web: `VITE_IDLE_TIMEOUT_MINUTES` (mặc định `30`) là số phút không thao
 | Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
 |---|---|---|---|---|---|
 | `RATE_LIMIT_ENABLED` | `true` | `true` | Không | API | `false` tắt hẳn giới hạn (chỉ dùng khi debug local) |
-| `RATE_LIMIT_OVERRIDES` | (không có) | Để trống | Không | API | JSON đổi ngưỡng từng nhóm, ví dụ `{"global":{"minute":1000}}` khi load test. Nhóm và ngưỡng mặc định ở `backend/src/common/rate-limit/rate-limit-rules.ts`: `global` 100/phút, `search` 20/phút, `profile-write` 30/phút và 300/ngày, `profile-upload` 10/giờ và 30/ngày, `avatar-upload` 5/ngày, `profile-download` 60/giờ, `sensitive-view` 100/giờ. Giới hạn ngày đếm trong bảng `iam.rate_limit_counter` |
+| `RATE_LIMIT_OVERRIDES` | (không có) | Để trống | Không | API | JSON đổi ngưỡng từng nhóm, ví dụ `{"global":{"minute":1000}}` khi load test. Nhóm và ngưỡng mặc định ở `backend/src/common/rate-limit/rate-limit-rules.ts`: `global` 100/phút, `search` 20/phút, `profile-write` 30/phút và 300/ngày, `profile-upload` 10/giờ và 30/ngày, `avatar-upload` 5/ngày, `profile-download` 60/giờ, `sensitive-view` 100/giờ, `assistant` 10/phút và 100/ngày (UC6). Giới hạn ngày đếm trong bảng `iam.rate_limit_counter` |
 
 ### Kho tài liệu (object storage)
 
@@ -127,6 +127,14 @@ Web: `VITE_IDLE_TIMEOUT_MINUTES` (mặc định `30`) là số phút không thao
 |---|---|---|---|---|---|
 | `SEED_EMPLOYEES` | `2000` | (mặc định) | Không | CLI seed | Số nhân viên mẫu được sinh |
 
+### Trợ lý chính sách (UC6, API gọi assistant service)
+
+| Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
+|---|---|---|---|---|---|
+| `ASSISTANT_URL` | (không có) | URL nội bộ của task assistant | Không | API | Không đặt thì `POST /assistant/questions` trả `fallback = true` ("Trợ lý tạm thời không dùng được"), không lỗi 5xx (UC6 E5) |
+| `ASSISTANT_INTERNAL_TOKEN` | (không có) | Secrets Manager, chung với assistant service | **Có** khi có `ASSISTANT_URL` | API | Ít nhất 16 ký tự; gửi ở header `Authorization: Bearer` khi gọi `POST /internal/answers` |
+| `ASSISTANT_TIMEOUT_MS` | `15000` | `15000` | Không | API | Chờ assistant service tối đa; lớn hơn timeout LLM (10 s) để service kịp trả fallback |
+
 ## 2a. Assistant service (`services/assistant/`, UC6)
 
 Service riêng, đọc cấu hình bằng code của nó (không import `backend/`). Thiếu biến bắt buộc thì không khởi động.
@@ -141,6 +149,9 @@ Service riêng, đọc cấu hình bằng code của nó (không import `backend
 | `SQS_ASSISTANT_QUEUE_URL`, `AWS_REGION` | (không có), `ap-southeast-1` | URL queue, region | **Có** khi `sqs` | |
 | `STORAGE_BUCKET`, `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` | Như backend | Bucket tài liệu, IAM chỉ đọc | `STORAGE_BUCKET` **có** | Đọc file để trích văn bản, tối đa 20 MiB |
 | `ASSISTANT_EMBEDDING_MODEL` | `embeddinggemma-300m` | `embeddinggemma-300m` | Không | `id` trong registry embedder (ADR-16 mục 4); `hash-256` chỉ để test. `id` lạ thì không khởi động |
+| `ASSISTANT_INTERNAL_TOKEN` | (không có) | Secrets Manager | **Có** | Trùng giá trị ở API, ít nhất 16 ký tự |
+| `ASSISTANT_LLM_TIMEOUT_MS` | `10000` | `10000` | Không | Timeout gọi nhà cung cấp LLM, không thử lại (NFR-3.5); 1000–60000 |
+| `ASSISTANT_LLM_PROVIDER`, `ASSISTANT_LLM_MODEL`, `ASSISTANT_LLM_API_KEY`, `ASSISTANT_LLM_BASE_URL` | (không có) | **Không dùng** | Không | **Tạm thời, chỉ local**, tới khi có trang "Cấu hình trợ lý" (`feat/assistant-config`). Ví dụ `deepseek`, `deepseek-chat`, khóa trong `.env` cá nhân, không commit. Thiếu thì trợ lý trả `fallback = true` |
 | `ASSISTANT_MODEL_DIR` | `./.model-cache` (Docker: `/app/.model-cache`) | Như Docker | Không | Thư mục model đã tải sẵn lúc build image; service không tải model khi chạy |
 
 ## 3. Frontend (Vite, đọc lúc build)
