@@ -56,13 +56,15 @@ d('Answerer + Retriever (Postgres)', () => {
       [ids.hr, `Điều 9. Quy trình nội bộ HR ${tag}|HR xử lý hồ sơ kết hôn trong 2 ngày làm việc.`, { all: false, departmentIds: [], roles: ['HR'] }, false],
       [ids.hidden, `Điều 1. Bản cũ ${tag}|Kết hôn được nghỉ 1 ngày (bản cũ đã ẩn).`, { all: true, departmentIds: [], roles: [] }, true],
     ];
+    // Tham số thứ hai là id event (id outbox, tăng dần) làm mốc thứ tự.
+    let seq = Date.now() * 1000;
     for (const [id, text, scope, hidden] of docs) {
       const [h, body] = text.split('|');
       files.set(id, await makeDocx([{ text: h }, { text: body }]));
       await indexer.published({
         documentId: id, versionId: randomUUID(), versionNo: 1, objectKey: id, contentType: DOCX,
         title: `Quy chế ${tag}`, type: 'POLICY', scope: scope as any, hidden, occurredAt: '',
-      });
+      }, String(++seq));
     }
     answerer = new Answerer(new Retriever(pool, embedder), configs, 1000);
   });
