@@ -30,6 +30,7 @@ paths:
               - document
               - user_account
               - role_assignment
+              - assistant_config
             type: string
         - name: entityId
           required: false
@@ -97,6 +98,8 @@ paths:
                 - ACCOUNT_SYNC_FAILED
                 - ROLE_GRANT
                 - ROLE_REVOKE
+                - ASSISTANT_CONFIG_UPDATE
+                - ASSISTANT_CONFIG_TEST
         - name: from
           required: false
           in: query
@@ -1732,6 +1735,87 @@ paths:
         - assistant
       security:
         - bearer: []
+  /api/v1/admin/assistant-config:
+    get:
+      operationId: AssistantConfigController_get
+      summary: Xem cấu hình nhà cung cấp AI (không có khóa, chỉ 4 ký tự cuối)
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantConfigView"
+      tags: &a17
+        - admin
+      security: &a18
+        - bearer: []
+    put:
+      operationId: AssistantConfigController_save
+      summary: Lưu cấu hình (AC-6.4.3, 6.4.5); version cũ trả 409
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveAssistantConfigDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantConfigView"
+      tags: *a17
+      security: *a18
+  /api/v1/admin/assistant-config/models:
+    post:
+      operationId: AssistantConfigController_models
+      summary: Tải danh sách model từ nhà cung cấp (AC-6.4.1); khóa sai 400, nhà cung
+        cấp không phản hồi 503
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListModelsDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantModelList"
+        "429":
+          description: Quá 20 lượt tải model, kiểm tra kết nối mỗi giờ
+      tags: *a17
+      security: *a18
+  /api/v1/admin/assistant-config/test:
+    post:
+      operationId: AssistantConfigController_test
+      summary: "Kiểm tra kết nối (AC-6.4.2): lỗi của nhà cung cấp nằm trong `error`,
+        HTTP vẫn 200"
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestConnectionDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionTestResult"
+        "429":
+          description: Quá 20 lượt tải model, kiểm tra kết nối mỗi giờ
+      tags: *a17
+      security: *a18
 info:
   title: HRHelper API (HR Enterprise Platform)
   description: "REST API /api/v1. Xác thực: Bearer JWT do Keycloak (OIDC) cấp.
@@ -1752,7 +1836,7 @@ components:
       properties:
         unitType:
           type: string
-          enum: &a17
+          enum: &a19
             - COMPANY
             - CENTER
             - DEPARTMENT
@@ -1791,7 +1875,7 @@ components:
       properties:
         unitType:
           type: string
-          enum: *a17
+          enum: *a19
         name:
           type: string
         office:
@@ -2460,7 +2544,7 @@ components:
           example: Quy chế làm việc
         type:
           type: string
-          enum: &a18
+          enum: &a20
             - POLICY
             - PROCESS
             - GUIDE
@@ -2502,7 +2586,7 @@ components:
           type: string
         type:
           type: string
-          enum: *a18
+          enum: *a20
         scope:
           $ref: "#/components/schemas/DocumentScopeDto"
       required:
@@ -2581,3 +2665,162 @@ components:
         - citations
         - fallback
         - masked
+    AssistantProviderInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          example: deepseek
+        name:
+          type: string
+          example: DeepSeek
+        dataRegion:
+          type: string
+          description: Nước nhận dữ liệu khi gửi câu hỏi (NFR-11.1)
+          example: Trung Quốc
+      required:
+        - id
+        - name
+        - dataRegion
+    AssistantConfigView:
+      type: object
+      properties:
+        provider:
+          type: string
+          nullable: true
+          description: "null: chưa cấu hình"
+        model:
+          type: string
+          nullable: true
+        apiKeyLast4:
+          type: string
+          nullable: true
+          description: 4 ký tự cuối của khóa API
+        enabled:
+          type: boolean
+        version:
+          type: number
+          description: Gửi lại khi lưu; chưa cấu hình là 0 (409 nếu cũ)
+        updatedBy:
+          type: string
+          nullable: true
+          format: uuid
+          description: Id tài khoản (iam) của ADMIN sửa lần cuối
+        updatedByName:
+          type: string
+          nullable: true
+          description: Tên trên hồ sơ, không có hồ sơ thì email
+        updatedAt:
+          type: string
+          nullable: true
+          format: date-time
+        providers:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantProviderInfo"
+      required:
+        - provider
+        - model
+        - apiKeyLast4
+        - enabled
+        - version
+        - updatedBy
+        - updatedByName
+        - updatedAt
+        - providers
+    SaveAssistantConfigDto:
+      type: object
+      properties:
+        provider:
+          type: string
+          example: deepseek
+        model:
+          type: string
+          example: deepseek-chat
+        apiKey:
+          type: string
+          description: Bỏ trống để giữ khóa đã lưu (chỉ khi không đổi nhà cung cấp, A6)
+        enabled:
+          type: boolean
+        version:
+          type: number
+          minimum: 0
+      required:
+        - provider
+        - model
+        - enabled
+        - version
+    ListModelsDto:
+      type: object
+      properties:
+        provider:
+          type: string
+          example: anthropic
+        apiKey:
+          type: string
+          description: Không gửi thì dùng khóa đã lưu, chỉ khi cùng nhà cung cấp
+      required:
+        - provider
+    AssistantModelInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - name
+    AssistantModelList:
+      type: object
+      properties:
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantModelInfo"
+      required:
+        - models
+    TestConnectionDto:
+      type: object
+      properties:
+        provider:
+          type: string
+          example: anthropic
+        apiKey:
+          type: string
+          description: Không gửi thì dùng khóa đã lưu, chỉ khi cùng nhà cung cấp
+        model:
+          type: string
+          example: deepseek-chat
+      required:
+        - provider
+        - model
+    ConnectionTestError:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - auth
+            - timeout
+            - rate_limit
+            - bad_request
+            - unavailable
+            - refused
+        message:
+          type: string
+      required:
+        - kind
+        - message
+    ConnectionTestResult:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        latencyMs:
+          type: number
+        error:
+          $ref: "#/components/schemas/ConnectionTestError"
+      required:
+        - ok
+        - latencyMs

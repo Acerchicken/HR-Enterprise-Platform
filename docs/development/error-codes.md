@@ -133,6 +133,24 @@ Gửi lại cùng một quyết định (duyệt đơn đã duyệt) không lỗ
 | 409 | `Tài liệu đã được người khác cập nhật, hãy tải lại` | `version` cũ |
 | 503 | `Kho tài liệu chưa được cấu hình (STORAGE_BUCKET)` | Thiếu cấu hình storage |
 
+### Trợ lý chính sách (`assistant`, UC6)
+
+Hỏi đáp (`POST /assistant/questions`) không trả 5xx: trợ lý lỗi thì trả `fallback = true` (E5). Các lỗi dưới đây của trang
+"Cấu hình trợ lý" (`/admin/assistant-config`, chỉ ADMIN).
+
+| HTTP | Message | Nguyên nhân |
+|---|---|---|
+| 400 | `Đổi nhà cung cấp phải nhập API key mới` | Đổi nhà cung cấp hoặc lưu lần đầu mà không có khóa (A6, `fields.apiKey`) |
+| 400 | `Khóa không hợp lệ` | "Tải danh sách model" bằng khóa sai (E8, `fields.apiKey`) |
+| 400 | `Nhập API key` | Tải model, kiểm tra kết nối mà không dán khóa và không có khóa đã lưu cho nhà cung cấp đó (`fields.apiKey`) |
+| 400 | `Nhà cung cấp không hỗ trợ` | `provider` không có trong registry (`fields.provider`) |
+| 409 | `Cấu hình vừa được người khác sửa, tải lại trang` | `version` cũ (E7) |
+| 503 | `Nhà cung cấp AI không phản hồi, thử lại sau` | Tải danh sách model khi nhà cung cấp lỗi, quá giờ, hết hạn mức (E9) |
+| 503 | `Trợ lý chưa chạy hoặc không kết nối được, thử lại sau` | Assistant service tắt (kể cả task staging đang tắt) |
+
+"Kiểm tra kết nối" luôn trả 200: lỗi của nhà cung cấp nằm trong `error.kind` (`auth`, `timeout`, `rate_limit`, `bad_request`,
+`unavailable`, `refused`) kèm `error.message` dễ hiểu (AC-6.4.2).
+
 ### Lỗi chung
 
 | HTTP | Message | Nguyên nhân |

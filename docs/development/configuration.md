@@ -151,7 +151,7 @@ Service riêng, đọc cấu hình bằng code của nó (không import `backend
 | `ASSISTANT_EMBEDDING_MODEL` | `embeddinggemma-300m` | `embeddinggemma-300m` | Không | `id` trong registry embedder (ADR-16 mục 4); `hash-256` chỉ để test. `id` lạ thì không khởi động |
 | `ASSISTANT_INTERNAL_TOKEN` | (không có) | Secrets Manager | **Có** | Trùng giá trị ở API, ít nhất 16 ký tự |
 | `ASSISTANT_LLM_TIMEOUT_MS` | `10000` | `10000` | Không | Timeout gọi nhà cung cấp LLM, không thử lại (NFR-3.5); 1000–60000 |
-| `ASSISTANT_LLM_PROVIDER`, `ASSISTANT_LLM_MODEL`, `ASSISTANT_LLM_API_KEY`, `ASSISTANT_LLM_BASE_URL` | (không có) | **Không dùng** | Không | **Tạm thời, chỉ local**, tới khi có trang "Cấu hình trợ lý" (`feat/assistant-config`). Ví dụ `deepseek`, `deepseek-chat`, khóa trong `.env` cá nhân, không commit. Thiếu thì trợ lý trả `fallback = true` |
+| `ASSISTANT_CONFIG_KEY` | (không có; docker-compose có khóa chỉ dùng local) | Secrets Manager | **Có** | 32 byte base64 (`openssl rand -base64 32`), mã hóa AES-256-GCM API key nhà cung cấp AI trong `assistant.llm_config` (FR-6.4, ADR-16 mục 7). Đổi hoặc mất khóa: ADMIN dán lại API key trên `/admin/assistant`. Nhà cung cấp, model, API key **không** đặt bằng biến môi trường |
 | `ASSISTANT_MODEL_DIR` | `./.model-cache` (Docker: `/app/.model-cache`) | Như Docker | Không | Thư mục model đã tải sẵn lúc build image; service không tải model khi chạy |
 
 ## 3. Frontend (Vite, đọc lúc build)

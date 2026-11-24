@@ -44,7 +44,11 @@ Phần hỏi đáp (`feat/policy-assistant`):
 | `backend/src/modules/assistant/assistant.service.spec.ts` | BFF: không hồ sơ thì "không tìm thấy" và không gọi service; phạm vi, token, `traceparent`; service tắt, chậm, lỗi thì fallback (E5) |
 | `backend/test/app.e2e-spec.ts` ("UC6 hỏi trợ lý") | Phạm vi gửi đi gồm đơn vị của người hỏi; 400 `fields.question`; 401; câu thứ 11 trong phút nhận 429 kèm `Retry-After` |
 
-`feat/assistant-config` thêm test vào bảng này.
+| `services/assistant/src/llm/anthropic.spec.ts` | Adapter Claude với HTTP giả: đoạn gửi dạng `search_result` bật `citations`, không gửi `temperature`; đọc trích dẫn có cấu trúc, bỏ `[n]` model tự viết; `refusal`, 401 không lộ khóa, 529, quá giờ, `listModels` |
+| `services/assistant/src/llm/google.spec.ts` | Adapter Gemini với HTTP giả: khóa ở header không ở URL, bỏ phần suy nghĩ, 400 `API_KEY_INVALID` thành lỗi khóa, `SAFETY`, tên model lạ, `listModels` nhiều trang |
+| `services/assistant/src/llm/secret-box.spec.ts` | AES-256-GCM: giải mã đúng, iv ngẫu nhiên, sai khóa, sai nhà cung cấp (AAD), bản mã bị sửa đều lỗi; `last4` |
+| `services/assistant/src/llm/config-store.int.spec.ts` | PostgreSQL: lưu lần đầu cần khóa, database chỉ có bản mã hóa, GET chỉ 4 ký tự cuối, 409, chỉ đổi model giữ khóa, đổi nhà cung cấp bắt nhập khóa (A6), tải model dùng khóa đã lưu chỉ khi cùng nhà cung cấp, E8, E9, kiểm tra kết nối lỗi vẫn 200, mất khóa mã hóa thì coi như chưa cấu hình |
+| `backend/test/app.e2e-spec.ts` ("UC6 trợ lý chính sách") | Cấu hình: chỉ ADMIN (HR 403), khóa không có trong response và audit, audit `ASSISTANT_CONFIG_UPDATE`, `ASSISTANT_CONFIG_TEST`, 409, A6, ô khóa trống giữ khóa, E8 |
 
 ## 3. Bảng phủ tiêu chí
 
@@ -57,8 +61,8 @@ Phần hỏi đáp (`feat/policy-assistant`):
 | AC-6.3.6 | e2e giới hạn tần suất nhóm `assistant`; 400 khi câu hỏi rỗng, quá 500 ký tự | `docs/test-cases-uc6` | Có (e2e "UC6 hỏi trợ lý") |
 | AC-6.3.7 | Integration: event `DocumentHidden`, đổi đơn vị người hỏi, `DocumentPublished` bản mới | `docs/test-cases-uc6` | Có: index (`indexer.int.spec.ts`), truy hồi theo phạm vi tính mỗi câu (`answerer.int.spec.ts`, e2e) |
 | AC-6.3.8, AC-6.3.9 | Unit guardrail; e2e với LLM giả ghi request và trả số lạ, trả lại system prompt; script bộ đánh giá (câu chứa dữ liệu cá nhân, tài liệu cài lệnh) | `docs/test-cases-uc6` | Unit, integration có; bộ đánh giá chưa |
-| AC-6.4.1, AC-6.4.2 | Unit adapter với HTTP giả (`listModels`, `testConnection`) | Ca tay với khóa thật của ba nhà cung cấp | Chưa |
-| AC-6.4.3 → AC-6.4.7 | e2e trong `feat/assistant-config` | `docs/test-cases-uc6` | Chưa |
+| AC-6.4.1, AC-6.4.2 | Unit adapter với HTTP giả (`listModels`, `testConnection`); integration `config-store.int.spec.ts` | Ca tay với khóa thật của ba nhà cung cấp | Tự động có; ca tay chưa |
+| AC-6.4.3 → AC-6.4.7 | e2e "UC6 trợ lý chính sách", `config-store.int.spec.ts`; AC-6.4.7 ở `answerer.int.spec.ts` (chưa cấu hình, tắt) | `docs/test-cases-uc6` | Có |
 
 ## 4. Dữ liệu và tài khoản
 

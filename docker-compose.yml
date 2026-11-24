@@ -203,12 +203,9 @@ services:
       STORAGE_SECRET_ACCESS_KEY: test
       ASSISTANT_EMBEDDING_MODEL: embeddinggemma-300m
       ASSISTANT_INTERNAL_TOKEN: dev-only-assistant-internal-token   # chỉ dùng local, khớp api
-      # Tạm thời tới khi có trang "Cấu hình trợ lý": đặt trong file .env cạnh docker-compose.yml (không commit), ví dụ
-      #   ASSISTANT_LLM_PROVIDER=deepseek  ASSISTANT_LLM_MODEL=deepseek-chat  ASSISTANT_LLM_API_KEY=sk-...
-      # Không đặt thì trợ lý trả danh sách tài liệu liên quan thay cho câu trả lời.
-      ASSISTANT_LLM_PROVIDER: ${ASSISTANT_LLM_PROVIDER:-}
-      ASSISTANT_LLM_MODEL: ${ASSISTANT_LLM_MODEL:-}
-      ASSISTANT_LLM_API_KEY: ${ASSISTANT_LLM_API_KEY:-}
+      # Khóa mã hóa API key nhà cung cấp AI (FR-6.4). Chỉ dùng local; staging lấy từ Secrets Manager.
+      # Nhà cung cấp, model, API key do ADMIN chọn trên trang "Cấu hình trợ lý" (/admin/assistant).
+      ASSISTANT_CONFIG_KEY: aDvkXTJ5YiraWyq5F42xETHIE/aZ/40esbmCcSqICg8=   # chỉ dùng local
     ports:
       - "3100:3100"
     depends_on:

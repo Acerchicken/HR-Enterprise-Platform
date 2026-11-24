@@ -52,8 +52,12 @@ export function toSections(lines: Array<{ text: string; heading?: boolean; suffi
   return out;
 }
 
-/** pdf.js chỉ có bản ESM; gọi import() thật (TypeScript commonjs sẽ đổi `import()` thành require). */
-const esmImport = new Function('s', 'return import(s)') as (s: string) => Promise<any>;
+/**
+ * pdf.js chỉ có bản ESM; gọi import() thật (TypeScript commonjs sẽ đổi `import()` thành require).
+ * Mã nguồn hàm có thêm chuỗi riêng cho mỗi lần nạp module: V8 lưu bản biên dịch theo mã nguồn, nên hai lần nạp (hai file test
+ * của jest) cùng mã sẽ dùng lại bộ nạp import() của lần đầu, đã bị dọn, và báo "Test environment has been torn down".
+ */
+const esmImport = new Function('s', `return import(s) // ${Date.now()}-${Math.random()}`) as (s: string) => Promise<any>;
 
 async function extractPdf(file: Buffer): Promise<Section[]> {
   const pdfjs = await esmImport('pdfjs-dist/legacy/build/pdf.mjs');

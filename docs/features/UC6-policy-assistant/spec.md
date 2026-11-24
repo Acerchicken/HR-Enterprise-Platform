@@ -131,7 +131,7 @@ sequenceDiagram
 | Luồng | Màn hình | API |
 |---|---|---|
 | 4.1, A1 → A5 | Trang "Tra cứu tài liệu" `/documents`, khung "Hỏi trợ lý chính sách" bên phải danh sách (màn hình hẹp: xếp dưới danh sách) | `POST /assistant/questions` (`feat/policy-assistant`) |
-| 4.2, A6 | `/admin/assistant` (ADMIN): chọn nhà cung cấp, model, ô API key (kiểu mật khẩu, hiện `••••abcd`), nút "Tải danh sách model", "Kiểm tra kết nối", công tắc bật trợ lý, dòng ghi nước nhận dữ liệu | `GET`, `PUT /admin/assistant-config`, `POST …/models`, `POST …/test` (chưa có, nhánh `feat/assistant-config`) |
+| 4.2, A6 | `/admin/assistant` (ADMIN): chọn nhà cung cấp, model, ô API key (kiểu mật khẩu, hiện `••••abcd`), nút "Tải danh sách model", "Kiểm tra kết nối", công tắc bật trợ lý, dòng ghi nước nhận dữ liệu | `GET`, `PUT /admin/assistant-config`, `POST …/models`, `POST …/test` |
 
 ### 9.1 Bản vẽ giao diện
 
@@ -151,7 +151,7 @@ Trang "Tra cứu tài liệu" khi chưa hỏi gì xem [UC5 mục 9.1](../UC5-doc
 
 ### 9.2 Hợp đồng API
 
-Hai API hỏi đáp đã chốt trong `feat/policy-assistant` ([openapi.yaml](../../openapi.yaml), tag `assistant`); bốn API cấu hình chốt trong `feat/assistant-config`.
+Hai API hỏi đáp đã chốt trong `feat/policy-assistant` ([openapi.yaml](../../openapi.yaml), tag `assistant`); bốn API cấu hình chốt trong `feat/assistant-config` (tag `admin`).
 
 | API | Ai gọi | Vào | Ra | Lỗi |
 |---|---|---|---|---|
@@ -170,7 +170,8 @@ service; chỉ assistant service giữ và giải mã khóa (ADR-16 mục 7).
 - NFR-1.3: trợ lý p95 ≤ 6 s khi LLM chạy bình thường, với 500 tài liệu.
 - NFR-3.5: gọi LLM có timeout ≤ 10 s, quá thì fallback. **Không thử lại** dù NFR-3.5 cho thử lại tối đa 3 lần: người dùng
   đang chờ, thử lại sẽ vượt 10 s; thử lại của NFR-3.5 áp dụng cho việc chạy nền (email, event, ingest tài liệu).
-- NFR-5.21: 10 câu/phút, 100 câu/ngày mỗi người.
+- NFR-5.21: 10 câu/phút, 100 câu/ngày mỗi người. Trang cấu hình: "Tải danh sách model", "Kiểm tra kết nối" chung nhóm
+  `assistant-config` 20 lượt/giờ (gọi ra nhà cung cấp, tốn hạn mức của khóa).
 - NFR-7.1: chi phí LLM nằm trong credit trả trước hoặc giới hạn chi tiêu đặt ở nhà cung cấp; ghi chi phí mỗi câu vào báo cáo tuần 12.
 - NFR-11.1: không lưu câu hỏi, câu trả lời; log chỉ có nhà cung cấp, model, số đoạn, độ trễ, số token, lý do fallback. Trang
   cấu hình ghi nước nhận dữ liệu của từng nhà cung cấp (Mỹ, Trung Quốc).
@@ -186,8 +187,8 @@ Chiến lược, bảng phủ tiêu chí và ca còn thiếu: [test.md](test.md)
 |---|---|---|
 | Event tài liệu qua outbox chung `leave.outbox`, lệnh `assistant:sync` | Có (`feat/assistant-service`) | – |
 | Assistant service: ingest, chia đoạn, index full-text và vector (EmbeddingGemma) | Có (`feat/assistant-service`) | Đo RAM, thời gian index thật trên staging (TV3) |
-| API hỏi đáp, truy hồi lai, adapter `openai-compatible` (DeepSeek), trích dẫn, guardrail G1–G4, fallback, giới hạn tần suất, khung trợ lý | Có (`feat/policy-assistant`) | Chỉnh ngưỡng liên quan (`rag/settings.ts`) theo bộ đánh giá của TV2. Trước khi có `feat/assistant-config`, nhà cung cấp, khóa đặt bằng biến môi trường tạm (chỉ local) |
-| Trang "Cấu hình trợ lý", khóa mã hóa, adapter `anthropic`, `google` | Chưa có | TV1, `feat/assistant-config` |
+| API hỏi đáp, truy hồi lai, adapter `openai-compatible` (DeepSeek), trích dẫn, guardrail G1–G4, fallback, giới hạn tần suất, khung trợ lý | Có (`feat/policy-assistant`) | Chỉnh ngưỡng liên quan (`rag/settings.ts`) theo bộ đánh giá của TV2 |
+| Trang "Cấu hình trợ lý", khóa mã hóa, adapter `anthropic`, `google` | Có (`feat/assistant-config`) | Ca tay với khóa thật của ba nhà cung cấp (test.md mục 3) |
 | Bộ câu hỏi đánh giá | Chưa có | TV2, `docs/assistant-eval-set` |
 
 ## 13. Thiết kế đề xuất cho phần chưa có
@@ -250,6 +251,16 @@ phạm vi → gửi LLM với đoạn đã bọc (**G3**) → kiểm trích dẫ
 - Audit (module audit của API, [UC7 spec mục 2](../UC7-audit-log/spec.md)): `entityType` `assistant_config`, hành động
   `ASSISTANT_CONFIG_UPDATE` (nhà cung cấp, model cũ và mới, 4 ký tự cuối của khóa, bật, tắt), `ASSISTANT_CONFIG_TEST` (nhà
   cung cấp, model, kết quả, độ trễ). Không có khóa.
+- Adapter `anthropic` dùng SDK chính thức `@anthropic-ai/sdk`: đoạn tài liệu gửi dạng khối `search_result` bật `citations`, Claude trả
+  trích dẫn có cấu trúc nên service không đọc `[n]` trong chữ; không gửi `temperature`, không thử lại. Adapter `google` gọi REST
+  `generateContent`, khóa ở header `x-goog-api-key`; Gemini báo khóa sai bằng 400 `API_KEY_INVALID`, adapter đổi thành lỗi khóa.
+- Người sửa (`updated_by`) là id tài khoản (`iam.user_account`), không phải hồ sơ, để tài khoản chỉ có vai trò ADMIN vẫn ghi được;
+  trang hiện tên trên hồ sơ, không có hồ sơ thì email. Audit ghi thêm `accountId` vì `actorId` của audit là hồ sơ nhân viên (UC7).
+- Giới hạn: cấu hình nằm ở assistant service nên lưu cấu hình và ghi audit **không chung một giao dịch**. Nếu ghi audit lỗi sau khi
+  đã lưu, API vẫn trả thành công (tránh ADMIN bấm lưu lại rồi gặp 409) và log `error` `ASSISTANT_CONFIG_AUDIT_FAILED` kèm nội dung
+  audit (nhà cung cấp, model cũ và mới, 4 ký tự cuối, không có khóa) để còn dấu vết.
+- API (BFF) không giữ, không log khóa: nhận khóa từ trang cấu hình rồi chuyển cho assistant service qua `/internal/config*`; service
+  mã hóa, lưu, giải mã mỗi câu hỏi. Mất `ASSISTANT_CONFIG_KEY` thì coi như chưa cấu hình (log `LLM_CONFIG_DECRYPT_FAILED`).
 - Registry nhà cung cấp trong `services/assistant/src/llm/providers.ts`: mỗi mục có `id`, tên hiển thị, adapter, `baseUrl` mặc
   định (nếu có), nước nhận dữ liệu. Ba mục đầu: `anthropic` (adapter Claude), `google` (adapter Gemini), `deepseek` (adapter
   `openai-compatible`, `baseUrl` của DeepSeek).

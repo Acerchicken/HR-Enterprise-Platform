@@ -50,7 +50,7 @@ code được ghi riêng, không mặc nhiên kết luận đó là lỗi.
 | Trợ lý chính sách | Hỏi | `POST /api/v1/assistant/questions` | ✓ | ✓ | ✓ | ✓ | Chỉ dùng đoạn văn của tài liệu khớp phạm vi như "Xem danh sách" tài liệu, lọc trong SQL trước khi gửi LLM; tài khoản không có hồ sơ đang làm việc luôn nhận "không tìm thấy"; 10 câu/phút, 100 câu/ngày | DR-02, DR-06, DR-08, ADR-16, `feat/policy-assistant` |
 | Cấu hình nhà cung cấp AI | Xem | `GET /api/v1/admin/assistant-config` | — | — | — | ✓ | Chỉ trả 4 ký tự cuối của API key | `feat/assistant-config` |
 | Cấu hình nhà cung cấp AI | Sửa | `PUT /api/v1/admin/assistant-config` | — | — | — | ✓ | Đổi nhà cung cấp phải nhập khóa mới; `version` cũ 409; audit `ASSISTANT_CONFIG_UPDATE` không chứa khóa | `feat/assistant-config` |
-| Cấu hình nhà cung cấp AI | Tải danh sách model, kiểm tra kết nối | `POST /api/v1/admin/assistant-config/models`, `POST /api/v1/admin/assistant-config/test` | — | — | — | ✓ | Không lưu khóa gửi kèm; audit `ASSISTANT_CONFIG_TEST` | `feat/assistant-config` |
+| Cấu hình nhà cung cấp AI | Tải danh sách model, kiểm tra kết nối | `POST /api/v1/admin/assistant-config/models`, `POST /api/v1/admin/assistant-config/test` | — | — | — | ✓ | Không lưu khóa gửi kèm; audit `ASSISTANT_CONFIG_TEST`; 20 lượt/giờ (nhóm `assistant-config`) | `feat/assistant-config` |
 
 ### Tài khoản đăng nhập của nhân viên (UC8 FR-8.6)
 

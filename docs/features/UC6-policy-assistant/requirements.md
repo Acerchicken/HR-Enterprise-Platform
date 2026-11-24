@@ -16,7 +16,7 @@ dùng lại.
 
 ## 2. Tiêu chí chấp nhận
 
-### FR-6.3 Trợ lý chính sách (S, chưa có, tuần 12)
+### FR-6.3 Trợ lý chính sách (S, đã code trong `feat/policy-assistant`, tuần 12)
 
 Khung hỏi trợ lý nằm trên trang "Tra cứu tài liệu" (`/documents`) của UC5, cạnh danh sách tài liệu; không có trang riêng.
 
@@ -43,7 +43,7 @@ Khung hỏi trợ lý nằm trên trang "Tra cứu tài liệu" (`/documents`) c
 
 Không lưu câu hỏi, câu trả lời vào database, audit hay log; lịch sử hỏi chỉ nằm trong trang đang mở.
 
-### FR-6.4 Cấu hình nhà cung cấp AI (S, chưa có, tuần 12; thêm 23/11/2026)
+### FR-6.4 Cấu hình nhà cung cấp AI (S, đã code trong `feat/assistant-config`, tuần 12; thêm 23/11/2026)
 
 Trang "Cấu hình trợ lý" (`/admin/assistant`) chỉ cho ADMIN. Trước mắt có ba nhà cung cấp: Claude (Anthropic), Google Gemini,
 DeepSeek. Cách làm và cách thêm nhà cung cấp mới: [ADR-16](../../architecture/adr/ADR-16-policy-assistant.md) mục 6, 7.

@@ -57,9 +57,10 @@ của bộ lọc `entity`.
 | Identity (UC8) | `role_assignment`, id tài khoản | `ROLE_GRANT`, `ROLE_REVOKE` | ADMIN cấp, thu hồi `HR`, `ADMIN` (FR-8.7); nghỉ việc tự thu hồi. Ghi vai trò và **lý do** ADMIN nhập (ngoại lệ có chủ ý của quy tắc "không ghi chữ tự do": lý do cấp quyền là bằng chứng cần giữ, không phải dữ liệu cá nhân) |
 
 Chưa ghi: đăng nhập thành công, thất bại, bị khóa (AC-7.4.1, NFR-5.10, theo ADR-17 mục 6); HR đổi cấu hình loại phép
-(`LEAVE_TYPE_UPDATE`, chưa có màn hình, UC4 spec 12); ADMIN đổi, kiểm tra cấu hình trợ lý (`entityType` `assistant_config`,
-`ASSISTANT_CONFIG_UPDATE`, `ASSISTANT_CONFIG_TEST`; ghi nhà cung cấp, model, 4 ký tự cuối của khóa; làm trong
-`feat/assistant-config`, [UC6 spec](../UC6-policy-assistant/spec.md)).
+(`LEAVE_TYPE_UPDATE`, chưa có màn hình, UC4 spec 12).
+
+ADMIN đổi, kiểm tra cấu hình trợ lý ghi từ `feat/assistant-config`: `entityType` `assistant_config`, `ASSISTANT_CONFIG_UPDATE`,
+`ASSISTANT_CONFIG_TEST`; ghi nhà cung cấp, model, 4 ký tự cuối của khóa, không có khóa ([UC6 spec](../UC6-policy-assistant/spec.md)).
 
 Mỗi bản ghi có:
 - người thực hiện (`actor_id` là id **hồ sơ nhân viên**, không phải id tài khoản; `NULL` với job, worker);

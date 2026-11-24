@@ -21,3 +21,51 @@ export interface AssistantAnswer {
 export const assistantApi = {
   ask: (question: string) => api<AssistantAnswer>('/assistant/questions', { method: 'POST', body: JSON.stringify({ question }) }),
 };
+
+/** Cấu hình nhà cung cấp AI (UC6 FR-6.4), chỉ ADMIN. Khóa API chỉ gửi đi, không bao giờ nhận về (AC-6.4.4). */
+export interface AssistantProvider {
+  id: string;
+  name: string;
+  dataRegion: string;
+}
+
+export interface AssistantConfig {
+  provider: string | null;
+  model: string | null;
+  apiKeyLast4: string | null;
+  enabled: boolean;
+  version: number;
+  updatedBy: string | null;
+  updatedByName: string | null;
+  updatedAt: string | null;
+  providers: AssistantProvider[];
+}
+
+export interface AssistantModel {
+  id: string;
+  name: string;
+}
+
+export interface ConnectionTest {
+  ok: boolean;
+  latencyMs: number;
+  error?: { kind: string; message: string };
+}
+
+export interface SaveAssistantConfig {
+  provider: string;
+  model: string;
+  /** Bỏ trống: giữ khóa đã lưu (chỉ khi không đổi nhà cung cấp). */
+  apiKey?: string;
+  enabled: boolean;
+  version: number;
+}
+
+export const assistantConfigApi = {
+  get: () => api<AssistantConfig>('/admin/assistant-config'),
+  save: (body: SaveAssistantConfig) => api<AssistantConfig>('/admin/assistant-config', { method: 'PUT', body: JSON.stringify(body) }),
+  models: (provider: string, apiKey?: string) =>
+    api<{ models: AssistantModel[] }>('/admin/assistant-config/models', { method: 'POST', body: JSON.stringify({ provider, apiKey }) }),
+  test: (provider: string, model: string, apiKey?: string) =>
+    api<ConnectionTest>('/admin/assistant-config/test', { method: 'POST', body: JSON.stringify({ provider, model, apiKey }) }),
+};

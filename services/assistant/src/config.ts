@@ -24,6 +24,8 @@ export interface AssistantConfig {
   internalToken: string;
   /** Timeout gọi LLM (NFR-3.5, mặc định 10 s, không thử lại). */
   llmTimeoutMs: number;
+  /** Khóa AES-256-GCM (base64, 32 byte) mã hóa API key nhà cung cấp trong `assistant.llm_config` (FR-6.4, ADR-16 mục 7). */
+  configKey: string;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AssistantConfig {
@@ -58,7 +60,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AssistantConfi
     modelCacheDir: env.ASSISTANT_MODEL_DIR || `${process.cwd()}/.model-cache`,
     internalToken: need('ASSISTANT_INTERNAL_TOKEN'),
     llmTimeoutMs: Number(env.ASSISTANT_LLM_TIMEOUT_MS || 10_000),
+    configKey: need('ASSISTANT_CONFIG_KEY'),
   };
+  if (cfg.configKey && Buffer.from(cfg.configKey, 'base64').length !== 32) problems.push('ASSISTANT_CONFIG_KEY phải là 32 byte mã hóa base64 (openssl rand -base64 32)');
   if (cfg.internalToken && cfg.internalToken.length < 16) problems.push('ASSISTANT_INTERNAL_TOKEN phải dài ít nhất 16 ký tự');
   if (!Number.isInteger(cfg.llmTimeoutMs) || cfg.llmTimeoutMs < 1000 || cfg.llmTimeoutMs > 60_000) problems.push('ASSISTANT_LLM_TIMEOUT_MS phải từ 1000 đến 60000');
   if (problems.length) throw new Error(`Cấu hình assistant service sai: ${problems.join('; ')}`);

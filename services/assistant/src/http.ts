@@ -2,8 +2,7 @@ import { createServer, IncomingMessage, Server, ServerResponse } from 'http';
 import { errorText, log } from './log';
 
 /**
- * HTTP nội bộ của assistant service (chỉ mạng nội bộ, ADR-15): `/health`, `POST /internal/answers`; cấu hình thêm ở
- * `feat/assistant-config`. Lỗi 500 không trả chi tiết (có thể chứa nội dung).
+ * HTTP nội bộ của assistant service (chỉ mạng nội bộ, ADR-15): `/health`, `POST /internal/answers`, `/internal/config*`. Lỗi 500 không trả chi tiết (có thể chứa nội dung).
  */
 export type Route = (req: IncomingMessage, body: unknown) => Promise<{ status: number; body: unknown }>;
 

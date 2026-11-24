@@ -97,7 +97,7 @@ Không dùng auto scaling theo lịch: lịch demo không cố định, bật ta
 ## 7. Còn thiếu
 
 Phần index đã có từ `feat/assistant-service` (event, service, schema, Docker, CI; đã cập nhật database-schema.md,
-configuration.md mục 2a, event-contract.md). Còn lại cập nhật trong `feat/policy-assistant`, `feat/assistant-config`:
+configuration.md mục 2a, event-contract.md). Còn lại đã cập nhật trong `feat/policy-assistant`, `feat/assistant-config`:
 
 - [database-schema.md](../../architecture/database-schema.md): bảng `llm_config`.
 - [configuration.md](../../development/configuration.md): `ASSISTANT_CONFIG_KEY`, `ASSISTANT_URL`, `ASSISTANT_INTERNAL_TOKEN`, `ASSISTANT_LLM_TIMEOUT_MS`.
