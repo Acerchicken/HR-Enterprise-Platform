@@ -8,7 +8,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Event có id nhỏ hơn hoặc bằng mốc thì không ghi đè nhóm đó, để event cũ không làm hiện lại tài liệu đã ẩn hay nới lại
  * phạm vi đã thu hẹp.
  *
- * Kèm quyền mặc định: bảng, sequence tạo sau trong schema `assistant` tự cấp cho `assistant_svc`.
+ * Kèm quyền mặc định: bảng, sequence tạo sau trong schema `assistant` tự cấp cho `assistant_svc`. Chỉ áp dụng cho đối tượng do
+ * user đang chạy migration tạo ra; đổi user migration thì chạy lại cho user mới (UC6 deploy.md bước 1).
  */
 export class AssistantEventOrder1732750000000 implements MigrationInterface {
   name = 'AssistantEventOrder1732750000000';
