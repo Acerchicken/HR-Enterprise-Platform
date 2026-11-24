@@ -40,6 +40,14 @@ dán trên trang "Cấu hình trợ lý", lưu mã hóa trong `assistant.llm_con
 ## 4. Các bước
 
 1. Migration tạo schema `assistant`, extension `vector`, `unaccent` (cần quyền `rds_superuser` trên RDS, chạy bằng user migration).
+   - **Luôn chạy migration bằng cùng một user.** `AssistantEventOrder` đặt `ALTER DEFAULT PRIVILEGES` để bảng, sequence tạo sau
+     trong schema `assistant` tự cấp quyền cho `assistant_svc`, nhưng lệnh này chỉ áp dụng cho đối tượng do **chính user chạy
+     migration** tạo ra. Nếu đổi user chạy migration trên RDS, chạy lại cho user mới:
+     `ALTER DEFAULT PRIVILEGES FOR ROLE <user_migration_mới> IN SCHEMA assistant GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO assistant_svc;`
+     và `... GRANT USAGE, SELECT ON SEQUENCES TO assistant_svc;`. Kiểm nhanh: `\ddp assistant` trong `psql`.
+   - Database đã chạy `AssistantSchema` trước bản sửa thứ tự event (máy local từ 23/11): chỉ cần `npm run migration:run`. Hai cột
+     mốc `meta_event_id`, `visibility_event_id` của các dòng cũ là 0 nên event kế tiếp vẫn được áp dụng; **không cần** chạy lại
+     `npm run assistant:sync`.
 2. Tạo API key ở nhà cung cấp định dùng, nạp credit trả trước hoặc đặt giới hạn chi tiêu ở đó. ADMIN dán khóa trên
    `/admin/assistant`, bấm "Kiểm tra kết nối" rồi lưu.
 3. Sau khi deploy assistant service: chạy lệnh đồng bộ lần đầu (UC5 13.2) để index tài liệu đã đăng trước đó.
@@ -76,6 +84,9 @@ Không dùng auto scaling theo lịch: lịch demo không cố định, bật ta
 - Rollback assistant service không ảnh hưởng UC5: module document vẫn ghi outbox, event chờ trong queue và được xử lý khi service
   chạy lại.
 - Index hỏng: xóa dữ liệu schema `assistant` rồi chạy lại lệnh đồng bộ lần đầu.
+- `assistant_svc` báo `permission denied` trên một bảng mới của schema `assistant`: bảng đó do user khác user migration thường
+  dùng tạo ra (xem bước 1). Cấp tay `GRANT SELECT, INSERT, UPDATE, DELETE ON assistant.<bảng> TO assistant_svc` rồi đặt lại
+  `ALTER DEFAULT PRIVILEGES` cho user đó.
 - Chi phí bất thường hoặc lộ khóa: ADMIN tắt trợ lý trên `/admin/assistant` và thu hồi khóa ở trang của nhà cung cấp; trợ lý tự
   lùi về danh sách tài liệu (A2 trong spec).
 - Mất `ASSISTANT_CONFIG_KEY`: không giải mã được khóa đã lưu; tạo khóa mới, ADMIN dán lại API key.
