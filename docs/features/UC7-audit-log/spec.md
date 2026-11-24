@@ -154,6 +154,20 @@ Chỗ bản vẽ khác trang đã code (trang theo spec):
 - Nhãn vai trò "HR" cạnh tên người thực hiện: audit không lưu vai trò lúc thao tác; bỏ nhãn (mục 13.2).
 - Ô "Tìm đồng nghiệp…" trên nav bar thuộc UC2 ([AC-2.1.6 → AC-2.1.9](../UC2-organization/requirements.md#fr-21-danh-bạ-m-đã-có)), không thuộc UC7.
 
+### 9.2 Sơ đồ luồng
+
+Bấm "Chạy" để xem từng bước: [`flows/flows.html`](flows/flows.html) (tải về hoặc mở từ repo đã clone). Ảnh PNG nằm cùng thư mục,
+xuất lại bằng `flows/render.js` (Playwright) hoặc `flows/render.ps1` (Edge, Windows).
+
+| Luồng | Sơ đồ |
+|---|---|
+| Ghi audit cùng giao dịch (FR-7.1, A3) | [uc7-f1.png](flows/uc7-f1.png) |
+| HR, ADMIN tra cứu (luồng chính, A1, A2, A4, E1, E2, E4, D1 → D3) | [uc7-f2.png](flows/uc7-f2.png) |
+| Chặn sửa, xóa audit (FR-7.2, E3, NFR-5.14) | [uc7-f3.png](flows/uc7-f3.png) |
+| Ai thấy audit nào (mục 2, D1) | [uc7-g1.png](flows/uc7-g1.png) |
+
+![Tra cứu ai đã làm gì](flows/uc7-f2.png)
+
 ## 10. Yêu cầu phi chức năng liên quan
 
 - NFR-6.1 → NFR-6.4: audit đủ, không sửa được, lưu 5 năm, `traceId`.

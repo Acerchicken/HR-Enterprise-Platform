@@ -199,6 +199,24 @@ Lỗi 400 ở service có `fields` theo tên trường của request (`scope`, `
 
 **Event:** chưa có. Thiết kế ở 13.2.
 
+### 9.3 Sơ đồ luồng
+
+Bấm "Chạy" để xem từng bước: [`flows/flows.html`](flows/flows.html) (tải về hoặc mở từ repo đã clone). Ảnh PNG nằm cùng thư mục,
+xuất lại bằng `flows/render.js` (Playwright) hoặc `flows/render.ps1` (Edge, Windows). Đánh chỉ mục tài liệu cho trợ lý ở
+[UC6 mục 9.3](../UC6-policy-assistant/spec.md#93-sơ-đồ-luồng).
+
+| Luồng | Sơ đồ |
+|---|---|
+| HR đăng tài liệu mới (luồng chính, E1 → E4, E7, E8) | [uc5-f1.png](flows/uc5-f1.png) |
+| Nhân viên xem, tải (A1, E5, DR-02, DR-06, DR-08) | [uc5-f2.png](flows/uc5-f2.png) |
+| Thêm phiên bản (A2, DR-04) | [uc5-f3.png](flows/uc5-f3.png) |
+| Sửa thông tin, phạm vi (A3, E6) | [uc5-f4.png](flows/uc5-f4.png) |
+| Ẩn, khôi phục, trang quản lý (A4, A5, DR-05) | [uc5-f5.png](flows/uc5-f5.png) |
+| Trạng thái phiên bản (E3, E3b, E4, E8) | [uc5-g1.png](flows/uc5-g1.png) |
+| Ai thấy một tài liệu (DR-02, DR-08) | [uc5-g2.png](flows/uc5-g2.png) |
+
+![Ai thấy một tài liệu](flows/uc5-g2.png)
+
 ## 10. Yêu cầu phi chức năng liên quan
 
 - NFR-5.16: mã hóa file khi lưu. Terraform staging hiện dùng SSE-S3 (`AES256`), chưa dùng khóa KMS (deploy.md mục 3).

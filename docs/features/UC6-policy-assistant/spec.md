@@ -163,6 +163,21 @@ Trang "Tra cứu tài liệu" khi chưa hỏi gì xem [UC5 mục 9.1](../UC5-doc
 API cấu hình nằm ở API (BFF, kiểm vai trò ADMIN, ghi audit), chuyển tiếp sang endpoint nội bộ `/internal/config` của assistant
 service; chỉ assistant service giữ và giải mã khóa (ADR-16 mục 7).
 
+### 9.3 Sơ đồ luồng
+
+Bấm "Chạy" để xem từng bước: [`flows/flows.html`](flows/flows.html) (tải về hoặc mở từ repo đã clone). Ảnh PNG nằm cùng thư mục,
+xuất lại bằng `flows/render.js` (Playwright) hoặc `flows/render.ps1` (Edge, Windows). Sơ đồ theo code của `feat/policy-assistant`
+và `feat/assistant-config`. Event tài liệu phát ở đâu xem [UC5 mục 9.3](../UC5-document-repository/spec.md#93-sơ-đồ-luồng).
+
+| Luồng | Sơ đồ |
+|---|---|
+| Hỏi trợ lý (4.1, A1, A2, A4, A5, E2 → E5, guardrail 13.5) | [uc6-f1.png](flows/uc6-f1.png) |
+| Đánh chỉ mục tài liệu từ event của UC5 (13.2) | [uc6-f2.png](flows/uc6-f2.png) |
+| ADMIN cấu hình nhà cung cấp AI (4.2, A6, E6 → E9) | [uc6-f3.png](flows/uc6-f3.png) |
+| Câu trả lời nào được trả (A1, A2, A5, E5) | [uc6-g1.png](flows/uc6-g1.png) |
+
+![Câu trả lời nào được trả](flows/uc6-g1.png)
+
 ## 10. Yêu cầu phi chức năng liên quan
 
 - NFR-1.3: trợ lý p95 ≤ 6 s khi LLM chạy bình thường, với 500 tài liệu.
