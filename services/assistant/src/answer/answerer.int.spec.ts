@@ -42,7 +42,8 @@ d('Answerer + Retriever (Postgres)', () => {
   const unitA = randomUUID();
   const unitB = randomUUID();
   const ids = { all: randomUUID(), unitB: randomUUID(), hr: randomUUID(), hidden: randomUUID() };
-  const tag = randomUUID().slice(0, 8);
+  // Bắt đầu bằng chữ: 8 ký tự hex toàn số (khoảng 2% số lần) sẽ bị G1 che như dãy số dài, câu hỏi mất tag và test chập chờn.
+  const tag = `t${randomUUID().slice(0, 8)}`;
 
   beforeAll(async () => {
     pool = new Pool({ connectionString: url });
