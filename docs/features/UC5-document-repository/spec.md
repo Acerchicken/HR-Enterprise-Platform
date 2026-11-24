@@ -78,6 +78,22 @@ sequenceDiagram
 | 8 | | Đạt: phiên bản thành `READY`, ghi audit `DOCUMENT_PUBLISH`. Tài liệu bắt đầu hiện với người trong phạm vi |
 | 9 | HR thấy tài liệu ở trang quản lý | Trả metadata tài liệu |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f1](flows/flows.html#f1), [g1](flows/flows.html#g1) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: hộp đăng tài liệu: phạm vi, file, tiến độ tải lên*
+
+![hộp đăng tài liệu: phạm vi, file, tiến độ tải lên](mockups/uc5-upload.png)
+
+*Sơ đồ f1: HR đăng tài liệu mới (luồng chính)*
+
+![HR đăng tài liệu mới (luồng chính)](flows/uc5-f1.png)
+
+*Sơ đồ g1: trạng thái phiên bản*
+
+![trạng thái phiên bản](flows/uc5-g1.png)
+
 ## 5. Luồng thay thế
 
 - **A1, nhân viên xem và tải (FR-5.2):**
@@ -93,7 +109,57 @@ sequenceDiagram
   danh sách, tìm kiếm, tải xuống. Audit `DOCUMENT_HIDE`, `DOCUMENT_RESTORE`.
 - **A5, HR quản lý:** `GET /documents/manage` và `GET /documents/manage/{id}` thấy mọi tài liệu, kể cả đã ẩn, chỉ metadata.
 
+**Minh họa luồng thay thế: A1**
+
+Chạy từng bước: [f2](flows/flows.html#f2), [g2](flows/flows.html#g2) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: trang "Tra cứu tài liệu" /documents*
+
+![trang "Tra cứu tài liệu" /documents](mockups/uc56-documents.png)
+
+*Màn hình: chi tiết tài liệu và các phiên bản*
+
+![chi tiết tài liệu và các phiên bản](mockups/uc5-detail.png)
+
+*Màn hình: tài liệu và trợ lý là hai tab trên điện thoại*
+
+![tài liệu và trợ lý là hai tab trên điện thoại](mockups/uc56-mobile.png)
+
+*Sơ đồ f2: nhân viên xem, tải (A1)*
+
+![nhân viên xem, tải (A1)](flows/uc5-f2.png)
+
+*Sơ đồ g2: ai thấy một tài liệu (DR-02, DR-08)*
+
+![ai thấy một tài liệu (DR-02, DR-08)](flows/uc5-g2.png)
+
+**Minh họa luồng thay thế: A2**
+
+Chạy từng bước: [f3](flows/flows.html#f3) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f3: thêm phiên bản (A2)*
+
+![thêm phiên bản (A2)](flows/uc5-f3.png)
+
+**Minh họa luồng thay thế: A3, A4, A5**
+
+Chạy từng bước: [f4](flows/flows.html#f4), [f5](flows/flows.html#f5) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: HR quản lý tài liệu /documents/manage*
+
+![HR quản lý tài liệu /documents/manage](mockups/uc5-manage.png)
+
+*Sơ đồ f4: sửa thông tin, phạm vi (A3)*
+
+![sửa thông tin, phạm vi (A3)](flows/uc5-f4.png)
+
+*Sơ đồ f5: ẩn, khôi phục, quản lý (A4, A5)*
+
+![ẩn, khôi phục, quản lý (A4, A5)](flows/uc5-f5.png)
+
 ## 6. Ngoại lệ
+
+Ngoại lệ chung của mọi API không lặp lại ở đây ([error-codes.md](../../development/error-codes.md#lỗi-chung)): 401 chưa đăng nhập hoặc token hết hạn; 403 tài khoản đã nghỉ việc (UC8 E4); 400 khi gửi trường lạ (chống gán hàng loạt) hoặc ID không phải UUID; 413 body quá 64 KiB; 500 kèm `traceId`. Cách rà ngoại lệ: [README mục "Rà ngoại lệ"](../README.md#rà-ngoại-lệ).
 
 | Mã | Tình huống | Hệ thống phản hồi |
 |---|---|---|
@@ -106,6 +172,21 @@ sequenceDiagram
 | E6 | Sửa metadata với `version` cũ | 409 `CONFLICT` |
 | E7 | Kho file chưa cấu hình | 503 `HTTP_503` ("Kho tài liệu chưa được cấu hình") ở các API đụng tới file: tạo, thêm phiên bản, xác nhận, tải xuống. Danh sách, chi tiết, trang quản lý, sửa metadata, ẩn, khôi phục vẫn chạy (NFR-3.4) |
 | E8 | URL tải lên quá 10 phút | Storage từ chối PUT; HR tạo phiên bản mới. Phiên bản cũ ở `PENDING` để lại, nên số phiên bản nhân viên thấy có thể nhảy (13.3) |
+
+### 6.1 Ngoại lệ bổ sung (rà 24/11/2026)
+
+Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" là hiện trạng: **Có** đã đối chiếu code hoặc thiết kế đã chốt; **Cần kiểm** chưa đối chiếu, test phải xác nhận; **Chưa đạt** code chưa làm đúng (mục 12); **Đề xuất** cần TV2 chốt nghiệp vụ.
+
+| Mã | Nhóm | Tình huống | Hệ thống phản hồi | Code |
+|---|---|---|---|---|
+| E9 | Bảo mật | Tên file có `/`, `\`, `..`, ký tự điều khiển, hoặc dài quá 255 ký tự | 400 `BAD_REQUEST` `fields.fileName`; object key luôn sinh từ ID | Cần kiểm |
+| E10 | Bảo mật | Sau khi nhận URL, PUT một file khác (đổi nội dung trước khi xác nhận) | `confirm` kiểm dung lượng, magic number trên object đang có; sai thì `REJECTED` (E3b) | Có |
+| E11 | Bảo mật | DOCX có macro (`.docm` đổi đuôi, có `vbaProject.bin`); PDF có JavaScript | DOCX có macro thì `REJECTED`; PDF luôn tải về dạng attachment, không mở trong trình duyệt (D5) | Cần kiểm |
+| E12 | Tranh chấp | Hai HR cùng thêm phiên bản cho một tài liệu | Số phiên bản cấp tuần tự, không trùng (khóa dòng tài liệu) | Cần kiểm |
+| E13 | Gửi trùng | Ẩn tài liệu đã ẩn, khôi phục tài liệu đang hiện | 200, không ghi audit, không phát event | Cần kiểm |
+| E14 | Hệ thống ngoài | Object mất trên storage (xóa ngoài ứng dụng) khi tải xuống | 404 `NOT_FOUND` cho người dùng, log lỗi kèm `traceId` cho người vận hành; không 500 | Cần kiểm |
+| E15 | Bảo mật | Từ khóa `q` ở trang quản lý có `%`, `_` | Ký tự LIKE được thoát (tìm đúng chữ) | Có |
+| E16 | Phân quyền | HR bị thu hồi vai trò khi đang mở trang quản lý | 403 ở thao tác kế tiếp (vai trò đọc từ database mỗi request, ADR-18) | Có |
 
 ## 7. Quy tắc áp dụng
 
@@ -215,8 +296,6 @@ xuất lại bằng `flows/render.js` (Playwright) hoặc `flows/render.ps1` (Ed
 | Trạng thái phiên bản (E3, E3b, E4, E8) | [uc5-g1.png](flows/uc5-g1.png) |
 | Ai thấy một tài liệu (DR-02, DR-08) | [uc5-g2.png](flows/uc5-g2.png) |
 
-![Ai thấy một tài liệu](flows/uc5-g2.png)
-
 ## 10. Yêu cầu phi chức năng liên quan
 
 - NFR-5.16: mã hóa file khi lưu. Terraform staging hiện dùng SSE-S3 (`AES256`), chưa dùng khóa KMS (deploy.md mục 3).
@@ -242,6 +321,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Staging: biến `STORAGE_*`, bucket tài liệu | Terraform đã merge (PR #70), chưa apply | TV3 apply tuần 12; đổi mã hóa sang KMS, bỏ `GET`, `HEAD` khỏi CORS (deploy.md mục 3) |
 | Ngày hiệu lực, ngày hết hiệu lực của chính sách | Chưa có trong yêu cầu | Thực tế chính sách có ngày áp dụng; TV2 quyết định có thêm vào metadata không |
 | Nhân viên xác nhận đã đọc chính sách | Chưa có trong yêu cầu | Thường có ở cổng chính sách HR; ngoài MVP, ghi lại để cân nhắc |
+| Ngoại lệ bổ sung mục 6.1 (E9 → E16) | Rà 24/11/2026 | cần kiểm: E9, E11, E12, E13, E14. TV4 viết test cho cả bảng, sửa code ca chưa đạt |
 
 ## 13. Thiết kế đề xuất cho phần chưa có
 

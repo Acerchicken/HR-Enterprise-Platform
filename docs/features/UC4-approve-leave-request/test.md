@@ -78,3 +78,4 @@ kiểm email đến Mailpit.
 
 **Lưu ý:** unit test "nội dung email có thời gian, số ngày và ghi chú" trong `leave-events.spec.ts` đang kiểm đúng điều BR-15
 cấm. Nhánh `feat/leave-privacy` phải đổi test này thành "email không có loại phép, ngày, lý do".
+- Ngoại lệ bổ sung [spec mục 6.1](spec.md#61-ngoại-lệ-bổ-sung-rà-24112026) (E19 → E26): mỗi mã ít nhất một ca e2e hoặc unit. ca của E19, E20, E21, E23, E24, E25, E26 xác nhận code đã đúng, sai thì chuyển sang "Chưa đạt" trong spec.

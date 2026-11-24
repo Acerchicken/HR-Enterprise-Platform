@@ -77,3 +77,4 @@ npm run test:e2e
 - Dữ liệu test đã theo seed mới (gốc `HQ`, loại đơn vị ADR-14). Job điều chuyển chạy 5 phút một lần, nên điều chuyển hiệu lực ngày D được áp dụng trong khoảng 00:00–00:05 ngày D (giờ Việt Nam), trước mốc 00:15 của AC-2.7.2.
 - Các ca biên nghiệp vụ trước đây còn thiếu (nghỉ việc gỡ vai trò, ngừng đơn vị có trưởng kiêm nhiệm, bảo vệ chức danh `CEO`)
   đã có test e2e ở `feat/department-admin-ui`.
+- Ngoại lệ bổ sung [spec mục 6.1](spec.md#61-ngoại-lệ-bổ-sung-rà-24112026) (E14 → E22): mỗi mã ít nhất một ca e2e hoặc unit. ca của E14, E15, E16, E17, E19, E21 xác nhận code đã đúng, sai thì chuyển sang "Chưa đạt" trong spec; E18, E22 chờ TV2 chốt rồi mới viết.

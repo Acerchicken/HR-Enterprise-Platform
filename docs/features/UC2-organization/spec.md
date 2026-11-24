@@ -56,6 +56,18 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 `GET /employees?q=&size=5`, hiện tối đa 5 người; chọn một người thì mở thẻ xem nhanh
 ([giao diện chung 4.1](../frontend.md#41-thẻ-xem-nhanh)); Enter thì mở `/directory?q=`.
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f1](flows/flows.html#f1) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: danh bạ có ô tìm, lọc phòng ban, phân trang*
+
+![danh bạ có ô tìm, lọc phòng ban, phân trang](mockups/uc2-directory.png)
+
+*Sơ đồ f1: xem sơ đồ tổ chức, danh bạ (4.1, 4.2)*
+
+![xem sơ đồ tổ chức, danh bạ (4.1, 4.2)](flows/uc2-f1.png)
+
 ### 4.2 Xem sơ đồ tổ chức (FR-2.2, FR-2.3)
 
 | Bước | Tác nhân | Hệ thống |
@@ -63,6 +75,18 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 | 1 | Người dùng mở "Sơ đồ tổ chức" | Gọi `GET /departments/tree`, trả toàn bộ cây (một gốc) |
 | 2 | Chọn một phòng ban | Gọi `GET /departments/{id}` và `GET /departments/{id}/members` (phân trang) |
 | 3 | Chọn một nhân viên | Hiện quản lý trực tiếp (trong hồ sơ) và gọi `GET /employees/{id}/direct-reports` |
+
+**Giao diện và sơ đồ luồng**
+
+*Màn hình: sơ đồ tổ chức: cây bên trái, đơn vị đang chọn bên phải*
+
+![sơ đồ tổ chức: cây bên trái, đơn vị đang chọn bên phải](mockups/uc2-org.png)
+
+*Màn hình: đơn vị theo từng cấp trên điện thoại*
+
+![đơn vị theo từng cấp trên điện thoại](mockups/uc2-org-mobile.png)
+
+*Sơ đồ f1: xem sơ đồ tổ chức, danh bạ, như 4.1* (xem [ảnh](flows/uc2-f1.png), [chạy từng bước](flows/flows.html#f1))
 
 ### 4.3 HR, ADMIN tạo hoặc sửa phòng ban (FR-2.4)
 
@@ -74,6 +98,22 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 | 4 | | Lưu, ghi audit, xóa cache dữ liệu tham chiếu |
 | 5 | Thấy cây đã cập nhật | Trả phòng ban |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f2](flows/flows.html#f2), [g1](flows/flows.html#g1) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: hộp thoại tạo, sửa đơn vị*
+
+![hộp thoại tạo, sửa đơn vị](mockups/uc2-dept-edit.png)
+
+*Sơ đồ f2: tạo, sửa đơn vị (4.3)*
+
+![tạo, sửa đơn vị (4.3)](flows/uc2-f2.png)
+
+*Sơ đồ g1: luật loại đơn vị (ADR-14)*
+
+![luật loại đơn vị (ADR-14)](flows/uc2-g1.png)
+
 ### 4.4 HR điều chuyển nhân viên (FR-2.7, FR-2.8)
 
 | Bước | Tác nhân | Hệ thống |
@@ -84,12 +124,54 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 | 4 | | Hiệu lực tương lai: lưu dòng "Sắp hiệu lực"; job trong worker (5 phút một lần, sau 00:00 giờ Việt Nam ngày hiệu lực) áp dụng như bước 3 (chạy lại không áp dụng hai lần) |
 | 5 | Thấy quá trình công tác cập nhật | Đơn nghỉ `SUBMITTED` của người này tự sang quản lý mới vì quyền duyệt tính theo quản lý hiện tại (BR-05); worker gửi email chung cho quản lý mới |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f4](flows/flows.html#f4), [f5](flows/flows.html#f5), [g2](flows/flows.html#g2), [g3](flows/flows.html#g3) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: form điều chuyển có ngày hiệu lực*
+
+![form điều chuyển có ngày hiệu lực](mockups/uc2-transfer.png)
+
+*Màn hình: điều chuyển người còn cấp dưới (AC-2.7.5, AC-2.7.6)*
+
+![điều chuyển người còn cấp dưới (AC-2.7.5, AC-2.7.6)](mockups/uc2-transfer-reports.png)
+
+*Màn hình: quá trình công tác trong hồ sơ (FR-2.8)*
+
+![quá trình công tác trong hồ sơ (FR-2.8)](mockups/uc2-career-mobile.png)
+
+*Sơ đồ f4: HR điều chuyển (4.4)*
+
+![HR điều chuyển (4.4)](flows/uc2-f4.png)
+
+*Sơ đồ f5: job áp dụng điều chuyển lúc 0:05*
+
+![job áp dụng điều chuyển lúc 0:05](flows/uc2-f5.png)
+
+*Sơ đồ g2: trạng thái điều chuyển*
+
+![trạng thái điều chuyển](flows/uc2-g2.png)
+
+*Sơ đồ g3: gợi ý quản lý trực tiếp*
+
+![gợi ý quản lý trực tiếp](flows/uc2-g3.png)
+
 ### 4.5 HR gán trưởng, phó đơn vị (FR-2.9)
 
 | Bước | Tác nhân | Hệ thống |
 |---|---|---|
 | 1 | HR mở đơn vị, chọn trưởng (có thể đánh dấu "Quyền") và các phó trong danh sách người của đơn vị đó và đơn vị cha | Gửi `PATCH /departments/{id}` với `headEmployeeId`, `headActing`, `deputyEmployeeIds` |
 | 2 | | Kiểm từng người đang làm việc, thuộc đơn vị đó hoặc đơn vị cha; số phó không quá giới hạn theo loại; lưu, ghi audit; không đổi quản lý trực tiếp của ai |
+
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f3](flows/flows.html#f3) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: dùng chung hộp thoại sửa đơn vị ở 4.3 (ô trưởng, phó, "Quyền trưởng").*
+
+*Sơ đồ f3: gán trưởng, phó (4.5)*
+
+![gán trưởng, phó (4.5)](flows/uc2-f3.png)
 
 ### 4.6 HR ngừng hoạt động đơn vị (FR-2.10)
 
@@ -98,6 +180,18 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 | 1 | HR điều chuyển hết người sang đơn vị khác (4.4), mở đơn vị, bấm "Ngừng hoạt động" | Gửi `PATCH /departments/{id}` với `status = INACTIVE` |
 | 2 | | Kiểm không còn nhân viên đang làm việc, không còn đơn vị con đang hoạt động, không có điều chuyển chưa hiệu lực vào đơn vị này; lưu, ghi audit, xóa cache |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f6](flows/flows.html#f6) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: ngừng hoạt động đơn vị chưa trống bị chặn (AC-2.10.1)*
+
+![ngừng hoạt động đơn vị chưa trống bị chặn (AC-2.10.1)](mockups/uc2-deactivate.png)
+
+*Sơ đồ f6: ngừng hoạt động đơn vị (4.6)*
+
+![ngừng hoạt động đơn vị (4.6)](flows/uc2-f6.png)
+
 ## 5. Luồng thay thế
 
 - **A1 (4.1 bước 1):** không nhập từ khóa. Trả toàn bộ danh bạ có phân trang.
@@ -105,7 +199,27 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
   tâm và trưởng các phòng nằm thẳng dưới Công ty.
 - **A3 (4.2 bước 1):** cần cây con theo mã phòng ban. Ngoài phạm vi theo quyết định issue #21; dùng chi tiết phòng ban bằng UUID.
 
+**Minh họa thêm: nghỉ việc người đang là trưởng, phó**
+
+Chạy từng bước: [f7](flows/flows.html#f7) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: xác nhận nghỉ việc với người đang là trưởng, phó*
+
+![xác nhận nghỉ việc với người đang là trưởng, phó](mockups/uc2-terminate.png)
+
+*Sơ đồ f7: cho nghỉ việc người đang là trưởng (UC1 AC-1.7.3, AC-2.9.8)*
+
+![cho nghỉ việc người đang là trưởng (UC1 AC-1.7.3, AC-2.9.8)](flows/uc2-f7.png)
+
+**Minh họa thêm: danh mục chức danh (FR-2.6)**
+
+*Màn hình: danh mục chức danh /org/positions*
+
+![danh mục chức danh /org/positions](mockups/uc2-positions.png)
+
 ## 6. Ngoại lệ
+
+Ngoại lệ chung của mọi API không lặp lại ở đây ([error-codes.md](../../development/error-codes.md#lỗi-chung)): 401 chưa đăng nhập hoặc token hết hạn; 403 tài khoản đã nghỉ việc (UC8 E4); 400 khi gửi trường lạ (chống gán hàng loạt) hoặc ID không phải UUID; 413 body quá 64 KiB; 500 kèm `traceId`. Cách rà ngoại lệ: [README mục "Rà ngoại lệ"](../README.md#rà-ngoại-lệ).
 
 | Mã | Tình huống | Hệ thống phản hồi |
 |---|---|---|
@@ -122,6 +236,22 @@ ai có vai trò MANAGER; trưởng, phó phòng là vai trò của phòng ban, k
 | E11 | Xóa chức danh đang được dùng hoặc có trong lịch sử | 409 `CONFLICT`; chỉ ngừng dùng được |
 | E12 | Sai luật loại cha, loại con; tạo đơn vị Công ty thứ hai | 400 `BAD_REQUEST` |
 | E13 | Ngừng hoạt động đơn vị còn người đang làm việc hoặc còn đơn vị con đang hoạt động | 409 `CONFLICT` |
+
+### 6.1 Ngoại lệ bổ sung (rà 24/11/2026)
+
+Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" là hiện trạng: **Có** đã đối chiếu code hoặc thiết kế đã chốt; **Cần kiểm** chưa đối chiếu, test phải xác nhận; **Chưa đạt** code chưa làm đúng (mục 12); **Đề xuất** cần TV2 chốt nghiệp vụ.
+
+| Mã | Nhóm | Tình huống | Hệ thống phản hồi | Code |
+|---|---|---|---|---|
+| E14 | Dữ liệu vào | Tên đơn vị rỗng hoặc quá 200 ký tự; mã đơn vị có ký tự ngoài `A-Z`, `0-9`, `-`, `_` | 400 `BAD_REQUEST` kèm `fields` | Cần kiểm |
+| E15 | Tranh chấp | Hai HR cùng sửa một đơn vị (gửi `version` cũ) | 409 `CONFLICT`; tải lại đơn vị | Cần kiểm |
+| E16 | Vòng đời dữ liệu | Điều chuyển tới đơn vị `INACTIVE` hoặc chức danh đã ngừng dùng; điều chuyển người đã nghỉ việc | 400 `BAD_REQUEST` | Cần kiểm |
+| E17 | Toàn vẹn | Quản lý mới trong điều chuyển là chính người đó hoặc cấp dưới (trực tiếp, gián tiếp) của họ | 400 `BAD_REQUEST` (vòng quản lý, như UC1 E5) | Cần kiểm |
+| E18 | Dữ liệu vào | Ngày hiệu lực điều chuyển xa hơn 1 năm | 400 `BAD_REQUEST` | Đề xuất, TV2 chốt |
+| E19 | Gửi trùng | Job áp dụng điều chuyển chạy hai lần (hai task, deploy lại) hoặc lỗi giữa chừng | Mỗi điều chuyển một giao dịch, khóa dòng; điều chuyển đã áp dụng không áp lại; lỗi thì `TRANSFER_FAIL`, lần chạy sau thử lại | Cần kiểm |
+| E20 | Bảo mật | Từ khóa danh bạ có `%`, `_`, `\` hoặc dài quá 100 ký tự | Ký tự LIKE được thoát (tìm đúng chữ); quá dài thì 400 | Có |
+| E21 | Toàn vẹn | Ngừng hoạt động đơn vị Công ty (gốc) | 409 `CONFLICT` | Cần kiểm |
+| E22 | Tranh chấp | Gán trưởng cho người đang có điều chuyển chưa hiệu lực sang đơn vị khác | 409 `CONFLICT` "Người này sắp điều chuyển"; hủy điều chuyển hoặc chọn người khác | Đề xuất, TV2 chốt |
 
 ## 7. Quy tắc áp dụng
 
@@ -316,6 +446,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Giải thể, sáp nhập đơn vị | Đã có ngừng hoạt động (E13 trả `details`), kích hoạt lại; sáp nhập = điều chuyển hết người rồi ngừng hoạt động | – |
 | Loại đơn vị, luật cha con (ADR-14) | Đã có (`feat/org-unit-types`): migration, luật cha con, cây có loại, trưởng, số người; chi tiết có `path`; lọc danh bạ gồm đơn vị con; seed Công ty, Trung tâm, Nhóm | – |
 | Audit phòng ban | Đã có | `changedFields` ghi giá trị mới (tên, mã, văn phòng, cha, trưởng đơn vị); không có dữ liệu cá nhân |
+| Ngoại lệ bổ sung mục 6.1 (E14 → E22) | Rà 24/11/2026 | cần kiểm: E14, E15, E16, E17, E19, E21; chờ TV2 chốt: E18, E22. TV4 viết test cho cả bảng, sửa code ca chưa đạt |
 
 ## 13. Thiết kế đề xuất cho phần chưa có
 

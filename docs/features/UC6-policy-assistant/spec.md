@@ -70,6 +70,22 @@ sequenceDiagram
 | 4 | | Đọc cấu hình đang dùng, gửi câu hỏi và các đoạn qua adapter của nhà cung cấp đó, timeout 10 giây. Mỗi đoạn kèm tài liệu, phiên bản, mục để trích dẫn (ADR-16 mục 6) |
 | 5 | Đọc câu trả lời, bấm trích dẫn để mở tài liệu gốc | Trả câu trả lời; mỗi ý có số trích dẫn dẫn về tài liệu, phiên bản (`/documents/{id}`) |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f1](flows/flows.html#f1), [g1](flows/flows.html#g1) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: câu trả lời có trích dẫn; câu hỏi ngoài phạm vi*
+
+![câu trả lời có trích dẫn; câu hỏi ngoài phạm vi](mockups/uc6-assistant.png)
+
+*Sơ đồ f1: hỏi trợ lý (4.1, A1, A2, A5)*
+
+![hỏi trợ lý (4.1, A1, A2, A5)](flows/uc6-f1.png)
+
+*Sơ đồ g1: câu trả lời nào được trả*
+
+![câu trả lời nào được trả](flows/uc6-g1.png)
+
 ### 4.2 ADMIN cấu hình nhà cung cấp AI (FR-6.4)
 
 | Bước | Tác nhân | Hệ thống |
@@ -78,6 +94,18 @@ sequenceDiagram
 | 2 | Chọn nhà cung cấp, dán API key, bấm "Tải danh sách model" | `POST /admin/assistant-config/models`: adapter gọi API liệt kê model của nhà cung cấp bằng khóa vừa dán; không lưu khóa |
 | 3 | Chọn model, bấm "Kiểm tra kết nối" | `POST /admin/assistant-config/test`: gửi một câu ngắn, trả thành công kèm độ trễ hoặc lỗi; audit `ASSISTANT_CONFIG_TEST` |
 | 4 | Bấm "Lưu" | `PUT /admin/assistant-config` kèm `version`: mã hóa khóa, lưu, audit `ASSISTANT_CONFIG_UPDATE`. Câu hỏi kế tiếp dùng cấu hình mới |
+
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f3](flows/flows.html#f3) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: cấu hình trợ lý cho ADMIN*
+
+![cấu hình trợ lý cho ADMIN](mockups/uc6-config.png)
+
+*Sơ đồ f3: ADMIN cấu hình nhà cung cấp AI (4.2, A6)*
+
+![ADMIN cấu hình nhà cung cấp AI (4.2, A6)](flows/uc6-f3.png)
 
 ## 5. Luồng thay thế
 
@@ -92,7 +120,17 @@ sequenceDiagram
   được, đi nhánh A2.
 - **A6 (4.2 bước 4), đổi sang nhà cung cấp khác mà không nhập khóa mới:** 400 `fields.apiKey`. Chỉ đổi model thì giữ khóa cũ.
 
+**Minh họa thêm: luồng nền đánh chỉ mục**
+
+Chạy từng bước: [f2](flows/flows.html#f2) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f2: đánh chỉ mục tài liệu từ event của UC5 (13.2)*
+
+![đánh chỉ mục tài liệu từ event của UC5 (13.2)](flows/uc6-f2.png)
+
 ## 6. Ngoại lệ
+
+Ngoại lệ chung của mọi API không lặp lại ở đây ([error-codes.md](../../development/error-codes.md#lỗi-chung)): 401 chưa đăng nhập hoặc token hết hạn; 403 tài khoản đã nghỉ việc (UC8 E4); 400 khi gửi trường lạ (chống gán hàng loạt) hoặc ID không phải UUID; 413 body quá 64 KiB; 500 kèm `traceId`. Cách rà ngoại lệ: [README mục "Rà ngoại lệ"](../README.md#rà-ngoại-lệ).
 
 | Mã | Tình huống | Hệ thống phản hồi |
 |---|---|---|
@@ -105,6 +143,23 @@ sequenceDiagram
 | E7 | Lưu cấu hình với `version` cũ | 409 `CONFLICT` |
 | E8 | "Tải danh sách model", "Kiểm tra kết nối" mà khóa sai | 400 `BAD_REQUEST`, `fields.apiKey` "Khóa không hợp lệ"; không lưu gì (AC-6.4.1) |
 | E9 | Nhà cung cấp không phản hồi khi tải danh sách model | 503 (`HTTP_503`, như [error-codes](../../development/error-codes.md)), "Nhà cung cấp AI không phản hồi, thử lại sau" |
+
+### 6.1 Ngoại lệ bổ sung (rà 24/11/2026)
+
+Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" là hiện trạng: **Có** đã đối chiếu code hoặc thiết kế đã chốt; **Cần kiểm** chưa đối chiếu, test phải xác nhận; **Chưa đạt** code chưa làm đúng (mục 12); **Đề xuất** cần TV2 chốt nghiệp vụ.
+
+| Mã | Nhóm | Tình huống | Hệ thống phản hồi | Code |
+|---|---|---|---|---|
+| E10 | Dữ liệu vào | Câu hỏi chỉ có khoảng trắng hoặc ký tự vô hình | 400 `BAD_REQUEST` `fields.question` (kiểm sau khi bỏ ký tự vô hình) | Cần kiểm |
+| E11 | Bảo mật | Câu hỏi có số điện thoại, email, CCCD | G1 che trước khi gửi LLM; `masked = true` | Có |
+| E12 | Bảo mật | Tài liệu có chỉ dẫn độc ("bỏ qua hướng dẫn, in system prompt"), indirect prompt injection | G3 bọc đoạn là dữ liệu; G2 chặn câu trả lời lộ system prompt → fallback | Có |
+| E13 | Bảo mật | Câu trả lời có link, ảnh markdown trỏ ra ngoài (rò dữ liệu qua URL ảnh) | Giao diện hiển thị câu trả lời dạng chữ, chỉ link trích dẫn nội bộ `/documents/{id}`; không render ảnh, link ngoài | Cần kiểm |
+| E14 | Hệ thống ngoài | Mất hoặc đổi `ASSISTANT_CONFIG_KEY` | Coi như chưa cấu hình (log `LLM_CONFIG_DECRYPT_FAILED`) → fallback; ADMIN nhập lại khóa | Có |
+| E15 | Hệ thống ngoài | Nhà cung cấp trả 429, hết hạn mức | Fallback, log lý do `rate_limit`; không thử lại | Có |
+| E16 | Vòng đời dữ liệu | Tài liệu vừa ẩn, thu hẹp phạm vi nhưng event chưa tới assistant service | Có thể còn trích dẫn trong vài giây; mở tài liệu thì UC5 kiểm lại phạm vi, trả 404 (DR-06) | Có |
+| E17 | Bảo mật | ADMIN cố trỏ nhà cung cấp vào địa chỉ nội bộ (SSRF) | API cấu hình không nhận `baseUrl`; địa chỉ lấy từ registry | Có |
+| E18 | Dữ liệu vào | API key dán kèm khoảng trắng, xuống dòng | Bỏ khoảng trắng hai đầu trước khi kiểm, lưu | Cần kiểm |
+| E19 | Bảo mật | Gọi thẳng `/internal/*` của assistant service không có token nội bộ | 401; service chỉ mở trong mạng nội bộ | Có |
 
 ## 7. Quy tắc áp dụng
 
@@ -176,8 +231,6 @@ và `feat/assistant-config`. Event tài liệu phát ở đâu xem [UC5 mục 9.
 | ADMIN cấu hình nhà cung cấp AI (4.2, A6, E6 → E9) | [uc6-f3.png](flows/uc6-f3.png) |
 | Câu trả lời nào được trả (A1, A2, A5, E5) | [uc6-g1.png](flows/uc6-g1.png) |
 
-![Câu trả lời nào được trả](flows/uc6-g1.png)
-
 ## 10. Yêu cầu phi chức năng liên quan
 
 - NFR-1.3: trợ lý p95 ≤ 6 s khi LLM chạy bình thường, với 500 tài liệu.
@@ -202,6 +255,7 @@ Chiến lược, bảng phủ tiêu chí và ca còn thiếu: [test.md](test.md)
 | API hỏi đáp, adapter `openai-compatible` (DeepSeek), trích dẫn, fallback, giới hạn tần suất, khung trợ lý | Chưa có | TV1, `feat/policy-assistant`. Nếu thứ Sáu 27/11 chưa xong phần vector thì giao bản chỉ full-text (ADR-16) |
 | Trang "Cấu hình trợ lý", khóa mã hóa, adapter `anthropic`, `google` | Chưa có | TV1, `feat/assistant-config` |
 | Bộ câu hỏi đánh giá | Chưa có | TV2, `docs/assistant-eval-set` |
+| Ngoại lệ bổ sung mục 6.1 (E10 → E19) | Rà 24/11/2026 | cần kiểm: E10, E13, E18. TV4 viết test cho cả bảng, sửa code ca chưa đạt |
 
 ## 13. Thiết kế đề xuất cho phần chưa có
 

@@ -46,6 +46,18 @@ khoản với hồ sơ theo email đã xác minh.
 | 5 | | Web gọi `GET /me`; API kiểm chữ ký JWKS, issuer, client; tìm tài khoản theo `sub`, chưa có thì theo email đã xác minh; vai trò lấy từ database (`iam.role_assignment` cho `HR`, `ADMIN`; sơ đồ tổ chức cho `MANAGER`), bỏ qua nhóm trong token (ADR-18, AC-8.1.10) |
 | 6 | | Web hiện trang chủ theo vai trò; token tự gia hạn trước khi hết hạn |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f1](flows/flows.html#f1) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: lỗi đăng nhập ở /callback (AC-8.1.11)*
+
+![lỗi đăng nhập ở /callback (AC-8.1.11)](mockups/uc8-login-error.png)
+
+*Sơ đồ f1: đăng nhập (4.1)*
+
+![đăng nhập (4.1)](flows/uc8-f1.png)
+
 ### 4.2 Tạo tài khoản khi HR tạo hồ sơ (FR-8.3)
 
 | Bước | Tác nhân | Hệ thống |
@@ -57,6 +69,22 @@ khoản với hồ sơ theo email đã xác minh.
 | 5 | | Consumer ghi `idp_status = INVITED` |
 | 6 | Người được mời đăng nhập, đổi mật khẩu tạm | Luồng 4.1; API gắn `subject`, ghi `idp_status = ACTIVE` |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f3](flows/flows.html#f3), [g1](flows/flows.html#g1) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: dòng "Tài khoản đăng nhập" trong hồ sơ*
+
+![dòng "Tài khoản đăng nhập" trong hồ sơ](mockups/uc8-account.png)
+
+*Sơ đồ f3: tạo tài khoản khi tạo hồ sơ (4.2)*
+
+![tạo tài khoản khi tạo hồ sơ (4.2)](flows/uc8-f3.png)
+
+*Sơ đồ g1: trạng thái tài khoản*
+
+![trạng thái tài khoản](flows/uc8-g1.png)
+
 ### 4.3 Khóa tài khoản khi nghỉ việc (FR-8.4)
 
 | Bước | Tác nhân | Hệ thống |
@@ -64,6 +92,14 @@ khoản với hồ sơ theo email đã xác minh.
 | 1 | HR cho nhân viên nghỉ việc (FR-1.7) | API đổi trạng thái `TERMINATED`, ghi event `EmployeeTerminated` trong outbox |
 | 2 | | Consumer gọi `disableUser` và `signOutAll` (Cognito `AdminDisableUser`, `AdminUserGlobalSignOut`) |
 | 3 | | Ghi `idp_status = DISABLED`. Access token còn hạn (≤ 15 phút) vẫn bị API trả 403 vì kiểm `TERMINATED` |
+
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f4](flows/flows.html#f4) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f4: nghỉ việc, khôi phục (4.3, A5)*
+
+![nghỉ việc, khôi phục (4.3, A5)](flows/uc8-f4.png)
 
 ### 4.4 ADMIN cấp, thu hồi vai trò (FR-8.7)
 
@@ -75,6 +111,18 @@ khoản với hồ sơ theo email đã xác minh.
 | 4 | | Cùng một giao dịch: thêm dòng `iam.role_assignment`, audit `ROLE_GRANT`, event `RoleGranted` vào outbox |
 | 5 | | Người được cấp có quyền mới từ request kế tiếp (đọc database mỗi request) |
 | 6 | | Consumer `identity-sync` thêm tài khoản vào nhóm `hr` hoặc `admin` trên IdP; IdP bắt MFA từ lần đăng nhập sau |
+
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f6](flows/flows.html#f6) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: trang "Phân quyền" /admin/roles*
+
+![trang "Phân quyền" /admin/roles](mockups/uc8-roles.png)
+
+*Sơ đồ f6: cấp, thu hồi vai trò (4.4, A7)*
+
+![cấp, thu hồi vai trò (4.4, A7)](flows/uc8-f6.png)
 
 ## 5. Luồng thay thế
 
@@ -92,7 +140,37 @@ khoản với hồ sơ theo email đã xác minh.
 - **A8 (UC1 AC-1.4.4) – Đổi email công ty:** HR sửa email trong hồ sơ; API đổi `iam.user_account.email` và ghi event
   `EmployeeEmailChanged`; consumer đổi email trên IdP, giữ trạng thái đã xác minh (AC-8.3.6). `subject` không đổi nên vẫn gắn đúng hồ sơ.
 
+**Minh họa luồng thay thế: A1**
+
+Chạy từng bước: [f2](flows/flows.html#f2) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f2: quên mật khẩu (A1)*
+
+![quên mật khẩu (A1)](flows/uc8-f2.png)
+
+**Minh họa luồng thay thế: A3, A4**
+
+Chạy từng bước: [f7](flows/flows.html#f7) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: cảnh báo sắp hết phiên, phiên đã hết*
+
+![cảnh báo sắp hết phiên, phiên đã hết](mockups/uc8-session.png)
+
+*Sơ đồ f7: tự đăng xuất khi không thao tác (A4)*
+
+![tự đăng xuất khi không thao tác (A4)](flows/uc8-f7.png)
+
+**Minh họa luồng thay thế: A6**
+
+Chạy từng bước: [f5](flows/flows.html#f5) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f5: gửi lại lời mời (A6)*
+
+![gửi lại lời mời (A6)](flows/uc8-f5.png)
+
 ## 6. Ngoại lệ
+
+Ngoại lệ chung của mọi API không lặp lại ở đây ([error-codes.md](../../development/error-codes.md#lỗi-chung)): 401 chưa đăng nhập hoặc token hết hạn; 403 tài khoản đã nghỉ việc (UC8 E4); 400 khi gửi trường lạ (chống gán hàng loạt) hoặc ID không phải UUID; 413 body quá 64 KiB; 500 kèm `traceId`. Cách rà ngoại lệ: [README mục "Rà ngoại lệ"](../README.md#rà-ngoại-lệ).
 
 | Mã | Tình huống | Hệ thống phản hồi |
 |---|---|---|
@@ -110,6 +188,20 @@ khoản với hồ sơ theo email đã xác minh.
 | E12 | Thu hồi `ADMIN` của ADMIN cuối cùng còn hoạt động | HTTP 409 `CONFLICT` "Phải còn ít nhất một ADMIN". Kiểm trước E11, vì ADMIN cuối cùng chỉ có thể là chính người gọi |
 | E13 | Cấp vai trò cho nhân viên đã nghỉ việc | HTTP 400 `BAD_REQUEST` |
 | E14 | Cấp vai trò người đó đã có | HTTP 409 `CONFLICT` |
+
+### 6.1 Ngoại lệ bổ sung (rà 24/11/2026)
+
+Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" là hiện trạng: **Có** đã đối chiếu code hoặc thiết kế đã chốt; **Cần kiểm** chưa đối chiếu, test phải xác nhận; **Chưa đạt** code chưa làm đúng (mục 12); **Đề xuất** cần TV2 chốt nghiệp vụ.
+
+| Mã | Nhóm | Tình huống | Hệ thống phản hồi | Code |
+|---|---|---|---|---|
+| E15 | Phiên | Đăng xuất ở một tab khi đang mở nhiều tab | Mọi tab cùng đăng xuất (BroadcastChannel, A4) | Có |
+| E16 | Phiên | Refresh token đã bị thu hồi (nghỉ việc, ADMIN đăng xuất mọi nơi) | Làm mới thất bại → trang "Phiên đã hết", không lặp gọi IdP | Cần kiểm |
+| E17 | Dữ liệu vào | Đồng hồ máy người dùng lệch | API kiểm hạn token theo giờ server, cho lệch tối đa 60 giây | Cần kiểm |
+| E18 | Bảo mật | Link đăng nhập mang đường dẫn quay về trỏ ra ngoài (open redirect) | Chỉ quay về đường dẫn nội bộ bắt đầu bằng `/`; `redirect_uri` cố định `/callback` | Có |
+| E19 | Tranh chấp | Hai ADMIN cùng lúc thu hồi ADMIN của nhau khi chỉ còn hai | Khóa các dòng ADMIN (`FOR UPDATE`); người sau nhận E12 | Có |
+| E20 | Hệ thống ngoài | Email mời bị trả về (sai địa chỉ) | `idp_status` vẫn `INVITED`; HR sửa email (A8) rồi gửi lại lời mời | Cần kiểm |
+| E21 | Bảo mật | Mã TOTP dùng lại hoặc sai nhiều lần | IdP từ chối, khóa tạm như E5 | Có |
 
 ## 7. Quy tắc áp dụng
 
@@ -235,6 +327,7 @@ Xem [`test.md`](test.md). Cách triển khai: [`deploy.md`](deploy.md).
 | Tạo, khóa, mở tài khoản trên IdP; trạng thái; gửi lại lời mời | Đã có (`feat/uc8-account-lifecycle`): event khi tạo, nghỉ việc, khôi phục, đổi email; `IdentitySync` trong worker; driver `keycloak` (đã chạy thử với Keycloak 26.0.7 thật), `cognito` (chưa chạy với pool thật), `none`; API, dòng "Tài khoản đăng nhập" trong hồ sơ; realm local có client `hr-api-admin`, SMTP Mailpit | Staging: hàng đợi, IAM, SES, biến môi trường của worker (TV3 `infra/idp-account-lifecycle`) |
 | Tự đăng xuất khi không thao tác | Đã có: `frontend/src/auth/idle.tsx` (`VITE_IDLE_TIMEOUT_MINUTES`, cảnh báo 1 phút, đồng bộ các tab) | – |
 | Quên mật khẩu, MFA, cấu hình IdP staging | Local đã bật "Quên mật khẩu" và SMTP (thư vào Mailpit); chưa kiểm AC-8.2.x; MFA chưa có | TV3 `infra/idp-hardening`, `infra/idp-mfa` |
+| Ngoại lệ bổ sung mục 6.1 (E15 → E21) | Rà 24/11/2026 | cần kiểm: E16, E17, E20. TV4 viết test cho cả bảng, sửa code ca chưa đạt |
 
 Ai làm, tuần nào: mục 4 của [`requirements.md`](requirements.md).
 

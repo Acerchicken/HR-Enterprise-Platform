@@ -96,10 +96,6 @@ bước: bấm "Chạy", hoặc dùng phím ← → để lùi, tiến; bấm v�
 | Trạng thái yêu cầu cập nhật | 4.2, 4.7, E19 → E21 | [uc1-g2.png](flows/uc1-g2.png) |
 | Trạng thái file hồ sơ | 4.3, 4.7, E12, E13 | [uc1-g3.png](flows/uc1-g3.png) |
 
-![Luồng gửi yêu cầu cập nhật và HR duyệt](flows/uc1-f2.png)
-
-![Trạng thái yêu cầu cập nhật](flows/uc1-g2.png)
-
 Sơ đồ vẽ theo spec (hành vi đúng), không theo code; phần code chưa đạt xem mục 12. Sửa luồng ở mục 4 → 7 thì sửa biến `FLOWS`
 trong `flows.html` rồi xuất lại ảnh: trên Windows chạy
 `powershell -ExecutionPolicy Bypass -File docs/features/UC1-employee-profile/flows/render.ps1` (dùng Edge, không cần cài gì);
@@ -115,6 +111,30 @@ máy có Playwright chạy `node docs/features/UC1-employee-profile/flows/render
 | 3 | Bấm "Thông tin cá nhân", sửa số điện thoại hoặc địa chỉ, bấm "Gửi yêu cầu" | Tạo yêu cầu cập nhật như luồng 4.2 (mục `personal`, thao tác sửa) |
 | 4 | Thấy giá trị cũ và khung "Đang chờ HR xác nhận" với giá trị mới | Hồ sơ chưa đổi cho tới khi HR duyệt (luồng 4.7) |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f1](flows/flows.html#f1), [g1](flows/flows.html#g1) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: popup hồ sơ dạng ngăn bên phải (máy tính)*
+
+![popup hồ sơ dạng ngăn bên phải (máy tính)](mockups/profile-desktop.png)
+
+*Màn hình: hồ sơ trên điện thoại*
+
+![hồ sơ trên điện thoại](mockups/profile-mobile.png)
+
+*Màn hình: đồng nghiệp xem hồ sơ (A1, mức danh bạ)*
+
+![đồng nghiệp xem hồ sơ (A1, mức danh bạ)](mockups/profile-directory-view.png)
+
+*Sơ đồ f1: xem hồ sơ, tải từng mục khi mở (4.1, A1)*
+
+![xem hồ sơ, tải từng mục khi mở (4.1, A1)](flows/uc1-f1.png)
+
+*Sơ đồ g1: ai thấy gì (mục 2, A1)*
+
+![ai thấy gì (mục 2, A1)](flows/uc1-g1.png)
+
 ### 4.2 Nhân viên gửi yêu cầu cập nhật (FR-1.9)
 
 Ví dụ: thêm người liên hệ khẩn cấp. Sửa, xóa dòng và sửa điện thoại, địa chỉ đi cùng luồng.
@@ -128,6 +148,22 @@ Ví dụ: thêm người liên hệ khẩn cấp. Sửa, xóa dòng và sửa đ
 | 5 | | Nếu cùng trường hoặc dòng đã có yêu cầu `PENDING`: chuyển yêu cầu cũ sang `CANCELLED` |
 | 6 | | Mã hóa phần nhạy cảm của giá trị đề xuất; lưu yêu cầu `PENDING`; ghi audit `PROFILE_CHANGE_SUBMIT`; ghi event outbox để báo HR (gộp tối đa một email mỗi giờ) |
 | 7 | Thấy khung "Đang chờ HR xác nhận" | Trả 202 kèm yêu cầu. Nhân viên bấm "Hủy yêu cầu" thì yêu cầu `CANCELLED`, audit `PROFILE_CHANGE_CANCEL` |
+
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f2](flows/flows.html#f2), [g2](flows/flows.html#g2) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: trang con và form gửi yêu cầu*
+
+![trang con và form gửi yêu cầu](mockups/subpage-mobile.png)
+
+*Sơ đồ f2: gửi yêu cầu cập nhật (4.2, A6, A7)*
+
+![gửi yêu cầu cập nhật (4.2, A6, A7)](flows/uc1-f2.png)
+
+*Sơ đồ g2: trạng thái yêu cầu cập nhật*
+
+![trạng thái yêu cầu cập nhật](flows/uc1-g2.png)
 
 ### 4.3 Nhân viên tải file lên hồ sơ (FR-1.10)
 
@@ -150,6 +186,18 @@ Ví dụ: tải CV. File bằng cấp, giấy tờ người phụ thuộc gắn 
 Tải xuống: `GET /employees/{id}/files/{fileId}/download`, API kiểm quyền rồi stream. Nhân viên muốn xóa file thì gửi yêu cầu
 xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /employees/{id}/files/{fileId}`.
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f3](flows/flows.html#f3), [g3](flows/flows.html#g3) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f3: tải file lên hồ sơ (4.3, A8)*
+
+![tải file lên hồ sơ (4.3, A8)](flows/uc1-f3.png)
+
+*Sơ đồ g3: trạng thái file hồ sơ*
+
+![trạng thái file hồ sơ](flows/uc1-g3.png)
+
 ### 4.4 HR tạo hồ sơ nhân viên (FR-1.5)
 
 | Bước | Tác nhân | Hệ thống |
@@ -162,6 +210,14 @@ xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /em
 | 6 | | Lưu hồ sơ, ghi audit `CREATE` và mở dòng quá trình công tác đầu tiên "Tuyển mới" từ `hireDate` (UC2 AC-2.8.3, khi có FR-2.8) trong cùng giao dịch |
 | 7 | HR được chuyển tới trang hồ sơ vừa tạo | Trả hồ sơ, mã 201 |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f6](flows/flows.html#f6) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f6: HR tạo hồ sơ (4.4, A3)*
+
+![HR tạo hồ sơ (4.4, A3)](flows/uc1-f6.png)
+
 ### 4.5 HR xem và sửa trường nhạy cảm, mục HR quản lý (FR-1.3, FR-1.4, FR-1.12)
 
 | Bước | Tác nhân | Hệ thống |
@@ -173,6 +229,14 @@ xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /em
 | 5 | | Lưu, tăng `version`, ghi audit `UPDATE` theo nhóm trường (mục 7) |
 | 6 | Với mục HR quản lý (hợp đồng, lương theo thời gian, BHXH…): HR thêm, sửa dòng như luồng 4.2, tải file như luồng 4.3 | Như 4.2, 4.3; `source = HR`; nhân viên không sửa, không xóa được |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f5](flows/flows.html#f5) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f5: HR xem nhạy cảm, sửa hồ sơ (4.5, A2, A4, A9)*
+
+![HR xem nhạy cảm, sửa hồ sơ (4.5, A2, A4, A9)](flows/uc1-f5.png)
+
 ### 4.6 Xem nhật ký thay đổi hồ sơ (FR-1.11)
 
 | Bước | Tác nhân | Hệ thống |
@@ -180,6 +244,14 @@ xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /em
 | 1 | Chủ hồ sơ hoặc HR mở "Lịch sử thay đổi" | `GET /employees/{id}/history?page=&section=&actorId=&from=&to=` |
 | 2 | | Kiểm người gọi là chủ hồ sơ hoặc HR; đọc audit có `entity_id` là hồ sơ này, gồm cả các dòng, file và yêu cầu cập nhật thuộc hồ sơ |
 | 3 | Thấy danh sách mới nhất trước | Mỗi dòng: thời điểm, người làm (tên), thao tác (gửi, hủy, duyệt, từ chối yêu cầu; HR sửa trực tiếp; tải file; xem nhạy cảm), mục, tên trường. Không có giá trị, không có tên file gốc, không có lý do từ chối |
+
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f7](flows/flows.html#f7) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f7: xem lịch sử thay đổi (4.6)*
+
+![xem lịch sử thay đổi (4.6)](flows/uc1-f7.png)
 
 ### 4.7 HR xác nhận yêu cầu cập nhật (FR-1.9)
 
@@ -192,6 +264,18 @@ xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /em
 | 5 | | Trong một giao dịch: ghi thay đổi vào hồ sơ hoặc dòng, tăng `version`; file kèm chuyển `READY`; yêu cầu `APPROVED` kèm người duyệt, thời điểm; audit `PROFILE_CHANGE_APPROVE` (mục, mã yêu cầu, tên trường); event outbox báo nhân viên |
 | 6 | HR bấm "Từ chối", nhập lý do | `POST /change-requests/{requestId}/reject` với `reason` (bắt buộc, tối đa 500 ký tự); yêu cầu `REJECTED`, hồ sơ không đổi; audit `PROFILE_CHANGE_REJECT` không chứa lý do; file kèm `REJECTED`, xóa sau 30 ngày; event outbox báo nhân viên |
 | 7 | Nhân viên nhận email báo chung, mở ứng dụng | Thấy kết quả; nếu bị từ chối thì thấy lý do |
+
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f4](flows/flows.html#f4) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: trang "Việc cần duyệt", tab "Sửa hồ sơ"*
+
+![trang "Việc cần duyệt", tab "Sửa hồ sơ"](../mockups/approvals.png)
+
+*Sơ đồ f4: HR duyệt, từ chối yêu cầu (4.7, A5, A10)*
+
+![HR duyệt, từ chối yêu cầu (4.7, A5, A10)](flows/uc1-f4.png)
 
 ## 5. Luồng thay thế
 
@@ -217,6 +301,8 @@ xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /em
 
 ## 6. Ngoại lệ
 
+Ngoại lệ chung của mọi API không lặp lại ở đây ([error-codes.md](../../development/error-codes.md#lỗi-chung)): 401 chưa đăng nhập hoặc token hết hạn; 403 tài khoản đã nghỉ việc (UC8 E4); 400 khi gửi trường lạ (chống gán hàng loạt) hoặc ID không phải UUID; 413 body quá 64 KiB; 500 kèm `traceId`. Cách rà ngoại lệ: [README mục "Rà ngoại lệ"](../README.md#rà-ngoại-lệ).
+
 | Mã | Tình huống | Hệ thống phản hồi |
 |---|---|---|
 | E1 | Nhân viên gửi yêu cầu cho trường hoặc mục không phải NV, cho hồ sơ người khác, hoặc gọi API ghi thẳng (`PATCH /employees/{id}`, API mục, duyệt, từ chối) | 403 `FORBIDDEN`; không tạo yêu cầu |
@@ -241,6 +327,23 @@ xóa (luồng 4.2, thao tác `DELETE`); HR xóa trực tiếp bằng `DELETE /em
 | E20 | Duyệt, từ chối, hủy yêu cầu không còn `PENDING` | 409 `CONFLICT`; duyệt lặp lại cùng yêu cầu đã `APPROVED` thì trả lại yêu cầu, không ghi lần hai |
 | E21 | Nhân viên đã có 20 yêu cầu `PENDING` | 409 `CONFLICT`, nêu giới hạn |
 | E22 | Từ chối không có lý do hoặc lý do quá 500 ký tự | 400 `BAD_REQUEST` kèm `fields.reason` |
+
+### 6.1 Ngoại lệ bổ sung (rà 24/11/2026)
+
+Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" là hiện trạng: **Có** đã đối chiếu code hoặc thiết kế đã chốt; **Cần kiểm** chưa đối chiếu, test phải xác nhận; **Chưa đạt** code chưa làm đúng (mục 12); **Đề xuất** cần TV2 chốt nghiệp vụ.
+
+| Mã | Nhóm | Tình huống | Hệ thống phản hồi | Code |
+|---|---|---|---|---|
+| E23 | Phân quyền | HR sửa trường HR quản lý (lương, chức danh, quản lý, trạng thái) trong hồ sơ của chính mình, hoặc duyệt yêu cầu cập nhật của chính mình | 403 `FORBIDDEN`; người khác trong HR phải làm | Cần kiểm |
+| E24 | Dữ liệu vào | Ngày sinh ở tương lai hoặc dưới 15 tuổi (tuổi lao động tối thiểu); ngày nghỉ việc trước ngày vào làm; hợp đồng có ngày kết thúc trước ngày bắt đầu | 400 `BAD_REQUEST` kèm `fields` | Cần kiểm |
+| E25 | Bảo mật | Tên file có `/`, `\`, `..`, ký tự điều khiển, hoặc dài quá 255 ký tự | 400 `BAD_REQUEST`. Object key luôn sinh từ ID, tên gốc chỉ để hiển thị và đặt tên khi tải về | Cần kiểm |
+| E26 | Bảo mật | Ảnh đại diện là SVG, GIF hoặc định dạng khác JPEG, PNG, WebP | 400 `BAD_REQUEST` (SVG có thể chứa script) | Cần kiểm |
+| E27 | Bảo mật | Trường chữ có thẻ HTML, script (`<script>`, `onerror=`) | Lưu nguyên văn; giao diện hiển thị dạng chữ, không render HTML (frontend không dùng `innerHTML`) | Có |
+| E28 | Gửi trùng | Dùng lại `Idempotency-Key` cho yêu cầu khác nội dung (mục, trường, giá trị khác) | 409 `CONFLICT`, như UC3 E10 | Cần kiểm |
+| E29 | Vòng đời dữ liệu | Chủ hồ sơ bị cho nghỉ việc khi còn yêu cầu `PENDING` | Yêu cầu chuyển `CANCELLED` kèm lý do `TERMINATED`; HR không duyệt được nữa (409) | Đề xuất, TV2 chốt |
+| E30 | Vòng đời dữ liệu | Chọn quản lý trực tiếp là người đã nghỉ việc | 400 `BAD_REQUEST`, như E5 | Cần kiểm |
+| E31 | Hệ thống ngoài | URL PUT hết hạn trước khi tải xong (mạng chậm) | Storage từ chối; file ở `PENDING`, tự `REJECTED` sau 24 giờ; giao diện cho tải lại | Có |
+| E32 | Vòng đời dữ liệu | Tải xuống file `PENDING`, `REJECTED`, hoặc đã xóa quá 30 ngày | 404 `NOT_FOUND`, như E7 | Cần kiểm |
 
 ## 7. Quy tắc áp dụng
 
@@ -503,6 +606,7 @@ Quyết định 14/11/2026 (rà soát trước khi làm UC1):
 | Hạn 2 ngày làm việc (AC-1.9.13) đếm bằng `workdaysBetween`: chỉ bỏ T7, CN, theo ngày UTC, chưa bỏ ngày lễ | TV1, nhánh `feat/leave-holidays` (UC4 spec 13.6) | Dùng dịch vụ lịch chung đọc `leave.holiday`, giờ Việt Nam (kiểm chéo UC3 spec mục 14) |
 | Nghỉ việc chưa xử lý đơn nghỉ của người nghỉ | TV1, nhánh `feat/leave-balance-rules` | Hộp xác nhận nêu số đơn; job của Leave hủy đơn chờ, đơn tương lai (UC3 AC-3.1.7, spec 13.2) |
 | Quét mã độc file tải lên | – | Không làm trong MVP, rủi ro chấp nhận (mục 7) |
+| Ngoại lệ bổ sung mục 6.1 (E23 → E32) | Rà 24/11/2026 | cần kiểm: E23, E24, E25, E26, E28, E30, E32; chờ TV2 chốt: E29. TV4 viết test cho cả bảng, sửa code ca chưa đạt |
 
 ## 13. Thiết kế đề xuất
 

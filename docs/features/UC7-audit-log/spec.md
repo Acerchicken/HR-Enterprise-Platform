@@ -89,6 +89,22 @@ Mỗi bản ghi có:
 | 4 | Xem danh sách: lúc nào, ai, hành động gì (ví dụ `VIEW_SENSITIVE`), `traceId` | Trả danh sách |
 | 5 | Lấy `traceId` để đối chiếu log hệ thống nếu cần | |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f2](flows/flows.html#f2), [g1](flows/flows.html#g1) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: lịch sử thao tác /audit*
+
+![lịch sử thao tác /audit](mockups/uc7-audit.png)
+
+*Sơ đồ f2: tra cứu ai đã làm gì (luồng chính, A1, A2, A4)*
+
+![tra cứu ai đã làm gì (luồng chính, A1, A2, A4)](flows/uc7-f2.png)
+
+*Sơ đồ g1: ai thấy audit nào (D1)*
+
+![ai thấy audit nào (D1)](flows/uc7-g1.png)
+
 ## 5. Luồng thay thế
 
 - **A1 (bước 1), tìm theo người thực hiện:** lọc `actor` để xem một người đã làm những gì.
@@ -97,7 +113,21 @@ Mỗi bản ghi có:
 - **A3, phần ghi khi thao tác thất bại:** giao dịch bị hủy, không có bản ghi audit, không có thay đổi dữ liệu.
 - **A4 (bước 1), chỉ lọc theo thời gian:** không chọn đối tượng, người; dùng chỉ mục BRIN `ix_audit_at` để đạt NFR-2.4 (mục 13.3, D2).
 
+**Minh họa luồng thay thế: A3 và phần ghi**
+
+Chạy từng bước: [f1](flows/flows.html#f1), [f3](flows/flows.html#f3) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f1: ghi audit cùng giao dịch (FR-7.1, A3)*
+
+![ghi audit cùng giao dịch (FR-7.1, A3)](flows/uc7-f1.png)
+
+*Sơ đồ f3: chặn sửa, xóa audit (FR-7.2, E3)*
+
+![chặn sửa, xóa audit (FR-7.2, E3)](flows/uc7-f3.png)
+
 ## 6. Ngoại lệ
+
+Ngoại lệ chung của mọi API không lặp lại ở đây ([error-codes.md](../../development/error-codes.md#lỗi-chung)): 401 chưa đăng nhập hoặc token hết hạn; 403 tài khoản đã nghỉ việc (UC8 E4); 400 khi gửi trường lạ (chống gán hàng loạt) hoặc ID không phải UUID; 413 body quá 64 KiB; 500 kèm `traceId`. Cách rà ngoại lệ: [README mục "Rà ngoại lệ"](../README.md#rà-ngoại-lệ).
 
 | Mã | Tình huống | Hệ thống phản hồi |
 |---|---|---|
@@ -105,6 +135,19 @@ Mỗi bản ghi có:
 | E2 | Ngày sai định dạng, `actor` không phải UUID | 400 `BAD_REQUEST` |
 | E3 | Bất kỳ ai, kể cả ứng dụng, chạy UPDATE hoặc DELETE trên bảng audit | Database trigger chặn, giao dịch lỗi (FR-7.2) |
 | E4 | `size` lớn hơn 100 hoặc nhỏ hơn 1, `page` nhỏ hơn 1 | 400 `BAD_REQUEST` |
+
+### 6.1 Ngoại lệ bổ sung (rà 24/11/2026)
+
+Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" là hiện trạng: **Có** đã đối chiếu code hoặc thiết kế đã chốt; **Cần kiểm** chưa đối chiếu, test phải xác nhận; **Chưa đạt** code chưa làm đúng (mục 12); **Đề xuất** cần TV2 chốt nghiệp vụ.
+
+| Mã | Nhóm | Tình huống | Hệ thống phản hồi | Code |
+|---|---|---|---|---|
+| E5 | Dữ liệu vào | `from` sau `to` | 400 `BAD_REQUEST`. Hiện trả danh sách rỗng | Chưa đạt |
+| E6 | Hiệu năng | Chỉ lọc theo thời gian với khoảng dài hơn 366 ngày | 400 `BAD_REQUEST`, yêu cầu thu hẹp hoặc thêm đối tượng, người | Đề xuất, TV2 chốt |
+| E7 | Hiệu năng | `page × size` vượt 10.000 (phân trang quá sâu) | 400 `BAD_REQUEST`, yêu cầu thu hẹp bộ lọc | Đề xuất, TV2 chốt |
+| E8 | Bảo mật | `changedFields`, `entityId` có chữ dạng HTML | Giao diện hiển thị dạng chữ | Có |
+| E9 | Hệ thống ngoài | Worker ghi audit khi database mất kết nối | Message chưa xác nhận, queue giao lại; không mất audit, không ghi trùng (`processed_event`) | Cần kiểm |
+| E10 | Bảo mật | `TRUNCATE` bảng audit bằng tài khoản ứng dụng | Phải bị từ chối (NFR-5.14). Hiện chưa chặn: trigger theo dòng không bắt `TRUNCATE`, tài khoản ứng dụng là chủ bảng | Chưa đạt |
 
 ## 7. Quy tắc áp dụng
 
@@ -166,8 +209,6 @@ xuất lại bằng `flows/render.js` (Playwright) hoặc `flows/render.ps1` (Ed
 | Chặn sửa, xóa audit (FR-7.2, E3, NFR-5.14) | [uc7-f3.png](flows/uc7-f3.png) |
 | Ai thấy audit nào (mục 2, D1) | [uc7-g1.png](flows/uc7-g1.png) |
 
-![Tra cứu ai đã làm gì](flows/uc7-f2.png)
-
 ## 10. Yêu cầu phi chức năng liên quan
 
 - NFR-6.1 → NFR-6.4: audit đủ, không sửa được, lưu 5 năm, `traceId`.
@@ -193,6 +234,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Audit đăng nhập | Chưa có | TV3, `infra/idp-auth-events`, tuần 13 (AC-7.4.1) |
 | Audit cấp, thu hồi vai trò | Đã có (UC8 `feat/uc8-role-admin`) | – (AC-7.4.2) |
 | Thời gian lưu | Đã chốt 5 năm (BR-13) | Quy trình archive, legal hold trước production (ngoài MVP) |
+| Ngoại lệ bổ sung mục 6.1 (E5 → E10) | Rà 24/11/2026 | chưa đạt: E5, E10; cần kiểm: E9; chờ TV2 chốt: E6, E7. TV4 viết test cho cả bảng, sửa code ca chưa đạt |
 
 ## 13. Thiết kế màn hình tra cứu và quyết định
 

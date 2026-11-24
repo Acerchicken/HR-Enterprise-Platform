@@ -91,3 +91,29 @@ cần Keycloak: `AUTH_MODE=dev` và token `Bearer dev:<email>` (bị chặn khi 
     và `code` theo [`error-codes.md`](../development/error-codes.md).
 - **Đường dẫn API** lược tiền tố `/api/v1`.
 - **Trạng thái** phản ánh nhánh `dev` ngày 13/11/2026. Ai merge code làm đổi hành vi thì cập nhật trong cùng PR.
+- **Giao diện và sơ đồ luồng trong spec:** mỗi luồng ở mục 4 (và nhóm luồng thay thế ở cuối mục 5) có khối "Giao diện và sơ
+  đồ luồng": ảnh màn hình từ `mockups/`, ảnh sơ đồ từ `flows/`, link chạy từng bước `flows/flows.html#fN`. Mục 9 giữ bảng mục
+  lục. Đổi luồng thì sửa `FLOWS` trong `flows.html`, chạy lại `render.js` hoặc `render.ps1`.
+
+## Rà ngoại lệ
+
+Mục 6 của mỗi spec rà theo các nhóm dưới đây. Mỗi ngoại lệ có mã HTTP, câu báo lỗi cố định và ít nhất một test. Ngoại lệ có
+ba tác dụng: đủ ca để kiểm thử, chặn đường tấn công, và là hợp đồng với frontend (giao diện biết hiện gì, người dùng biết làm gì
+tiếp). Ghi ca có thật, không thêm cho đủ số: ca nào cũng phải có code và test đi kèm.
+
+| Nhóm | Câu hỏi | Ví dụ |
+|---|---|---|
+| Dữ liệu vào | Rỗng, quá dài, sai định dạng, ngày vô lý, trường lạ? | Ngày sinh tương lai, `from` sau `to` |
+| Phân quyền | Sai vai trò, sai quan hệ, tự làm cho chính mình? | HR duyệt yêu cầu của mình, ADMIN tự cấp vai trò |
+| Tranh chấp | Hai người, hai tab cùng sửa? | `version` cũ → 409, khóa dòng số dư |
+| Gửi trùng | Bấm hai lần, retry, job chạy hai lần, event giao hai lần? | `Idempotency-Key`, `processed_event` |
+| Vòng đời dữ liệu | Đối tượng đã nghỉ việc, ngừng hoạt động, ẩn, hết hạn? | Điều chuyển tới đơn vị đã ngừng |
+| Toàn vẹn | Tạo vòng, mất gốc, vi phạm luật cây? | Quản lý là cấp dưới của chính mình |
+| Hệ thống ngoài | IdP, S3, queue, email, LLM chậm hoặc lỗi? | Fallback, thử lại, DLQ; không mất dữ liệu |
+| Bảo mật | Lộ dữ liệu qua lỗi, tên file, HTML, LIKE, redirect, prompt? | 404 thay 403, thoát ký tự LIKE |
+| Hiệu năng và giới hạn | Truy vấn quá rộng, trang quá sâu, gọi quá nhiều? | 429 `Retry-After`, giới hạn khoảng ngày |
+| Phiên (UC8) | Nhiều tab, token thu hồi, đồng hồ lệch? | Đăng xuất mọi tab |
+
+Ngoại lệ chung cho mọi API (401, 403 tài khoản đã nghỉ việc, 400 trường lạ hoặc UUID sai, 413, 500 kèm `traceId`) ghi một lần ở
+[error-codes.md](../development/error-codes.md#lỗi-chung), không lặp ở từng spec. Ngoại lệ thêm khi rà ghi ở mục 6.1 với cột
+"Code" (Có, Cần kiểm, Chưa đạt, Đề xuất); test.md có ca cho từng mã.

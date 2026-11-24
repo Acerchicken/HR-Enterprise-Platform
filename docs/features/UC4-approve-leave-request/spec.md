@@ -76,6 +76,30 @@ stateDiagram-v2
 | 6 | | Kiểm `version`; ghi trạng thái, lịch sử, audit, event outbox trong một giao dịch |
 | 7 | Thấy đơn đã duyệt, biến khỏi danh sách chờ | Trả đơn; worker gửi email cho nhân viên (FR-4.6) |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f1](flows/flows.html#f1), [g1](flows/flows.html#g1), [g2](flows/flows.html#g2) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: quản lý duyệt đơn nghỉ*
+
+![quản lý duyệt đơn nghỉ](mockups/uc4-manager.png)
+
+*Màn hình: duyệt trên điện thoại, từ chối bắt buộc ghi chú*
+
+![duyệt trên điện thoại, từ chối bắt buộc ghi chú](mockups/uc4-mobile.png)
+
+*Sơ đồ f1: duyệt, từ chối đơn (luồng chính, A1, A5)*
+
+![duyệt, từ chối đơn (luồng chính, A1, A5)](flows/uc4-f1.png)
+
+*Sơ đồ g1: trạng thái đơn nghỉ*
+
+![trạng thái đơn nghỉ](flows/uc4-g1.png)
+
+*Sơ đồ g2: ai được xử lý đơn*
+
+![ai được xử lý đơn](flows/uc4-g2.png)
+
 ## 5. Luồng thay thế
 
 - **A1 (bước 3), từ chối:** gọi `POST /leave-requests/{id}/reject`. Đơn sang `REJECTED`, trả số ngày khỏi `pending` (BR-09).
@@ -112,7 +136,77 @@ stateDiagram-v2
   sửa đơn. HR mở danh sách đơn bị ảnh hưởng và bấm "Tính lại" từng đơn, kèm lý do (13.6).
 - **A5 (bước 5), bấm duyệt hai lần:** lần hai trả lại đơn, không đổi số dư, không gửi email lần nữa (BR-11).
 
+**Minh họa luồng thay thế: A2**
+
+Chạy từng bước: [f4](flows/flows.html#f4) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: HR, tab "Hoàn tất đơn nghỉ"*
+
+![HR, tab "Hoàn tất đơn nghỉ"](mockups/uc4-complete.png)
+
+*Sơ đồ f4: hoàn tất đơn (A2)*
+
+![hoàn tất đơn (A2)](flows/uc4-f4.png)
+
+**Minh họa luồng thay thế: A3, A6**
+
+Chạy từng bước: [f2](flows/flows.html#f2) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: HR, tab "Đơn nghỉ": đơn chờ HR duyệt*
+
+![HR, tab "Đơn nghỉ": đơn chờ HR duyệt](mockups/uc4-hr.png)
+
+*Sơ đồ f2: HR duyệt thêm (A3, A6)*
+
+![HR duyệt thêm (A3, A6)](flows/uc4-f2.png)
+
+**Minh họa luồng thay thế: A4**
+
+Chạy từng bước: [f6](flows/flows.html#f6) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: phân công duyệt thay /approvals/delegations*
+
+![phân công duyệt thay /approvals/delegations](mockups/uc4-delegation.png)
+
+*Sơ đồ f6: người duyệt thay (A4)*
+
+![người duyệt thay (A4)](flows/uc4-f6.png)
+
+**Minh họa luồng thay thế: A7**
+
+Chạy từng bước: [f3](flows/flows.html#f3) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: xác nhận hoặc bác đề nghị hủy*
+
+![xác nhận hoặc bác đề nghị hủy](mockups/uc4-cancel-request.png)
+
+*Sơ đồ f3: xác nhận hoặc bác đề nghị hủy (A7)*
+
+![xác nhận hoặc bác đề nghị hủy (A7)](flows/uc4-f3.png)
+
+**Minh họa luồng thay thế: A8**
+
+Chạy từng bước: [f5](flows/flows.html#f5) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f5: nhắc đơn chờ (A8)*
+
+![nhắc đơn chờ (A8)](flows/uc4-f5.png)
+
+**Minh họa luồng thay thế: A9**
+
+Chạy từng bước: [f7](flows/flows.html#f7) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: lịch nghỉ lễ và đơn bị ảnh hưởng*
+
+![lịch nghỉ lễ và đơn bị ảnh hưởng](mockups/uc4-holidays.png)
+
+*Sơ đồ f7: sửa lịch lễ, tính lại đơn (A9)*
+
+![sửa lịch lễ, tính lại đơn (A9)](flows/uc4-f7.png)
+
 ## 6. Ngoại lệ
+
+Ngoại lệ chung của mọi API không lặp lại ở đây ([error-codes.md](../../development/error-codes.md#lỗi-chung)): 401 chưa đăng nhập hoặc token hết hạn; 403 tài khoản đã nghỉ việc (UC8 E4); 400 khi gửi trường lạ (chống gán hàng loạt) hoặc ID không phải UUID; 413 body quá 64 KiB; 500 kèm `traceId`. Cách rà ngoại lệ: [README mục "Rà ngoại lệ"](../README.md#rà-ngoại-lệ).
 
 | Mã | Tình huống | Hệ thống phản hồi |
 |---|---|---|
@@ -134,6 +228,21 @@ stateDiagram-v2
 | E17 | Xác nhận, bác khi đơn không có đề nghị hủy, không còn `APPROVED`, hoặc đã tới `startDate` | 409 `CONFLICT` |
 | E18 | Tính lại đơn `COMPLETED`, `CANCELLED`, `REJECTED`; số ngày mới bằng 0; số ngày tăng mà không đủ số dư | 409 `CONFLICT` |
 | E9 | Queue hoặc dịch vụ email lỗi | Quyết định vẫn được lưu; event chờ trong outbox hoặc vào DLQ (NFR-3.4) |
+
+### 6.1 Ngoại lệ bổ sung (rà 24/11/2026)
+
+Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" là hiện trạng: **Có** đã đối chiếu code hoặc thiết kế đã chốt; **Cần kiểm** chưa đối chiếu, test phải xác nhận; **Chưa đạt** code chưa làm đúng (mục 12); **Đề xuất** cần TV2 chốt nghiệp vụ.
+
+| Mã | Nhóm | Tình huống | Hệ thống phản hồi | Code |
+|---|---|---|---|---|
+| E19 | Phân quyền | Người duyệt thay xử lý ngoài khoảng ngày phân công, hoặc sau khi phân công đã kết thúc | 403 `FORBIDDEN` | Cần kiểm |
+| E20 | Dữ liệu vào | Phân công duyệt thay cho chính mình, ngày kết thúc trước ngày bắt đầu, chồng khoảng ngày với phân công khác của cùng người | 400 hoặc 409 kèm `fields` | Cần kiểm |
+| E21 | Phân quyền | Người duyệt thay xử lý đơn của chính mình | 403 `FORBIDDEN` | Cần kiểm |
+| E22 | Vòng đời dữ liệu | Quản lý bị cho nghỉ việc hoặc điều chuyển khi còn đơn chờ | Đơn chuyển sang quản lý trực tiếp mới (người duyệt tính lúc duyệt); không có quản lý thì như E8 | Có |
+| E23 | Dữ liệu vào | Ghi chú, lý do quá 500 ký tự | 400 `BAD_REQUEST` `fields.comment` | Cần kiểm |
+| E24 | Gửi trùng | Job nhắc đơn chờ chạy hai lần (hai task, deploy lại) | Không nhắc hai lần cùng một mốc (đánh dấu đã nhắc trong giao dịch) | Cần kiểm |
+| E25 | Dữ liệu vào | Thêm ngày lễ đã có; xóa ngày lễ không có | 409 `CONFLICT`; 404 `NOT_FOUND` | Cần kiểm |
+| E26 | Tranh chấp | Duyệt khi số dư đã không đủ (HR vừa giảm hạn mức sau khi gửi) | Duyệt vẫn lưu; hệ thống ghi `LEAVE_BALANCE_OVERDRAWN` và HR thấy cảnh báo (BR-18) | Cần kiểm |
 
 ## 7. Quy tắc áp dụng
 
@@ -272,6 +381,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Email chung, payload tối thiểu, audit không chứa ghi chú (BR-14, BR-15) | Đã có | – |
 | Trang "Việc cần duyệt" gộp đơn nghỉ, hoàn tất; link cũ `/leave/approvals`, `/leave/hr` chuyển tiếp (AC-0.6.4) | Đã có | – |
 | Đo MT-2 (thời gian gửi → quyết định) | Chưa có báo cáo | Truy vấn trên `leave_request_history` khi có dữ liệu staging |
+| Ngoại lệ bổ sung mục 6.1 (E19 → E26) | Rà 24/11/2026 | cần kiểm: E19, E20, E21, E23, E24, E25, E26. TV4 viết test cho cả bảng, sửa code ca chưa đạt |
 
 ## 13. Thiết kế
 
