@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UC5 – Sơ đồ luồng kho tài liệu</title>
+<!--
+  Sơ đồ luồng động cho UC5 (nguồn: ../spec.md v1.1, mục 4 → 7, 9.2, 13.2; DR-01 → DR-08, ADR-13, ADR-15, ADR-18).
+  Mở trực tiếp bằng trình duyệt, không cần server. Dữ liệu sơ đồ nằm trong biến FLOWS bên dưới;
+  sửa luồng trong spec thì sửa FLOWS rồi chạy lại render.js (hoặc render.ps1) để xuất PNG.
+  Tham số URL: #f2 chọn luồng; ?static=1 ẩn nút điều khiển (dùng khi xuất ảnh).
+-->
+<style>
+  :root {
+    --primary: #0E7490; --primary-soft: #E0F2F7; --ink: #0F172A; --muted: #64748B; --line: #CBD5E1;
+    --bg: #F8FAFC; --card: #FFFFFF; --err: #DC2626; --async: #7C3AED; --ok: #15803D; --warn: #B45309;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); background: var(--bg); }
+  header { background: var(--primary); color: #fff; padding: 14px 20px; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header p { margin: 2px 0 0; opacity: .85; font-size: 13px; }
+  .wrap { display: grid; grid-template-columns: 250px 1fr; gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
+  nav { display: flex; flex-direction: column; gap: 4px; }
+  nav .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 10px 4px 2px; }
+  nav button { text-align: left; border: 1px solid transparent; background: none; padding: 7px 10px; border-radius: 8px;
+    font: inherit; color: var(--ink); cursor: pointer; }
+  nav button:hover { background: var(--primary-soft); }
+  nav button.on { background: var(--card); border-color: var(--primary); color: var(--primary); font-weight: 600; }
+  nav button small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
+  main { min-width: 0; }
+  .card { background: var(--card); border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; }
+  .title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; margin-bottom: 4px; }
+  .title h2 { margin: 0; font-size: 17px; }
+  .title .refs { color: var(--muted); font-size: 13px; }
+  .intro { margin: 0 0 12px; color: #334155; }
+  .ctrl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .ctrl button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; font: inherit; cursor: pointer; }
+  .ctrl button.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .ctrl button:disabled { opacity: .4; cursor: default; }
+  .ctrl .pos { color: var(--muted); margin-left: 4px; }
+  .ctrl label { color: var(--muted); display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .stage { overflow-x: auto; border: 1px solid #E2E8F0; border-radius: 10px; background: #fff; }
+  #diagram { display: block; }
+  .detail { margin-top: 12px; padding: 12px 14px; border-left: 4px solid var(--primary); background: var(--primary-soft);
+    border-radius: 0 8px 8px 0; min-height: 52px; }
+  .detail b { color: var(--primary); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; color: var(--muted); font-size: 12.5px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { display: inline-block; width: 28px; border-top: 2px solid var(--ink); }
+  .legend i.ret { border-top-style: dashed; border-color: var(--muted); }
+  .legend i.as { border-top-style: dashed; border-color: var(--async); }
+  .legend i.er { border-color: var(--err); }
+
+  /* SVG */
+  svg text { font-family: "Segoe UI", Roboto, Arial, sans-serif; }
+  .pbox { fill: var(--primary); }
+  .pbox.ext { fill: #334155; }
+  .ptext { fill: #fff; font-size: 13px; font-weight: 600; }
+  .life { stroke: var(--line); stroke-dasharray: 4 4; }
+  .msg line, .msg path { stroke: var(--ink); stroke-width: 1.6; fill: none; }
+  .msg text { font-size: 12.5px; fill: var(--ink); }
+  .msg.ret line, .msg.ret path { stroke: var(--muted); stroke-dasharray: 5 4; }
+  .msg.ret text { fill: #475569; }
+  .msg.async line, .msg.async path { stroke: var(--async); stroke-dasharray: 5 4; }
+  .msg.async text { fill: var(--async); }
+  .msg.err line, .msg.err path { stroke: var(--err); }
+  .msg.err text { fill: var(--err); }
+  .msg .num { fill: #fff; stroke: var(--primary); stroke-width: 1.4; }
+  .msg .numt { fill: var(--primary); font-size: 10.5px; font-weight: 700; }
+  .msg .hit { fill: transparent; stroke: none; cursor: pointer; }
+  .msg.cur .hl { fill: #FEF3C7; }
+  .msg .hl { fill: transparent; }
+  .frag rect.box { fill: none; stroke: #94A3B8; stroke-width: 1.2; }
+  .frag .tab { fill: #F1F5F9; stroke: #94A3B8; stroke-width: 1.2; }
+  .frag text { font-size: 12px; fill: #334155; }
+  .frag text.kw { font-weight: 700; }
+  .frag line.else { stroke: #94A3B8; stroke-dasharray: 6 4; }
+  .ref rect { fill: #F1F5F9; stroke: #94A3B8; }
+  .ref text { font-size: 12.5px; fill: #334155; }
+  .ref text.kw { font-weight: 700; }
+  .node rect, .node polygon, .node ellipse { fill: #fff; stroke: var(--primary); stroke-width: 1.8; }
+  .node.start ellipse, .node.end ellipse.in { fill: var(--ink); stroke: var(--ink); }
+  .node.end ellipse.out { fill: #fff; stroke: var(--ink); }
+  .node.decision polygon { fill: #FFF7ED; stroke: var(--warn); }
+  .node.result rect { fill: var(--primary-soft); }
+  .node.bad rect { stroke: var(--err); fill: #FEF2F2; }
+  .node.good rect { stroke: var(--ok); fill: #F0FDF4; }
+  .node text { font-size: 12.5px; fill: var(--ink); }
+  .node text.big { font-weight: 700; font-size: 13px; }
+  .edge path { stroke: var(--ink); stroke-width: 1.6; fill: none; }
+  .edge.err path { stroke: var(--err); }
+  .edge text { font-size: 12px; fill: #334155; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+  .edge.err text { fill: var(--err); }
+  .edge .hit, .edge.err .hit { stroke: transparent; stroke-width: 14; fill: none; cursor: pointer; }
+
+  /* trạng thái chạy từng bước */
+  svg.play .msg.future, svg.play .edge.future, svg.play .frag.future, svg.play .ref.future { opacity: .14; }
+  svg.play .msg.cur line, svg.play .msg.cur path, svg.play .edge.cur path { stroke-width: 2.6; }
+  svg.play .edge.cur text { font-weight: 700; }
+  .msg.cur line, .msg.cur path { animation: draw .55s ease-out; }
+  @keyframes draw { from { stroke-dashoffset: 400; } }
+
+  body.static header, body.static nav, body.static .ctrl, body.static .detail, body.static .intro { display: none; }
+  body.static .wrap { display: block; padding: 0; }
+  body.static { background: #fff; }
+  body.static .card { border: 0; border-radius: 0; padding: 0; display: inline-block; }
+  body.static .stage { border: 0; border-radius: 0; }
+  body.static .title { padding: 12px 16px 0; }
+
+  @media (max-width: 860px) {
+    .wrap { grid-template-columns: 1fr; padding: 10px; }
+    nav { flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 4px; }
+    nav .grp { display: none; }
+    nav button { white-space: nowrap; border-color: var(--line); background: #fff; }
+    nav button small { display: none; }
+    .ctrl label { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>UC5 – Kho tài liệu chính sách: sơ đồ luồng</h1>
+  <p>Theo spec.md v1.1 (mục 4 luồng chính, 5 luồng thay thế, 6 ngoại lệ, 9.2 API, 13.2 event), DR-01 → DR-08, ADR-13 và ADR-18. Chọn luồng bên trái, bấm "Chạy" để xem từng bước.</p>
+</header>
+<div class="wrap">
+  <nav id="nav"></nav>
+  <main>
+    <div class="card">
+      <div class="title"><h2 id="ftitle"></h2><span class="refs" id="frefs"></span></div>
+      <p class="intro" id="fintro"></p>
+      <div class="ctrl">
+        <button id="bPlay" class="primary">▶ Chạy</button>
+        <button id="bPrev">◀ Lùi</button>
+        <button id="bNext">Tiếp ▶</button>
+        <button id="bAll">Hiện tất cả</button>
+        <span class="pos" id="pos"></span>
+        <label>Tốc độ <input id="speed" type="range" min="600" max="3000" step="200" value="1600"></label>
+      </div>
+      <div class="stage"><svg id="diagram" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      <div class="detail" id="detail">Bấm "Chạy" hoặc bấm vào một mũi tên để xem giải thích bước đó.</div>
+      <div class="legend" id="legend">
+        <span><i></i>Gọi</span><span><i class="ret"></i>Trả về</span><span><i class="as"></i>Bất đồng bộ (outbox, queue)</span>
+        <span><i class="er"></i>Lỗi, ngoại lệ (mã E ở spec mục 6)</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ------------------------------------------------------------------ */
+/* Dữ liệu sơ đồ                                                        */
+/* Tin nhắn: {f, t, l, k?: 'ret'|'async'|'err', s?: tham chiếu spec, d?: giải thích thêm}
+   Khối: {frag: 'alt'|'opt'|'loop', c: điều kiện, m: [...], else?: [{c, m}]}
+   Tham chiếu: {ref: 'văn bản', s?}                                       */
+/* ------------------------------------------------------------------ */
+const P = {
+  U: { n: 'Nhân viên' }, H: { n: 'HR' }, W: { n: 'Web (React)' }, A: { n: 'API (NestJS)' },
+  D: { n: 'PostgreSQL', ext: 1 }, S: { n: 'Object storage (S3)', ext: 1 }, Q: { n: 'Outbox → queue', ext: 1 },
+  X: { n: 'Assistant service (UC6)', ext: 1 },
+};
+
+const FLOWS = [
+{
+  id: 'f1', grp: 'HR', name: 'Đăng tài liệu mới', sub: 'Luồng chính (mục 4)',
+  refs: 'FR-5.1 · AC-5.1.x · DR-01, DR-03 · ADR-13',
+  intro: 'File đi thẳng từ trình duyệt lên storage bằng URL có hạn 10 phút, không qua API. API chỉ kiểm file thật khi xác nhận; chỉ khi đó tài liệu mới hiện với nhân viên.',
+  type: 'seq', p: ['H', 'W', 'A', 'D', 'S', 'Q', 'X'],
+  m: [
+    { f: 'H', t: 'W', l: 'Mở "Đăng tài liệu": tiêu đề, loại, phạm vi (toàn công ty / đơn vị theo cây / vai trò), chọn file', s: '4 bước 1' },
+    { f: 'W', t: 'W', l: 'Kiểm ngay ở trình duyệt: đuôi .pdf, .docx, 1 byte → 20 MiB' },
+    { f: 'W', t: 'A', l: 'POST /documents {title, type, scope, fileName, contentType, sizeBytes}', s: '4 bước 2' },
+    { frag: 'alt', c: 'không hợp lệ', m: [
+      { f: 'A', t: 'W', l: 'Không phải HR → 403 (E1)', k: 'err' },
+      { f: 'A', t: 'W', l: 'Thiếu tiêu đề, phạm vi rỗng, đơn vị không có hoặc đã ngừng, sai loại file, quá 20 MiB → 400 kèm fields (E2)', k: 'err', s: 'AC-5.1.9, D3' },
+      { f: 'A', t: 'W', l: 'Kho file chưa cấu hình → 503 (E7)', k: 'err' },
+    ], else: [{ c: 'hợp lệ', m: [
+      { f: 'A', t: 'D', l: 'Một giao dịch: document + phiên bản 1 PENDING + audit DOCUMENT_CREATE', s: '4 bước 4' },
+      { f: 'A', t: 'S', l: 'Ký URL PUT có hạn 10 phút' },
+      { f: 'A', t: 'W', l: '201 {document, upload: {versionId, url}}', k: 'ret' },
+    ] }] },
+    { f: 'W', t: 'S', l: 'PUT file thẳng lên storage, có thanh tiến độ', s: '4 bước 5' },
+    { f: 'S', t: 'W', l: 'Quá 10 phút hoặc mạng lỗi → storage từ chối; "Tải lên không thành công", bấm lại thì thêm phiên bản mới (E8)', k: 'err' },
+    { f: 'W', t: 'A', l: 'POST /documents/{id}/versions/{versionId}/confirm (tự gọi khi PUT xong)', s: '4 bước 6' },
+    { f: 'A', t: 'S', l: 'HEAD: có file chưa, đúng dung lượng? Đọc vài byte đầu (magic number; DOCX kiểm thêm cấu trúc)', s: '4 bước 7, NFR-5.23' },
+    { frag: 'alt', c: 'chưa có file', m: [
+      { f: 'A', t: 'W', l: '400; phiên bản vẫn PENDING, tải lên rồi xác nhận lại (E3)', k: 'err' },
+    ], else: [{ c: 'sai dung lượng hoặc định dạng thật (ZIP đổi đuôi .pdf)', m: [
+      { f: 'A', t: 'S', l: 'Xóa file', k: 'err' },
+      { f: 'A', t: 'D', l: 'Phiên bản REJECTED, không ghi audit', k: 'err' },
+      { f: 'A', t: 'W', l: '400 (E3b); xác nhận lại bản REJECTED → 409 (E4)', k: 'err' },
+    ] }, { c: 'đạt', m: [
+      { f: 'A', t: 'D', l: 'Một giao dịch: phiên bản READY + audit DOCUMENT_PUBLISH + outbox DocumentPublished', s: '4 bước 8, UC5 13.2' },
+      { f: 'A', t: 'W', l: '200 DocumentAdmin; tài liệu hiện ở trang quản lý', k: 'ret', s: '4 bước 9' },
+      { f: 'Q', t: 'X', l: 'DocumentPublished: đọc file, trích văn bản, đánh chỉ mục', k: 'async' },
+    ] }] },
+    { ref: 'Từ lúc này người trong phạm vi thấy tài liệu: luồng "Nhân viên xem, tải"' },
+  ],
+},
+{
+  id: 'f2', grp: 'Nhân viên', name: 'Xem, tải tài liệu', sub: 'Luồng A1',
+  refs: 'FR-5.2 · AC-5.2.x · DR-02, DR-06, DR-08 · ADR-13, ADR-18',
+  intro: 'Phạm vi tính lại ở mỗi request, ngay trong câu SQL. Tài liệu ngoài phạm vi, đã ẩn hay không tồn tại đều trả 404 giống hệt nhau. Tải xuống đi qua API, không phát link.',
+  type: 'seq', p: ['U', 'W', 'A', 'D', 'S'],
+  m: [
+    { f: 'U', t: 'W', l: 'Mở "Tra cứu tài liệu" /documents (từ trang chủ), lọc theo loại' },
+    { f: 'W', t: 'A', l: 'GET /documents?type=&page=&size=', s: 'A1 bước 1' },
+    { f: 'A', t: 'D', l: 'Đơn vị hiện tại + mọi đơn vị cha (ADR-14), vai trò hiện tại (MANAGER = có cấp dưới trực tiếp)', s: 'DR-06' },
+    { f: 'A', t: 'D', l: 'SELECT … WHERE chưa ẩn AND có bản READY AND (scope_all OR đơn vị khớp OR vai trò khớp)', s: 'DR-02, visibleQuery' },
+    { f: 'A', t: 'W', l: 'Trang tài liệu, mới cập nhật trước; không có hồ sơ đang làm việc thì rỗng', k: 'ret' },
+    { f: 'W', t: 'U', l: 'Bảng tài liệu; rỗng thì "Chưa có tài liệu nào dành cho bạn", không gợi ý gì thêm', k: 'ret', s: 'DR-08' },
+    { f: 'U', t: 'W', l: 'Mở một tài liệu' },
+    { f: 'W', t: 'A', l: 'GET /documents/{id}', s: 'A1 bước 2' },
+    { f: 'A', t: 'W', l: 'Ngoài phạm vi, đã ẩn, không tồn tại → cùng một 404 "Không tìm thấy tài liệu" (E5)', k: 'err', s: 'DR-08' },
+    { f: 'A', t: 'W', l: 'Chi tiết + versions[] (chỉ READY, mới nhất trước)', k: 'ret' },
+    { f: 'U', t: 'W', l: 'Bấm tải bản mới nhất hoặc một bản cũ' },
+    { f: 'W', t: 'A', l: 'GET /documents/{id}/download hoặc …/versions/{versionId}/download', s: 'A1 bước 3' },
+    { f: 'A', t: 'D', l: 'Kiểm lại phạm vi (người dùng có thể vừa điều chuyển, mất vai trò)', s: 'A1 bước 4, DR-06' },
+    { f: 'A', t: 'S', l: 'GetObject (kho chưa cấu hình → 503, E7)' },
+    { f: 'S', t: 'A', l: 'Luồng byte', k: 'ret' },
+    { f: 'A', t: 'W', l: 'Stream file; Content-Disposition: attachment, Cache-Control: private, no-store; không ghi audit', k: 'ret', s: 'UC5 9.2' },
+  ],
+},
+{
+  id: 'f3', grp: 'HR', name: 'Thêm phiên bản', sub: 'Luồng A2',
+  refs: 'FR-5.3 · AC-5.3.x · DR-04',
+  intro: 'Số phiên bản tăng 1, bản cũ giữ nguyên và vẫn tải được. Phiên bản bỏ dở (PENDING) không hiện với nhân viên, nên số nhân viên thấy có thể nhảy (1 → 3).',
+  type: 'seq', p: ['H', 'W', 'A', 'D', 'S', 'Q', 'X'],
+  m: [
+    { f: 'H', t: 'W', l: 'Ở /documents/manage, bấm "Thêm phiên bản", chọn file' },
+    { f: 'W', t: 'A', l: 'POST /documents/{id}/versions {fileName, contentType, sizeBytes}', s: 'A2' },
+    { f: 'A', t: 'W', l: 'Không phải HR → 403; tài liệu không có → 404; sai file → 400; kho chưa cấu hình → 503', k: 'err' },
+    { f: 'A', t: 'D', l: 'Phiên bản N + 1 ở PENDING; chưa ghi audit' },
+    { f: 'A', t: 'W', l: '201 UploadTicket {versionId, versionNo, url}', k: 'ret' },
+    { f: 'W', t: 'S', l: 'PUT file' },
+    { f: 'W', t: 'A', l: 'POST …/versions/{versionId}/confirm' },
+    { ref: 'Kiểm file và kết quả như bước 7–8 của "Đăng tài liệu mới": READY + DOCUMENT_PUBLISH + outbox DocumentPublished, hoặc REJECTED' },
+    { f: 'A', t: 'W', l: '200; bản mới thành bản mặc định, bản cũ vẫn trong versions[]', k: 'ret', s: 'DR-04' },
+    { f: 'Q', t: 'X', l: 'DocumentPublished: thay toàn bộ đoạn của tài liệu bằng đoạn của bản mới', k: 'async', s: 'UC6 13.2' },
+  ],
+},
+{
+  id: 'f4', grp: 'HR', name: 'Sửa thông tin, phạm vi', sub: 'Luồng A3',
+  refs: 'FR-5.1 · DR-02, DR-06 · E6',
+  intro: 'Phạm vi mới áp cho mọi phiên bản, kể cả bản cũ. Người mất quyền không tải được nữa từ request kế tiếp; trợ lý UC6 cũng thôi dùng tài liệu đó khi nhận event.',
+  type: 'seq', p: ['H', 'W', 'A', 'D', 'Q', 'X'],
+  m: [
+    { f: 'H', t: 'W', l: 'Hộp "Sửa thông tin, phạm vi": đổi tiêu đề, loại, phạm vi' },
+    { f: 'W', t: 'A', l: 'PATCH /documents/{id} {version, title?, type?, scope?} (scope thay cả bộ)', s: 'A3' },
+    { frag: 'alt', c: 'không hợp lệ', m: [
+      { f: 'A', t: 'W', l: 'Phạm vi rỗng, đơn vị đã ngừng hoạt động → 400 fields.scope… (E2, D3)', k: 'err' },
+      { f: 'A', t: 'W', l: 'version cũ (người khác vừa sửa) → 409 "Tài liệu đã được người khác cập nhật, hãy tải lại" (E6)', k: 'err' },
+    ], else: [{ c: 'không đổi trường nào', m: [
+      { f: 'A', t: 'W', l: '200, không ghi audit, không phát event', k: 'ret', s: 'UC5 13.2' },
+    ] }, { c: 'có thay đổi', m: [
+      { f: 'A', t: 'D', l: 'Một giao dịch: cập nhật + version + 1 + audit DOCUMENT_UPDATE (trường đổi) + outbox DocumentUpdated (phạm vi sau khi đổi, cả bộ)' },
+      { f: 'A', t: 'W', l: '200 DocumentAdmin', k: 'ret' },
+      { f: 'Q', t: 'X', l: 'DocumentUpdated: ghi đè tiêu đề, loại, phạm vi', k: 'async' },
+    ] }] },
+  ],
+},
+{
+  id: 'f5', grp: 'HR', name: 'Ẩn, khôi phục, quản lý', sub: 'Luồng A4, A5',
+  refs: 'FR-5.1 · DR-05 · ADR-18',
+  intro: 'HR ẩn thay vì xóa. Tài liệu ẩn biến khỏi mọi danh sách, tải xuống và trợ lý. Trang quản lý thấy mọi tài liệu nhưng chỉ metadata: HR không tự có quyền tải tài liệu ngoài phạm vi (DR-03).',
+  type: 'seq', p: ['H', 'W', 'A', 'D', 'Q', 'X'],
+  m: [
+    { f: 'H', t: 'W', l: 'Mở /documents/manage: ô tìm tiêu đề, lọc loại, tab Đang hiện / Đã ẩn / Chưa có bản sẵn sàng' },
+    { f: 'W', t: 'A', l: 'GET /documents/manage?q=&type=&state=VISIBLE|HIDDEN|NOT_READY', s: 'A5' },
+    { f: 'A', t: 'W', l: 'Không phải HR → 403 (E1)', k: 'err' },
+    { f: 'A', t: 'W', l: 'Mọi tài liệu kể cả đã ẩn; phạm vi có tên đơn vị, đơn vị đã ngừng hiện xám; versions[] mọi trạng thái', k: 'ret', s: 'AC-5.1.9' },
+    { f: 'H', t: 'W', l: 'Bấm "Ẩn" (hoặc "Khôi phục"), xác nhận trong hộp thoại' },
+    { f: 'W', t: 'A', l: 'POST /documents/{id}/hide | /restore', s: 'A4' },
+    { f: 'A', t: 'D', l: 'Một giao dịch: hidden = true | false + audit DOCUMENT_HIDE | DOCUMENT_RESTORE + outbox DocumentHidden | DocumentRestored', s: 'DR-05' },
+    { f: 'A', t: 'W', l: '200 DocumentAdmin', k: 'ret' },
+    { f: 'Q', t: 'X', l: 'DocumentHidden | DocumentRestored: đổi cờ hidden; event cũ đến sau không làm hiện lại', k: 'async', s: 'UC6 13.2' },
+    { ref: 'Nhân viên mở tài liệu đã ẩn: 404 giống tài liệu không tồn tại (E5)' },
+  ],
+},
+{
+  id: 'g1', grp: 'Quy tắc', name: 'Trạng thái phiên bản', sub: 'document_version.status',
+  refs: 'FR-5.1, FR-5.3 · E3, E3b, E4, E8 · ADR-13',
+  intro: 'Chỉ bản READY hiện với nhân viên. Bản PENDING bỏ dở nằm lại (chưa có job dọn), chỉ thấy ở trang quản lý.',
+  type: 'graph', w: 1000, h: 430,
+  n: [
+    { id: 's', k: 'start', x: 40, y: 200 },
+    { id: 'P', k: 'state', x: 270, y: 200, l: 'PENDING', sub: 'có URL PUT 10 phút', w: 200, h: 60 },
+    { id: 'R', k: 'good', x: 700, y: 110, l: 'READY', sub: 'nhân viên trong phạm vi thấy', w: 250, h: 60 },
+    { id: 'X', k: 'bad', x: 700, y: 200, l: 'REJECTED', sub: 'file đã xóa, không audit', w: 250, h: 60 },
+    { id: 'O', k: 'state', x: 700, y: 340, l: 'PENDING bỏ dở', sub: 'chỉ hiện ở trang quản lý', w: 250, h: 60 },
+    { id: 'e', k: 'end', x: 950, y: 200 },
+  ],
+  e: [
+    { f: 's', t: 'P', l: 'POST /documents\nhoặc …/versions', lp: [140, 160] },
+    { f: 'P', t: 'P', l: 'confirm khi chưa PUT → 400 (E3)', k: 'err', loop: 1, lp: [270, 112] },
+    { f: 'P', t: 'R', l: 'confirm đạt\nDOCUMENT_PUBLISH', via: [[400, 185], [400, 110]], lp: [500, 80] },
+    { f: 'P', t: 'X', l: 'sai dung lượng,\nđịnh dạng (E3b)', k: 'err', lp: [480, 180] },
+    { f: 'P', t: 'O', l: 'URL hết hạn, PUT lỗi (E8)\nHR tạo phiên bản mới', via: [[270, 340]], lp: [450, 326] },
+    { f: 'R', t: 'R', l: 'confirm lại: trả tài liệu, không đổi gì', loop: 1, lp: [700, 30] },
+    { f: 'X', t: 'e', l: 'confirm lại\n→ 409 (E4)', k: 'err', lp: [895, 160] },
+  ],
+},
+{
+  id: 'g2', grp: 'Quy tắc', name: 'Ai thấy một tài liệu', sub: 'DR-02, DR-08',
+  refs: 'FR-5.2 · DR-02, DR-03, DR-06, DR-08 · ADR-14, ADR-18',
+  intro: 'Một điều kiện trong WHERE (visibleQuery), tính ở mỗi request. Ba phạm vi là phép OR. Không đạt thì 404, không phải 403, để không lộ tài liệu có tồn tại.',
+  type: 'graph', w: 1040, h: 600,
+  n: [
+    { id: 's', k: 'start', x: 40, y: 60 },
+    { id: 'q0', k: 'decision', x: 250, y: 60, l: 'Có hồ sơ\nđang làm việc?', w: 180, h: 74 },
+    { id: 'q1', k: 'decision', x: 520, y: 60, l: 'Tài liệu chưa ẩn\nvà có bản READY?', w: 200, h: 80 },
+    { id: 'q2', k: 'decision', x: 520, y: 200, l: 'scope.all?', w: 170, h: 64 },
+    { id: 'q3', k: 'decision', x: 520, y: 330, l: 'Đơn vị của mình là\nđơn vị trong phạm vi\nhoặc con cháu?', w: 220, h: 96 },
+    { id: 'q4', k: 'decision', x: 520, y: 480, l: 'Vai trò hiện tại\nnằm trong scope.roles?', w: 220, h: 84 },
+    { id: 'ok', k: 'good', x: 880, y: 330, l: 'Thấy trong danh sách,\nxem chi tiết, tải mọi bản READY', w: 250, h: 66 },
+    { id: 'no', k: 'bad', x: 250, y: 330, l: '404 (E5), không có\ntrong danh sách, không\nlộ tiêu đề, số lượng', w: 210, h: 80 },
+  ],
+  e: [
+    { f: 's', t: 'q0', l: '' },
+    { f: 'q0', t: 'q1', l: 'có' },
+    { f: 'q0', t: 'no', l: 'không (kể cả\nchỉ có ADMIN)', k: 'err', lp: [180, 200] },
+    { f: 'q1', t: 'q2', l: 'có' },
+    { f: 'q1', t: 'no', l: 'không', k: 'err', via: [[380, 130]], lp: [395, 160] },
+    { f: 'q2', t: 'ok', l: 'có', via: [[880, 200]] },
+    { f: 'q2', t: 'q3', l: 'không' },
+    { f: 'q3', t: 'ok', l: 'có' },
+    { f: 'q3', t: 'q4', l: 'không' },
+    { f: 'q4', t: 'ok', l: 'có\n(MANAGER = có cấp\ndưới trực tiếp)', via: [[880, 480]], lp: [770, 448] },
+    { f: 'q4', t: 'no', l: 'không', k: 'err', via: [[250, 480]] },
+  ],
+},
+];
+
+/* ------------------------------------------------------------------ */
+/* Vẽ                                                                   */
+/* ------------------------------------------------------------------ */
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('diagram');
+const FONT = '12.5px "Segoe UI", Roboto, Arial, sans-serif';
+const ctx = document.createElement('canvas').getContext('2d');
+ctx.font = FONT;
+
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function wrap(text, width) {
+  const out = [];
+  for (const para of String(text).split('\n')) {
+    let line = '';
+    for (const w of para.split(' ')) {
+      const t = line ? line + ' ' + w : w;
+      if (ctx.measureText(t).width > width && line) { out.push(line); line = w; } else line = t;
+    }
+    out.push(line);
+  }
+  return out;
+}
+function textLines(parent, lines, x, y, anchor, cls) {
+  const t = el('text', { x, y, 'text-anchor': anchor || 'start' }, parent);
+  if (cls) t.setAttribute('class', cls);
+  lines.forEach((ln, i) => { const s = el('tspan', { x, dy: i ? 15 : 0 }, t); s.textContent = ln; });
+  return t;
+}
+function defs() {
+  const d = el('defs', {}, svg);
+  const mk = (id, color, open) => {
+    const m = el('marker', { id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 8, markerHeight: 8, orient: 'auto-start-reverse' }, d);
+    el('path', open ? { d: 'M1,1 L9,5 L1,9', fill: 'none', stroke: color, 'stroke-width': 1.5 } : { d: 'M0,0 L10,5 L0,10 z', fill: color }, m);
+  };
+  mk('a', '#0F172A'); mk('ar', '#64748B', 1); mk('aa', '#7C3AED', 1); mk('ae', '#DC2626');
+}
+const markerOf = (k) => ({ ret: 'ar', async: 'aa', err: 'ae' }[k] || 'a');
+
+let steps = [];   // phần tử theo thứ tự chạy: {g, info}
+
+function drawSeq(f) {
+  const ids = f.p, gap = ids.length > 5 ? 175 : 205, left = 90;
+  const X = {}; ids.forEach((id, i) => X[id] = left + i * gap);
+  const W = left * 2 + (ids.length - 1) * gap;
+  const top = 18, ph = 40;
+  let y = top + ph + 26;
+  const layer = el('g', {}, svg), fragLayer = el('g', {}, layer), msgLayer = el('g', {}, layer);
+  let n = 0;
+
+  function msg(m) {
+    n++;
+    const self = m.f === m.t;
+    const x1 = X[m.f], x2 = X[m.t];
+    const width = self ? Math.round(gap * 1.25) : Math.abs(x2 - x1) - 24;
+    const lines = wrap(m.l, Math.max(width, 120));
+    const g = el('g', { class: 'msg ' + (m.k || '') }, msgLayer);
+    const lh = lines.length * 15;
+    const hl = el('rect', { class: 'hl', x: Math.min(x1, x2) - 20, y: y - 12, width: Math.abs(x2 - x1) + (self ? width + 60 : 40), height: lh + (self ? 34 : 18), rx: 6 }, g);
+    if (self) {
+      textLines(g, lines, x1 + 40, y + 2, 'start');
+      const ay = y + lh - 6;
+      el('path', { d: `M${x1},${ay} h30 v18 h-28`, 'marker-end': `url(#${markerOf(m.k)})` }, g);
+      y += lh + 32;
+    } else {
+      textLines(g, lines, (x1 + x2) / 2, y + 2, 'middle');
+      const ay = y + lh - 4;
+      el('line', { x1, y1: ay, x2: x2 + (x2 > x1 ? -2 : 2), y2: ay, 'marker-end': `url(#${markerOf(m.k)})` }, g);
+      y += lh + 20;
+    }
+    const nx = self ? x1 - 14 : x1 + (x2 > x1 ? -14 : 14), ny = self ? y - 22 - 6 : y - 24;
+    el('circle', { class: 'num', cx: nx, cy: ny, r: 9 }, g);
+    const nt = el('text', { class: 'numt', x: nx, y: ny + 3.5, 'text-anchor': 'middle' }, g); nt.textContent = n;
+    el('rect', { class: 'hit', x: hl.getAttribute('x'), y: hl.getAttribute('y'), width: hl.getAttribute('width'), height: hl.getAttribute('height') }, g);
+    steps.push({ g, info: m, n });
+  }
+  function ref(r) {
+    const g = el('g', { class: 'ref' }, msgLayer);
+    const lines = wrap(r.ref, W - 200);
+    const h = lines.length * 15 + 16;
+    el('rect', { x: 40, y, width: W - 80, height: h, rx: 4 }, g);
+    const kw = el('text', { class: 'kw', x: 52, y: y + 18 }, g); kw.textContent = 'ref';
+    textLines(g, lines, W / 2, y + 18, 'middle');
+    y += h + 16;
+    steps.push({ g, info: { l: r.ref, s: r.s, ref: 1 } });
+  }
+  function frag(fr, depth) {
+    const g = el('g', { class: 'frag' }, fragLayer);
+    const x0 = 34 + depth * 10, x1 = W - 34 - depth * 10, y0 = y;
+    const label = (c) => '[' + c + ']';
+    el('path', { class: 'tab', d: `M${x0},${y0} h${ctx.measureText(fr.frag).width + 18} v14 l-8,8 h${-(ctx.measureText(fr.frag).width + 10)} z` }, g);
+    const kw = el('text', { class: 'kw', x: x0 + 6, y: y0 + 15 }, g); kw.textContent = fr.frag;
+    const ct = el('text', { x: x0 + ctx.measureText(fr.frag).width + 26, y: y0 + 15 }, g); ct.textContent = label(fr.c);
+    y += 36;
+    const start = steps.length;
+    walk(fr.m, depth + 1);
+    for (const e of fr.else || []) {
+      y += 2;
+      el('line', { class: 'else', x1: x0, x2: x1, y1: y, y2: y }, g);
+      const t = el('text', { x: x0 + 8, y: y + 15 }, g); t.textContent = label(e.c);
+      y += 30;
+      walk(e.m, depth + 1);
+    }
+    y += 6;
+    el('rect', { class: 'box', x: x0, y: y0, width: x1 - x0, height: y - y0, rx: 3 }, g);
+    y += 14;
+    steps[start] && (steps[start].frag = (steps[start].frag || []).concat(g));
+  }
+  function walk(list, depth) {
+    for (const it of list) it.frag ? frag(it, depth) : it.ref ? ref(it) : msg(it);
+  }
+  walk(f.m, 0);
+
+  const bottom = y + 6;
+  const heads = el('g', {}, svg);
+  svg.insertBefore(heads, layer);
+  for (const id of ids) {
+    el('line', { class: 'life', x1: X[id], x2: X[id], y1: top + ph, y2: bottom }, heads);
+    for (const yy of [top, bottom]) {
+      const w = Math.max(ctx.measureText(P[id].n).width + 28, 110);
+      el('rect', { class: 'pbox' + (P[id].ext ? ' ext' : ''), x: X[id] - w / 2, y: yy, width: w, height: ph, rx: 8 }, heads);
+      const t = el('text', { class: 'ptext', x: X[id], y: yy + 25, 'text-anchor': 'middle' }, heads); t.textContent = P[id].n;
+    }
+  }
+  return [W, bottom + ph + 18];
+}
+
+function drawGraph(f) {
+  const N = {}; f.n.forEach((n) => N[n.id] = n);
+  const edgeLayer = el('g', {}, svg), nodeLayer = el('g', {}, svg);
+  const half = (n) => n.k === 'start' ? [9, 9] : n.k === 'end' ? [12, 12] : [(n.w || 150) / 2, (n.h || 56) / 2];
+  function clip(n, px, py) {           // điểm trên biên nút theo hướng tới (px, py)
+    const [hw, hh] = half(n), dx = px - n.x, dy = py - n.y;
+    if (!dx && !dy) return [n.x, n.y];
+    if (n.k === 'start' || n.k === 'end') { const d = Math.hypot(dx, dy); return [n.x + dx / d * hw, n.y + dy / d * hh]; }
+    if (n.k === 'decision') { const s = 1 / (Math.abs(dx) / hw + Math.abs(dy) / hh); return [n.x + dx * s, n.y + dy * s]; }
+    const s = Math.min(hw / Math.abs(dx || 1e-9), hh / Math.abs(dy || 1e-9));
+    return [n.x + dx * s, n.y + dy * s];
+  }
+  for (const n of f.n) {
+    const g = el('g', { class: 'node ' + n.k }, nodeLayer);
+    const [hw, hh] = half(n);
+    if (n.k === 'start') el('ellipse', { cx: n.x, cy: n.y, rx: 9, ry: 9 }, g);
+    else if (n.k === 'end') { el('ellipse', { class: 'out', cx: n.x, cy: n.y, rx: 12, ry: 12 }, g); el('ellipse', { class: 'in', cx: n.x, cy: n.y, rx: 7, ry: 7 }, g); }
+    else if (n.k === 'decision') el('polygon', { points: `${n.x},${n.y - hh} ${n.x + hw},${n.y} ${n.x},${n.y + hh} ${n.x - hw},${n.y}` }, g);
+    else el('rect', { x: n.x - hw, y: n.y - hh, width: hw * 2, height: hh * 2, rx: n.k === 'state' || n.k === 'good' || n.k === 'bad' && n.sub ? 22 : 8 }, g);
+    if (n.l) {
+      const lines = n.l.split('\n');
+      if (n.sub) {
+        const t = el('text', { class: 'big', x: n.x, y: n.y - 3, 'text-anchor': 'middle' }, g); t.textContent = n.l;
+        const s = el('text', { x: n.x, y: n.y + 15, 'text-anchor': 'middle' }, g); s.textContent = n.sub;
+      } else textLines(g, lines, n.x, n.y + 4 - (lines.length - 1) * 7.5, 'middle');
+    }
+  }
+  let i = 0;
+  for (const e of f.e) {
+    i++;
+    const a = N[e.f], b = N[e.t];
+    const g = el('g', { class: 'edge ' + (e.k || '') }, edgeLayer);
+    let d, lx, ly;
+    if (e.loop) {
+      const [, hh] = half(a), x = a.x, y = a.y - hh;
+      d = `M${x - 30},${y} C${x - 40},${y - 70} ${x + 40},${y - 70} ${x + 30},${y}`;
+      lx = x; ly = y - 66;
+    } else {
+      const pts = [[a.x, a.y], ...(e.via || []), [b.x, b.y]];
+      const p0 = clip(a, pts[1][0], pts[1][1]);
+      const pn = clip(b, pts[pts.length - 2][0], pts[pts.length - 2][1]);
+      const all = [p0, ...(e.via || []), pn];
+      d = 'M' + all.map((p) => p.join(',')).join(' L');
+      const mid = Math.floor((all.length - 1) / 2);
+      const [q0, q1] = [all[mid], all[mid + 1]];
+      lx = (q0[0] + q1[0]) / 2; ly = (q0[1] + q1[1]) / 2;
+      if (q0[1] === q1[1]) ly -= 8; else lx += 8;
+    }
+    if (e.lp) [lx, ly] = e.lp;
+    el('path', { d, 'marker-end': `url(#${e.k === 'err' ? 'ae' : 'a'})` }, g);
+    el('path', { class: 'hit', d }, g);
+    if (e.l) {
+      const lines = e.l.split('\n');
+      const vertical = !e.lp && !e.loop && !(e.via || []).length && Math.abs(a.x - b.x) < 5;
+      const anchor = vertical ? 'start' : 'middle';
+      const t = textLines(g, lines, lx, ly - (lines.length - 1) * 15 + (vertical ? 4 : 0), anchor);
+      t.setAttribute('class', '');
+    }
+    steps.push({ g, info: { l: e.l.replace(/\n/g, ' ') || `${a.l || a.id} → kết thúc`, from: a.l || '', to: b.l || '' }, n: i });
+  }
+  return [f.w, f.h];
+}
+
+/* ------------------------------------------------------------------ */
+/* Điều khiển                                                           */
+/* ------------------------------------------------------------------ */
+const $ = (id) => document.getElementById(id);
+let cur = -1, timer = null, flow = null;
+
+function render(f) {
+  flow = f; stop(); steps = []; cur = -1;
+  svg.innerHTML = ''; svg.classList.remove('play');
+  defs();
+  let [w, h] = f.type === 'seq' ? drawSeq(f) : drawGraph(f);
+  const bb = svg.getBBox(); w = Math.max(w, Math.ceil(bb.x + bb.width + 16));
+  svg.setAttribute('width', w); svg.setAttribute('height', h); svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  el('rect', { x: 0, y: 0, width: w, height: h, fill: '#fff' }, svg).parentNode.insertBefore(svg.lastChild, svg.firstChild.nextSibling);
+  $('ftitle').textContent = f.name; $('frefs').textContent = f.sub + ' · ' + f.refs; $('fintro').textContent = f.intro;
+  document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b.dataset.id === f.id));
+  steps.forEach((s, i) => s.g.addEventListener('click', () => { stop(); go(i); }));
+  $('legend').style.display = f.type === 'seq' ? '' : 'none';
+  $('detail').textContent = 'Bấm "Chạy" hoặc bấm vào một mũi tên để xem giải thích bước đó.';
+  updatePos();
+}
+function go(i) {
+  cur = Math.max(-1, Math.min(i, steps.length - 1));
+  svg.classList.toggle('play', cur >= 0);
+  steps.forEach((s, j) => {
+    const cls = j < cur ? 'done' : j === cur ? 'cur' : 'future';
+    for (const g of [s.g, ...(s.frag || [])]) {
+      g.classList.remove('done', 'cur', 'future');
+      if (cur >= 0) g.classList.add(j <= cur && g !== s.g ? 'done' : g === s.g ? cls : cls);
+    }
+  });
+  if (cur >= 0) {
+    const s = steps[cur], m = s.info;
+    const who = m.f ? `${P[m.f].n} → ${P[m.t].n}` : m.ref ? 'Tham chiếu' : 'Chuyển trạng thái';
+    $('detail').innerHTML = `<b>Bước ${cur + 1}/${steps.length} · ${who}</b><br>${esc(m.l)}` + (m.s ? `<br><small>Spec: ${esc(m.s)}</small>` : '');
+    const bb = s.g.getBBox(), st = svg.parentNode;
+    if (bb.x < st.scrollLeft || bb.x + bb.width > st.scrollLeft + st.clientWidth) st.scrollLeft = bb.x - 40;
+  }
+  updatePos();
+}
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+function updatePos() {
+  $('pos').textContent = cur >= 0 ? `${cur + 1} / ${steps.length}` : `${steps.length} bước`;
+  $('bPrev').disabled = cur <= 0; $('bNext').disabled = cur >= steps.length - 1;
+  $('bPlay').textContent = timer ? '❚❚ Dừng' : '▶ Chạy';
+}
+function stop() { clearInterval(timer); timer = null; updatePos(); }
+function play() {
+  if (timer) return stop();
+  if (cur >= steps.length - 1) go(-1);
+  go(cur + 1);
+  timer = setInterval(() => { if (cur >= steps.length - 1) stop(); else go(cur + 1); }, +$('speed').value);
+  updatePos();
+}
+$('bPlay').onclick = play;
+$('bNext').onclick = () => { stop(); go(cur + 1); };
+$('bPrev').onclick = () => { stop(); go(cur - 1); };
+$('bAll').onclick = () => { stop(); go(-1); };
+$('speed').oninput = () => { if (timer) { stop(); play(); } };
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') $('bNext').click();
+  else if (e.key === 'ArrowLeft') $('bPrev').click();
+  else if (e.key === ' ') { e.preventDefault(); play(); }
+});
+
+const nav = $('nav'); let lastGrp = '';
+for (const f of FLOWS) {
+  if (f.grp !== lastGrp) { const d = document.createElement('div'); d.className = 'grp'; d.textContent = f.grp; nav.appendChild(d); lastGrp = f.grp; }
+  const b = document.createElement('button'); b.dataset.id = f.id;
+  b.innerHTML = `${esc(f.name)}<small>${esc(f.sub)}</small>`;
+  b.onclick = () => { location.hash = f.id; };
+  nav.appendChild(b);
+}
+if (new URLSearchParams(location.search).get('static')) document.body.classList.add('static');
+const pick = () => render(FLOWS.find((f) => '#' + f.id === location.hash) || FLOWS[0]);
+window.addEventListener('hashchange', pick);
+pick();
+window.FLOWS = FLOWS;
+</script>
+</body>
+</html>
