@@ -19,8 +19,8 @@ export class AssistantConfigView {
   @ApiProperty({ nullable: true, type: String, description: '4 ký tự cuối của khóa API' }) apiKeyLast4: string | null;
   @ApiProperty() enabled: boolean;
   @ApiProperty({ description: 'Gửi lại khi lưu; chưa cấu hình là 0 (409 nếu cũ)' }) version: number;
-  @ApiProperty({ nullable: true, type: String, format: 'uuid' }) updatedBy: string | null;
-  @ApiProperty({ nullable: true, type: String }) updatedByName: string | null;
+  @ApiProperty({ nullable: true, type: String, format: 'uuid', description: 'Id tài khoản (iam) của ADMIN sửa lần cuối' }) updatedBy: string | null;
+  @ApiProperty({ nullable: true, type: String, description: 'Tên trên hồ sơ, không có hồ sơ thì email' }) updatedByName: string | null;
   @ApiProperty({ nullable: true, type: String, format: 'date-time' }) updatedAt: string | null;
   @ApiProperty({ type: [AssistantProviderInfo] }) providers: AssistantProviderInfo[];
 }

@@ -5,7 +5,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * - Một dòng duy nhất (`id = 1`): nhà cung cấp, model, base URL, khóa API đã mã hóa AES-256-GCM bằng `ASSISTANT_CONFIG_KEY`
  *   (chỉ assistant service giữ khóa này, ADR-08), 4 ký tự cuối để hiển thị, bật/tắt, `version` chống ghi đè (409).
- * - `updated_by` là id tài khoản (iam) của ADMIN; không khóa ngoại vì schema `assistant` không phụ thuộc schema khác.
+ * - `updated_by` là id tài khoản `iam.user_account` của ADMIN (không phải hồ sơ nhân viên, để tài khoản chỉ có vai trò ADMIN vẫn
+ *   ghi được); không khóa ngoại vì schema `assistant` không phụ thuộc schema khác.
  */
 export class AssistantLlmConfig1732800000000 implements MigrationInterface {
   name = 'AssistantLlmConfig1732800000000';

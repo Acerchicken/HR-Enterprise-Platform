@@ -1789,6 +1789,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AssistantModelList"
+        "429":
+          description: Quá 20 lượt tải model, kiểm tra kết nối mỗi giờ
       tags: *a17
       security: *a18
   /api/v1/admin/assistant-config/test:
@@ -1810,6 +1812,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ConnectionTestResult"
+        "429":
+          description: Quá 20 lượt tải model, kiểm tra kết nối mỗi giờ
       tags: *a17
       security: *a18
 info:
@@ -2701,9 +2705,11 @@ components:
           type: string
           nullable: true
           format: uuid
+          description: Id tài khoản (iam) của ADMIN sửa lần cuối
         updatedByName:
           type: string
           nullable: true
+          description: Tên trên hồ sơ, không có hồ sơ thì email
         updatedAt:
           type: string
           nullable: true

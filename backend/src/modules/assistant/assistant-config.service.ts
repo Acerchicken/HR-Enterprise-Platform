@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, HttpException, Inject, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { APP_CONFIG, AppConfig } from '../../config/config';
-import { AuditService } from '../audit/audit.service';
+import { AuditEntry, AuditService } from '../audit/audit.service';
 import { AuthUser } from '../identity/roles';
 import { AssistantConfigView, AssistantModelList, ConnectionTestResult, ListModelsDto, SaveAssistantConfigDto, TestConnectionDto } from './assistant-config.dto';
 
@@ -45,10 +45,11 @@ export class AssistantConfigService {
       apiKey: dto.apiKey,
       enabled: dto.enabled,
       version: dto.version,
-      updatedBy: actor.employeeId,
+      // Id tài khoản (iam), không phải hồ sơ: tài khoản chỉ có vai trò ADMIN, không có hồ sơ nhân viên vẫn ghi được người sửa.
+      updatedBy: actor.userId,
     });
     const { before, after } = r;
-    await this.audit.record({
+    await this.recordAudit({
       actorId: actor.employeeId,
       action: 'ASSISTANT_CONFIG_UPDATE',
       entityType: 'assistant_config',
@@ -59,6 +60,8 @@ export class AssistantConfigService {
         enabled: { from: before?.enabled ?? null, to: after.enabled },
         apiKeyLast4: after.apiKeyLast4,
         keyChanged: !!dto.apiKey,
+        version: after.version,
+        accountId: actor.userId,
       },
     });
     const { providers } = await this.call<{ providers: AssistantConfigView['providers'] }>('GET', '/internal/config');
@@ -71,21 +74,48 @@ export class AssistantConfigService {
 
   async test(actor: AuthUser, dto: TestConnectionDto): Promise<ConnectionTestResult> {
     const r = await this.call<ConnectionTestResult>('POST', '/internal/config/test', { provider: dto.provider, model: dto.model, apiKey: dto.apiKey });
-    await this.audit.record({
+    await this.recordAudit({
       actorId: actor.employeeId,
       action: 'ASSISTANT_CONFIG_TEST',
       entityType: 'assistant_config',
       entityId: 'llm',
-      changedFields: { provider: dto.provider, model: dto.model, ok: r.ok, latencyMs: r.latencyMs, error: r.error?.kind ?? null, newKey: !!dto.apiKey },
+      changedFields: {
+        provider: dto.provider,
+        model: dto.model,
+        ok: r.ok,
+        latencyMs: r.latencyMs,
+        error: r.error?.kind ?? null,
+        newKey: !!dto.apiKey,
+        accountId: actor.userId,
+      },
     });
     return r;
+  }
+
+  /**
+   * Cấu hình nằm ở assistant service nên lưu cấu hình và ghi audit không chung một giao dịch (UC6 spec 13.4). Cấu hình đã đổi
+   * thì không báo lỗi 500 (ADMIN bấm lưu lại sẽ gặp 409); nếu ghi audit lỗi, log `error` kèm nội dung audit (không có khóa)
+   * để còn dấu vết.
+   */
+  private async recordAudit(entry: AuditEntry): Promise<void> {
+    try {
+      await this.audit.record(entry);
+    } catch (e) {
+      this.logger.error(
+        JSON.stringify({ event: 'ASSISTANT_CONFIG_AUDIT_FAILED', action: entry.action, actorId: entry.actorId, changedFields: entry.changedFields, error: e instanceof Error ? e.message : String(e) }),
+      );
+    }
   }
 
   private async view(c: ServiceConfigView | null, providers: AssistantConfigView['providers']): Promise<AssistantConfigView> {
     let updatedByName: string | null = null;
     if (c?.updatedBy) {
-      const rows: { full_name: string }[] = await this.db.query('SELECT full_name FROM employee.employee WHERE id = $1', [c.updatedBy]);
-      updatedByName = rows[0]?.full_name ?? null;
+      // Tên trên hồ sơ nếu tài khoản có hồ sơ, không thì email đăng nhập.
+      const rows: { name: string }[] = await this.db.query(
+        `SELECT COALESCE(e.full_name, a.email) AS name FROM iam.user_account a LEFT JOIN employee.employee e ON e.id = a.employee_id WHERE a.id = $1`,
+        [c.updatedBy],
+      );
+      updatedByName = rows[0]?.name ?? null;
     }
     return {
       provider: c?.provider ?? null,

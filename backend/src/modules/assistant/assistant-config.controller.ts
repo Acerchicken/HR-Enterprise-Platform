@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, Put } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags, ApiTooManyRequestsResponse } from '@nestjs/swagger';
+import { RateLimit } from '../../common/rate-limit/rate-limit.interceptor';
 import { CurrentUser, Roles } from '../identity/auth.decorators';
 import { AuthUser } from '../identity/roles';
 import {
@@ -12,7 +13,10 @@ import {
 } from './assistant-config.dto';
 import { AssistantConfigService } from './assistant-config.service';
 
-/** UC6 FR-6.4 (spec 4.2, 9.2): trang "Cấu hình trợ lý". Chỉ ADMIN, kể cả HR bị 403 (AC-6.4.6). */
+/**
+ * UC6 FR-6.4 (spec 4.2, 9.2): trang "Cấu hình trợ lý". Chỉ ADMIN, kể cả HR bị 403 (AC-6.4.6). Tải model, kiểm tra kết nối gọi ra
+ * nhà cung cấp (tốn hạn mức của khóa) nên chung một nhóm giới hạn 20 lượt/giờ.
+ */
 @ApiTags('admin')
 @ApiBearerAuth()
 @Controller('admin/assistant-config')
@@ -36,6 +40,8 @@ export class AssistantConfigController {
 
   @Post('models')
   @HttpCode(200)
+  @RateLimit('assistant-config')
+  @ApiTooManyRequestsResponse({ description: 'Quá 20 lượt tải model, kiểm tra kết nối mỗi giờ' })
   @ApiOperation({ summary: 'Tải danh sách model từ nhà cung cấp (AC-6.4.1); khóa sai 400, nhà cung cấp không phản hồi 503' })
   @ApiOkResponse({ type: AssistantModelList })
   models(@Body() dto: ListModelsDto): Promise<AssistantModelList> {
@@ -44,6 +50,8 @@ export class AssistantConfigController {
 
   @Post('test')
   @HttpCode(200)
+  @RateLimit('assistant-config')
+  @ApiTooManyRequestsResponse({ description: 'Quá 20 lượt tải model, kiểm tra kết nối mỗi giờ' })
   @ApiOperation({ summary: 'Kiểm tra kết nối (AC-6.4.2): lỗi của nhà cung cấp nằm trong `error`, HTTP vẫn 200' })
   @ApiOkResponse({ type: ConnectionTestResult })
   test(@Body() dto: TestConnectionDto, @CurrentUser() user: AuthUser): Promise<ConnectionTestResult> {

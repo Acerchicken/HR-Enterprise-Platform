@@ -170,7 +170,8 @@ service; chỉ assistant service giữ và giải mã khóa (ADR-16 mục 7).
 - NFR-1.3: trợ lý p95 ≤ 6 s khi LLM chạy bình thường, với 500 tài liệu.
 - NFR-3.5: gọi LLM có timeout ≤ 10 s, quá thì fallback. **Không thử lại** dù NFR-3.5 cho thử lại tối đa 3 lần: người dùng
   đang chờ, thử lại sẽ vượt 10 s; thử lại của NFR-3.5 áp dụng cho việc chạy nền (email, event, ingest tài liệu).
-- NFR-5.21: 10 câu/phút, 100 câu/ngày mỗi người.
+- NFR-5.21: 10 câu/phút, 100 câu/ngày mỗi người. Trang cấu hình: "Tải danh sách model", "Kiểm tra kết nối" chung nhóm
+  `assistant-config` 20 lượt/giờ (gọi ra nhà cung cấp, tốn hạn mức của khóa).
 - NFR-7.1: chi phí LLM nằm trong credit trả trước hoặc giới hạn chi tiêu đặt ở nhà cung cấp; ghi chi phí mỗi câu vào báo cáo tuần 12.
 - NFR-11.1: không lưu câu hỏi, câu trả lời; log chỉ có nhà cung cấp, model, số đoạn, độ trễ, số token, lý do fallback. Trang
   cấu hình ghi nước nhận dữ liệu của từng nhà cung cấp (Mỹ, Trung Quốc).
@@ -253,6 +254,11 @@ phạm vi → gửi LLM với đoạn đã bọc (**G3**) → kiểm trích dẫ
 - Adapter `anthropic` dùng SDK chính thức `@anthropic-ai/sdk`: đoạn tài liệu gửi dạng khối `search_result` bật `citations`, Claude trả
   trích dẫn có cấu trúc nên service không đọc `[n]` trong chữ; không gửi `temperature`, không thử lại. Adapter `google` gọi REST
   `generateContent`, khóa ở header `x-goog-api-key`; Gemini báo khóa sai bằng 400 `API_KEY_INVALID`, adapter đổi thành lỗi khóa.
+- Người sửa (`updated_by`) là id tài khoản (`iam.user_account`), không phải hồ sơ, để tài khoản chỉ có vai trò ADMIN vẫn ghi được;
+  trang hiện tên trên hồ sơ, không có hồ sơ thì email. Audit ghi thêm `accountId` vì `actorId` của audit là hồ sơ nhân viên (UC7).
+- Giới hạn: cấu hình nằm ở assistant service nên lưu cấu hình và ghi audit **không chung một giao dịch**. Nếu ghi audit lỗi sau khi
+  đã lưu, API vẫn trả thành công (tránh ADMIN bấm lưu lại rồi gặp 409) và log `error` `ASSISTANT_CONFIG_AUDIT_FAILED` kèm nội dung
+  audit (nhà cung cấp, model cũ và mới, 4 ký tự cuối, không có khóa) để còn dấu vết.
 - API (BFF) không giữ, không log khóa: nhận khóa từ trang cấu hình rồi chuyển cho assistant service qua `/internal/config*`; service
   mã hóa, lưu, giải mã mỗi câu hỏi. Mất `ASSISTANT_CONFIG_KEY` thì coi như chưa cấu hình (log `LLM_CONFIG_DECRYPT_FAILED`).
 - Registry nhà cung cấp trong `services/assistant/src/llm/providers.ts`: mỗi mục có `id`, tên hiển thị, adapter, `baseUrl` mặc
