@@ -30,9 +30,12 @@ d('Indexer (Postgres)', () => {
   let indexer: Indexer;
   const docIds: string[] = [];
   const dept = randomUUID();
+  // Id event là id outbox (số tăng dần). Bắt đầu từ số lớn để không trùng event thật nếu TEST_DB_URL trỏ vào database dev.
+  let lastSeq = Date.now() * 1000;
+  const nextId = () => String(++lastSeq);
 
-  const published = (documentId: string, versionNo: number, objectKey: string, contentType = DOCX, extra: object = {}) => ({
-    id: randomUUID(),
+  const published = (documentId: string, versionNo: number, objectKey: string, contentType = DOCX, extra: object = {}, id = nextId()) => ({
+    id,
     type: 'DocumentPublished',
     payload: {
       documentId,
@@ -153,15 +156,81 @@ d('Indexer (Postgres)', () => {
     const id = newDoc();
     await indexer.handle(published(id, 1, 'v1.docx'));
     await indexer.handle({
-      id: randomUUID(),
+      id: nextId(),
       type: 'DocumentUpdated',
       payload: { documentId: id, title: 'Tên mới', type: 'GUIDE', scope: { all: true, departmentIds: [], roles: [] }, occurredAt: '' },
     });
-    await indexer.handle({ id: randomUUID(), type: 'DocumentHidden', payload: { documentId: id, occurredAt: '' } });
+    await indexer.handle({ id: nextId(), type: 'DocumentHidden', payload: { documentId: id, occurredAt: '' } });
     expect(await doc(id)).toMatchObject({ title: 'Tên mới', type: 'GUIDE', scope_all: true, hidden: true, version_no: 1 });
     expect(await chunks(id)).toHaveLength(2);
-    await indexer.handle({ id: randomUUID(), type: 'DocumentRestored', payload: { documentId: id, occurredAt: '' } });
+    await indexer.handle({ id: nextId(), type: 'DocumentRestored', payload: { documentId: id, occurredAt: '' } });
     expect((await doc(id)).hidden).toBe(false);
+  });
+
+  describe('event đến lệch thứ tự (SQS Standard, đẩy lại từ DLQ)', () => {
+    const scopeOf = (departmentIds: string[]) => ({ all: false, departmentIds, roles: [] as string[] });
+    const updated = (documentId: string, id: string, title: string, departmentIds: string[]) => ({
+      id,
+      type: 'DocumentUpdated',
+      payload: { documentId, title, type: 'POLICY', scope: scopeOf(departmentIds), occurredAt: '' },
+    });
+    const vis = (documentId: string, id: string, hidden: boolean) => ({
+      id,
+      type: hidden ? 'DocumentHidden' : 'DocumentRestored',
+      payload: { documentId, occurredAt: '' },
+    });
+
+    it('Published lỗi tạm rồi thử lại sau khi Hidden đã xử lý: tài liệu vẫn ẩn, đoạn vẫn được index', async () => {
+      const id = newDoc();
+      const pubId = nextId();
+      const hiddenId = nextId();
+      await indexer.handle(vis(id, hiddenId, true));
+      await indexer.handle(published(id, 1, 'v1.docx', DOCX, {}, pubId));
+      expect(await doc(id)).toMatchObject({ hidden: true, index_status: 'INDEXED', version_no: 1, scope_department_ids: [dept] });
+      expect(await chunks(id)).toHaveLength(2);
+    });
+
+    it('Hidden cũ đến sau Restored mới: tài liệu vẫn hiện; Restored cũ đến sau Hidden mới: vẫn ẩn', async () => {
+      const id = newDoc();
+      await indexer.handle(published(id, 1, 'v1.docx'));
+      const h1 = nextId();
+      const r1 = nextId();
+      await indexer.handle(vis(id, r1, false));
+      await indexer.handle(vis(id, h1, true));
+      expect((await doc(id)).hidden).toBe(false);
+
+      const r2 = nextId();
+      const h2 = nextId();
+      await indexer.handle(vis(id, h2, true));
+      await indexer.handle(vis(id, r2, false));
+      expect((await doc(id)).hidden).toBe(true);
+    });
+
+    it('thu hẹp phạm vi rồi event phạm vi rộng cũ hơn đến sau: giữ phạm vi hẹp', async () => {
+      const id = newDoc();
+      await indexer.handle(published(id, 1, 'v1.docx'));
+      const other = randomUUID();
+      const wide = nextId();
+      const narrow = nextId();
+      await indexer.handle(updated(id, narrow, 'Hẹp', [dept]));
+      await indexer.handle(updated(id, wide, 'Rộng', [dept, other]));
+      expect(await doc(id)).toMatchObject({ title: 'Hẹp', scope_department_ids: [dept] });
+    });
+
+    it('Published cũ (cùng phiên bản) đến sau Updated: giữ metadata của Updated', async () => {
+      const id = newDoc();
+      const pubId = nextId();
+      const updId = nextId();
+      await indexer.handle(updated(id, updId, 'Tên mới', [dept]));
+      await indexer.handle(published(id, 1, 'v1.docx', DOCX, { title: 'Tên cũ', scope: { all: true, departmentIds: [], roles: [] } }, pubId));
+      expect(await doc(id)).toMatchObject({ title: 'Tên mới', scope_all: false, scope_department_ids: [dept], index_status: 'INDEXED' });
+    });
+
+    it('id event không phải id outbox: ném lỗi, không ghi gì', async () => {
+      const id = newDoc();
+      await expect(indexer.handle({ ...published(id, 1, 'v1.docx'), id: randomUUID() })).rejects.toThrow(/id outbox/);
+      expect(await doc(id)).toBeUndefined();
+    });
   });
 
   it('reindex-embeddings: ghi vector model mới song song, rồi xóa vector model cũ', async () => {

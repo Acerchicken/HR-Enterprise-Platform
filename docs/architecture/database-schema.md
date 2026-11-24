@@ -761,7 +761,7 @@ Index: `ix_document_scope_value (kind, value)` – lọc tài liệu người d�
 
 Thuộc assistant service (ADR-15, ADR-16), backend không đọc, ghi. Migration nằm ở backend vì chỉ user migration tạo được
 extension và role. Service kết nối bằng role `assistant_svc` (tạo `NOLOGIN`, staging đặt mật khẩu ngoài migration), chỉ có
-`SELECT, INSERT, UPDATE, DELETE` trên bảng của schema này. Dữ liệu ghi theo event tài liệu (UC5 spec 13.2), dựng lại được bằng
+`SELECT, INSERT, UPDATE, DELETE` trên bảng của schema này (cả bảng tạo sau, nhờ `ALTER DEFAULT PRIVILEGES`). Dữ liệu ghi theo event tài liệu (UC5 spec 13.2), dựng lại được bằng
 `npm run assistant:sync` ở backend.
 
 **`assistant.document`** – bản sao metadata và phạm vi xem của tài liệu UC5, ghi đè theo event.
@@ -774,6 +774,8 @@ extension và role. Service kết nối bằng role `assistant_svc` (tạo `NOLO
 | `hidden` | boolean | NN | Tài liệu ẩn không dùng để trả lời |
 | `scope_all`, `scope_department_ids`, `scope_roles` | boolean, uuid[], text[] | NN | Phạm vi xem (DR-06) |
 | `index_status` | varchar(10) | CHECK `PENDING`, `INDEXED`, `FAILED` | `FAILED`: file không trích được chữ |
+| `meta_event_id` | bigint | NN, mặc định 0 | Id outbox của event gần nhất đã ghi tiêu đề, loại, phạm vi; event id nhỏ hơn không ghi đè |
+| `visibility_event_id` | bigint | NN, mặc định 0 | Id outbox của event gần nhất đã ghi `hidden` |
 | `updated_at` | timestamptz | NN | |
 
 **`assistant.chunk`** – đoạn văn bản của phiên bản đang index, khoảng 1.500 ký tự, không vượt ranh giới mục, điều.
@@ -884,6 +886,7 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `1732500000000-LeaveRules` | 11 | Loại phép theo `quota_kind`, seed loại mới, số dư thập phân, phân bổ theo năm, `PENDING_HR`, đề nghị hủy, ngày lễ có loại, duyệt thay (UC3, UC4 `feat/leave-uc3-uc4`) |
 | `1732600000000-AuditTimeIndex` | 12 | Chỉ mục BRIN `audit.ix_audit_at (at)` (UC7 D2, `feat/audit-ui`) |
 | `1732700000000-AssistantSchema` | 12 | Extension `vector`, `unaccent`; schema `assistant` (4 bảng), HNSW cho EmbeddingGemma, role `assistant_svc` (UC6 `feat/assistant-service`) |
+| `1732750000000-AssistantEventOrder` | 12 | `assistant.document.meta_event_id`, `visibility_event_id` (thứ tự event); quyền mặc định của schema `assistant` cho `assistant_svc` |
 
 Lệnh: `npm run migration:run` (dev, ts-node), `npm run migration:run:prod` (bản build, dùng trên staging),
 `npm run migration:revert` (lùi một migration). Dữ liệu mẫu: `npm run seed`.
