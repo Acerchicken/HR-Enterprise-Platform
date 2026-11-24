@@ -15,6 +15,7 @@ import {
   ProfileEventType,
 } from '../modules/employee/profile-events';
 import { isIdentityEvent } from '../modules/identity/identity-events';
+import { isDocumentEvent } from '../modules/document/document-events';
 import { IdentitySync } from './identity-sync';
 
 /**
@@ -48,6 +49,11 @@ export class NotificationWorker implements OnApplicationShutdown {
     const seen = await this.ds.query('SELECT 1 FROM notification.processed_event WHERE event_id = $1', [eventId]);
     if (seen.length) {
       this.logger.log(`Bỏ qua event trùng ${eventId}`);
+      return false;
+    }
+
+    if (isDocumentEvent(type)) {
+      // Event tài liệu dành cho assistant service (UC6); notification không gửi email cho tài liệu (UC5 D2).
       return false;
     }
 

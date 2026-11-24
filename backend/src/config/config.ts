@@ -44,6 +44,8 @@ export interface AppConfig {
     driver: QueueDriver;
     rabbitmqUrl: string | null;
     sqsQueueUrl: string | null;
+    /** Queue SQS của assistant service (UC6); không đặt thì event tài liệu không được gửi đi. */
+    sqsAssistantQueueUrl: string | null;
     awsRegion: string | null;
   };
   smtp: {
@@ -205,7 +207,7 @@ function loadQueue(env: NodeJS.ProcessEnv): AppConfig['queue'] {
   if (driver === 'sqs' && (!sqsQueueUrl || !awsRegion)) {
     throw new Error('QUEUE_DRIVER=sqs cần SQS_QUEUE_URL và AWS_REGION');
   }
-  return { driver, rabbitmqUrl, sqsQueueUrl, awsRegion };
+  return { driver, rabbitmqUrl, sqsQueueUrl, sqsAssistantQueueUrl: env.SQS_ASSISTANT_QUEUE_URL || null, awsRegion };
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');

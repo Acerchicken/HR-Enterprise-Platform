@@ -37,6 +37,59 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+  assistant:
+    name: Assistant Service (Lint & Test)
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: hr
+          POSTGRES_PASSWORD: hr
+          POSTGRES_DB: hr
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hr -d hr" --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DB_HOST: localhost
+      DB_USER: hr
+      DB_PASSWORD: hr
+      DB_NAME: hr
+      DB_SSL: 'off'
+      ALLOW_DEV_SECRETS: 'true'
+      FIELD_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=
+      TEST_DB_URL: postgres://hr:hr@localhost:5432/hr
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            services/assistant/package-lock.json
+
+      # Schema assistant do migration của backend tạo (ADR-16), test tích hợp của service cần nó.
+      - name: Run backend migrations
+        working-directory: backend
+        run: npm ci && npm run migration:run
+
+      - name: Install dependencies
+        working-directory: services/assistant
+        run: npm ci
+
+      - name: Check types
+        working-directory: services/assistant
+        run: npm run lint
+
+      - name: Run tests (unit + Postgres)
+        working-directory: services/assistant
+        run: npm test
+
   frontend:
     name: Frontend (Lint & Build)
     runs-on: ubuntu-latest
@@ -85,6 +138,38 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: hr-platform-api:test
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL'
+          scanners: 'vuln'
+          trivyignores: '.trivyignore'
+
+  docker-assistant:
+    name: Docker Assistant (Build & Scan)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build assistant image (tải model EmbeddingGemma)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/assistant
+          file: ./services/assistant/Dockerfile
+          push: false
+          load: true
+          tags: hr-platform-assistant:test
+          cache-from: type=gha,scope=assistant
+          cache-to: type=gha,mode=max,scope=assistant
+
+      - name: Scan assistant image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: hr-platform-assistant:test
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true

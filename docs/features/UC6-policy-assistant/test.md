@@ -20,7 +20,19 @@ liệu ngoài phạm vi chứa đúng đáp án, để chứng minh lọc phạm
 
 ## 2. Test tự động đã có
 
-Chưa có: tính năng chưa làm. PR `feat/assistant-service`, `feat/policy-assistant`, `feat/assistant-config` phải thêm test vào bảng dưới.
+Phần index (`feat/assistant-service`). Chạy: `cd services/assistant && npm test`; thêm `TEST_DB_URL=postgres://hr:hr@localhost:5432/hr`
+(database đã chạy migration của backend) để chạy cả test với PostgreSQL. CI chạy cả hai (job "Assistant Service").
+
+| File | Phủ |
+|---|---|
+| `services/assistant/src/ingest/chunker.spec.ts` | Chia đoạn không vượt mục, chồng đoạn, cắt câu và từ quá dài, không mất chữ |
+| `services/assistant/src/ingest/extract.spec.ts` | DOCX theo tiêu đề và "Điều n", PDF theo trang (nối dòng bị ngắt), file không chữ, file hỏng, định dạng lạ |
+| `services/assistant/src/rag/embedders/embedders.spec.ts` | Tiền tố EmbeddingGemma; registry từ chối `id` lạ, thêm embedder giả bằng một dòng đăng ký |
+| `services/assistant/src/ingest/indexer.int.spec.ts` | PostgreSQL: index theo điều, full-text không dấu, vector; chống trùng event; bản mới thay bản cũ, bản cũ đến muộn bị bỏ; `FAILED` khi không trích được chữ; lỗi storage để queue thử lại; payload sai; `DocumentUpdated`, `Hidden`, `Restored`; event lệch thứ tự (Published thử lại sau Hidden vẫn ẩn, Hidden/Restored cũ bị bỏ, phạm vi rộng cũ không đè phạm vi hẹp, Published cũ không đè metadata của Updated), id event không phải id outbox; `reindex-embeddings` song song rồi xóa model cũ |
+| `backend/src/messaging/messaging.spec.ts` | Event `Document*` đi routing key `document.*`, SQS queue riêng, bỏ qua khi chưa cấu hình |
+| `backend/test/app.e2e-spec.ts` ("event tài liệu cho trợ lý") | Đăng bản `READY`, sửa, ẩn, khôi phục ghi đúng event vào outbox; thao tác không đổi gì không ghi |
+
+`feat/policy-assistant`, `feat/assistant-config` thêm test vào bảng này.
 
 ## 3. Bảng phủ tiêu chí
 
@@ -31,7 +43,7 @@ Chưa có: tính năng chưa làm. PR `feat/assistant-service`, `feat/policy-ass
 | AC-6.3.4 | e2e với LLM giả trả chậm, lỗi, từ chối; thiếu khóa | `docs/test-cases-uc6` | Chưa |
 | AC-6.3.5 | Script bộ đánh giá | `docs/assistant-eval-report` | Chưa |
 | AC-6.3.6 | e2e giới hạn tần suất nhóm `assistant`; 400 khi câu hỏi rỗng, quá 500 ký tự | `docs/test-cases-uc6` | Chưa |
-| AC-6.3.7 | Integration: event `DocumentHidden`, đổi đơn vị người hỏi, `DocumentPublished` bản mới | `docs/test-cases-uc6` | Chưa |
+| AC-6.3.7 | Integration: event `DocumentHidden`, đổi đơn vị người hỏi, `DocumentPublished` bản mới | `docs/test-cases-uc6` | Một phần: phía index có (`indexer.int.spec.ts`); phía truy hồi, đổi đơn vị trong `feat/policy-assistant` |
 | AC-6.3.8, AC-6.3.9 | Unit guardrail; e2e với LLM giả ghi request và trả số lạ, trả lại system prompt; script bộ đánh giá (câu chứa dữ liệu cá nhân, tài liệu cài lệnh) | `docs/test-cases-uc6` | Chưa |
 | AC-6.4.1, AC-6.4.2 | Unit adapter với HTTP giả (`listModels`, `testConnection`) | Ca tay với khóa thật của ba nhà cung cấp | Chưa |
 | AC-6.4.3 → AC-6.4.7 | e2e trong `feat/assistant-config` | `docs/test-cases-uc6` | Chưa |

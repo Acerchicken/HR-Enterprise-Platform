@@ -7,7 +7,7 @@ import { SqsEventBus, SqsEventConsumer } from './sqs';
 /** null = không cấu hình queue (vd khi chạy test): API vẫn ghi outbox nhưng không đẩy đi. */
 export function createEventBus(cfg: AppConfig): EventBus | null {
   const q = cfg.queue;
-  if (q.driver === 'sqs') return new SqsEventBus(new SQSClient({ region: q.awsRegion! }), q.sqsQueueUrl!);
+  if (q.driver === 'sqs') return new SqsEventBus(new SQSClient({ region: q.awsRegion! }), q.sqsQueueUrl!, q.sqsAssistantQueueUrl);
   if (q.driver === 'rabbitmq') return new RabbitMqEventBus(q.rabbitmqUrl!);
   return null;
 }

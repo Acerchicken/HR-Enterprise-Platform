@@ -944,6 +944,36 @@ describe('HRHelper API (e2e)', () => {
       }
     });
 
+    it('event tài liệu cho trợ lý: đăng, sửa, ẩn, khôi phục ghi outbox cùng giao dịch (UC5 13.2, AC-5.4.x, UC6)', async () => {
+      const events = async (id: string) =>
+        (await ds.query(`SELECT event_type, payload FROM leave.outbox WHERE aggregate_id = $1 ORDER BY id`, [id])) as Array<{ event_type: string; payload: any }>;
+      const d = await publish('E2E Event trợ lý', { departmentIds: [me.departmentId], roles: ['HR'] });
+      let rows = await events(d.id);
+      expect(rows.map((r) => r.event_type)).toEqual(['DocumentPublished']);
+      expect(rows[0].payload).toMatchObject({
+        documentId: d.id,
+        versionId: d.versionId,
+        versionNo: 1,
+        title: 'E2E Event trợ lý',
+        hidden: false,
+        scope: { all: false, departmentIds: [me.departmentId], roles: ['HR'] },
+      });
+      expect(rows[0].payload.objectKey).toMatch(/^documents\//);
+
+      const cur = (await http.get(`/api/v1/documents/manage/${d.id}`).set(HR)).body;
+      await http.patch(`/api/v1/documents/${d.id}`).set(HR).send({ title: 'E2E Event trợ lý 2', version: cur.version }).expect(200);
+      await http.post(`/api/v1/documents/${d.id}/hide`).set(HR).expect(200);
+      await http.post(`/api/v1/documents/${d.id}/restore`).set(HR).expect(200);
+      rows = await events(d.id);
+      expect(rows.map((r) => r.event_type)).toEqual(['DocumentPublished', 'DocumentUpdated', 'DocumentHidden', 'DocumentRestored']);
+      expect(rows[1].payload).toMatchObject({ title: 'E2E Event trợ lý 2', scope: { departmentIds: [me.departmentId], roles: ['HR'] } });
+
+      // Không đổi gì (gửi lại phạm vi cũ) thì không có event.
+      const now = (await http.get(`/api/v1/documents/manage/${d.id}`).set(HR)).body;
+      await http.patch(`/api/v1/documents/${d.id}`).set(HR).send({ title: 'E2E Event trợ lý 2', version: now.version }).expect(200);
+      expect(await events(d.id)).toHaveLength(4);
+    });
+
     it('sửa metadata cần version đúng (optimistic locking)', async () => {
       const e = await publish('E2E Đổi tên', { all: true });
       const cur = (await http.get(`/api/v1/documents/manage/${e.id}`).set(HR)).body;

@@ -8,7 +8,7 @@
 | Thành phần | Việc |
 |---|---|
 | API (`backend/`) | `POST /assistant/questions`: kiểm đầu vào, giới hạn tần suất, tính phạm vi người hỏi, gọi nội bộ assistant service |
-| Module document (`backend/`) | Ghi event `document.*` vào `document.outbox` (UC5 spec 13.2) |
+| Module document (`backend/`) | Ghi event `document.*` vào outbox chung `leave.outbox` (UC5 spec 13.2) |
 | Assistant service (`services/assistant/`) | Nhận event từ queue `assistant.document`, trích văn bản PDF, DOCX, chia đoạn, tính embedding, ghi index; trả lời câu hỏi qua adapter của nhà cung cấp ADMIN chọn; giữ cấu hình và khóa API đã mã hóa |
 | Web | Khung "Hỏi trợ lý chính sách" trên trang `/documents`; trang "Cấu hình trợ lý" `/admin/assistant` (ADMIN) |
 | Database | Schema `assistant` (bảng `document`, `chunk`, `llm_config`), extension `vector` và `unaccent`, DB user `assistant_svc` |
@@ -26,7 +26,7 @@ dán trên trang "Cấu hình trợ lý", lưu mã hóa trong `assistant.llm_con
 | `ASSISTANT_EMBEDDING_MODEL` | Assistant service | `embeddinggemma-300m` | `embeddinggemma-300m` | Dùng mặc định; `id` lạ thì service không khởi động |
 | `ASSISTANT_LLM_TIMEOUT_MS` | Assistant service | `10000` | `10000` | Dùng mặc định |
 | `ASSISTANT_URL`, `ASSISTANT_INTERNAL_TOKEN` | API | `http://localhost:3100`, chuỗi bất kỳ | URL nội bộ, Secrets Manager | API trả `fallback = true`, câu "Trợ lý tạm thời không dùng được" |
-| `ASSISTANT_DB_URL` | Assistant service | User `assistant_svc` | User `assistant_svc` | Service không chạy |
+| `ASSISTANT_DB_URL` | Assistant service | User `hr` (docker-compose) | User `assistant_svc` | Service không chạy |
 | `STORAGE_*` | Assistant service | Như UC5, quyền chỉ đọc | Như UC5, IAM chỉ đọc bucket | Không trích được văn bản; tài liệu mới không vào index |
 | Nhóm `assistant` trong `RATE_LIMIT_OVERRIDES` | API | Mặc định 10/phút, 100/ngày | Như local; nâng tạm khi chạy bộ đánh giá | – |
 
@@ -34,12 +34,20 @@ dán trên trang "Cấu hình trợ lý", lưu mã hóa trong `assistant.llm_con
 
 | Môi trường | Tài nguyên | File |
 |---|---|---|
-| Local | PostgreSQL đổi image sang `pgvector/pgvector:pg16`; RabbitMQ thêm queue `assistant.document`; S3Mock như UC5 | `docker-compose.yml` |
+| Local | PostgreSQL build từ `infra/postgres-pgvector` (postgres:16-alpine thêm pgvector, giữ volume cũ dùng được); container `assistant` (port 3100), tự khai báo queue `assistant.document`; S3Mock như UC5 | `docker-compose.yml`, `services/assistant/Dockerfile` |
 | Staging | RDS bật extension `vector`; SQS `assistant.document` + DLQ, subscription SNS lọc `document.*`; task Fargate assistant khoảng 2 GB RAM (EmbeddingGemma q8; đo thật, vượt thì dùng q4); secret `ASSISTANT_CONFIG_KEY`; security group, NAT cho phép gọi HTTPS ra API của ba nhà cung cấp | `infra/staging/` (nhánh `infra/llm-secrets-cost`) |
 
 ## 4. Các bước
 
 1. Migration tạo schema `assistant`, extension `vector`, `unaccent` (cần quyền `rds_superuser` trên RDS, chạy bằng user migration).
+   - **Luôn chạy migration bằng cùng một user.** `AssistantEventOrder` đặt `ALTER DEFAULT PRIVILEGES` để bảng, sequence tạo sau
+     trong schema `assistant` tự cấp quyền cho `assistant_svc`, nhưng lệnh này chỉ áp dụng cho đối tượng do **chính user chạy
+     migration** tạo ra. Nếu đổi user chạy migration trên RDS, chạy lại cho user mới:
+     `ALTER DEFAULT PRIVILEGES FOR ROLE <user_migration_mới> IN SCHEMA assistant GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO assistant_svc;`
+     và `... GRANT USAGE, SELECT ON SEQUENCES TO assistant_svc;`. Kiểm nhanh: `\ddp assistant` trong `psql`.
+   - Database đã chạy `AssistantSchema` trước bản sửa thứ tự event (máy local từ 23/11): chỉ cần `npm run migration:run`. Hai cột
+     mốc `meta_event_id`, `visibility_event_id` của các dòng cũ là 0 nên event kế tiếp vẫn được áp dụng; **không cần** chạy lại
+     `npm run assistant:sync`.
 2. Tạo API key ở nhà cung cấp định dùng, nạp credit trả trước hoặc đặt giới hạn chi tiêu ở đó. ADMIN dán khóa trên
    `/admin/assistant`, bấm "Kiểm tra kết nối" rồi lưu.
 3. Sau khi deploy assistant service: chạy lệnh đồng bộ lần đầu (UC5 13.2) để index tài liệu đã đăng trước đó.
@@ -76,6 +84,9 @@ Không dùng auto scaling theo lịch: lịch demo không cố định, bật ta
 - Rollback assistant service không ảnh hưởng UC5: module document vẫn ghi outbox, event chờ trong queue và được xử lý khi service
   chạy lại.
 - Index hỏng: xóa dữ liệu schema `assistant` rồi chạy lại lệnh đồng bộ lần đầu.
+- `assistant_svc` báo `permission denied` trên một bảng mới của schema `assistant`: bảng đó do user khác user migration thường
+  dùng tạo ra (xem bước 1). Cấp tay `GRANT SELECT, INSERT, UPDATE, DELETE ON assistant.<bảng> TO assistant_svc` rồi đặt lại
+  `ALTER DEFAULT PRIVILEGES` cho user đó.
 - Chi phí bất thường hoặc lộ khóa: ADMIN tắt trợ lý trên `/admin/assistant` và thu hồi khóa ở trang của nhà cung cấp; trợ lý tự
   lùi về danh sách tài liệu (A2 trong spec).
 - Mất `ASSISTANT_CONFIG_KEY`: không giải mã được khóa đã lưu; tạo khóa mới, ADMIN dán lại API key.
@@ -85,13 +96,11 @@ Không dùng auto scaling theo lịch: lịch demo không cố định, bật ta
 
 ## 7. Còn thiếu
 
-Toàn bộ UC6 chưa có trên `dev`. Cập nhật file này trong PR `feat/assistant-service`, `feat/policy-assistant`, `feat/assistant-config`.
-Các tài liệu chỉ mô tả code hiện có nên cập nhật cùng PR code, không cập nhật trước:
+Phần index đã có từ `feat/assistant-service` (event, service, schema, Docker, CI; đã cập nhật database-schema.md,
+configuration.md mục 2a, event-contract.md). Còn lại cập nhật trong `feat/policy-assistant`, `feat/assistant-config`:
 
-- [database-schema.md](../../architecture/database-schema.md): schema `assistant` (`document`, `chunk`, `chunk_embedding`,
-  `llm_config`), extension `vector`, `unaccent`, migration.
-- [configuration.md](../../development/configuration.md): biến `ASSISTANT_*` ở mục 2.
+- [database-schema.md](../../architecture/database-schema.md): bảng `llm_config`.
+- [configuration.md](../../development/configuration.md): `ASSISTANT_CONFIG_KEY`, `ASSISTANT_URL`, `ASSISTANT_INTERNAL_TOKEN`, `ASSISTANT_LLM_TIMEOUT_MS`.
 - [openapi.yaml](../../openapi.yaml): API ở spec 9.2.
 - [error-codes.md](../../development/error-codes.md): 503 khi nhà cung cấp AI không phản hồi (spec E9).
-- [event-contract.md](../../architecture/event-contract.md) mục 7: chuyển phần `document.outbox`, queue `assistant.document` thành
-  hợp đồng chính thức.
+- ~~event-contract.md mục 7~~: đã chuyển vào mục 4, 6 trong `feat/assistant-service`.

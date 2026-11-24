@@ -182,8 +182,8 @@ Chiến lược, bảng phủ tiêu chí và ca còn thiếu: [test.md](test.md)
 
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
-| Event tài liệu `document.outbox` | Chưa có | TV1, đầu nhánh `feat/assistant-service` (UC5 13.2) |
-| Assistant service: ingest, chia đoạn, index full-text và vector | Chưa có | TV1, `feat/assistant-service` |
+| Event tài liệu qua outbox chung `leave.outbox`, lệnh `assistant:sync` | Có (`feat/assistant-service`) | – |
+| Assistant service: ingest, chia đoạn, index full-text và vector (EmbeddingGemma) | Có (`feat/assistant-service`) | Đo RAM, thời gian index thật trên staging (TV3) |
 | API hỏi đáp, adapter `openai-compatible` (DeepSeek), trích dẫn, fallback, giới hạn tần suất, khung trợ lý | Chưa có | TV1, `feat/policy-assistant`. Nếu thứ Sáu 27/11 chưa xong phần vector thì giao bản chỉ full-text (ADR-16) |
 | Trang "Cấu hình trợ lý", khóa mã hóa, adapter `anthropic`, `google` | Chưa có | TV1, `feat/assistant-config` |
 | Bộ câu hỏi đánh giá | Chưa có | TV2, `docs/assistant-eval-set` |
@@ -210,6 +210,10 @@ Chiến lược, bảng phủ tiêu chí và ca còn thiếu: [test.md](test.md)
 - Đổi model embedding: lệnh `reindex-embeddings --model <id>` tính vector mới song song vector cũ, đổi biến môi trường rồi xóa
   vector cũ; không đọc lại file, không chia lại đoạn.
 - `DocumentUpdated`, `DocumentHidden`, `DocumentRestored`: chỉ cập nhật `assistant.document`, không tính lại đoạn.
+- Thứ tự: queue không giữ thứ tự (SQS Standard, đẩy lại từ DLQ), nên dùng id event (id `leave.outbox`, tăng dần) làm mốc.
+  Tiêu đề, loại, phạm vi chỉ ghi khi id lớn hơn `meta_event_id`; `hidden` chỉ ghi khi id lớn hơn `visibility_event_id`.
+  Event cũ đến sau không làm hiện lại tài liệu đã ẩn, không nới lại phạm vi đã thu hẹp (DR-02, DR-06). Id event không phải
+  số nguyên thì vào DLQ.
 - Lệnh đồng bộ lần đầu cho tài liệu đã `READY` trước khi có event (UC5 13.2).
 - Trích lỗi: ghi log, tài liệu không có đoạn; trợ lý không dùng tài liệu đó cho tới khi có bản mới.
 

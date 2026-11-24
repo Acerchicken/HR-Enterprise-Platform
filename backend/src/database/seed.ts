@@ -318,7 +318,14 @@ async function main() {
       const [row] = await m.query(
         `INSERT INTO leave.leave_type (code, name, max_days_per_year, quota_kind, max_days_per_event, max_months_per_event,
            requires_event_date, requires_document, hr_approval, hr_approval_min_days)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         -- Migration LeaveRules đã tạo sẵn các loại phép mới trên database trống: cập nhật thay vì lỗi trùng mã.
+         ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, max_days_per_year = EXCLUDED.max_days_per_year,
+           quota_kind = EXCLUDED.quota_kind, max_days_per_event = EXCLUDED.max_days_per_event,
+           max_months_per_event = EXCLUDED.max_months_per_event, requires_event_date = EXCLUDED.requires_event_date,
+           requires_document = EXCLUDED.requires_document, hr_approval = EXCLUDED.hr_approval,
+           hr_approval_min_days = EXCLUDED.hr_approval_min_days
+         RETURNING id`,
         [t.code, t.name, t.maxPerYear, t.kind, t.perEvent ?? null, t.months ?? null, t.kind === 'PER_EVENT', t.doc, t.hr, t.hrMin ?? null],
       );
       typeId.set(t.code, row.id);
