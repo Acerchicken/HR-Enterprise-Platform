@@ -180,7 +180,7 @@ interface `EventBus` (publish) và `EventConsumer` (consume) trong `backend/src/
 - Nếu đổi sang queue FIFO (URL đuôi `.fifo`), code tự đặt `MessageGroupId = leave` và `MessageDeduplicationId` = id event.
 - Quyền gửi/nhận lấy từ IAM role của App Runner (API) và ECS task (worker), không dùng access key.
 - Event tài liệu (`Document*`) gửi vào queue riêng `SQS_ASSISTANT_QUEUE_URL` (`backend/src/messaging/routing.ts`); chưa đặt
-  biến này thì API bỏ qua event tài liệu (đánh dấu đã gửi, ghi log cảnh báo). FIFO: `MessageGroupId = document`. Chưa có SNS
+  biến này thì API bỏ qua event tài liệu (đánh dấu đã gửi, ghi log cảnh báo một lần mỗi process). FIFO: `MessageGroupId = document`. Chưa có SNS
   fan-out (mục 7): mỗi loại event đi đúng một queue.
 
 ## 5. Bảo đảm giao nhận và chống trùng
@@ -191,7 +191,7 @@ interface `EventBus` (publish) và `EventConsumer` (consume) trong `backend/src/
 | Giao **ít nhất một lần** | Cả RabbitMQ và SQS standard đều có thể giao lại |
 | Không gửi email trùng | Worker tra `notification.processed_event` theo id event trước khi gửi; gửi xong mới ghi id (`ON CONFLICT DO NOTHING`) |
 | Không lặp vô hạn khi lỗi | RabbitMQ: nack → DLQ ngay. SQS: sau 5 lần nhận → DLQ |
-| Thứ tự | Publisher gửi theo `id` outbox. Worker không dựa vào thứ tự (mỗi event độc lập, chỉ để gửi email) |
+| Thứ tự | Publisher gửi theo `id` outbox, nhưng queue không bảo đảm giữ thứ tự (SQS Standard, giao lại, đẩy lại từ DLQ). Worker không dựa vào thứ tự (mỗi event độc lập, chỉ để gửi email). Assistant service **có** phụ thuộc thứ tự: dùng id outbox làm mốc, bỏ event cũ hơn mốc đã áp dụng (UC6 spec 13.2) |
 
 Giới hạn hiện tại: nếu email đã gửi nhưng worker chết trước khi ghi `processed_event`, event được giao lại sẽ gửi email lần
 hai. Chấp nhận được với email thông báo.

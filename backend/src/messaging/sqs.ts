@@ -15,6 +15,9 @@ import { destinationOf } from './routing';
  * (không có ai nhận), để notification service không nhận nhầm.
  */
 export class SqsEventBus implements EventBus {
+  private readonly logger = new Logger('SqsEventBus');
+  private warnedNoAssistantQueue = false;
+
   constructor(
     private readonly client: Pick<SQSClient, 'send' | 'destroy'>,
     private readonly queueUrl: string,
@@ -24,7 +27,13 @@ export class SqsEventBus implements EventBus {
   async publish(event: BusEvent): Promise<void> {
     const dest = destinationOf(event.type);
     const url = dest === 'assistant' ? this.assistantQueueUrl : this.queueUrl;
-    if (!url) return;
+    if (!url) {
+      if (!this.warnedNoAssistantQueue) {
+        this.warnedNoAssistantQueue = true;
+        this.logger.warn('Chưa đặt SQS_ASSISTANT_QUEUE_URL: bỏ qua event tài liệu, trợ lý (UC6) không được cập nhật');
+      }
+      return;
+    }
     const fifo = url.endsWith('.fifo');
     await this.client.send(
       new SendMessageCommand({
