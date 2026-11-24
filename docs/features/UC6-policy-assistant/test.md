@@ -28,7 +28,7 @@ Phần index (`feat/assistant-service`). Chạy: `cd services/assistant && npm t
 | `services/assistant/src/ingest/chunker.spec.ts` | Chia đoạn không vượt mục, chồng đoạn, cắt câu và từ quá dài, không mất chữ |
 | `services/assistant/src/ingest/extract.spec.ts` | DOCX theo tiêu đề và "Điều n", PDF theo trang (nối dòng bị ngắt), file không chữ, file hỏng, định dạng lạ |
 | `services/assistant/src/rag/embedders/embedders.spec.ts` | Tiền tố EmbeddingGemma; registry từ chối `id` lạ, thêm embedder giả bằng một dòng đăng ký |
-| `services/assistant/src/ingest/indexer.int.spec.ts` | PostgreSQL: index theo điều, full-text không dấu, vector; chống trùng event; bản mới thay bản cũ, bản cũ đến muộn bị bỏ; `FAILED` khi không trích được chữ; lỗi storage để queue thử lại; payload sai; `DocumentUpdated`, `Hidden`, `Restored`; `reindex-embeddings` song song rồi xóa model cũ |
+| `services/assistant/src/ingest/indexer.int.spec.ts` | PostgreSQL: index theo điều, full-text không dấu, vector; chống trùng event; bản mới thay bản cũ, bản cũ đến muộn bị bỏ; `FAILED` khi không trích được chữ; lỗi storage để queue thử lại; payload sai; `DocumentUpdated`, `Hidden`, `Restored`; event lệch thứ tự (Published thử lại sau Hidden vẫn ẩn, Hidden/Restored cũ bị bỏ, phạm vi rộng cũ không đè phạm vi hẹp, Published cũ không đè metadata của Updated), id event không phải id outbox; `reindex-embeddings` song song rồi xóa model cũ |
 | `backend/src/messaging/messaging.spec.ts` | Event `Document*` đi routing key `document.*`, SQS queue riêng, bỏ qua khi chưa cấu hình |
 | `backend/test/app.e2e-spec.ts` ("event tài liệu cho trợ lý") | Đăng bản `READY`, sửa, ẩn, khôi phục ghi đúng event vào outbox; thao tác không đổi gì không ghi |
 
