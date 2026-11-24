@@ -761,7 +761,7 @@ Index: `ix_document_scope_value (kind, value)` – lọc tài liệu người d�
 
 Thuộc assistant service (ADR-15, ADR-16), backend không đọc, ghi. Migration nằm ở backend vì chỉ user migration tạo được
 extension và role. Service kết nối bằng role `assistant_svc` (tạo `NOLOGIN`, staging đặt mật khẩu ngoài migration), chỉ có
-`SELECT, INSERT, UPDATE, DELETE` trên bảng của schema này (cả bảng tạo sau, nhờ `ALTER DEFAULT PRIVILEGES`). Dữ liệu ghi theo event tài liệu (UC5 spec 13.2), dựng lại được bằng
+`SELECT, INSERT, UPDATE, DELETE` trên bảng của schema này (cả bảng tạo sau, nhờ `ALTER DEFAULT PRIVILEGES`; chỉ đúng khi migration luôn chạy bằng cùng một user, xem UC6 deploy bước 1). Dữ liệu ghi theo event tài liệu (UC5 spec 13.2), dựng lại được bằng
 `npm run assistant:sync` ở backend.
 
 **`assistant.document`** – bản sao metadata và phạm vi xem của tài liệu UC5, ghi đè theo event.
