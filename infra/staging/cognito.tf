@@ -1,20 +1,41 @@
 # Cognito User Pool (OIDC Identity Provider per ADR-12)
 resource "aws_cognito_user_pool" "main" {
-  name = "${var.project_name}-${var.environment}-users"
+  name             = "${var.project_name}-${var.environment}-users"
+  user_pool_tier   = "ESSENTIALS"
 
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
 
+  # Enforce TOTP MFA for all accounts on Cognito per ADR-17 / NFR-5.4
+  mfa_configuration = "ON"
+  software_token_mfa_configuration {
+    enabled = true
+  }
+
   password_policy {
-    minimum_length    = 8
-    require_lowercase = true
-    require_numbers   = true
-    require_symbols   = false
-    require_uppercase = false
+    minimum_length                   = 8
+    require_lowercase                = true
+    require_numbers                  = true
+    require_symbols                  = false
+    require_uppercase                = true
+    temporary_password_validity_days = 7
   }
 
   admin_create_user_config {
-    allow_admin_create_user_only = false
+    allow_admin_create_user_only = true
+  }
+
+  account_recovery_setting {
+    recovery_mechanism {
+      name     = "verified_email"
+      priority = 1
+    }
+  }
+
+  email_configuration {
+    email_sending_account = "DEVELOPER"
+    source_arn            = aws_ses_email_identity.sender.arn
+    from_email_address    = var.sender_email
   }
 
   schema {
@@ -31,8 +52,9 @@ resource "aws_cognito_user_pool" "main" {
 
 # Cognito Hosted Domain for OIDC endpoints (/oauth2/userInfo, /logout)
 resource "aws_cognito_user_pool_domain" "main" {
-  domain       = "${var.project_name}-${var.environment}-${random_string.suffix.result}"
-  user_pool_id = aws_cognito_user_pool.main.id
+  domain                = "${var.project_name}-${var.environment}-${random_string.suffix.result}"
+  user_pool_id          = aws_cognito_user_pool.main.id
+  managed_login_version = 2
 }
 
 # Cognito App Client for Web SPA (Authorization Code Grant with PKCE, public client)
@@ -49,8 +71,10 @@ resource "aws_cognito_user_pool_client" "web" {
   callback_urls = [
     "http://localhost:5173",
     "http://localhost:5173/",
+    "http://localhost:5173/callback",
     "https://${aws_cloudfront_distribution.web.domain_name}",
-    "https://${aws_cloudfront_distribution.web.domain_name}/"
+    "https://${aws_cloudfront_distribution.web.domain_name}/",
+    "https://${aws_cloudfront_distribution.web.domain_name}/callback"
   ]
 
   logout_urls = [
@@ -59,10 +83,18 @@ resource "aws_cognito_user_pool_client" "web" {
   ]
 
   explicit_auth_flows = [
-    "ALLOW_USER_SRP_AUTH",
-    "ALLOW_REFRESH_TOKEN_AUTH",
-    "ALLOW_USER_PASSWORD_AUTH"
+    "ALLOW_REFRESH_TOKEN_AUTH"
   ]
+
+  access_token_validity  = 15
+  id_token_validity      = 15
+  refresh_token_validity = 10
+
+  token_validity_units {
+    access_token  = "minutes"
+    id_token      = "minutes"
+    refresh_token = "hours"
+  }
 }
 
 # Nhóm trên IdP chỉ để IdP bắt MFA theo vai trò; API không đọc nhóm, vai trò lấy từ database (ADR-18).
