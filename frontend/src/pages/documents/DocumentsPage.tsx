@@ -1,5 +1,5 @@
 import { Settings2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { Me } from '../../api/client';
 import { DOCUMENT_TYPES, documentsApi, DocumentType, TYPE_LABEL } from '../../api/documents';
@@ -14,13 +14,20 @@ const PAGE_SIZE = 20;
 /**
  * Trang "Tra cứu tài liệu" `/documents` (UC5 A1, AC-5.2.7; bản vẽ uc56-documents). Chỉ có tài liệu trong phạm vi của người
  * xem, mới cập nhật trước; không hiện số lượng hay gợi ý gì về tài liệu ngoài phạm vi (DR-08). Bên phải là khung hỏi trợ lý
- * của UC6 (spec 9.1); màn hình hẹp thì xếp dưới danh sách.
+ * của UC6 (spec 9.1); màn hình hẹp thì xếp dưới danh sách. Ô tìm theo tiêu đề, không cần gõ dấu (FR-5.4, AC-5.2.10).
  */
 export function DocumentsPage() {
   const me = useOutletContext<Me | null>();
   const [type, setType] = useState<DocumentType | undefined>();
+  const [q, setQ] = useState('');
+  const [term, setTerm] = useState('');
   const [page, setPage] = useState(1);
-  const list = useApi(() => documentsApi.list({ type, page, size: PAGE_SIZE }), [type, page]);
+  // Gõ tìm: chờ 300 ms sau phím cuối mới gọi API (frontend.md 2.1).
+  useEffect(() => {
+    const t = setTimeout(() => (setTerm(q.trim()), setPage(1)), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+  const list = useApi(() => documentsApi.list({ type, q: term || undefined, page, size: PAGE_SIZE }), [type, term, page]);
   const pick = (t: DocumentType | undefined) => (setType(t), setPage(1));
 
   return (
@@ -33,6 +40,9 @@ export function DocumentsPage() {
             <Link className="button" to="/documents/manage"><Settings2 size={16} /> Quản lý tài liệu</Link>
           </div>
         )}
+      </div>
+      <div className="toolbar">
+        <input type="search" placeholder="Tìm tài liệu theo tiêu đề…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Tìm tài liệu theo tiêu đề" maxLength={100} />
       </div>
       <div className="segmented wrap" role="group" aria-label="Lọc theo loại">
         <button type="button" className={!type ? 'primary' : ''} aria-pressed={!type} onClick={() => pick(undefined)}>Tất cả</button>
@@ -47,7 +57,11 @@ export function DocumentsPage() {
       <section className="card flush doc-list">
         {list.loading && !list.data && <Skeleton lines={4} />}
         {list.data?.items.length === 0 && (
-          <EmptyState>{type ? `Chưa có tài liệu loại ${TYPE_LABEL[type].toLowerCase()} dành cho bạn.` : 'Chưa có tài liệu nào dành cho bạn.'}</EmptyState>
+          <EmptyState>
+            {term
+              ? `Không có tài liệu nào khớp "${term}". Thử từ khóa khác hoặc hỏi trợ lý bên cạnh.`
+              : type ? `Chưa có tài liệu loại ${TYPE_LABEL[type].toLowerCase()} dành cho bạn.` : 'Chưa có tài liệu nào dành cho bạn.'}
+          </EmptyState>
         )}
         <ul className="plain">
           {list.data?.items.map((d) => (

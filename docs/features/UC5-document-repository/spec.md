@@ -256,11 +256,11 @@ schema response cho nhóm này. Lỗi theo dạng chung `{code, message, traceId
 
 | API | Ai gọi | Vào | Ra | Lỗi |
 |---|---|---|---|---|
-| `GET /documents?type=&page=&size=` | Mọi người | – | Trang `{id, title, type, updatedAt, latest: Version \| null}`, mới cập nhật trước | – (không có hồ sơ thì rỗng) |
+| `GET /documents?type=&q=&page=&size=` | Mọi người | `q`: 1–100 ký tự, tìm trong tiêu đề, không phân biệt hoa thường và dấu (FR-5.4) | Trang `{id, title, type, updatedAt, latest: Version \| null}`, mới cập nhật trước | – (không có hồ sơ thì rỗng) |
 | `GET /documents/{id}` | Mọi người | – | Như trên + `versions[]` (chỉ `READY`, mới nhất trước) | 404 (E5) |
 | `GET /documents/{id}/download` | Mọi người | – | File bản `READY` mới nhất; `Content-Disposition: attachment` tên file UTF-8; `Cache-Control: private, no-store` | 404, 503 |
 | `GET /documents/{id}/versions/{versionId}/download` | Mọi người | – | File của phiên bản đó (phải `READY`) | 404, 503 |
-| `GET /documents/manage?type=&q=&state=&page=&size=` | HR | `q`: 1–100 ký tự, tìm trong tiêu đề; `state`: `VISIBLE` (chưa ẩn, có bản `READY`), `HIDDEN`, `NOT_READY` (chưa có bản `READY`) | Trang `DocumentAdmin`: như trên + `hidden`, `version`, `scope {all, departmentIds, roles, departments: [{id, name, active}]}`, `versions[]` mọi trạng thái | 400, 403 |
+| `GET /documents/manage?type=&q=&state=&page=&size=` | HR | `q`: như trên; `state`: `VISIBLE` (chưa ẩn, có bản `READY`), `HIDDEN`, `NOT_READY` (chưa có bản `READY`) | Trang `DocumentAdmin`: như trên + `hidden`, `version`, `scope {all, departmentIds, roles, departments: [{id, name, active}]}`, `versions[]` mọi trạng thái | 400, 403 |
 | `GET /documents/manage/{id}` | HR | – | `DocumentAdmin` (kể cả đã ẩn) | 403, 404 |
 | `POST /documents` | HR | `{title, type, scope {all?, departmentIds?, roles?}, fileName, contentType, sizeBytes}` | 201 `{document: DocumentAdmin, upload: UploadTicket}` | 400 (E2), 403, 503 |
 | `POST /documents/{id}/versions` | HR | `{fileName, contentType, sizeBytes}` | 201 `UploadTicket` `{versionId, versionNo, url…}` | 400, 403, 404, 503 |
@@ -315,6 +315,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 |---|---|---|
 | API đăng, phiên bản, phạm vi, tải qua API, ẩn, khôi phục | Đã có (PR #64) | SRS đã cập nhật trạng thái FR-5.x (22/11) |
 | Giao diện kho tài liệu; `fields` ở lỗi 400; chặn đơn vị `INACTIVE` (D3) | Đã có (22/11) | – |
+| Nhân viên tìm tài liệu theo từ khóa, không cần dấu (FR-5.4) | Đã có (`feat/document-search`, 26/11) | – |
 | Event tài liệu cho assistant service (outbox chung) | Đã có (`feat/assistant-service`) | TV1 (13.2, D1) |
 | Dọn phiên bản `PENDING` bỏ dở | Chưa có | Đánh đổi đã ghi trong ADR-13; đề xuất lifecycle rule ở bucket (deploy.md mục 7) |
 | Local: object storage | Đã có | S3Mock trong docker-compose (PR #68) |

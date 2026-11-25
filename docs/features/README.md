@@ -75,7 +75,8 @@ Biến môi trường đầy đủ: [`configuration.md`](../development/configur
 | Mức | Chạy ở đâu | Lệnh |
 |---|---|---|
 | Unit test | CI trên mọi PR vào `dev`, `main` | `cd backend && npm test` |
-| e2e (API với DB thật) | Local, **chưa chạy trong CI** | `cd backend && npm run test:e2e` sau khi đã migrate và seed |
+| e2e (API với DB thật) | Local; CI job `Backend (E2E & OpenAPI)` trên mọi PR vào `dev`, `main` (từ 25/11, Postgres pgvector, `AUTH_MODE=dev`, kho tài liệu giả trong bộ nhớ) | `cd backend && npm run test:e2e` sau khi đã migrate và seed |
+| Đặc tả OpenAPI khớp code | Cùng job CI trên: chạy `npm run openapi` rồi `git diff --exit-code docs/openapi.yaml` | `cd backend && npm run openapi`, commit `docs/openapi.yaml` cùng PR đổi API |
 | Ca kiểm thử tay | Local, staging | Theo `test.md` của từng tính năng; kết quả ghi vào `test-report-tuan-NN.md` |
 
 Tài khoản mẫu (Keycloak, realm `hr`): `employee@hr.local`, `manager@hr.local`, `hr@hr.local`, `admin@hr.local`. Chế độ không

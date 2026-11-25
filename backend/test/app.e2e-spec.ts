@@ -866,6 +866,27 @@ describe('HRHelper API (e2e)', () => {
       expect((await http.get(`/api/v1/documents/manage/${a.id}`).set(HR).expect(200)).body.scope.departmentIds).toEqual([parent]);
     });
 
+    it('nhân viên tìm tài liệu theo từ khóa, không cần dấu; không lộ tài liệu ngoài phạm vi (FR-5.4, AC-5.2.10)', async () => {
+      const open = await publish('E2E Quy chế nghỉ phép năm 2026', { all: true });
+      const hrOnly = await publish('E2E Quy chế nghỉ phép dành cho HR', { roles: ['HR'] });
+      const find = async (who: typeof EMPLOYEE, q: string) =>
+        (await http.get(`/api/v1/documents?size=100&q=${encodeURIComponent(q)}`).set(who).expect(200)).body.items.map((d: any) => d.id);
+
+      // Có dấu, không dấu, chữ hoa đều khớp.
+      for (const q of ['nghỉ phép', 'nghi phep', 'NGHI PHEP NAM']) expect(await find(EMPLOYEE, q)).toContain(open.id);
+      // Khớp từ khóa nhưng ngoài phạm vi thì không hiện (DR-08); HR trong phạm vi thì thấy.
+      expect(await find(EMPLOYEE, 'nghi phep')).not.toContain(hrOnly.id);
+      expect(await find(HR, 'nghi phep')).toEqual(expect.arrayContaining([open.id, hrOnly.id]));
+      // Không khớp; ký tự đặc biệt của LIKE được hiểu đúng chữ.
+      expect(await find(EMPLOYEE, 'khong-co-tai-lieu-nay')).toEqual([]);
+      expect(await find(EMPLOYEE, '%')).toEqual([]);
+      // Từ khóa quá dài bị từ chối.
+      await http.get(`/api/v1/documents?q=${'a'.repeat(101)}`).set(EMPLOYEE).expect(400);
+      // Trang quản lý của HR cũng tìm không cần dấu.
+      const managed = (await http.get('/api/v1/documents/manage?size=100&q=quy%20che%20nghi%20phep').set(HR).expect(200)).body.items.map((d: any) => d.id);
+      expect(managed).toEqual(expect.arrayContaining([open.id, hrOnly.id]));
+    });
+
     it('phạm vi theo vai trò; ngoài phạm vi trả 404 như không tồn tại; chỉ HR quản lý kho (DR-02, DR-03, DR-08)', async () => {
       const b = await publish('E2E Chỉ dành cho HR', { roles: ['HR'] });
       expect(b.confirmed.status).toBe(200);

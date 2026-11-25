@@ -37,6 +37,62 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+  # N9: 150+ ca e2e (API thật + Postgres thật, AUTH_MODE=dev, kho tài liệu giả trong bộ nhớ, không queue) chạy ở mỗi PR,
+  # cùng kiểm tra docs/openapi.yaml khớp code (docs-as-code: đổi API mà quên `npm run openapi` thì job đỏ).
+  backend-e2e:
+    name: Backend (E2E & OpenAPI)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: hr
+          POSTGRES_PASSWORD: hr
+          POSTGRES_DB: hr
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hr -d hr" --health-interval 5s --health-timeout 3s --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DB_HOST: localhost
+      DB_USER: hr
+      DB_PASSWORD: hr
+      DB_NAME: hr
+      DB_SSL: 'off'
+      AUTH_MODE: dev
+      APP_VERSION: dev
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run migrations & seed
+        run: npm run migration:run && npm run seed
+
+      - name: Run e2e tests
+        run: npm run test:e2e
+
+      - name: Check OpenAPI is up to date
+        run: |
+          npm run openapi
+          if ! git diff --exit-code -- ../docs/openapi.yaml; then
+            echo "::error file=docs/openapi.yaml::docs/openapi.yaml lệch với code. Chạy 'npm run openapi' trong backend/ rồi commit."
+            exit 1
+          fi
+
   assistant:
     name: Assistant Service (Lint & Test)
     runs-on: ubuntu-latest

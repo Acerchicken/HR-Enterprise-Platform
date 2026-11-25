@@ -96,6 +96,7 @@ resource "aws_iam_policy" "ecs_exec_secrets" {
         Resource = [
           aws_secretsmanager_secret.db_credentials.arn,
           aws_secretsmanager_secret.app_secrets.arn,
+          aws_secretsmanager_secret.assistant.arn,
           aws_kms_key.main.arn
         ]
       }

@@ -23,6 +23,7 @@ flowchart LR
 | 7. Cloud | [Ánh xạ dịch vụ và chi phí AWS](cloud/mapping.md) | Dịch vụ cloud cho từng khối, chi phí | – | – |
 | 7. Cloud | [Rà soát trước khi deploy staging](cloud/staging-readiness.md) | Chỗ thiếu trong Terraform, workflow, code trước khi `apply`; biến môi trường theo thành phần | – | – |
 | 8. Phát triển | [Biến môi trường](development/configuration.md), [mã lỗi API](development/error-codes.md), [CONVENTIONS](CONVENTIONS.md) | Cấu hình từng môi trường; lỗi API trả gì | – | – |
+| 9. Bảo vệ đồ án | [Đối chiếu với yêu cầu môn học](defense/doi-chieu-yeu-cau-mon-hoc.md) | Đề tài đã đáp ứng từng slide yêu cầu (use case, security & workflow, P1–P5, Project Scope) tới đâu; việc còn thiếu, ai làm, hạn; câu trả lời chuẩn bị cho 12 câu hỏi Architecture Defense; kịch bản demo | `N1` → `N13` | – |
 
 Quy trình làm việc: [`CONVENTIONS.md`](CONVENTIONS.md). Kế hoạch tổng: [`progress/ke-hoach-tong.md`](progress/ke-hoach-tong.md) (mục 7: lịch hoàn thành từng chức năng). Báo cáo tuần: [`progress/`](progress/README.md).
 

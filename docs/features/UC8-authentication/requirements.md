@@ -41,6 +41,9 @@ Môi trường: **L** = local (Keycloak), **S** = staging (Cognito). Không ghi 
   Khi gọi API chỉ dành cho HR hoặc quản lý. Thì 403: vai trò chỉ lấy từ database và sơ đồ tổ chức (ADR-18).
 - **AC-8.1.11** Giả sử `/callback` thiếu `code`, sai `state` hoặc IdP trả `error`. Thì web hiện "Đăng nhập không thành
   công" kèm nút "Thử lại", không lưu token, không lặp chuyển hướng (E1).
+- **AC-8.1.12** Giả sử token hợp lệ nhưng IdP chưa xác minh email (`email_verified` khác true hoặc không có) và chưa có
+  tài khoản nào gắn `subject` này. Khi gọi API. Thì 401, không tạo tài khoản, không gắn `subject` hay hồ sơ theo email
+  (threat model T-02, NFR-5.9, E3). Tài khoản đã gắn `subject` từ trước vẫn đăng nhập bình thường.
 
 ### FR-8.2 Quên mật khẩu (M, chưa có)
 

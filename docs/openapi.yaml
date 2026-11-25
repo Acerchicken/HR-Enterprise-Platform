@@ -1507,6 +1507,13 @@ paths:
               - FORM
               - NOTICE
             type: string
+        - name: q
+          required: false
+          in: query
+          description: Tìm trong tiêu đề, không phân biệt hoa thường và dấu tiếng Việt
+          schema:
+            maxLength: 100
+            type: string
       responses:
         "200":
           description: ""
@@ -1546,7 +1553,7 @@ paths:
         - name: q
           required: false
           in: query
-          description: Tìm trong tiêu đề, không phân biệt hoa thường
+          description: Tìm trong tiêu đề, không phân biệt hoa thường và dấu tiếng Việt
           schema:
             maxLength: 100
             type: string
