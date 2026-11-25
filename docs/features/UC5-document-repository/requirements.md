@@ -12,6 +12,7 @@
 | US-5.2 | Nhân viên | Xem và tải tài liệu áp dụng cho mình | Tự tra chính sách, không hỏi HR | FR-5.2 |
 | US-5.3 | HR | Đăng bản mới mà vẫn giữ bản cũ | Nhân viên thấy bản mới nhất, vẫn tra lại được bản cũ | FR-5.3 |
 | US-5.4 | HR | Ẩn tài liệu thay vì xóa | Gỡ tài liệu sai mà không mất lịch sử | FR-5.2 (DR-05) |
+| US-5.5 | Nhân viên | Gõ vài chữ (có dấu hoặc không) để tìm tài liệu | Tự tìm chính sách nhanh, không phải lướt cả danh sách (use case "Employee self-service search" của đề bài) | FR-5.4 |
 
 ## 2. Tiêu chí chấp nhận
 
@@ -51,6 +52,17 @@
 - **AC-5.2.5** Khi HR ẩn tài liệu. Thì mọi nhân viên nhận 404; HR vẫn thấy ở trang quản lý; khôi phục thì xem lại được (DR-05).
 - **AC-5.2.6** Khi tải. Thì API kiểm lại phạm vi rồi stream file; response không chứa link storage.
 - **AC-5.2.7** Trang "Tra cứu tài liệu": danh sách mới cập nhật trước, lọc theo loại, mở chi tiết, tải bản mới nhất.
+
+### FR-5.4 Tìm tài liệu theo từ khóa (M, thêm 25/11/2026)
+
+Thêm sau khi đối chiếu với yêu cầu môn học ([`defense/doi-chieu-yeu-cau-mon-hoc.md`](../../defense/doi-chieu-yeu-cau-mon-hoc.md)):
+use case 6 của đề bài "Employee self-service search" cần nhân viên tự tìm được tài liệu; FR-6.2 bị bỏ ngày 22/11 nhưng UC5 chưa có
+yêu cầu tìm kiếm.
+
+- **AC-5.2.10** Giả sử có tài liệu "Quy chế nghỉ phép năm 2026" trong phạm vi của nhân viên. Khi nhân viên gõ "nghi phep",
+  "nghỉ phép" hoặc "NGHI PHEP" ở trang "Tra cứu tài liệu". Thì tài liệu hiện trong kết quả (`GET /documents?q=`, tìm trong tiêu đề,
+  không phân biệt hoa thường và dấu). Tài liệu khớp từ khóa nhưng ngoài phạm vi không hiện (DR-08). `q` dài hơn 100 ký tự trả 400;
+  `%`, `_` được hiểu đúng chữ. Trang quản lý của HR tìm cùng cách.
 
 ### FR-5.3 Phiên bản (S, đã có)
 

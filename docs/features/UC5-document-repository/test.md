@@ -32,6 +32,7 @@ Rủi ro chính là **lộ tài liệu ngoài phạm vi**, kể cả gián tiế
 | AC-5.1.9 | "phạm vi chỉ nhận đơn vị đang hoạt động; đơn vị đã có trong phạm vi thì giữ được" | Chọn đơn vị `INACTIVE` làm phạm vi | Có |
 | AC-5.1.8, AC-5.2.7 | – (e2e "trang quản lý: tìm theo tiêu đề, lọc…" kiểm API của trang quản lý) | Đăng tài liệu trên giao diện, lỗi hiện đúng ô; trang `/documents` lọc loại, mở chi tiết, tải | Có giao diện; TV4 chạy ca tay |
 | AC-5.2.1 | "phạm vi phòng ban gồm phòng ban con…" | Phòng ban con | Có |
+| AC-5.2.10 | "nhân viên tìm tài liệu theo từ khóa, không cần dấu; không lộ tài liệu ngoài phạm vi" | Trang `/documents` gõ "nghi phep": kết quả đổi sau khoảng 0,3 s; từ khóa không khớp hiện gợi ý hỏi trợ lý | Có |
 | AC-5.2.2 | Unit "nhiều phạm vi là phép cộng…" | Nhiều phạm vi | Có |
 | AC-5.2.3 | "phạm vi theo vai trò; ngoài phạm vi trả 404 như không tồn tại…" | Đoán ID | Có |
 | AC-5.2.4, AC-5.2.5 | "ẩn tài liệu thì không ai xem được, khôi phục thì xem lại được; đổi phòng ban mất quyền ngay" | Đổi phòng ban, tài liệu ẩn | Có |
