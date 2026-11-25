@@ -27,4 +27,17 @@ export const dataSourceOptions: DataSourceOptions = {
   logging: ['error'],
 };
 
+/**
+ * Cho API và worker (không cho CLI migration, seed: câu lệnh dài như tạo index không bị cắt). pg Pool: giới hạn số kết nối,
+ * thời gian chờ lấy kết nối và `statement_timeout` ở phía Postgres (SRS 6.14 "Database chậm": chờ tối đa 5 s rồi trả 503).
+ */
+export const runtimeDataSourceOptions: DataSourceOptions = {
+  ...dataSourceOptions,
+  extra: {
+    max: cfg.db.poolMax,
+    connectionTimeoutMillis: cfg.db.connectTimeoutMs,
+    ...(cfg.db.statementTimeoutMs ? { statement_timeout: cfg.db.statementTimeoutMs } : {}),
+  },
+};
+
 export default new DataSource(dataSourceOptions);

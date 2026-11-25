@@ -76,8 +76,21 @@ describe('HRHelper API (e2e)', () => {
     await app.close();
   });
 
-  it('health không cần đăng nhập', async () => {
-    await http.get('/api/v1/health').expect(200, { status: 'ok' });
+  it('health không cần đăng nhập, trả phiên bản đang chạy (NFR-8.5)', async () => {
+    await http.get('/api/v1/health').expect(200, { status: 'ok', version: process.env.APP_VERSION || 'dev' });
+  });
+
+  it('kết nối database có statement_timeout, câu lệnh chậm bị hủy thay vì treo (SRS 6.14)', async () => {
+    const { DataSource: DS } = await import('typeorm');
+    const ds = app.get(DS);
+    const [{ statement_timeout }] = await ds.query('SHOW statement_timeout');
+    expect(statement_timeout).toBe('5s');
+    const { isDbTimeout } = await import('../src/common/api-error.filter');
+    const err = await ds.transaction(async (m: import('typeorm').EntityManager) => {
+      await m.query(`SET LOCAL statement_timeout = '50ms'`);
+      return m.query('SELECT pg_sleep(1)').catch((e: unknown) => e);
+    }).catch((e: unknown) => e);
+    expect(isDbTimeout(err)).toBe(true);
   });
 
   it('thiếu token → 401 với format lỗi chuẩn', async () => {

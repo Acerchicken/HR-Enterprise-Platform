@@ -202,7 +202,9 @@ resource "aws_ecs_task_definition" "worker" {
         { name = "STORAGE_BUCKET", value = aws_s3_bucket.documents.id },
         { name = "STORAGE_REGION", value = var.aws_region },
         { name = "MAIL_DRIVER", value = "ses" },
-        { name = "SMTP_FROM", value = var.sender_email }
+        { name = "SMTP_FROM", value = var.sender_email },
+        # Job nền (cộng phép đầu năm, áp dụng điều chuyển) chạy câu lệnh dài hơn request API: nới statement_timeout.
+        { name = "DB_STATEMENT_TIMEOUT_MS", value = "60000" }
       ]
 
       secrets = [

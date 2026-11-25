@@ -363,7 +363,7 @@ khi instance vừa khởi động.
 | NFR-3.2 | Không có điểm hỏng đơn lẻ ở tầng API | Tối thiểu 2 instance; mất 1 instance thì tỉ lệ lỗi < 1% và tự thay instance mới trong < 5 phút | Tắt 1 instance trong load test (ADR-06) | Kế hoạch tuần 11 |
 | NFR-3.3 | Phát hành phiên bản mới không dừng dịch vụ | Lỗi 5xx < 1% trong lúc deploy; migration tương thích ngược; quay về image trước trong < 15 phút | Deploy giữa load test; thử rollback | Một phần: pipeline có bước gắn tag image để rollback |
 | NFR-3.4 | Lỗi của queue, email, LLM không làm hỏng nghiệp vụ chính | Tạo, duyệt, hủy đơn vẫn chạy; email gửi bù khi dịch vụ hoạt động lại | Tắt queue rồi tạo đơn | Đã có: outbox + queue (ADR-03) |
-| NFR-3.5 | Gọi hệ thống ngoài có giới hạn thời gian và thử lại | Timeout ≤ 10 s; thử lại tối đa 3 lần, giãn cách tăng dần; hết lượt thì vào DLQ | Unit test; tắt SMTP trong test | Một phần: có DLQ, chưa có giãn cách tăng dần |
+| NFR-3.5 | Gọi hệ thống ngoài có giới hạn thời gian và thử lại | Timeout ≤ 10 s; thử lại tối đa 3 lần, giãn cách tăng dần; hết lượt thì vào DLQ | Unit test; tắt SMTP trong test | Một phần: có DLQ; database có `statement_timeout` 5 s và chờ kết nối 5 s rồi trả 503 (25/11); email chưa có giãn cách tăng dần |
 | NFR-3.6 | Load balancer biết instance nào hỏng | `GET /api/v1/health` trả 200 khi API và database sẵn sàng, không cần đăng nhập | e2e test | Đã có |
 
 ### 6.5 NFR-4 – Sao lưu và phục hồi
@@ -455,11 +455,11 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 
 | Mã | Yêu cầu | Ngưỡng | Kiểm chứng | Trạng thái |
 |---|---|---|---|---|
-| NFR-8.1 | Log tập trung | Log dạng JSON, có traceId, giữ 14 ngày, tìm được theo traceId | Tìm một request trên CloudWatch | Một phần: có traceId, log chưa ở dạng JSON |
-| NFR-8.2 | Metric chính | Request/giây, p95, tỉ lệ 5xx, độ dài queue, số message trong DLQ, số event outbox chưa gửi, CPU và kết nối database | Dashboard | Kế hoạch tuần 11 |
+| NFR-8.1 | Log tập trung | Log dạng JSON, có traceId, giữ 14 ngày, tìm được theo traceId | Tìm một request trên CloudWatch | Một phần (25/11): log JSON có traceId và access log (`LOG_FORMAT`, mặc định ở production); giữ 14 ngày đặt ở log group (Terraform) |
+| NFR-8.2 | Metric chính | Request/giây, p95, tỉ lệ 5xx, độ dài queue, số message trong DLQ, số event outbox chưa gửi, CPU và kết nối database | Dashboard | Một phần (25/11): metric `OutboxPending`, `OutboxOldestAgeSeconds` (CloudWatch EMF); request/giây, p95, 5xx đo từ access log; dashboard chưa có (N5b) |
 | NFR-8.3 | Cảnh báo | Báo khi tỉ lệ 5xx > 1% trong 5 phút, p95 > 1 s trong 10 phút, DLQ có message, outbox tồn quá 15 phút | Kích hoạt thử từng cảnh báo | Kế hoạch tuần 11 |
 | NFR-8.4 | Sổ tay xử lý sự cố (runbook) | Có runbook cho từng tình huống ở mục 6.14 | Review tài liệu | Kế hoạch tuần 12 |
-| NFR-8.5 | Thông tin phiên bản đang chạy | Biết được commit hoặc tag đang chạy ở mỗi môi trường | Gọi health check | Chưa có |
+| NFR-8.5 | Thông tin phiên bản đang chạy | Biết được commit hoặc tag đang chạy ở mỗi môi trường | Gọi health check | Đã có (25/11): `GET /health` trả `version` = commit SHA build vào image |
 
 ### 6.10 NFR-9 – Bảo trì và kiểm thử
 
