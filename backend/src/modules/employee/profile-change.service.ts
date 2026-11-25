@@ -65,6 +65,8 @@ export interface RequestView {
   submittedAt: Date;
   reviewedAt: Date | null;
   rejectReason?: string | null;
+  /** `TERMINATED`: hệ thống hủy vì chủ hồ sơ nghỉ việc (UC1 E29). */
+  cancelReason: string | null;
   fileIds: string[];
   files?: FileView[];
 }
@@ -739,6 +741,7 @@ export class ProfileChangeService {
       proposedSensitive: Object.fromEntries(keys.map((k) => [k, { hasValue: true, value: null }])),
       submittedAt: r.submittedAt,
       reviewedAt: r.reviewedAt,
+      cancelReason: r.cancelReason ?? null,
       fileIds: r.fileIds ?? [],
       ...(withReason ? { rejectReason: r.rejectReason } : {}),
     };

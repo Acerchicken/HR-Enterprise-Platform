@@ -28,7 +28,8 @@ Không có biến riêng. `traceId` lấy từ header `X-Trace-Id` (NFR-6.4). IP
 
 - Trigger chặn UPDATE, DELETE được tạo cùng migration; không cần bước tay.
 - Không chạy lệnh dọn dữ liệu nào lên `audit.audit_log`: trigger sẽ chặn và làm lỗi cả giao dịch.
-- **Seed với `--reset` xóa sạch audit** bằng `TRUNCATE` (trigger theo dòng không chặn `TRUNCATE`). Seed không `--reset` thì
+- **Seed với `--reset` xóa sạch audit**: tắt tạm trigger `trg_audit_no_truncate` (chủ bảng làm được) rồi `TRUNCATE` trong cùng
+  giao dịch. Seed không `--reset` thì
   bỏ qua khi đã có nhân viên. Không chạy `--reset` trên staging sau khi đã demo.
 
 ## 5. Kiểm tra sau deploy
@@ -48,5 +49,5 @@ Không có biến riêng. `traceId` lấy từ header `X-Trace-Id` (NFR-6.4). IP
 
 - Audit đăng nhập và cấp, thu hồi vai trò (NFR-5.10) cần lấy event từ Keycloak và Cognito; tuần 13 nếu còn thời gian.
 - Chưa có quy trình archive sau 5 năm (BR-13).
-- `TRUNCATE` vượt qua trigger append-only. Đề xuất: tài khoản database của ứng dụng trên staging không có quyền `TRUNCATE`
-  bảng audit (NFR-5.14), chỉ tài khoản quản trị chạy seed `--reset`.
+- `TRUNCATE` đã bị trigger `trg_audit_no_truncate` chặn (E10), nhưng tài khoản ứng dụng là chủ bảng nên vẫn tắt được trigger.
+  Đề xuất: trên staging, tài khoản ứng dụng không phải chủ bảng, không có quyền `TRUNCATE` (NFR-5.14, staging-readiness L3).

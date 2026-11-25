@@ -91,4 +91,4 @@ npm run test:e2e               # cần docker compose (db, keycloak) đã chạy
 - AC-1.10.x: ca bảo mật file trong `docs/security-test-cases-week11` (TV4), chạy khi `feat/profile-files` xong.
 - AC-1.14.x: ca rate limit trong `docs/security-test-cases-week11`.
 - AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2: viết khi `fix/employee-org-integrity` xong.
-- Ngoại lệ bổ sung [spec mục 6.1](spec.md#61-ngoại-lệ-bổ-sung-rà-24112026) (E23 → E32): mỗi mã ít nhất một ca e2e hoặc unit. Với E29, tạo yêu cầu cập nhật rồi cho nhân viên nghỉ việc: yêu cầu tự `CANCELLED` với reason `TERMINATED`, vẫn xem được lịch sử/audit, HR duyệt yêu cầu cũ nhận 409; đây là tiêu chí cần code/test, chưa phải kết quả đã chạy.
+- Ngoại lệ bổ sung [spec mục 6.1](spec.md#61-ngoại-lệ-bổ-sung-rà-24112026) (E23 → E32): mỗi mã ít nhất một ca e2e hoặc unit. Với E29, tạo yêu cầu cập nhật rồi cho nhân viên nghỉ việc: yêu cầu tự `CANCELLED` với reason `TERMINATED`, vẫn xem được lịch sử/audit, HR duyệt yêu cầu cũ nhận 409. **E29 đã có e2e** ("nghỉ việc hủy yêu cầu sửa hồ sơ đang chờ…", chạy xanh 25/11); các mã khác còn chờ TV4.

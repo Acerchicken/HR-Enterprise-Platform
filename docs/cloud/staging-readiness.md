@@ -77,7 +77,7 @@ aws ecs run-task --cluster hr-platform-staging-cluster --task-definition hr-plat
 |---|---|---|---|
 | L1 | Bucket tài liệu SSE-S3 (`AES256`), NFR-5.16 cần SSE-KMS; CORS cho `PUT`, `GET`, `HEAD`, ADR-13 chỉ cần `PUT` | [UC5 deploy.md mục 3](../features/UC5-document-repository/deploy.md#3-hạ-tầng) | TV3 |
 | L2 | Queue `identity-sync` riêng, SNS `hr-events` fan-out (ADR-15), Lambda Post-authentication | Hiện mọi event đi chung queue `leave-notifications`, worker xử lý được. Làm khi tách dịch vụ thông báo | TV3 |
-| L3 | `TRUNCATE` vượt trigger append-only của audit (NFR-5.14) | User ứng dụng là chủ bảng. Không chạy seed `--reset` trên staging | TV3, TV1 |
+| L3 | Tách quyền database cho bảng audit (NFR-5.14) | `TRUNCATE` đã bị trigger chặn (UC7 E10), nhưng user ứng dụng là chủ bảng nên tắt được trigger. Cần user ứng dụng riêng, không phải chủ bảng. Không chạy seed `--reset` trên staging | TV3, TV1 |
 | L4 | Workflow chỉ chạy tay (`workflow_dispatch`) | Thêm lại `push: branches: [dev]` khi staging đã chạy ổn (tuần 12) | TV3 |
 | L5 | `force_destroy`, `skip_final_snapshot = true`, `deletion_protection = false` | Chấp nhận cho staging, không mang lên production | – |
 | L6 | Migration chạy hai lần mỗi deploy: task ECS trong workflow và `CMD` của image API khi App Runner khởi động | Không hại (migration đã chạy thì bỏ qua). Có thể bỏ khỏi `CMD` để App Runner khởi động nhanh hơn | TV1 |

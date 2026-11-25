@@ -1841,6 +1841,52 @@ describe('HRHelper API (e2e)', () => {
       expect(list.find((x: any) => x.id === t.id).status).toBe('CANCELLED');
       await http.patch(`/api/v1/employees/${c.id}`).set(HR).send({ status: 'TERMINATED', version: cv }).expect(200);
     });
+
+    it('ngày hiệu lực xa nhất là cùng ngày năm sau: đúng mốc được, sau mốc 400 (E18)', async () => {
+      const { transferHorizon, addDays } = await import('../src/modules/employee/transfer-rules');
+      const edge = transferHorizon(today);
+      const a = await mk('Chuyển Xa Mốc', leg.id, leg.headEmployeeId);
+      const res = await post(a.id, body(a, { departmentId: mkt.id, managerId: mkt.headEmployeeId, effectiveDate: addDays(edge, 1) })).expect(400);
+      expect(res.body.fields).toHaveProperty('effectiveDate');
+      const t = (await post(a.id, body(a, { departmentId: mkt.id, managerId: mkt.headEmployeeId, effectiveDate: edge })).expect(201)).body;
+      expect(t).toMatchObject({ status: 'SCHEDULED', effectiveDate: edge });
+    });
+
+    it('gán trưởng cho người sắp điều chuyển sang nhánh khác: 409 (E22)', async () => {
+      const a = await mk('Sắp Sang Marketing', leg.id, leg.headEmployeeId);
+      const t = (await post(a.id, body(a, { departmentId: mkt.id, managerId: mkt.headEmployeeId, effectiveDate: plus(5) })).expect(201)).body;
+      const res = await http.patch(`/api/v1/departments/${leg.id}`).set(HR).send({ headEmployeeId: a.id }).expect(409);
+      expect(res.body.message).toMatch(/sắp điều chuyển/);
+      expect((await http.get(`/api/v1/departments/${leg.id}`).set(HR)).body.head.id).toBe(leg.headEmployeeId);
+      // Hủy điều chuyển thì gán được; trả lại trưởng cũ.
+      await http.delete(`/api/v1/employees/${a.id}/transfers/${t.id}`).set(HR).expect((r) => expect(r.status).toBeLessThan(300));
+      try {
+        await http.patch(`/api/v1/departments/${leg.id}`).set(HR).send({ headEmployeeId: a.id }).expect(200);
+      } finally {
+        await http.patch(`/api/v1/departments/${leg.id}`).set(HR).send({ headEmployeeId: leg.headEmployeeId }).expect(200);
+      }
+    });
+
+    it('nghỉ việc hủy yêu cầu sửa hồ sơ đang chờ, lý do TERMINATED; HR duyệt yêu cầu cũ 409 (UC1 E29)', async () => {
+      const a = await mk('Nghỉ Còn Yêu Cầu', leg.id, leg.headEmployeeId);
+      const req = (
+        await http
+          .post(`/api/v1/employees/${a.id}/change-requests`)
+          .set(as(a.workEmail))
+          .set('Idempotency-Key', `e29-${Date.now()}`)
+          .send({ section: 'personal', action: 'UPDATE', proposed: { phone: '0912 777 888' } })
+          .expect(202)
+      ).body;
+      const v = (await http.get(`/api/v1/employees/${a.id}`).set(HR)).body.version;
+      await http.patch(`/api/v1/employees/${a.id}`).set(HR).send({ status: 'TERMINATED', version: v }).expect(200);
+      await http.post(`/api/v1/change-requests/${req.id}/approve`).set(HR).expect(409);
+      const { DataSource } = await import('typeorm');
+      const ds = app.get(DataSource);
+      const [row] = await ds.query(`SELECT status, cancel_reason FROM employee.profile_change_request WHERE id = $1`, [req.id]);
+      expect(row).toEqual({ status: 'CANCELLED', cancel_reason: 'TERMINATED' });
+      const logs = (await http.get(`/api/v1/audit-logs?entity=employee&entityId=${a.id}&action=PROFILE_CHANGE_CANCEL`).set(HR)).body.items;
+      expect(logs[0]).toMatchObject({ actorId: null, changedFields: { requestId: req.id, reason: 'TERMINATED' } });
+    });
   });
 
   describe('UC3, UC4 nghỉ phép', () => {
@@ -2134,6 +2180,19 @@ describe('HRHelper API (e2e)', () => {
       for (const r of [byMgr, byHr]) await post(r.id, 'cancel', EMPLOYEE, { version: r.version }).expect(200);
     });
 
+    it('ngày bắt đầu trước ngày vào làm hoặc sau 31/12 năm sau: 400 (E16)', async () => {
+      const { vnToday, addDays } = await import('../src/modules/employee/transfer-rules');
+      const [{ hire_date }] = await ds.query(`SELECT to_char(hire_date, 'YYYY-MM-DD') AS hire_date FROM employee.employee WHERE id = $1`, [employeeId]);
+      const before = addDays(hire_date, -1);
+      expect((await annual(before).expect(400)).body.fields).toHaveProperty('startDate');
+      const edge = `${Number(vnToday().slice(0, 4)) + 1}-12-31`;
+      expect((await annual(addDays(edge, 1)).expect(400)).body.fields).toHaveProperty('startDate');
+      // Đúng mốc không bị chặn bởi E16 (có thể vẫn lỗi vì lý do khác như cuối tuần, số dư năm sau).
+      const res = await annual(edge);
+      expect(res.body.fields?.startDate).toBeUndefined();
+      if (res.status === 201) await post(res.body.id, 'cancel', EMPLOYEE, { version: res.body.version }).expect(200);
+    });
+
     it('người duyệt thay: thấy và duyệt trong thời hạn; hết phân công thì 403 (AC-4.3.x)', async () => {
       const [other] = await ds.query(
         `SELECT e.id, e.work_email FROM employee.employee e
@@ -2296,6 +2355,21 @@ describe('HRHelper API (e2e)', () => {
       }
     });
 
+    it('chỉ lọc thời gian: tối đa 366 ngày tính cả hai đầu; có người hoặc mã đối tượng thì không giới hạn (E5, E6)', async () => {
+      await logs('from=2025-01-01&to=2026-01-01&size=1').expect(200); // 366 ngày
+      const res = await logs('from=2025-01-01&to=2026-01-02&size=1').expect(400);
+      expect(res.body.fields).toHaveProperty('to');
+      await logs(`from=2025-01-01&to=2026-06-30&size=1&actor=${employeeId}`).expect(200);
+      await logs(`from=2025-01-01&to=2026-06-30&size=1&entity=employee&entityId=${employeeId}`).expect(200);
+      await logs('from=2026-11-02&to=2026-11-01').expect(400); // E5
+    });
+
+    it('phân trang sâu: page × size tối đa 10.000 (E7)', async () => {
+      await logs('page=100&size=100').expect(200);
+      const res = await logs('page=101&size=100').expect(400);
+      expect(res.body.fields).toHaveProperty('page');
+    });
+
     it('lọc theo hành động, nhiều giá trị; có tên người thực hiện (AC-7.3.8)', async () => {
       await http.get(`/api/v1/employees/${employeeId}?include=sensitive`).set(HR).expect(200);
       const body = (await logs('action=VIEW_SENSITIVE&action=ROLE_GRANT&size=50').expect(200)).body;
@@ -2357,6 +2431,15 @@ describe('HRHelper API (e2e)', () => {
     const { DataSource } = await import('typeorm');
     const ds = app.get(DataSource);
     await expect(ds.query('DELETE FROM audit.audit_log')).rejects.toThrow(/append-only/);
+    // E10: TRUNCATE cũng bị chặn (trigger theo câu lệnh). Chạy trong giao dịch để chắc chắn không mất dữ liệu nếu lỗi.
+    const qr = ds.createQueryRunner();
+    await qr.startTransaction();
+    try {
+      await expect(qr.query('TRUNCATE audit.audit_log')).rejects.toThrow(/append-only/);
+    } finally {
+      await qr.rollbackTransaction();
+      await qr.release();
+    }
   });
   describe('UC6 trợ lý chính sách: API BFF hỏi đáp (AC-6.3.4, 6.3.6, 6.3.7) và cấu hình (FR-6.4)', () => {
     const calls: any[] = [];

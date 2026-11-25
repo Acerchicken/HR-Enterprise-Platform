@@ -8,7 +8,7 @@ import { Employee } from './employee.entity';
 import { EmployeeService } from './employee.service';
 import { EmploymentAssignment } from './employment-assignment.entity';
 import { CreateTransferDto, TerminationImpact, TransferView } from './transfer.dto';
-import { addDays, pendingAsNewManager, vnToday } from './transfer-rules';
+import { addDays, pendingAsNewManager, transferHorizon, vnToday } from './transfer-rules';
 
 const ACTIVE_STATUSES = ['ACTIVE', 'ON_LEAVE'];
 
@@ -35,6 +35,9 @@ export class TransferService {
     const fields: Record<string, string> = {};
     if (dto.effectiveDate < e.hireDate) fields.effectiveDate = 'Ngày hiệu lực trước ngày vào làm';
     else if (dto.effectiveDate < addDays(today, -30)) fields.effectiveDate = 'Ngày hiệu lực chỉ được lùi tối đa 30 ngày';
+    else if (dto.effectiveDate > transferHorizon(today)) {
+      fields.effectiveDate = `Ngày hiệu lực không được sau ${transferHorizon(today)} (tối đa một năm)`;
+    }
     const current = await this.rows.findOneBy({ employeeId, status: 'ACTIVE' });
     if (!fields.effectiveDate && current && dto.effectiveDate < current.effectiveFrom) {
       // Cùng ngày được (sửa nhầm trong ngày): giai đoạn trước thành rỗng và không hiện trong quá trình công tác.

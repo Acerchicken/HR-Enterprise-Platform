@@ -144,10 +144,13 @@ async function main() {
 
   await dataSource.transaction(async (m) => {
     if (reset) {
-      // audit_log là append-only (trigger chặn DELETE) nên dùng TRUNCATE – chỉ dành cho môi trường dev.
+      // audit_log là append-only: trigger chặn DELETE và TRUNCATE (UC7 E10). Chỉ ở dev, chủ bảng tắt tạm trigger TRUNCATE
+      // trong giao dịch này để làm lại dữ liệu mẫu; không chạy --reset trên staging.
+      await m.query(`ALTER TABLE audit.audit_log DISABLE TRIGGER trg_audit_no_truncate`);
       await m.query(`TRUNCATE audit.audit_log, leave.leave_request_history, leave.leave_request_allocation, leave.approval_delegation, leave.leave_request, leave.leave_balance,
         leave.leave_type, iam.role_assignment, iam.user_account, employee.employee_sensitive, employee.employee,
         org.position, org.department RESTART IDENTITY CASCADE`);
+      await m.query(`ALTER TABLE audit.audit_log ENABLE TRIGGER trg_audit_no_truncate`);
     }
 
     // ---- Phòng ban & chức danh ----

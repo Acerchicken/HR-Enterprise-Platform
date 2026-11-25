@@ -92,6 +92,14 @@ export class LeaveService {
     if (!isValidDate(period.endDate)) throw fieldError('endDate', 'Ngày kết thúc không hợp lệ');
     if (period.endDate < period.startDate) throw fieldError('endDate', 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu');
     if (period.halfDay && period.startDate !== period.endDate) throw fieldError('halfDay', 'Nghỉ nửa ngày chỉ áp dụng cho một ngày');
+    // UC3 E16 (TV2 chốt 25/11): không nghỉ trước ngày vào làm, không đặt trước quá 31/12 năm kế tiếp (giờ Việt Nam).
+    // Không có trần chung cho thời lượng: loại phép nào cần thì có quy tắc riêng.
+    const latestStart = `${Number(vnToday().slice(0, 4)) + 1}-12-31`;
+    if (period.startDate > latestStart) throw fieldError('startDate', `Ngày bắt đầu không được sau ${latestStart}`);
+    const ownerFacts = await this.balances.employeeFacts(this.requests.manager, ownerId);
+    if (ownerFacts && period.startDate < ownerFacts.hireDate) {
+      throw fieldError('startDate', `Ngày bắt đầu trước ngày vào làm (${ownerFacts.hireDate})`);
+    }
     if (type.requiresEventDate) {
       if (!dto.eventDate || !isValidDate(dto.eventDate)) throw fieldError('eventDate', 'Loại phép theo sự kiện cần ngày sự kiện');
       if (!eventDateInRange(dto.eventDate, period.startDate)) throw fieldError('eventDate', 'Ngày sự kiện cách ngày nghỉ quá 1 năm');

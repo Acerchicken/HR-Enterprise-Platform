@@ -212,7 +212,7 @@ const FLOWS = [
 {
   id: 'f3', grp: 'Ghi', name: 'Chặn sửa, xóa audit', sub: 'FR-7.2, E3',
   refs: 'FR-7.2 · AC-7.2.x · ADR-09 · NFR-5.14 (một phần)',
-  intro: 'Trigger trg_audit_append_only chặn mọi UPDATE, DELETE, kể cả từ code lỗi hay tài khoản quản trị. Chưa có lớp quyền database: tài khoản ứng dụng vẫn là chủ bảng, nên TRUNCATE (trigger theo dòng không bắt) chưa bị chặn. Hết hạn 5 năm (BR-13) chỉ archive hoặc hủy bằng quy trình có phê duyệt.',
+  intro: 'Trigger trg_audit_append_only chặn mọi UPDATE, DELETE, kể cả từ code lỗi hay tài khoản quản trị. Trigger trg_audit_no_truncate (theo câu lệnh) chặn TRUNCATE. Chưa có lớp quyền database: tài khoản ứng dụng là chủ bảng nên vẫn tắt được trigger. Hết hạn 5 năm (BR-13) chỉ archive hoặc hủy bằng quy trình có phê duyệt.',
   type: 'seq', p: ['A', 'J', 'D'],
   m: [
     { f: 'A', t: 'D', l: 'UPDATE hoặc DELETE audit.audit_log (lỗi code, câu SQL tay)' },
@@ -221,7 +221,8 @@ const FLOWS = [
     { f: 'J', t: 'D', l: 'Worker, job, lệnh quản trị: chỉ INSERT (actor_id NULL)' },
     { f: 'D', t: 'J', l: 'OK', k: 'ret' },
     { f: 'A', t: 'D', l: 'TRUNCATE audit.audit_log' },
-    { f: 'D', t: 'A', l: 'Cần: không có quyền TRUNCATE, UPDATE, DELETE → permission denied. Chưa có: tài khoản ứng dụng đang là chủ bảng; chỉ seed -- --reset ở dev dùng TRUNCATE', k: 'err', s: 'NFR-5.14 (chưa đạt)' },
+    { f: 'D', t: 'D', l: 'Trigger BEFORE TRUNCATE FOR EACH STATEMENT → RAISE "audit_log là append-only"', k: 'err', s: 'E10' },
+    { f: 'D', t: 'A', l: 'Lỗi, dữ liệu giữ nguyên. Còn thiếu: tài khoản ứng dụng không phải chủ bảng (không tắt được trigger); seed -- --reset ở dev tắt tạm trigger', k: 'err', s: 'NFR-5.14 (một phần)' },
   ],
 },
 {

@@ -5,6 +5,16 @@ export function vnToday(now = new Date()): string {
   return new Date(now.getTime() + 7 * 3600_000).toISOString().slice(0, 10);
 }
 
+/**
+ * Mốc xa nhất cho ngày hiệu lực điều chuyển (UC2 E18, TV2 chốt 25/11): cùng ngày lịch của năm kế tiếp, tính cả mốc.
+ * 29/2 không có ở năm sau thì lấy 28/2.
+ */
+export function transferHorizon(today: string): string {
+  const [y, m, d] = today.split('-').map(Number);
+  const last = new Date(Date.UTC(y + 1, m, 0)).getUTCDate();
+  return `${y + 1}-${String(m).padStart(2, '0')}-${String(Math.min(d, last)).padStart(2, '0')}`;
+}
+
 export function addDays(day: string, n: number): string {
   const d = new Date(`${day}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);

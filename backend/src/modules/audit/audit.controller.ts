@@ -9,6 +9,10 @@ import { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES, HR_ONLY_ENTITY_TYPES } from './audit
 import { auditPeriod, isAuditDate } from './audit-period';
 import { AuditService } from './audit.service';
 
+const DAY_MS = 24 * 3600 * 1000;
+const MAX_TIME_ONLY_DAYS = 366;
+const MAX_PAGE_DEPTH = 10_000;
+
 const toArray = ({ value }: { value: unknown }) =>
   value === undefined || value === '' ? undefined : (Array.isArray(value) ? value : String(value).split(',')).map((v) => String(v).trim());
 
@@ -46,7 +50,11 @@ class AuditLogQuery extends PageQuery {
   @IsString()
   from?: string;
 
-  @ApiPropertyOptional({ description: 'YYYY-MM-DD (tính cả ngày, giờ Việt Nam) hoặc ngày giờ ISO 8601; tính cả mốc', example: '2026-11-01' })
+  @ApiPropertyOptional({
+    description:
+      'YYYY-MM-DD (tính cả ngày, giờ Việt Nam) hoặc ngày giờ ISO 8601; tính cả mốc. Không có `actor`, `entityId` thì khoảng tối đa 366 ngày (UC7 E6); page × size tối đa 10.000 (E7)',
+    example: '2026-11-01',
+  })
   @IsOptional()
   @IsString()
   to?: string;
@@ -72,6 +80,20 @@ export class AuditController {
     const { from, toExclusive } = auditPeriod(q.from, q.to);
     if (from && toExclusive && from >= toExclusive) {
       throw new BadRequestException({ message: '"Từ ngày" phải trước "Đến ngày"', fields: { to: 'Phải sau "Từ ngày"' } });
+    }
+    // E6 (TV2 chốt 25/11): chỉ lọc theo thời gian thì khoảng tối đa 366 ngày, tính cả hai đầu.
+    if (from && toExclusive && !q.actor && !q.entityId && toExclusive.getTime() - from.getTime() > MAX_TIME_ONLY_DAYS * DAY_MS) {
+      throw new BadRequestException({
+        message: `Khoảng thời gian tối đa ${MAX_TIME_ONLY_DAYS} ngày khi không lọc theo người hoặc đối tượng cụ thể`,
+        fields: { to: `Thu hẹp còn tối đa ${MAX_TIME_ONLY_DAYS} ngày, hoặc thêm người thực hiện, mã đối tượng` },
+      });
+    }
+    // E7: phân trang quá sâu (OFFSET lớn) làm chậm database; đúng 10.000 vẫn được.
+    if (q.page * q.size > MAX_PAGE_DEPTH) {
+      throw new BadRequestException({
+        message: `Chỉ xem được ${MAX_PAGE_DEPTH.toLocaleString('vi-VN')} bản ghi đầu; hãy thu hẹp bộ lọc`,
+        fields: { page: `page × size tối đa ${MAX_PAGE_DEPTH}` },
+      });
     }
     return this.audit.search({
       entityType: q.entity,
