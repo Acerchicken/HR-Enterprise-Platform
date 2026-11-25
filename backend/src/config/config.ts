@@ -22,7 +22,18 @@ export interface AppConfig {
     database: string;
     ssl: DbSslMode;
     sslCaFile: string | null;
+    /**
+     * Chịu lỗi khi database chậm (SRS 6.14, NFR-3.5): chờ lấy kết nối tối đa `connectTimeoutMs`, mỗi câu lệnh tối đa
+     * `statementTimeoutMs` (0 = không giới hạn), rồi API trả 503 thay vì treo. `poolMax`: số kết nối tối đa mỗi instance.
+     */
+    poolMax: number;
+    connectTimeoutMs: number;
+    statementTimeoutMs: number;
   };
+  /** `json` (một dòng JSON mỗi log, có traceId; mặc định khi NODE_ENV=production, NFR-8.1) hoặc `text` (dễ đọc khi dev). */
+  logFormat: LogFormat;
+  /** Phiên bản đang chạy (commit hoặc tag), trả ở /health (NFR-8.5). Image staging được build với APP_VERSION = commit SHA. */
+  appVersion: string;
   auth: {
     mode: AuthMode;
     issuer: string;
@@ -141,7 +152,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
       database: env.DB_NAME ?? 'hr',
       ssl: (env.DB_SSL ?? 'off') as DbSslMode,
       sslCaFile: env.DB_SSL_CA_FILE || null,
+      poolMax: intOf(env, 'DB_POOL_MAX', 10, 1, 100),
+      connectTimeoutMs: intOf(env, 'DB_CONNECT_TIMEOUT_MS', 5000, 0, 60000),
+      statementTimeoutMs: intOf(env, 'DB_STATEMENT_TIMEOUT_MS', 5000, 0, 600000),
     },
+    logFormat: logFormatOf(env.LOG_FORMAT, nodeEnv),
+    appVersion: env.APP_VERSION || 'dev',
     auth: {
       mode,
       issuer,
@@ -268,5 +284,20 @@ function mailDriverOf(v: string | undefined): MailDriver {
 function trustProxyOf(v: string | undefined): number {
   const n = Number(v ?? 0);
   if (!Number.isInteger(n) || n < 0 || n > 5) throw new Error(`TRUST_PROXY phải là số nguyên 0–5 (số lớp proxy), nhận: ${v}`);
+  return n;
+}
+
+export type LogFormat = 'json' | 'text';
+
+function logFormatOf(v: string | undefined, nodeEnv: string): LogFormat {
+  const f = (v || (nodeEnv === 'production' ? 'json' : 'text')).trim().toLowerCase();
+  if (f !== 'json' && f !== 'text') throw new Error(`LOG_FORMAT không hợp lệ: ${v} (json | text)`);
+  return f;
+}
+
+function intOf(env: NodeJS.ProcessEnv, name: string, def: number, min: number, max: number): number {
+  const raw = env[name];
+  const n = raw === undefined || raw === '' ? def : Number(raw);
+  if (!Number.isInteger(n) || n < min || n > max) throw new Error(`${name} phải là số nguyên ${min}–${max}, nhận: ${raw}`);
   return n;
 }

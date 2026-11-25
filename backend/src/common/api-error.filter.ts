@@ -20,6 +20,7 @@ const CODE_BY_STATUS: Record<number, string> = {
   422: 'UNPROCESSABLE',
   429: 'TOO_MANY_REQUESTS',
   500: 'INTERNAL',
+  503: 'SERVICE_UNAVAILABLE',
 };
 
 /**
@@ -56,6 +57,12 @@ export class ApiErrorFilter implements ExceptionFilter {
     } else if (exception instanceof QueryFailedError && (exception as any).code === '23505') {
       status = HttpStatus.CONFLICT;
       message = 'Dữ liệu bị trùng';
+    } else if (isDbTimeout(exception)) {
+      // SRS 6.14 "Database chậm hoặc hết kết nối": quá DB_STATEMENT_TIMEOUT_MS hoặc DB_CONNECT_TIMEOUT_MS thì trả 503, không treo.
+      status = HttpStatus.SERVICE_UNAVAILABLE;
+      message = 'Hệ thống đang bận, vui lòng thử lại sau ít phút';
+      res.setHeader('Retry-After', '5');
+      this.logger.warn(`Database quá thời gian chờ: ${(exception as Error).message}`, `traceId=${req.traceId}`);
     } else {
       // Chỉ log message + stack: QueryFailedError còn mang câu SQL và tham số (có thể chứa dữ liệu cá nhân).
       this.logger.error(exception instanceof Error ? (exception.stack ?? exception.message) : String(exception), `traceId=${req.traceId}`);
@@ -70,4 +77,11 @@ export class ApiErrorFilter implements ExceptionFilter {
       traceId: req.traceId,
     });
   }
+}
+
+/** 57014 = query_canceled (statement_timeout); lỗi của pg Pool khi chờ kết nối quá connectionTimeoutMillis. */
+export function isDbTimeout(e: unknown): boolean {
+  if (e instanceof QueryFailedError && (e as { code?: string }).code === '57014') return true;
+  const msg = e instanceof Error ? e.message : '';
+  return /timeout exceeded when trying to connect|Connection terminated due to connection timeout/i.test(msg);
 }

@@ -60,4 +60,20 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ TRUST_PROXY: 'true' })).toThrow('TRUST_PROXY');
     expect(() => loadConfig({ TRUST_PROXY: '-1' })).toThrow('TRUST_PROXY');
   });
+
+  it('log JSON mặc định ở production, chữ khi dev; APP_VERSION mặc định dev (NFR-8.1, NFR-8.5)', () => {
+    expect(loadConfig({}).logFormat).toBe('text');
+    expect(loadConfig(prod).logFormat).toBe('json');
+    expect(loadConfig({ LOG_FORMAT: 'json' }).logFormat).toBe('json');
+    expect(() => loadConfig({ LOG_FORMAT: 'xml' })).toThrow('LOG_FORMAT');
+    expect(loadConfig({}).appVersion).toBe('dev');
+    expect(loadConfig({ APP_VERSION: 'abc123' }).appVersion).toBe('abc123');
+  });
+
+  it('pool và thời gian chờ database có mặc định, chặn giá trị sai (SRS 6.14)', () => {
+    expect(loadConfig({}).db).toMatchObject({ poolMax: 10, connectTimeoutMs: 5000, statementTimeoutMs: 5000 });
+    expect(loadConfig({ DB_STATEMENT_TIMEOUT_MS: '0' }).db.statementTimeoutMs).toBe(0);
+    expect(() => loadConfig({ DB_POOL_MAX: '0' })).toThrow('DB_POOL_MAX');
+    expect(() => loadConfig({ DB_CONNECT_TIMEOUT_MS: 'abc' })).toThrow('DB_CONNECT_TIMEOUT_MS');
+  });
 });

@@ -4,10 +4,12 @@ import { DataSource } from 'typeorm';
 import { APP_CONFIG, AppConfig } from '../../../config/config';
 import { EVENT_BUS, EventBus } from '../../../messaging/event-bus';
 import { createEventBus } from '../../../messaging/factory';
+import { metrics } from '../../../common/json-logger';
 import { OutboxEvent } from './outbox.entity';
 
 const POLL_MS = 1000;
 const BATCH = 50;
+const METRIC_MS = 60_000;
 
 /**
  * Đọc leave.outbox và đẩy event chưa gửi qua EventBus (RabbitMQ khi local, SQS trên AWS, chọn bằng QUEUE_DRIVER).
@@ -20,6 +22,7 @@ export class OutboxPublisher implements OnApplicationBootstrap, OnApplicationShu
   private readonly logger = new Logger(OutboxPublisher.name);
   private readonly bus: EventBus | null;
   private timer: NodeJS.Timeout | null = null;
+  private metricTimer: NodeJS.Timeout | null = null;
   private running = false;
   private stopped = false;
 
@@ -38,11 +41,32 @@ export class OutboxPublisher implements OnApplicationBootstrap, OnApplicationShu
     }
     this.logger.log(`Đẩy event outbox qua ${this.cfg.queue.driver}`);
     this.timer = setInterval(() => void this.tick(), POLL_MS);
+    this.metricTimer = setInterval(() => void this.reportBacklog(), METRIC_MS);
+  }
+
+  /**
+   * NFR-8.2, NFR-8.3: số event chưa gửi và tuổi event cũ nhất (giây), ghi thành metric CloudWatch (EMF) mỗi phút. Cảnh báo
+   * "outbox tồn quá 15 phút" đặt trên `OutboxOldestAgeSeconds` > 900. Dùng chỉ mục một phần `ix_leave_outbox_unpublished`.
+   */
+  async reportBacklog(): Promise<{ pending: number; oldestAgeSeconds: number } | null> {
+    try {
+      const [row]: { pending: string; age: string | null }[] = await this.ds.query(
+        `SELECT count(*) AS pending, EXTRACT(EPOCH FROM now() - min(created_at)) AS age FROM leave.outbox WHERE published_at IS NULL`,
+      );
+      const result = { pending: Number(row.pending), oldestAgeSeconds: Math.max(0, Math.round(Number(row.age ?? 0))) };
+      metrics().metric('OutboxPending', result.pending);
+      metrics().metric('OutboxOldestAgeSeconds', result.oldestAgeSeconds, 'Seconds');
+      return result;
+    } catch (e) {
+      this.logger.warn(`Không đọc được số event outbox tồn: ${e instanceof Error ? e.message : e}`);
+      return null;
+    }
   }
 
   async onApplicationShutdown() {
     this.stopped = true;
     if (this.timer) clearInterval(this.timer);
+    if (this.metricTimer) clearInterval(this.metricTimer);
     await this.bus?.close().catch(() => undefined);
   }
 
