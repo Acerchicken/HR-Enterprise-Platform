@@ -92,3 +92,4 @@ không chạy trong CI để không tốn chi phí.
 ## 7. Ca còn thiếu (TV4)
 
 Toàn bộ. Viết ca ở `docs/test-cases-uc6` sau khi API xong; báo cáo bộ đánh giá ở `docs/assistant-eval-report`.
+- Ngoại lệ bổ sung [spec mục 6.1](spec.md#61-ngoại-lệ-bổ-sung-rà-24112026) (E10 → E19): mỗi mã ít nhất một ca e2e hoặc unit. ca của E10, E13, E18 xác nhận code đã đúng, sai thì chuyển sang "Chưa đạt" trong spec.

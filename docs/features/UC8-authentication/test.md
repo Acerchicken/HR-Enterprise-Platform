@@ -70,3 +70,4 @@ Unit, e2e theo README chung. Ca tay: local `docker compose up -d --build`, Mailp
 
 Toàn bộ ca tay ở mục 3 cột "Chưa", nhánh `docs/test-cases-uc8` (tuần 12). Ca MFA, khóa, tự đăng ký đã giao ở
 `docs/security-test-cases-week11` thì dẫn chiếu sang, không viết lại.
+- Ngoại lệ bổ sung [spec mục 6.1](spec.md#61-ngoại-lệ-bổ-sung-rà-24112026) (E15 → E21): mỗi mã ít nhất một ca e2e hoặc unit. ca của E16, E17, E20 xác nhận code đã đúng, sai thì chuyển sang "Chưa đạt" trong spec.

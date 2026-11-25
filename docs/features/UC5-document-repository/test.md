@@ -74,3 +74,4 @@ luôn chạy (spec 13.3 ca 7).
 - URL tải lên quá 10 phút bị storage từ chối.
 - Giao diện (AC-5.1.8, AC-5.2.7) khi `feat/document-ui` xong.
 - Chạy lại toàn bộ trên staging tuần 12.
+- Ngoại lệ bổ sung [spec mục 6.1](spec.md#61-ngoại-lệ-bổ-sung-rà-24112026) (E9 → E16): mỗi mã ít nhất một ca e2e hoặc unit. ca của E9, E11, E12, E13, E14 xác nhận code đã đúng, sai thì chuyển sang "Chưa đạt" trong spec.

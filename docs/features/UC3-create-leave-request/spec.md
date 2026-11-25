@@ -78,6 +78,34 @@ sequenceDiagram
 | 9 | | Ghi đơn `SUBMITTED`, cộng `pending`, chụp `requiresHrApproval` theo cấu hình loại phép (BR-16, UC4 A6), ghi lịch sử, audit, event outbox |
 | 10 | Thấy đơn mới trong "Đơn của tôi" | Trả 201 kèm đơn; worker gửi email cho quản lý trực tiếp |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f1](flows/flows.html#f1), [g1](flows/flows.html#g1), [g2](flows/flows.html#g2) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: form đăng ký nghỉ, số dư bên phải*
+
+![form đăng ký nghỉ, số dư bên phải](mockups/uc3-new.png)
+
+*Màn hình: đăng ký nghỉ trên điện thoại, lỗi trùng lịch*
+
+![đăng ký nghỉ trên điện thoại, lỗi trùng lịch](mockups/uc3-new-mobile.png)
+
+*Màn hình: đăng ký nghỉ theo sự kiện (nghỉ cưới)*
+
+![đăng ký nghỉ theo sự kiện (nghỉ cưới)](mockups/uc3-event-mobile.png)
+
+*Sơ đồ f1: tạo đơn nghỉ (luồng chính, A5)*
+
+![tạo đơn nghỉ (luồng chính, A5)](flows/uc3-f1.png)
+
+*Sơ đồ g1: cách tính phép năm (BR-01)*
+
+![cách tính phép năm (BR-01)](flows/uc3-g1.png)
+
+*Sơ đồ g2: loại phép theo cách tính số dư*
+
+![loại phép theo cách tính số dư](flows/uc3-g2.png)
+
 ## 5. Luồng thay thế
 
 - **A1, nhân viên hủy đơn (FR-3.6):**
@@ -101,7 +129,61 @@ sequenceDiagram
 - **A7, tự hủy đơn chờ sau ngày bắt đầu (BR-07):** nhân viên nhận 409. HR xác minh ngày nghỉ thực tế, sau đó dùng quy trình
   điều chỉnh/hủy có lý do; số dư chỉ được trả theo ngày chưa nghỉ đã xác minh, không tự trả toàn bộ số ngày.
 
+**Minh họa luồng thay thế: A1, A2, A7**
+
+Chạy từng bước: [f2](flows/flows.html#f2) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: đơn nghỉ của tôi, chi tiết đơn (A2)*
+
+![đơn nghỉ của tôi, chi tiết đơn (A2)](mockups/uc3-list.png)
+
+*Màn hình: xác nhận hủy đơn trên điện thoại*
+
+![xác nhận hủy đơn trên điện thoại](mockups/uc3-detail-mobile.png)
+
+*Sơ đồ f2: tự hủy đơn chờ (A1, A7)*
+
+![tự hủy đơn chờ (A1, A7)](flows/uc3-f2.png)
+
+**Minh họa luồng thay thế: A6**
+
+Chạy từng bước: [f3](flows/flows.html#f3) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: đề nghị hủy đơn đã duyệt*
+
+![đề nghị hủy đơn đã duyệt](mockups/uc3-cancel-request.png)
+
+*Sơ đồ f3: đề nghị hủy đơn đã duyệt (A6)*
+
+![đề nghị hủy đơn đã duyệt (A6)](flows/uc3-f3.png)
+
+**Minh họa luồng thay thế: A3**
+
+Chạy từng bước: [f4](flows/flows.html#f4) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f4: tạo đơn hộ (A3)*
+
+![tạo đơn hộ (A3)](flows/uc3-f4.png)
+
+**Minh họa thêm: số dư phép**
+
+Chạy từng bước: [f5](flows/flows.html#f5), [f6](flows/flows.html#f6) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: số dư nhân viên, HR chỉnh hạn mức*
+
+![số dư nhân viên, HR chỉnh hạn mức](mockups/uc3-balances.png)
+
+*Sơ đồ f5: cấp và tính lại số dư (A5, 13.2)*
+
+![cấp và tính lại số dư (A5, 13.2)](flows/uc3-f5.png)
+
+*Sơ đồ f6: HR chỉnh hạn mức (FR-3.8)*
+
+![HR chỉnh hạn mức (FR-3.8)](flows/uc3-f6.png)
+
 ## 6. Ngoại lệ
+
+Ngoại lệ chung của mọi API không lặp lại ở đây ([error-codes.md](../../development/error-codes.md#lỗi-chung)): 401 chưa đăng nhập hoặc token hết hạn; 403 tài khoản đã nghỉ việc (UC8 E4); 400 khi gửi trường lạ (chống gán hàng loạt) hoặc ID không phải UUID; 413 body quá 64 KiB; 500 kèm `traceId`. Cách rà ngoại lệ: [README mục "Rà ngoại lệ"](../README.md#rà-ngoại-lệ).
 
 | Mã | Tình huống | Hệ thống phản hồi |
 |---|---|---|
@@ -119,6 +201,20 @@ sequenceDiagram
 | E12 | Loại phép theo sự kiện mà thiếu `eventDate`, loại khác mà có `eventDate`; số ngày vượt mức của sự kiện (AC-3.1.4) | 400 `BAD_REQUEST` kèm `fields` |
 | E13 | Đã có đơn cùng loại phép, cùng `eventDate` chưa bị từ chối, chưa bị hủy (AC-3.2.6) | 409 `CONFLICT` |
 | E14 | Gửi đề nghị hủy khi đơn không `APPROVED`, đã có đề nghị hoặc đã tới `startDate` | 409 `CONFLICT` |
+
+### 6.1 Ngoại lệ bổ sung (rà 24/11/2026)
+
+Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" là hiện trạng: **Có** đã đối chiếu code hoặc thiết kế đã chốt; **Cần kiểm** chưa đối chiếu, test phải xác nhận; **Chưa đạt** code chưa làm đúng (mục 12); **Đề xuất** cần TV2 chốt nghiệp vụ.
+
+| Mã | Nhóm | Tình huống | Hệ thống phản hồi | Code |
+|---|---|---|---|---|
+| E15 | Tranh chấp | Hai đơn gửi gần như cùng lúc (hai tab, hai thiết bị) cùng dùng số dư cuối hoặc trùng ngày | Khóa dòng số dư trong giao dịch (`pessimistic_write`); đơn sau nhận E3 hoặc E5 | Có |
+| E16 | Dữ liệu vào | Ngày bắt đầu trước ngày vào làm hoặc sau 31/12 của năm kế tiếp; khoảng nghỉ dài hơn 1 năm | Hai điều kiện ngày trả 400 `BAD_REQUEST` kèm `fields`; khoảng dài hơn 1 năm không bị chặn toàn cục, chỉ áp dụng giới hạn nếu loại phép có quy tắc riêng đã cấu hình | Chưa đạt (kiểm tra ngày bắt đầu); không áp trần chung cho thời lượng |
+| E17 | Vòng đời dữ liệu | Chủ đơn bị cho nghỉ việc khi đơn còn chờ | Hệ thống hủy đơn (`LEAVE_SYSTEM_CANCEL`, lý do `TERMINATED`), trả số ngày khỏi `pending` | Có |
+| E18 | Vòng đời dữ liệu | Loại phép đã ngừng dùng | 400 `BAD_REQUEST` `fields.leaveTypeId` | Cần kiểm |
+| E19 | Phân quyền | Quản lý tạo đơn hộ cho người không phải cấp dưới trực tiếp; HR tạo đơn hộ cho chính mình | 403 `FORBIDDEN` | Cần kiểm |
+| E20 | Dữ liệu vào | Năm sau chưa có dòng số dư (đơn tháng 12 cho tháng 1) | Tạo dòng số dư năm sau ngay trong giao dịch theo 13.2, không lỗi | Cần kiểm |
+| E21 | Bảo mật | Lý do có thông tin sức khỏe (nghỉ ốm, thai sản) | Không đưa vào email, audit, danh sách của người không có quyền (BR-14); HR đọc thì ghi `VIEW_LEAVE_REASON` | Có |
 
 ## 7. Quy tắc áp dụng
 
@@ -254,6 +350,7 @@ lần 2 (mục 15). Unit test: `leave-rules.spec.ts`, `leave-state-machine.spec.
 | Nghỉ việc hủy đơn (AC-3.1.7), lịch lễ thay đổi (AC-3.4.3), 403 khi chưa gắn hồ sơ (E9) | Đã có | – |
 | Lưu trữ 5 năm, legal hold (BR-13) | Chưa có | Thiết kế sau MVP; ghi trong SRS mục 8 |
 | Bản vẽ `uc3-balances.png` chưa có cột "Chuyển từ năm trước" | Giao diện đã có cột | Vẽ lại khi rảnh |
+| Ngoại lệ bổ sung mục 6.1 (E15 → E21) | Rà 24/11/2026, TV2 chốt E16 ngày 25/11 | chưa đạt: E16 (ngày bắt đầu trước ngày vào làm hoặc sau 31/12 năm kế tiếp); cần kiểm: E18, E19, E20. Thời lượng >1 năm không bị chặn toàn cục. TV1 bổ sung kiểm tra ngày; TV4 viết test cho cả bảng |
 
 ## 13. Thiết kế
 
