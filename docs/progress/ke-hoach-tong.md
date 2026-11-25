@@ -155,9 +155,9 @@ UC nào cũng dở. Từ nay:
 | `test/load-k6` | TV4 Duy, TV1 hỗ trợ | Load test local 50 request/giây 15 phút; đo NFR-1.1 → 1.3, NFR-2.1, NFR-2.4. Dùng nhiều tài khoản hoặc nâng ngưỡng rate limit | NFR-1, NFR-2 | T6 (20/11) | CN (22/11) | TV1, TV3 |
 | `infra/service-extraction` | TV3 Bảo | ADR-15 phần hạ tầng: SNS topic `hr-events` và filter policy cho các queue SQS, task Fargate cho notification và search (có thể chung một task hai container), DB user `notification_svc`, `search_svc`, X-Ray. Chỉ `validate`, `plan` | Tiêu chí nghiệm thu ADR-15 | T7 (21/11), 21:00 | CN (22/11) | TV1 |
 | `docs/slo-dashboard-cost` | TV3 Bảo | Dashboard CloudWatch theo SLI ở SRS 6.13; chi phí/tháng theo kết quả load test và thêm task của ADR-15 | SRS 6.13 | CN (22/11), 12:00 | T2 (23/11) | TV1 |
-| `feat/notification-service` | TV1 Duong | ADR-15 bước 1: tách worker thành `services/notification/`, payload outbox mang sẵn người nhận, driver `MAIL_DRIVER=smtp\|ses` (thay nhánh `feat/mail-driver-ses` đã lên kế hoạch 14/11) | Tiêu chí ADR-15, worker gửi được email trên staging | CN (22/11) | T2 (23/11) | TV3, TV4 |
+| `feat/notification-service` | TV1 Duong | ADR-15 bước 1: tách worker thành `services/notification/`, payload outbox mang sẵn người nhận, driver `MAIL_DRIVER=smtp\|ses` (thay nhánh `feat/mail-driver-ses` đã lên kế hoạch 14/11) | Tiêu chí ADR-15, worker gửi được email trên staging | CN (22/11) | T2 (23/11) | TV3, TV4 (đã mở PR #148, Terraform #149 ngày 26/11) |
 | (không có nhánh) | TV3 Bảo | `terraform apply` staging theo `docs/aws-rollout-plan`, gồm bucket tài liệu, bucket hồ sơ, hạ tầng ADR-15; chạy Deploy Staging với seed | `deploy.md` mục 5 của các UC đã dev xong | T3 (24/11) xong | – | TV1 |
-| `feat/tracing-otel` | TV1 Duong | ADR-15 bước 4: OpenTelemetry cho API và hai service, `traceparent` qua outbox và queue; Jaeger local, X-Ray staging | Tiêu chí ADR-15 | T6 (27/11) | T7 (28/11) | TV3 |
+| `feat/tracing-otel` | TV1 Duong | ADR-15 bước 4: OpenTelemetry cho API và hai service, `traceparent` qua outbox và queue; Jaeger local, X-Ray staging | Tiêu chí ADR-15 | T6 (27/11) | T7 (28/11) | TV3 (đã mở PR ngày 26/11; X-Ray staging chưa nối) |
 | `infra/llm-secrets-cost` | TV3 Bảo | Khóa mã hóa cấu hình trợ lý `ASSISTANT_CONFIG_KEY` trong Secrets Manager; cho phép gọi HTTPS ra API của Claude, Gemini, DeepSeek; RDS bật extension `vector`; task Fargate assistant khoảng 2 GB RAM cho EmbeddingGemma (ADR-16, sửa 23/11) | NFR-7.1 | T4 (25/11), 21:00 | T5 (26/11) | TV1 |
 
 PR đang mở của TV3: #68 (MinIO local) đang conflict và Request changes; #70 (Terraform tài liệu, email SES API) đã sửa 15/11, chờ
@@ -274,7 +274,7 @@ Slide "Common Project Deliverables" của môn là **danh sách sản phẩm ph�
 | Giai đoạn | Deliverable | Trạng thái 25/11 | Còn thiếu | Việc |
 |---|---|---|---|---|
 | P1 | Problem statement, users/stakeholders, FR, NFR có ngưỡng, workload, kiến trúc cloud ban đầu | ✅ | Cột trạng thái FR trong SRS lệch code | N10 |
-| P2 | Component architecture, API, data model, sync/async, integration | ✅ | SNS fan-out (ADR-15) chưa làm, notification service chưa tách | `feat/notification-service`, `infra/service-extraction` |
+| P2 | Component architecture, API, data model, sync/async, integration | ✅ | SNS fan-out (ADR-15) chưa làm; notification service tách 26/11 (#148, #149, chờ merge) | `feat/notification-service`, `infra/service-extraction` |
 | P3 | Threat model | 🟡 | Chưa phủ kho tài liệu, trợ lý, Cognito, AWS | N11 |
 | P3 | IAM / access control | ✅ | Quyền Cognito cho worker (F2) | N1 |
 | P3 | CI/CD | 🟡 | e2e chưa chạy trong CI; Deploy Staging chưa chạy lần nào | N1, N9 |
