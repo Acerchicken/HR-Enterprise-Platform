@@ -53,6 +53,17 @@ export interface AppConfig {
     port: number;
     from: string;
   };
+  /** Worker gửi email: `smtp` (local, Mailpit; mặc định) hoặc `ses` (AWS, staging-readiness F1). Địa chỉ gửi vẫn là SMTP_FROM. */
+  mail: {
+    driver: MailDriver;
+    sesRegion: string;
+  };
+  /**
+   * Số lớp proxy đứng trước API (Express `trust proxy`), để `req.ip` (audit, rate limit) là IP thật của người dùng thay vì
+   * IP của load balancer. Local: 0 (tắt). Staging App Runner: 1 (staging-readiness F5). Không đặt cao hơn số proxy thật,
+   * nếu không người dùng có thể giả IP bằng header X-Forwarded-For.
+   */
+  trustProxy: number;
   /**
    * Object storage cho kho tài liệu (S3 trên AWS, MinIO khi chạy local). `bucket` rỗng thì API tài liệu trả 503.
    * `publicEndpoint`: địa chỉ trình duyệt dùng để upload bằng presigned URL (khác `endpoint` khi API chạy trong Docker).
@@ -146,6 +157,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
       port: Number(env.SMTP_PORT ?? 1025),
       from: env.SMTP_FROM ?? 'no-reply@hr.local',
     },
+    mail: {
+      driver: mailDriverOf(env.MAIL_DRIVER),
+      sesRegion: env.SES_REGION || env.AWS_REGION || 'ap-southeast-1',
+    },
+    trustProxy: trustProxyOf(env.TRUST_PROXY),
     storage: {
       bucket: env.STORAGE_BUCKET || null,
       region: env.STORAGE_REGION || env.AWS_REGION || 'ap-southeast-1',
@@ -239,4 +255,18 @@ function parseOverrides(raw: string | undefined): AppConfig['rateLimit']['overri
     // Rơi xuống lỗi bên dưới.
   }
   throw new Error('RATE_LIMIT_OVERRIDES phải là JSON, ví dụ {"global":{"minute":1000}}');
+}
+
+export type MailDriver = 'smtp' | 'ses';
+
+function mailDriverOf(v: string | undefined): MailDriver {
+  const d = (v || 'smtp').trim().toLowerCase();
+  if (d !== 'smtp' && d !== 'ses') throw new Error(`MAIL_DRIVER không hợp lệ: ${v} (smtp | ses)`);
+  return d;
+}
+
+function trustProxyOf(v: string | undefined): number {
+  const n = Number(v ?? 0);
+  if (!Number.isInteger(n) || n < 0 || n > 5) throw new Error(`TRUST_PROXY phải là số nguyên 0–5 (số lớp proxy), nhận: ${v}`);
+  return n;
 }

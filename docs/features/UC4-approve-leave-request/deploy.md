@@ -18,7 +18,7 @@
 |---|---|---|---|
 | `QUEUE_DRIVER` | Suy ra `rabbitmq` | `sqs` | Worker không khởi động nếu `none` |
 | `RABBITMQ_URL` / `SQS_QUEUE_URL`, `AWS_REGION` | `amqp://hr:hr@rabbitmq:5672` | URL queue SQS | Event nằm trong outbox |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM` | Mailpit `1025` | Chỉ có `SMTP_FROM`, `MAIL_DRIVER=ses` (code chưa đọc) | Email lỗi, event thử lại rồi vào DLQ |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM` | Mailpit `1025` | `SMTP_FROM`, `MAIL_DRIVER=ses` (gửi bằng SES API) | Email lỗi, event thử lại rồi vào DLQ |
 
 ## 3. Hạ tầng
 
@@ -46,5 +46,5 @@
 
 ## 7. Còn thiếu
 
-- Email trên staging: worker chỉ gửi qua SMTP, Terraform đặt `MAIL_DRIVER=ses` nhưng code chưa đọc; cần SES transport (TV1, F1 trong [staging-readiness](../../cloud/staging-readiness.md)). `QUEUE_DRIVER`, `SQS_QUEUE_URL` đã có ([configuration.md mục 5](../../development/configuration.md#5-điểm-còn-thiếu-trên-staging)).
+- Email trên staging: worker đọc `MAIL_DRIVER=ses` và gửi bằng SES API v2 với task role (F1 trong [staging-readiness](../../cloud/staging-readiness.md), sửa 25/11). SES sandbox: người nhận thử cũng phải xác minh. `QUEUE_DRIVER`, `SQS_QUEUE_URL` đã có ([configuration.md mục 5](../../development/configuration.md#5-điểm-còn-thiếu-trên-staging)).
 - Người duyệt thay (FR-4.3) cần bảng phân công mới: thêm migration và ghi vào đây khi làm `feat/leave-delegation`.
