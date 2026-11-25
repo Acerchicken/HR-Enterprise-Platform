@@ -2,7 +2,7 @@
 
 | Mục | Nội dung |
 |---|---|
-| Trạng thái | Đề xuất (Duong chọn phạm vi "đủ bộ, chưa có SSO" ngày 17/11/2026) |
+| Trạng thái | **Đã chấp nhận** 18/11/2026 (PR #99; Duong chọn phạm vi "đủ bộ, chưa có SSO" ngày 17/11/2026) |
 | Ngày quyết định | Ngày merge PR |
 | Thời điểm | Tuần 11 (16/11 – 22/11/2026) |
 | Người viết | TV1 (Dương) |

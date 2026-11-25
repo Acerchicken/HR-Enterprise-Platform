@@ -34,6 +34,12 @@ const HAS_READY = `EXISTS (SELECT 1 FROM document.document_version v WHERE v.doc
 const likePattern = (q: string) => `%${q.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
 /**
+ * Tìm theo tiêu đề, không phân biệt hoa thường và dấu: "nghi phep" khớp "Quy chế nghỉ phép" (FR-5.4). Extension `unaccent` do
+ * migration `AssistantSchema` tạo; `public.` để không phụ thuộc `search_path`.
+ */
+const TITLE_MATCH = 'public.unaccent(d.title) ILIKE public.unaccent(:q)';
+
+/**
  * Kho tài liệu HR (UC5, docs/business/document-rules.md).
  * Quyền xem tính lại ở mỗi request từ phòng ban và vai trò hiện tại (DR-06) và lọc ngay trong truy vấn, nên tài liệu ngoài
  * phạm vi không lộ cả tiêu đề hay số lượng (DR-08). Tài liệu không xem được trả 404 như tài liệu không tồn tại.
@@ -55,6 +61,7 @@ export class DocumentService {
     if (!viewer.active) return { items: [], page: q.page, size: q.size, total: 0 };
     const qb = this.visibleQuery(viewer).orderBy('d.updated_at', 'DESC').addOrderBy('d.title', 'ASC');
     if (q.type) qb.andWhere('d.type = :type', { type: q.type });
+    if (q.q?.trim()) qb.andWhere(TITLE_MATCH, { q: likePattern(q.q) });
     const [docs, total] = await qb.skip((q.page - 1) * q.size).take(q.size).getManyAndCount();
     return { items: await this.views(docs, false), page: q.page, size: q.size, total };
   }
@@ -80,7 +87,7 @@ export class DocumentService {
   async manageList(q: ManageDocumentQuery): Promise<Page<DocumentAdminView>> {
     const qb = this.ds.getRepository(DocumentEntity).createQueryBuilder('d').orderBy('d.updated_at', 'DESC').addOrderBy('d.title', 'ASC');
     if (q.type) qb.andWhere('d.type = :type', { type: q.type });
-    if (q.q?.trim()) qb.andWhere('d.title ILIKE :q', { q: likePattern(q.q) });
+    if (q.q?.trim()) qb.andWhere(TITLE_MATCH, { q: likePattern(q.q) });
     if (q.state === 'VISIBLE') qb.andWhere(`d.hidden = false AND ${HAS_READY}`);
     if (q.state === 'HIDDEN') qb.andWhere('d.hidden = true');
     if (q.state === 'NOT_READY') qb.andWhere(`NOT ${HAS_READY}`);

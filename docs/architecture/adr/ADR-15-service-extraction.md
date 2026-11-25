@@ -2,7 +2,7 @@
 
 | Mục | Nội dung |
 |---|---|
-| Trạng thái | **Đề xuất** (Duong chọn phương án B ngày 15/11/2026) |
+| Trạng thái | **Đã chấp nhận** 16/11/2026 (PR #92; Duong chọn phương án B ngày 15/11/2026) |
 | Ngày quyết định | Ngày merge PR |
 | Thời điểm | Tuần 11 (16/11 – 23/11/2026) |
 | Người viết | TV1 (Dương) |

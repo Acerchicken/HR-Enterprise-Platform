@@ -33,6 +33,8 @@ qua bằng `ALLOW_DEV_SECRETS=true`.
 | `PORT` | `3000` | `var.api_container_port` | Không | API | Cổng HTTP |
 | `CORS_ORIGIN` | `http://localhost:5173` | `https://<domain CloudFront>` | Staging | API | Origin web được gọi API; nhiều origin cách nhau dấu phẩy |
 | `TRUST_PROXY` | `0` | `1` (App Runner) | Không | API | Số lớp proxy trước API (Express `trust proxy`), để `req.ip` trong audit và rate limit là IP người dùng. Số nguyên 0–5; không đặt cao hơn số proxy thật, nếu không người dùng giả được IP bằng `X-Forwarded-For` (F5) |
+| `LOG_FORMAT` | `text` (dev), `json` (khi `NODE_ENV=production`) | `json` (mặc định) | Không | API, Worker | `json`: một dòng JSON mỗi log có `traceId`, `level`, `context`, `version`, kèm access log mỗi request (method, đường dẫn không query, status, `durationMs`) và metric dạng CloudWatch EMF (NFR-8.1, NFR-8.2) |
+| `APP_VERSION` | `dev` | Commit SHA (build-arg trong `deploy-staging.yml`) | Không | API, Worker | Trả ở `GET /health` (`version`) và có trong mọi dòng log JSON (NFR-8.5) |
 | `ALLOW_DEV_SECRETS` | (không đặt) | **không đặt** | Không | Tất cả | `true` cho phép chạy `production` với khóa dev. **Chỉ** docker-compose local |
 
 ### Database
@@ -46,6 +48,9 @@ qua bằng `ALLOW_DEV_SECRETS=true`.
 | `DB_NAME` | `hr` | `var.db_name` | Staging | Tất cả | |
 | `DB_SSL` | `off` | `require` | Không | Tất cả | `off` không TLS · `require` mã hóa, không kiểm tra chứng chỉ · `verify` mã hóa và kiểm tra theo CA |
 | `DB_SSL_CA_FILE` | (không có) | (chưa dùng) | **Có** khi `DB_SSL=verify` | Tất cả | Đường dẫn CA bundle của RDS, ví dụ `/app/certs/rds-global-bundle.pem` |
+| `DB_POOL_MAX` | `10` | `10` | Không | API, Worker | Số kết nối tối đa mỗi instance (1–100). Tổng của mọi instance phải nhỏ hơn `max_connections` của RDS |
+| `DB_CONNECT_TIMEOUT_MS` | `5000` | | Không | API, Worker | Chờ lấy kết nối từ pool tối đa bao lâu; quá thì API trả 503 `SERVICE_UNAVAILABLE` kèm `Retry-After: 5` (SRS 6.14) |
+| `DB_STATEMENT_TIMEOUT_MS` | `5000` | API 5000, worker 60000 (job nền) | Không | API, Worker | `statement_timeout` của Postgres cho mỗi câu lệnh; quá thì hủy câu lệnh và trả 503. `0` = không giới hạn. CLI migration, seed không áp dụng |
 
 ### Xác thực (OIDC)
 

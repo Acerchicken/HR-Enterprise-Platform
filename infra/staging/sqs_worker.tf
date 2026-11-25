@@ -231,7 +231,9 @@ resource "aws_ecs_task_definition" "worker" {
         { name = "SQS_QUEUE_URL", value = aws_sqs_queue.worker_queue.url },
         { name = "SQS_IDENTITY_QUEUE_URL", value = aws_sqs_queue.identity.url },
         { name = "STORAGE_BUCKET", value = aws_s3_bucket.documents.id },
-        { name = "STORAGE_REGION", value = var.aws_region }
+        { name = "STORAGE_REGION", value = var.aws_region },
+        # Job nền (cộng phép đầu năm, áp dụng điều chuyển) chạy câu lệnh dài hơn request API: nới statement_timeout.
+        { name = "DB_STATEMENT_TIMEOUT_MS", value = "60000" }
       ]
 
       secrets = [

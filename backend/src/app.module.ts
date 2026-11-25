@@ -4,7 +4,7 @@ import { RateLimitModule } from './common/rate-limit/rate-limit.interceptor';
 import { SecurityHeadersMiddleware } from './common/security-headers.middleware';
 import { TraceIdMiddleware } from './common/trace-id.middleware';
 import { ConfigModule } from './config/config.module';
-import { dataSourceOptions } from './database/data-source';
+import { runtimeDataSourceOptions } from './database/data-source';
 import { HealthController } from './health.controller';
 import { AuditModule } from './modules/audit/audit.module';
 import { DocumentModule } from './modules/document/document.module';
@@ -21,7 +21,7 @@ import { OrganizationModule } from './modules/organization/organization.module';
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forRoot({ ...dataSourceOptions, migrationsRun: false }),
+    TypeOrmModule.forRoot({ ...runtimeDataSourceOptions, migrationsRun: false }),
     RateLimitModule,
     AuditModule,
     OrganizationModule,

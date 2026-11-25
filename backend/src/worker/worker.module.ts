@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '../config/config.module';
-import { dataSourceOptions } from '../database/data-source';
+import { runtimeDataSourceOptions } from '../database/data-source';
 import { EmployeeModule } from '../modules/employee/employee.module';
 import { LeaveCoreModule } from '../modules/leave/leave-core.module';
 import { APP_CONFIG, AppConfig } from '../config/config';
@@ -18,7 +18,7 @@ import { TransferJob } from './transfer-job';
  * RateLimitModule: EmployeeModule cần RateLimitService (ProfileFileService); interceptor không có tác dụng vì worker không nhận request.
  */
 @Module({
-  imports: [ConfigModule.register({ needsAuth: false }), TypeOrmModule.forRoot({ ...dataSourceOptions, migrationsRun: false }), RateLimitModule, EmployeeModule, LeaveCoreModule],
+  imports: [ConfigModule.register({ needsAuth: false }), TypeOrmModule.forRoot({ ...runtimeDataSourceOptions, migrationsRun: false }), RateLimitModule, EmployeeModule, LeaveCoreModule],
   providers: [
     NotificationWorker,
     TransferJob,

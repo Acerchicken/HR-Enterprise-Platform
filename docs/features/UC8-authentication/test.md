@@ -43,6 +43,7 @@
 | AC-8.5.x | – | HR, ADMIN bị hỏi TOTP; nhân viên (local) không bị hỏi | Chưa |
 | AC-8.1.10 | Unit `identity.service.spec.ts` (token có `hr`, `manager`, `admin` mà database không có → chỉ `EMPLOYEE`) | Đăng nhập `manager@hr.local` sau khi import lại realm: vẫn là MANAGER nhờ có cấp dưới | Có |
 | AC-8.1.11 | – | Sửa `state` trong URL `/callback` | Có ở local (chạy tay 18/11) |
+| AC-8.1.12 | Unit `identity.service.spec.ts` (chưa xác minh: 401, không tạo, không gắn; đã xác minh: gắn hồ sơ; đã có `subject`: vào được), `token-verifier.spec.ts` (`email_verified` boolean của Keycloak, chuỗi `"true"` của Cognito userinfo, thiếu claim là chưa xác minh) | Keycloak: bỏ tick "Email verified" của một user mới rồi đăng nhập | Có (unit, 25/11) |
 | AC-8.3.6 | e2e đổi email đổi `iam.user_account.email`, sinh `EmployeeEmailChanged`; driver đổi email trên Keycloak thật | Đổi email, đăng nhập bằng email mới | Tự động có; tay chưa |
 | AC-8.6.x | e2e `UC8 FR-8.3, FR-8.6` | Xem trạng thái, gửi lại | Có |
 | AC-8.7.1 → 8.7.7 | e2e `UC8 FR-8.7` trong `app.e2e-spec.ts` (5 ca); unit `role-access.spec.ts` | ADMIN cấp HR rồi người đó đăng nhập lại bị hỏi TOTP (cần `identity-sync`) | Có; đồng bộ nhóm: unit `identity-sync.spec.ts`; TOTP chờ `infra/idp-mfa` |

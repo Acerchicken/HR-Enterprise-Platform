@@ -71,7 +71,7 @@ const query = (params: Record<string, string | number | undefined>) =>
   new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '') as [string, string][]).toString();
 
 export const documentsApi = {
-  list: (p: { type?: DocumentType; page: number; size: number }) => api<Page<DocumentItem>>(`/documents?${query(p)}`),
+  list: (p: { type?: DocumentType; q?: string; page: number; size: number }) => api<Page<DocumentItem>>(`/documents?${query(p)}`),
   get: (id: string) => api<DocumentItem>(`/documents/${id}`),
   manageList: (p: { type?: DocumentType; q?: string; state?: ManageState; page: number; size: number }) =>
     api<Page<DocumentAdmin>>(`/documents/manage?${query(p)}`),
