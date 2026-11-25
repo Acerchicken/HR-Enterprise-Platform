@@ -47,4 +47,17 @@ describe('loadConfig', () => {
   it('AUTH_MODE=dev bị chặn ở production', () => {
     expect(() => loadConfig({ ...prod, AUTH_MODE: 'dev' })).toThrow('AUTH_MODE=dev');
   });
+
+  it('MAIL_DRIVER mặc định smtp, nhận ses, giá trị lạ bị chặn (staging-readiness F1)', () => {
+    expect(loadConfig({}).mail.driver).toBe('smtp');
+    expect(loadConfig({ MAIL_DRIVER: 'ses', AWS_REGION: 'us-east-1' }).mail).toEqual({ driver: 'ses', sesRegion: 'us-east-1' });
+    expect(() => loadConfig({ MAIL_DRIVER: 'sendgrid' })).toThrow('MAIL_DRIVER');
+  });
+
+  it('TRUST_PROXY mặc định 0, nhận số lớp proxy, chặn giá trị không hợp lệ (staging-readiness F5)', () => {
+    expect(loadConfig({}).trustProxy).toBe(0);
+    expect(loadConfig({ TRUST_PROXY: '1' }).trustProxy).toBe(1);
+    expect(() => loadConfig({ TRUST_PROXY: 'true' })).toThrow('TRUST_PROXY');
+    expect(() => loadConfig({ TRUST_PROXY: '-1' })).toThrow('TRUST_PROXY');
+  });
 });

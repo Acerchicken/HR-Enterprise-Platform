@@ -32,6 +32,7 @@ qua bằng `ALLOW_DEV_SECRETS=true`.
 | `NODE_ENV` | `development` | `production` | Staging | Tất cả | `production` bật kiểm tra secret và cấm `AUTH_MODE=dev` |
 | `PORT` | `3000` | `var.api_container_port` | Không | API | Cổng HTTP |
 | `CORS_ORIGIN` | `http://localhost:5173` | `https://<domain CloudFront>` | Staging | API | Origin web được gọi API; nhiều origin cách nhau dấu phẩy |
+| `TRUST_PROXY` | `0` | `1` (App Runner) | Không | API | Số lớp proxy trước API (Express `trust proxy`), để `req.ip` trong audit và rate limit là IP người dùng. Số nguyên 0–5; không đặt cao hơn số proxy thật, nếu không người dùng giả được IP bằng `X-Forwarded-For` (F5) |
 | `ALLOW_DEV_SECRETS` | (không đặt) | **không đặt** | Không | Tất cả | `true` cho phép chạy `production` với khóa dev. **Chỉ** docker-compose local |
 
 ### Database
@@ -81,9 +82,11 @@ Dùng cho outbox publisher (trong API) và notification worker. Chi tiết: [h�
 
 | Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
 |---|---|---|---|---|---|
-| `SMTP_HOST` | `localhost` | Chưa có (task worker chỉ đặt `MAIL_DRIVER=ses`, code chưa đọc; [staging-readiness F1](../cloud/staging-readiness.md#3-chức-năng-hỏng-nếu-không-sửa-làm-trước-demo)) | Staging | Worker | Local là Mailpit (giao diện xem mail http://localhost:8025) |
-| `SMTP_PORT` | `1025` | | Staging | Worker | Kết nối không TLS (`secure: false`) |
-| `SMTP_FROM` | `no-reply@hr.local` | | Staging | Worker | Địa chỉ người gửi |
+| `MAIL_DRIVER` | `smtp` | `ses` (task worker) | Không | Worker | `smtp`: gửi qua `SMTP_HOST`/`SMTP_PORT` (local Mailpit). `ses`: gửi bằng Amazon SES API v2 (`@aws-sdk/client-sesv2`) với IAM task role, không cần SMTP credentials ([staging-readiness F1](../cloud/staging-readiness.md#3-chức-năng-hỏng-nếu-không-sửa-làm-trước-demo)). Nhiều người nhận thì đặt Bcc, chia lô 49 địa chỉ |
+| `SES_REGION` | `AWS_REGION` | (dùng `AWS_REGION`) | Không | Worker | Region của SES identity nếu khác region chạy worker |
+| `SMTP_HOST` | `localhost` | Không dùng (`MAIL_DRIVER=ses`) | Khi `smtp` | Worker | Local là Mailpit (giao diện xem mail http://localhost:8025) |
+| `SMTP_PORT` | `1025` | | Khi `smtp` | Worker | Kết nối không TLS (`secure: false`) |
+| `SMTP_FROM` | `no-reply@hr.local` | ✓ (email đã xác minh trong SES) | Staging | Worker | Địa chỉ người gửi, dùng cho cả hai driver |
 
 ### Đồng bộ tài khoản sang IdP (UC8 FR-8.3, 8.4, 8.6, 8.7)
 
@@ -181,7 +184,7 @@ Staging đặt trong bước build của `deploy-staging.yml`.
 Rà lại ngày 25/11/2026 trước khi `apply`: [staging-readiness.md](../cloud/staging-readiness.md), mục 8 là bảng biến theo từng
 thành phần (API, worker, assistant), có biến nào chưa có trong Terraform. Chính:
 
-- Worker gửi mail bằng SMTP; `MAIL_DRIVER=ses` trong Terraform chưa được code đọc nên email trên staging lỗi (F1).
+- ~~Worker gửi mail bằng SMTP; `MAIL_DRIVER=ses` chưa được code đọc (F1)~~: đã sửa 25/11 (`feat/mail-ses-trust-proxy`), cùng `TRUST_PROXY=1` cho API (F5).
 - Worker thiếu `IDP_ADMIN_DRIVER`, `COGNITO_USER_POOL_ID` (F2); API thiếu `PROFILE_STORAGE_BUCKET` (F3), `ASSISTANT_URL`,
   `ASSISTANT_INTERNAL_TOKEN`, `SQS_ASSISTANT_QUEUE_URL` (F4).
 

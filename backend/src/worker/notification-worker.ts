@@ -1,6 +1,5 @@
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { createTransport, Transporter } from 'nodemailer';
 import { DataSource } from 'typeorm';
 import { APP_CONFIG, AppConfig } from '../config/config';
 import { EmployeeService } from '../modules/employee/employee.service';
@@ -17,9 +16,10 @@ import {
 import { isIdentityEvent } from '../modules/identity/identity-events';
 import { isDocumentEvent } from '../modules/document/document-events';
 import { IdentitySync } from './identity-sync';
+import { createMailSender, MailSender } from './mail-sender';
 
 /**
- * Worker nhận event nghỉ phép từ queue (RabbitMQ khi local, SQS trên AWS) và gửi email (local: Mailpit).
+ * Worker nhận event nghỉ phép từ queue (RabbitMQ khi local, SQS trên AWS) và gửi email (local: Mailpit qua SMTP; AWS: SES, MAIL_DRIVER=ses).
  * Chống trùng: id event (= id dòng outbox) được ghi vào notification.processed_event sau khi gửi;
  * gặp lại id đã xử lý thì bỏ qua. Lỗi gửi → DLQ để xem lại, không lặp vô hạn
  * (RabbitMQ: nack ngay; SQS: sau maxReceiveCount lần).
@@ -28,7 +28,7 @@ import { IdentitySync } from './identity-sync';
 export class NotificationWorker implements OnApplicationShutdown {
   private readonly logger = new Logger(NotificationWorker.name);
   private consumer: EventConsumer | null = null;
-  private readonly mailer: Transporter;
+  private readonly mailer: MailSender;
 
   constructor(
     @Inject(APP_CONFIG) private readonly cfg: AppConfig,
@@ -36,7 +36,7 @@ export class NotificationWorker implements OnApplicationShutdown {
     private readonly employees: EmployeeService,
     private readonly identity: IdentitySync,
   ) {
-    this.mailer = createTransport({ host: cfg.smtp.host, port: cfg.smtp.port, secure: false });
+    this.mailer = createMailSender(cfg);
   }
 
   async start(consumer: EventConsumer = createEventConsumer(this.cfg)) {

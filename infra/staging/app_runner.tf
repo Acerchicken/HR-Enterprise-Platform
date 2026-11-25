@@ -148,6 +148,7 @@ resource "aws_apprunner_service" "api" {
           DB_NAME              = var.db_name
           DB_USER              = var.db_username
           DB_SSL               = "require"
+          TRUST_PROXY          = "1" # staging-readiness F5: một lớp proxy của App Runner trước API
           AWS_REGION           = var.aws_region
           AUTH_MODE            = "oidc"
           OIDC_ISSUER          = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.main.id}"
