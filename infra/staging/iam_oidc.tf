@@ -67,7 +67,8 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
           "ecr:CompleteLayerUpload"
         ]
         Resource = [
-          aws_ecr_repository.api.arn
+          aws_ecr_repository.api.arn,
+          aws_ecr_repository.assistant.arn
         ]
       },
       {
@@ -109,6 +110,7 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
         Resource = [
           aws_ecs_cluster.staging.arn,
           "${aws_ecs_cluster.staging.arn}/*",
+          "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:service/${aws_ecs_cluster.staging.name}/*",
           aws_ecs_task_definition.worker.arn,
           "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:task-definition/${var.project_name}-${var.environment}-*"
         ]
@@ -121,7 +123,8 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
         ]
         Resource = [
           aws_iam_role.ecs_execution_role.arn,
-          aws_iam_role.worker_task_role.arn
+          aws_iam_role.worker_task_role.arn,
+          aws_iam_role.assistant_task_role.arn
         ]
       },
       {

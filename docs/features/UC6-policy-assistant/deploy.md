@@ -35,7 +35,7 @@ dán trên trang "Cấu hình trợ lý", lưu mã hóa trong `assistant.llm_con
 | Môi trường | Tài nguyên | File |
 |---|---|---|
 | Local | PostgreSQL build từ `infra/postgres-pgvector` (postgres:16-alpine thêm pgvector, giữ volume cũ dùng được); container `assistant` (port 3100), tự khai báo queue `assistant.document`; S3Mock như UC5 | `docker-compose.yml`, `services/assistant/Dockerfile` |
-| Staging | RDS bật extension `vector`; SQS `assistant.document` + DLQ, subscription SNS lọc `document.*`; task Fargate assistant khoảng 2 GB RAM (EmbeddingGemma q8; đo thật, vượt thì dùng q4); secret `ASSISTANT_CONFIG_KEY`; security group, NAT cho phép gọi HTTPS ra API của ba nhà cung cấp | `infra/staging/` (nhánh `infra/llm-secrets-cost`; danh sách đủ ở [staging-readiness mục 4](../../cloud/staging-readiness.md#4-trợ-lý-chính-sách-trên-staging-f4-chi-tiết), chưa có gì trong Terraform 25/11) |
+| Staging | RDS bật extension `vector`; SQS `<project>-<env>-assistant-document` + DLQ (API gửi thẳng, chưa có SNS fan-out); Cloud Map `assistant.staging.hr.internal:3100`; task Fargate assistant khoảng 2 GB RAM (EmbeddingGemma q8; đo thật, vượt thì dùng q4); secret `ASSISTANT_CONFIG_KEY`; security group, NAT cho phép gọi HTTPS ra API của ba nhà cung cấp | `infra/staging/` `infra/staging/assistant.tf` (25/11, `terraform validate` qua, chưa apply; danh sách đủ ở [staging-readiness mục 4](../../cloud/staging-readiness.md#4-trợ-lý-chính-sách-trên-staging-f4-chi-tiết)); image build trong `deploy-staging.yml` |
 
 ## 4. Các bước
 
@@ -64,7 +64,7 @@ khoảng 3–4 cent USD mỗi giờ (ước lượng, TV3 kiểm lại theo bả
 | Việc | Cách làm | Ghi chú |
 |---|---|---|
 | Mặc định | Service assistant trên ECS để `desiredCount = 0` (khai báo trong `infra/staging/`) | Không tốn tiền compute khi tắt |
-| Bật | `aws ecs update-service --cluster <cluster> --service assistant --desired-count 1`, chờ task `RUNNING` và health check đạt | Mất khoảng 1–2 phút vì nạp model embedding. Bật trước giờ demo ít nhất 5 phút |
+| Bật | `aws ecs update-service --cluster hr-platform-staging-cluster --service hr-platform-staging-assistant --desired-count 1` (tên service: output `assistant_service_name`; Terraform bỏ qua `desired_count` nên apply sau không tắt lại), chờ task `RUNNING` và health check đạt | Mất khoảng 1–2 phút vì nạp model embedding. Bật trước giờ demo ít nhất 5 phút |
 | Kiểm nhanh | Hỏi một câu mẫu trên `/documents`; trang `/admin/assistant` bấm "Kiểm tra kết nối" | Lúc task chưa lên, API trả `fallback = true` (E5), không lỗi 5xx |
 | Tắt | `aws ecs update-service ... --desired-count 0` ngay sau khi dùng | Index nằm trong RDS, bật lại dùng được ngay, không phải tính lại |
 | Tài liệu đăng lúc tắt | Event chờ trong SQS `assistant.document`, task bật lên thì xử lý | Queue đặt thời gian giữ message 14 ngày (tối đa của SQS); DLQ như ADR-15 |

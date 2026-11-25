@@ -31,6 +31,8 @@ env:
   ECS_WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE || 'hr-platform-staging-worker' }}
   ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY || 'hr-platform-staging-worker' }}
   ECR_REPOSITORY: hr-api
+  ECR_ASSISTANT_REPOSITORY: hr-assistant
+  ECS_ASSISTANT_SERVICE: ${{ vars.ECS_ASSISTANT_SERVICE || 'hr-platform-staging-assistant' }}
   INPUT_IMAGE_TAG: ${{ github.event.inputs.image_tag }}
   INPUT_RUN_SEED: ${{ github.event.inputs.run_seed }}
   INPUT_SKIP_MIGRATION: ${{ github.event.inputs.skip_migration }}
@@ -108,6 +110,20 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # UC6 (staging-readiness F4): image assistant service, tag SHA + latest. Image có sẵn model embedding (~1 GB).
+      - name: Build and push Assistant Image to ECR
+        if: env.IS_ROLLBACK != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/assistant
+          file: ./services/assistant/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_ASSISTANT_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_ASSISTANT_REPOSITORY }}:latest
+          cache-from: type=gha,scope=assistant
+          cache-to: type=gha,mode=max,scope=assistant
 
       - name: Run Database Migration (ECS One-off Task)
         if: env.INPUT_SKIP_MIGRATION != 'true'
@@ -205,6 +221,21 @@ jobs:
             --cluster "${ECS_CLUSTER_NAME}" \
             --service "${ECS_WORKER_SERVICE}" \
             --force-new-deployment
+
+      # Assistant mặc định tắt (desired_count = 0) để tiết kiệm; chỉ deploy lại khi đang bật cho demo.
+      - name: Update ECS Assistant Service (if running)
+        if: env.IS_ROLLBACK != 'true'
+        run: |
+          DESIRED=$(aws ecs describe-services --cluster "${ECS_CLUSTER_NAME}" --services "${ECS_ASSISTANT_SERVICE}" \
+            --query "services[0].desiredCount" --output text 2>/dev/null || echo "None")
+          if [ "$DESIRED" = "None" ] || [ -z "$DESIRED" ]; then
+            echo "Assistant service '${ECS_ASSISTANT_SERVICE}' chưa có (chưa apply infra F4). Bỏ qua."
+          elif [ "$DESIRED" = "0" ]; then
+            echo "Assistant service đang tắt (desired 0). Image mới sẽ được dùng khi bật."
+          else
+            aws ecs update-service --cluster "${ECS_CLUSTER_NAME}" --service "${ECS_ASSISTANT_SERVICE}" --force-new-deployment > /dev/null
+            echo "Đã deploy lại assistant service (${DESIRED} task)."
+          fi
 
       - name: Update App Runner API Service
         run: |
