@@ -270,7 +270,7 @@ worker ngoài giờ demo. Con số chốt khi ADR-12 được merge.
 | Bước | Công cụ | Trạng thái |
 |---|---|---|
 | Bảo vệ `dev`, `main` | GitHub ruleset (chỉ qua PR, chỉ nhóm trưởng merge), CODEOWNERS | ✅ |
-| CI mọi PR | GitHub Actions `ci.yml`: Node 20, `npm ci`, `npm run lint`, `npm test` (backend), `npm run build` (frontend) | ✅ |
+| CI mọi PR | GitHub Actions `ci.yml`: Node 20, `npm ci`, `npm run lint`, `npm test` (backend), e2e với Postgres thật và kiểm tra `docs/openapi.yaml` khớp code (từ 25/11), test assistant, `npm run build` (frontend), build và quét Trivy 3 image | ✅ |
 | Build + quét image | Docker Buildx, Trivy (chặn lỗ hổng CRITICAL) | 🟡 nhánh `ci/docker-images` |
 | Deploy staging | GitHub Actions + OIDC vào AWS, push ECR, chạy migration trên ECS, cập nhật App Runner/ECS, upload S3, kiểm `/health` | 🟡 nhánh `ci/deploy-staging` |
 | Phát hành | Tag `week-NN` + GitHub Release trên `main` (đã có `week-08`) | ✅ |
