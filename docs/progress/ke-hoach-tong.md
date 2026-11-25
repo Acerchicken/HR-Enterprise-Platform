@@ -296,24 +296,13 @@ Ngoài P1 → P5, slide "Business Problem & Functional Scope" còn thiếu một
 
 ### 8.2 Việc bổ sung tới buổi bảo vệ
 
-Việc đã có trong kế hoạch tuần 12 (`tuan-12/README.md`, nằm trong PR báo cáo tuần 11) giữ nguyên hạn; bảng dưới chỉ thêm việc mới và hạn mới. Các việc mới không thuộc
-danh sách cắt ở mục 7.8: chúng đứng **trước** `feat/approvals-inbox` vì giảng viên chấm trực tiếp.
+Phân việc, hạn và tiêu chí "xong" của từng người: [`tuan-12-bo-sung/`](tuan-12-bo-sung/README.md) (lập 25/11). Các việc này không
+thuộc danh sách cắt ở mục 7.8: chúng đứng **trước** `feat/approvals-inbox` vì giảng viên chấm trực tiếp.
 
-> **Cập nhật 25/11 (tối):** Duong yêu cầu dồn các việc này vào một ngày T5 (26/11), lịch theo giờ ở
-> [`defense/ke-hoach-26-11.md`](../defense/ke-hoach-26-11.md). Hạn trong bảng dưới là hạn cuối nếu việc nào trễ.
-
-| Mã | Nhánh | Người | Việc | Mở PR | Merge | Review |
-|---|---|---|---|---|---|---|
-| N2 | `feat/document-search` | TV1 Duong | `q` cho `GET /documents` (tiêu đề, mô tả, không dấu), ô tìm trên `/documents`, e2e; thêm FR-5.4 vào SRS và UC5 | T6 (27/11) | T7 (28/11) | TV2, TV4 |
-| N3 | `fix/trust-proxy` | TV1 Duong | `TRUST_PROXY` để audit ghi đúng IP người dùng trên App Runner (F5) | T5 (26/11) | T6 (27/11) | TV3 |
-| N4 | `test/load-k6` (#121), `docs/load-test-staging` | TV4 Duy, TV3 Bảo | Sửa xin token đồng loạt, chạy lại NFR-2.1 ở local; trên staging: 50 request/giây 15 phút có tắt một instance, một lượt tăng dần tới 250 request/giây; App Runner tối thiểu 2 instance trong lúc đo và demo | T6 (27/11) local; T2 (30/11) staging | T3 (1/12) | TV1 |
-| N5 | `feat/observability-basics` | TV1 Duong | Log JSON có `traceId`, `/health` trả commit, metric outbox tồn, timeout kết nối và `statement_timeout` 5 s cho database | T7 (28/11) | CN (29/11) | TV3 |
-| N5 | `docs/slo-dashboard-cost` (đã có) | TV3 Bảo | Thêm vào việc đã giao: thống nhất NFR-7.1 với Budgets 50 USD và hạn mức thẻ; cộng task assistant và tiền LLM vào dự toán | T7 (28/11) | CN (29/11) | TV1 |
-| N6 | `docs/test-report-failure` | TV4 Duy, TV3 Bảo | Diễn tập trên staging: tắt worker (email gửi bù), khóa LLM sai (fallback), tắt assistant service, rollback bằng `image_tag`, khôi phục RDS theo thời điểm (đo RTO); ghi thời gian, ảnh | T2 (30/11) | T3 (1/12) | TV1 |
-| N7 | `docs/assistant-eval-set` (đã có, **trễ**) | TV2 Thanh | Hạn mới cho bộ ≥ 30 câu; thêm câu prompt injection nằm trong tài liệu | T5 (26/11), 21:00 | T6 (27/11) | TV1, TV4 |
-| N7 | `docs/assistant-eval-report` (đã có) | TV4 Duy | Thêm Recall@6, tỉ lệ chặn injection, p95 độ trễ, token và chi phí mỗi câu theo `usage` service đã log | T2 (30/11), 21:00 | T3 (1/12) | TV1, TV2 |
-| N9 | `ci/e2e` | TV3 Bảo | Job e2e có Postgres trong `ci.yml`; bật lại `push: [dev]` cho Deploy Staging khi staging ổn | CN (29/11) | T2 (30/11) | TV1 |
-| N10 | `docs/feature-status-final` (kéo sớm) | TV2 Thanh | Sửa cột trạng thái FR-2.2, 2.4, 3.7, 3.8, 4.3, 4.8, 4.9, 6.3, 6.4 trong SRS trước; phần còn lại giữ hạn T5 (3/12) | T6 (27/11) | T7 (28/11) | TV1 |
-| N11 | `docs/threat-model-uc5-uc6-cloud` | TV2 Thanh | Thêm mối đe dọa của kho tài liệu, trợ lý (prompt injection trực tiếp, gián tiếp; rò dữ liệu qua LLM; lộ khóa API), Cognito, AWS; sửa T-18 theo #120 | T6 (27/11) | T7 (28/11) | TV1 |
-| N12 | cùng PR báo cáo tuần 12 | TV1 Duong | ADR-15 → ADR-18 đổi sang "Đã chấp nhận" | T2 (30/11) | T2 (30/11) | – |
-| N13 | `docs/defense` | Cả nhóm, TV1 chủ trì | Slide bảo vệ từ mục 5, 7 của file đối chiếu; mỗi người tập câu hỏi thuộc vai trò mình; video demo dự phòng | T6 (4/12) tập lần 1 | T2 (7/12) bảo vệ | – |
+| Người | Việc | Hạn |
+|---|---|---|
+| TV1 Duong | N2 tìm tài liệu, N3 email SES + IP thật, N5a log JSON + metric + timeout database, N9 e2e trong CI, F4 hạ tầng trợ lý (nhận từ TV3), `fix/auth-email-verified`, N12 trạng thái ADR | Hết T5 (26/11) (Duong, 25/11) |
+| TV2 Thanh | N7a bộ câu hỏi đánh giá (trễ), N10 trạng thái FR, N11 threat model | T5 (26/11) 21:00; T7 (28/11) 21:00 |
+| TV3 Bảo | N1 B1, F2, F3 + `apply` staging, N8 MFA, N5b dashboard và chi phí, N6 diễn tập lỗi | Mở PR T5 (26/11) 21:00; `apply` T6 (27/11) 21:00; còn lại CN (29/11) → T2 (30/11) |
+| TV4 Duy | N4 load test (local rồi staging), N6 biên bản diễn tập lỗi, N7b báo cáo đánh giá trợ lý | T6 (27/11); T2 (30/11) 21:00 |
+| Cả nhóm | N13 slide, tập bảo vệ, video demo | Tập T6 (4/12), bảo vệ T2 (7/12) |

@@ -438,8 +438,8 @@ Số liệu trợ lý *(cần đo bằng `usage` đã log, N7)*.
 Hạn tính theo lịch [tuần 12](../progress/ke-hoach-tong.md#72-thứ-tự-và-mốc) và đóng băng T4 (2/12). Việc đã có trong kế hoạch tuần 12
 giữ nguyên hạn; việc mới ghi "mới". Trễ quá 24 giờ thì TV1 báo trong project chat.
 
-**Cập nhật 25/11 (tối):** các việc dưới đây được dồn vào một ngày T5 (26/11), lịch theo giờ ở [`ke-hoach-26-11.md`](ke-hoach-26-11.md);
-hạn trong bảng là hạn cuối nếu trễ.
+**Cập nhật 25/11 (tối, Duong):** TV1 làm hết phần code còn thiếu trong một ngày (tới hết T5 26/11), nhận thêm F4 và N9 từ TV3.
+Thành viên khác giữ hạn riêng. Phân việc từng người: [`progress/tuan-12-bo-sung/`](../progress/tuan-12-bo-sung/README.md).
 
 | Mã | Việc | Người | Nhánh / nơi làm | Hạn | Đáp ứng | Mới? |
 |---|---|---|---|---|---|---|
