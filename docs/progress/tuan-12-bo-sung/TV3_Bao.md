@@ -81,4 +81,13 @@ TV3 thao tác, TV4 bấm giờ và ghi biên bản `docs/test-report-failure`. M
 
 ## Việc đã làm
 
-*(TV3 điền khi xong: ngày, PR, kết quả.)*
+- **25/11/2026**:
+  - Hoàn thành nhánh và mở PR `infra/idp-hardening` (B1 + Keycloak):
+    - Cognito User Pool: `mfa_configuration = "ON"`, `software_token_mfa_configuration { enabled = true }`, `user_pool_tier = "ESSENTIALS"`, `allow_admin_create_user_only = true`, `require_uppercase = true`, `temporary_password_validity_days = 7`, `account_recovery_setting` (verified_email), `email_configuration` qua SES (`aws_ses_email_identity.sender`).
+    - Cognito App Client: `explicit_auth_flows = ["ALLOW_REFRESH_TOKEN_AUTH"]`, access/ID token 15 phút, refresh token 10 giờ, `callback_urls` bổ sung `/callback` (localhost và CloudFront), Hosted Domain `managed_login_version = 2`.
+    - Keycloak local: `passwordPolicy` (8 ký tự, hoa, thường, số, không trùng email), `bruteForceProtected: true`, `failureFactor: 5`, khóa 15 phút (`waitIncrementSeconds: 900`, `maxFailureWaitSeconds: 900`), phiên tối đa 10 giờ (`ssoSessionMaxLifespan: 36000`).
+  - Hoàn thành nhánh và mở PR `infra/profile-files` (F3 + F2 + App Runner Scaling):
+    - Profile files bucket `hr-platform-staging-profile-files`: chặn public 100%, SSE-KMS (`aws_kms_key.main`), CORS chỉ cho phép method `PUT` từ domain CloudFront, lifecycle xóa object tag `deleted=true` sau 30 ngày.
+    - App Runner IAM: cấp quyền `s3:GetObject`, `PutObject`, `DeleteObject`, `PutObjectTagging` trên bucket profile files; bổ sung biến môi trường `PROFILE_STORAGE_BUCKET`.
+    - App Runner Auto Scaling: bổ sung `aws_apprunner_auto_scaling_configuration_version` kết nối với API service, biến `apprunner_min_instances` (mặc định 1 cho staging, cấu hình 2 khi load test/demo theo ADR-06, NFR-3.2).
+    - Task worker & IAM: bổ sung biến môi trường `IDP_ADMIN_DRIVER=cognito`, `COGNITO_USER_POOL_ID`; policy `cognito-idp:AdminCreateUser`, `AdminUpdateUserAttributes`, `AdminAddUserToGroup`, `AdminRemoveUserFromGroup`, `AdminDisableUser`, `AdminEnableUser`, `AdminUserGlobalSignOut`, `AdminGetUser` trên ARN user pool.
