@@ -340,7 +340,7 @@ Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" l�
 | E26 | Bảo mật | Ảnh đại diện là SVG, GIF hoặc định dạng khác JPEG, PNG, WebP | 400 `BAD_REQUEST` (SVG có thể chứa script) | Cần kiểm |
 | E27 | Bảo mật | Trường chữ có thẻ HTML, script (`<script>`, `onerror=`) | Lưu nguyên văn; giao diện hiển thị dạng chữ, không render HTML (frontend không dùng `innerHTML`) | Có |
 | E28 | Gửi trùng | Dùng lại `Idempotency-Key` cho yêu cầu khác nội dung (mục, trường, giá trị khác) | 409 `CONFLICT`, như UC3 E10 | Cần kiểm |
-| E29 | Vòng đời dữ liệu | Chủ hồ sơ bị cho nghỉ việc khi còn yêu cầu `PENDING` | Yêu cầu chuyển `CANCELLED` kèm lý do `TERMINATED`; HR không duyệt được nữa (409) | Đề xuất, TV2 chốt |
+| E29 | Vòng đời dữ liệu | Chủ hồ sơ bị cho nghỉ việc khi còn yêu cầu `PENDING` | Tự chuyển yêu cầu sang `CANCELLED`, reason `TERMINATED`; giữ bản ghi và lịch sử; ghi audit là thao tác hệ thống; HR không duyệt yêu cầu cũ (409). Nếu cần sửa tiếp, HR tạo thao tác hiệu chỉnh riêng có audit | Chưa đạt |
 | E30 | Vòng đời dữ liệu | Chọn quản lý trực tiếp là người đã nghỉ việc | 400 `BAD_REQUEST`, như E5 | Cần kiểm |
 | E31 | Hệ thống ngoài | URL PUT hết hạn trước khi tải xong (mạng chậm) | Storage từ chối; file ở `PENDING`, tự `REJECTED` sau 24 giờ; giao diện cho tải lại | Có |
 | E32 | Vòng đời dữ liệu | Tải xuống file `PENDING`, `REJECTED`, hoặc đã xóa quá 30 ngày | 404 `NOT_FOUND`, như E7 | Cần kiểm |
@@ -605,8 +605,9 @@ Quyết định 14/11/2026 (rà soát trước khi làm UC1):
 | Event email hồ sơ ghi chung `leave.outbox` | – | Nợ kỹ thuật, chuyển `employee.outbox` theo ADR-15 |
 | Hạn 2 ngày làm việc (AC-1.9.13) đếm bằng `workdaysBetween`: chỉ bỏ T7, CN, theo ngày UTC, chưa bỏ ngày lễ | TV1, nhánh `feat/leave-holidays` (UC4 spec 13.6) | Dùng dịch vụ lịch chung đọc `leave.holiday`, giờ Việt Nam (kiểm chéo UC3 spec mục 14) |
 | Nghỉ việc chưa xử lý đơn nghỉ của người nghỉ | TV1, nhánh `feat/leave-balance-rules` | Hộp xác nhận nêu số đơn; job của Leave hủy đơn chờ, đơn tương lai (UC3 AC-3.1.7, spec 13.2) |
+| Nghỉ việc chưa xử lý yêu cầu cập nhật hồ sơ `PENDING` (E29) | TV1, PR code tiếp theo | Chuyển `CANCELLED` với reason `TERMINATED`, ghi lịch sử/audit; HR không thể duyệt yêu cầu cũ |
 | Quét mã độc file tải lên | – | Không làm trong MVP, rủi ro chấp nhận (mục 7) |
-| Ngoại lệ bổ sung mục 6.1 (E23 → E32) | Rà 24/11/2026 | cần kiểm: E23, E24, E25, E26, E28, E30, E32; chờ TV2 chốt: E29. TV4 viết test cho cả bảng, sửa code ca chưa đạt |
+| Ngoại lệ bổ sung mục 6.1 (E23 → E32) | Rà 24/11/2026, TV2 chốt E29 ngày 25/11 | chưa đạt: E29; cần kiểm: E23, E24, E25, E26, E28, E30, E32. TV1 xử lý E29 trong PR code; TV4 viết test cho cả bảng |
 
 ## 13. Thiết kế đề xuất
 

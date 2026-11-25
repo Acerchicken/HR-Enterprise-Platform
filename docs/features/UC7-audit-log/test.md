@@ -60,4 +60,4 @@ npm run test:e2e
 - AC-7.3.1: lọc theo `actor`.
 - NFR-2.4: `EXPLAIN` truy vấn chỉ theo `from`, `to` dùng `ix_audit_at` với 3,75 triệu bản ghi.
 - AC-7.1.1 cho thao tác kho tài liệu (`DOCUMENT_*`).
-- Ngoại lệ bổ sung [spec mục 6.1](spec.md#61-ngoại-lệ-bổ-sung-rà-24112026) (E5 → E10): mỗi mã ít nhất một ca e2e hoặc unit. ca của E5, E10 đang đỏ cho tới khi sửa code; ca của E9 xác nhận code đã đúng, sai thì chuyển sang "Chưa đạt" trong spec; E6, E7 chờ TV2 chốt rồi mới viết.
+- Ngoại lệ bổ sung [spec mục 6.1](spec.md#61-ngoại-lệ-bổ-sung-rà-24112026) (E5 → E10): với E6 kiểm 366 ngày bao gồm cả hai đầu được nhận, 367 ngày khi chỉ lọc thời gian trả 400, và khoảng dài hơn kèm actor hoặc entity/entityId được nhận; với E7 `page × size = 10.000` được nhận, `10.001` trả 400. E6/E7 là tiêu chí cần triển khai và kiểm thử, chưa phải kết quả đã chạy. E5/E10 đang chưa đạt; E9 cần kiểm.
