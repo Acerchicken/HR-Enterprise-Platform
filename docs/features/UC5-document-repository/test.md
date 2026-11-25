@@ -58,9 +58,8 @@ npm test -- document
 npm run test:e2e        # test tự tạo bucket nếu chưa có
 ```
 
-Không đặt `STORAGE_BUCKET` thì e2e vẫn xanh nhưng nhóm "kho tài liệu" bị bỏ qua: biên bản phải ghi rõ đã chạy với storage.
-CI hiện không chạy e2e; đề xuất chuyển nhóm này sang bucket giả trong bộ nhớ (`test/fake-storage.ts`, như file hồ sơ UC1) để
-luôn chạy (spec 13.3 ca 7).
+Không đặt `STORAGE_BUCKET` thì nhóm "kho tài liệu" chạy với bucket giả trong bộ nhớ (`test/fake-storage.ts`); đặt thì chạy với
+S3Mock/MinIO thật. CI chạy e2e với bucket giả ở mọi PR (job `Backend (E2E & OpenAPI)`, từ 25/11); biên bản ghi rõ đã chạy với loại nào.
 
 ## 6. Kiểm thử phi chức năng
 
