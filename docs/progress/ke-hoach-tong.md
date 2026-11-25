@@ -299,6 +299,9 @@ Ngoài P1 → P5, slide "Business Problem & Functional Scope" còn thiếu một
 Việc đã có trong kế hoạch tuần 12 (`tuan-12/README.md`, nằm trong PR báo cáo tuần 11) giữ nguyên hạn; bảng dưới chỉ thêm việc mới và hạn mới. Các việc mới không thuộc
 danh sách cắt ở mục 7.8: chúng đứng **trước** `feat/approvals-inbox` vì giảng viên chấm trực tiếp.
 
+> **Cập nhật 25/11 (tối):** Duong yêu cầu dồn các việc này vào một ngày T5 (26/11), lịch theo giờ ở
+> [`defense/ke-hoach-26-11.md`](../defense/ke-hoach-26-11.md). Hạn trong bảng dưới là hạn cuối nếu việc nào trễ.
+
 | Mã | Nhánh | Người | Việc | Mở PR | Merge | Review |
 |---|---|---|---|---|---|---|
 | N2 | `feat/document-search` | TV1 Duong | `q` cho `GET /documents` (tiêu đề, mô tả, không dấu), ô tìm trên `/documents`, e2e; thêm FR-5.4 vào SRS và UC5 | T6 (27/11) | T7 (28/11) | TV2, TV4 |

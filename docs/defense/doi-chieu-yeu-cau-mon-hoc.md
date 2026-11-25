@@ -438,6 +438,9 @@ Số liệu trợ lý *(cần đo bằng `usage` đã log, N7)*.
 Hạn tính theo lịch [tuần 12](../progress/ke-hoach-tong.md#72-thứ-tự-và-mốc) và đóng băng T4 (2/12). Việc đã có trong kế hoạch tuần 12
 giữ nguyên hạn; việc mới ghi "mới". Trễ quá 24 giờ thì TV1 báo trong project chat.
 
+**Cập nhật 25/11 (tối):** các việc dưới đây được dồn vào một ngày T5 (26/11), lịch theo giờ ở [`ke-hoach-26-11.md`](ke-hoach-26-11.md);
+hạn trong bảng là hạn cuối nếu trễ.
+
 | Mã | Việc | Người | Nhánh / nơi làm | Hạn | Đáp ứng | Mới? |
 |---|---|---|---|---|---|---|
 | N1 | Sửa B1 (Cognito: `callback_urls` có `/callback`, MFA `ON`, chỉ admin tạo user, chính sách mật khẩu, token 15 phút, SES), F2, F3 trong `infra/staging`; `plan` → TV1 duyệt → `apply`; Deploy Staging với seed chạy xanh; smoke test theo `deploy.md` mục 5 | TV3 Bảo (TV1 duyệt plan, TV4 smoke) | `infra/idp-hardening`, `infra/profile-files`, rồi `apply` | Mở PR T4 25/11 21:00; `apply` T5 26/11. Quá T6 27/11 21:00 chưa có thì báo giảng viên và demo local | Real cloud deployment, Automated deployment, P3 IaC, CI/CD | Không |
