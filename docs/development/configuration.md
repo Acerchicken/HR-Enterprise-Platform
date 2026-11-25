@@ -75,13 +75,13 @@ Dùng cho outbox publisher (trong API) và notification worker. Chi tiết: [h�
 | `RABBITMQ_URL` | (không có) | (không dùng) | **Có** khi `rabbitmq` | API, Worker | Ví dụ `amqp://hr:hr@localhost:5672` |
 | `SQS_QUEUE_URL` | (không có) | URL queue `hr-platform-staging-leave-notifications` | **Có** khi `sqs` | API, Worker | Quyền gửi/nhận lấy từ IAM role, không cần access key |
 | `AWS_REGION` | (không có) | `var.aws_region` (ví dụ `ap-southeast-1`) | **Có** khi `sqs` | API, Worker | Region của SQS; cũng là region mặc định cho kho tài liệu |
-| `SQS_ASSISTANT_QUEUE_URL` | (không có) | URL queue `assistant.document` (Terraform, nhánh `infra/llm-secrets-cost`) | Không | API, Assistant service | Queue nhận event tài liệu (UC6). API thiếu biến này thì bỏ qua event tài liệu khi dùng SQS; assistant service dùng nó khi `QUEUE_DRIVER=sqs` |
+| `SQS_ASSISTANT_QUEUE_URL` | (không có) | URL queue `assistant.document` (Terraform, chưa có: [staging-readiness F4](../cloud/staging-readiness.md#4-trợ-lý-chính-sách-trên-staging-f4-chi-tiết)) | Không | API, Assistant service | Queue nhận event tài liệu (UC6). API thiếu biến này thì bỏ qua event tài liệu khi dùng SQS; assistant service dùng nó khi `QUEUE_DRIVER=sqs` |
 
 ### Email (notification worker)
 
 | Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
 |---|---|---|---|---|---|
-| `SMTP_HOST` | `localhost` | Đặt ở task definition của worker | Staging | Worker | Local là Mailpit (giao diện xem mail http://localhost:8025) |
+| `SMTP_HOST` | `localhost` | Chưa có (task worker chỉ đặt `MAIL_DRIVER=ses`, code chưa đọc; [staging-readiness F1](../cloud/staging-readiness.md#3-chức-năng-hỏng-nếu-không-sửa-làm-trước-demo)) | Staging | Worker | Local là Mailpit (giao diện xem mail http://localhost:8025) |
 | `SMTP_PORT` | `1025` | | Staging | Worker | Kết nối không TLS (`secure: false`) |
 | `SMTP_FROM` | `no-reply@hr.local` | | Staging | Worker | Địa chỉ người gửi |
 
@@ -176,12 +176,14 @@ Staging đặt trong bước build của `deploy-staging.yml`.
 | Test e2e | Biến môi trường của shell; `app.e2e-spec.ts` tự đặt `AUTH_MODE=dev` | Không đặt biến queue thì `none`. Nhóm test kho tài liệu chạy với S3Mock khi có `STORAGE_BUCKET`, không có thì dùng bucket giả trong bộ nhớ |
 | Staging AWS | `infra/staging/app_runner.tf`, Secrets Manager, `deploy-staging.yml` | Không có `ALLOW_DEV_SECRETS` |
 
-## 5. Điểm còn thiếu trên staging (13/11/2026)
+## 5. Điểm còn thiếu trên staging
 
-- Bucket tài liệu và `STORAGE_BUCKET`, `STORAGE_REGION` trong `app_runner.tf` đã merge (PR #70, 21/11) nhưng **chưa `terraform apply`**
-  (tuần 12), nên API kho tài liệu trên staging còn trả 503. Terraform chưa có bucket file hồ sơ (`PROFILE_STORAGE_BUCKET`); bucket
-  tài liệu đang mã hóa SSE-S3 (`AES256`), chưa dùng khóa KMS như NFR-5.16 (kiểm chéo UC5, 22/11). Ở local, docker-compose đã có `s3mock` (cổng 9090) tự tạo sẵn bucket `hr-documents` và `hr-profile-files-local`.
-- Biến của worker (`SMTP_*`, `QUEUE_DRIVER`, `SQS_QUEUE_URL`) nằm ở task definition ECS, chưa thấy trong Terraform.
+Rà lại ngày 25/11/2026 trước khi `apply`: [staging-readiness.md](../cloud/staging-readiness.md), mục 8 là bảng biến theo từng
+thành phần (API, worker, assistant), có biến nào chưa có trong Terraform. Chính:
+
+- Worker gửi mail bằng SMTP; `MAIL_DRIVER=ses` trong Terraform chưa được code đọc nên email trên staging lỗi (F1).
+- Worker thiếu `IDP_ADMIN_DRIVER`, `COGNITO_USER_POOL_ID` (F2); API thiếu `PROFILE_STORAGE_BUCKET` (F3), `ASSISTANT_URL`,
+  `ASSISTANT_INTERNAL_TOKEN`, `SQS_ASSISTANT_QUEUE_URL` (F4).
 
 **Khi thêm biến mới:** đọc trong `config.ts` (có mặc định cho dev hoặc kiểm tra trong `assertValid`), thêm vào `.env.example`,
 `docker-compose.yml` nếu cần, Terraform hoặc workflow cho staging, và một dòng vào file này, trong cùng PR.
