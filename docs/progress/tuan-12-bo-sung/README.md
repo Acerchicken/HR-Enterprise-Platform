@@ -33,6 +33,22 @@ viên chấm trực tiếp:
 - **Staging là đường găng.** TV3 `apply` chậm nhất T6 (27/11) 21:00; quá hạn thì TV1 báo giảng viên và nhóm demo, đo ở local.
 - Staging tắt ngoài giờ đo và demo (`infra/README.md` mục 5.3).
 
+## Trạng thái phần TV1 (cập nhật 25/11)
+
+Code, test và tài liệu xong trong ngày 25/11, sớm hơn hạn T5 (26/11). Chờ review rồi merge.
+
+| Mã | PR | Kiểm chứng | Ghi chú |
+|---|---|---|---|
+| N2 | [#140](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/140) | e2e 152/152 | |
+| N3 | [#141](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/141) | unit 189/189 | Gửi SES thật cần `apply` staging (TV3); chưa có giãn cách tăng dần khi gửi email lỗi |
+| N5a | [#142](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/142) | unit 196/196, e2e 152/152 | Xếp chồng trên #141: merge #141 trước, dùng merge commit |
+| – (T-02) | [#143](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/143) | unit 185/185, e2e 151/151 | AC-8.1.12 mới |
+| N9 | [#144](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/144) | Chạy thử các bước trên database trống: e2e 151/151, OpenAPI khớp | |
+| F4 | [#145](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/145) | `terraform fmt`, `validate` qua | Xếp chồng trên #141. TV3 `plan`/`apply`, rồi `ALTER ROLE assistant_svc` |
+| N12 | [#146](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/146) | – | |
+
+**Thứ tự merge:** #141 → #142, #145 (merge commit); các PR còn lại độc lập, merge thứ tự nào cũng được (đã thử gộp từng cặp, không xung đột).
+
 ## Bảng tổng hợp
 
 | Mã | Việc | Người | Nhánh | Mở PR | Merge | Review | Chi tiết |

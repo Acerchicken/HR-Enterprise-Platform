@@ -301,7 +301,7 @@ thuộc danh sách cắt ở mục 7.8: chúng đứng **trước** `feat/approv
 
 | Người | Việc | Hạn |
 |---|---|---|
-| TV1 Duong | N2 tìm tài liệu, N3 email SES + IP thật, N5a log JSON + metric + timeout database, N9 e2e trong CI, F4 hạ tầng trợ lý (nhận từ TV3), `fix/auth-email-verified`, N12 trạng thái ADR | Hết T5 (26/11) (Duong, 25/11) |
+| TV1 Duong | N2 tìm tài liệu, N3 email SES + IP thật, N5a log JSON + metric + timeout database, N9 e2e trong CI, F4 hạ tầng trợ lý (nhận từ TV3), `fix/auth-email-verified`, N12 trạng thái ADR | Hết T5 (26/11) (Duong, 25/11) (**25/11: xong, PR #140 → #146 chờ merge**) |
 | TV2 Thanh | N7a bộ câu hỏi đánh giá (trễ), N10 trạng thái FR, N11 threat model | T5 (26/11) 21:00; T7 (28/11) 21:00 |
 | TV3 Bảo | N1 B1, F2, F3 + `apply` staging, N8 MFA, N5b dashboard và chi phí, N6 diễn tập lỗi | Mở PR T5 (26/11) 21:00; `apply` T6 (27/11) 21:00; còn lại CN (29/11) → T2 (30/11) |
 | TV4 Duy | N4 load test (local rồi staging), N6 biên bản diễn tập lỗi, N7b báo cáo đánh giá trợ lý | T6 (27/11); T2 (30/11) 21:00 |

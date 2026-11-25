@@ -7,6 +7,8 @@ TV1 nhận thêm từ TV3: hạ tầng trợ lý (F4) và e2e trong CI (N9), đ�
 
 ## Việc và hạn
 
+**25/11:** cả 7 việc đã mở PR ([#140](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/140) → [#146](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/146)), trạng thái từng PR ở [README](README.md#trạng-thái-phần-tv1-cập-nhật-2511).
+
 | # | Mã | Nhánh | Việc | Tiêu chí của slide | Review |
 |---|---|---|---|---|---|
 | 1 | N2 | `feat/document-search` | Nhân viên tìm tài liệu theo từ khóa | Use case 6 "Employee self-service search" | TV2, TV4 |

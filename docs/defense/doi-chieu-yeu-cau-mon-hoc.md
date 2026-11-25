@@ -457,6 +457,8 @@ Thành viên khác giữ hạn riêng. Phân việc từng người: [`progress/
 | N12 | Đổi trạng thái ADR-15 → ADR-18 sang "Đã chấp nhận" (PR #92, #99, #100, #128 đã merge) | TV1 Duong | cùng PR báo cáo tuần 12 | T2 30/11 | Architecture decisions | **Mới** |
 | N13 | Slide bảo vệ dùng mục 5 và 7 của file này; tập trả lời 12 câu, mỗi người phụ trách câu thuộc vai trò mình (TV1: 1, 4, 5, 12; TV2: 2, 3; TV3: 6, 8, 10, 11; TV4: 3, 7 phần đo); quay video demo dự phòng | Cả nhóm, TV1 chủ trì | `docs/defense` | Tập lần 1 T6 4/12; bảo vệ T2 7/12 | How Projects Will Be Reviewed | **Mới** |
 
+> **Cập nhật 25/11 tối:** phần TV1 đã có PR: N2 [#140](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/140), N3 [#141](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/141), N5a [#142](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/142), T-02 [#143](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/143), N9 [#144](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/144), F4 [#145](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/145), N12 [#146](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/146). Chi tiết ở [tuần 12 bổ sung](../progress/tuan-12-bo-sung/README.md#trạng-thái-phần-tv1-cập-nhật-2511).
+
 ---
 
 ## 7. Kịch bản demo cho các Required Demonstrations
