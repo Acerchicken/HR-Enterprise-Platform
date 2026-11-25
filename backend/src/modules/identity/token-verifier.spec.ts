@@ -14,13 +14,15 @@ const cognito = loadConfig({
 
 describe('readClaims', () => {
   it('token Keycloak: azp, email; không đọc realm_access.roles (ADR-18)', () => {
-    const p = { sub: 's', azp: 'hr-web', email: 'HR@hr.local', realm_access: { roles: ['hr', 'offline_access'] } };
-    expect(readClaims(p, keycloak)).toEqual({ client: 'hr-web', email: 'hr@hr.local' });
+    const p = { sub: 's', azp: 'hr-web', email: 'HR@hr.local', email_verified: true, realm_access: { roles: ['hr', 'offline_access'] } };
+    expect(readClaims(p, keycloak)).toEqual({ client: 'hr-web', email: 'hr@hr.local', emailVerified: true });
+    expect(readClaims({ ...p, email_verified: false }, keycloak).emailVerified).toBe(false);
+    expect(readClaims({ ...p, email_verified: undefined }, keycloak).emailVerified).toBe(false);
   });
 
   it('access token Cognito: client_id, không có email; không đọc cognito:groups (ADR-18)', () => {
     const p = { sub: 's', client_id: 'web-client-123', token_use: 'access', 'cognito:groups': ['hr'] };
-    expect(readClaims(p, cognito)).toEqual({ client: 'web-client-123', email: null });
+    expect(readClaims(p, cognito)).toEqual({ client: 'web-client-123', email: null, emailVerified: false });
   });
 
   it('từ chối ID token của Cognito và client lạ', () => {
@@ -54,9 +56,9 @@ describe('TokenVerifier với Cognito', () => {
   beforeEach(() => fetchMock.mockReset());
 
   it('lấy email từ userinfo một lần rồi cache theo sub', async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ sub: 'u-1', email: 'Manager@hr.local' }) });
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ sub: 'u-1', email: 'Manager@hr.local', email_verified: 'true' }) });
     const token = await sign({ sub: 'u-1', client_id: 'web-client-123', token_use: 'access', 'cognito:groups': ['hr'] });
-    await expect(verifier.verify(token)).resolves.toEqual({ subject: 'u-1', email: 'manager@hr.local' });
+    await expect(verifier.verify(token)).resolves.toEqual({ subject: 'u-1', email: 'manager@hr.local', emailVerified: true });
     await verifier.verify(token);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe(`Bearer ${token}`);
