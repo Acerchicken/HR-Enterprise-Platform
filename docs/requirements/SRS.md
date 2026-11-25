@@ -396,7 +396,7 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 | NFR-5.6 | Đăng xuất | Kết thúc phiên ở identity provider và xóa token ở trình duyệt | Đăng xuất rồi bấm Back | Đã có |
 | NFR-5.7 | Giữ token an toàn ở trình duyệt | Token chỉ trong `sessionStorage` (đóng tab là mất), không trong `localStorage`, URL hay log | Review code | Đã có |
 | NFR-5.8 | API kiểm token ở mọi request | Kiểm chữ ký (JWKS), issuer, hạn dùng, client (`azp`/`aud`); sai thì 401 | e2e test token giả, token hết hạn | Đã có |
-| NFR-5.9 | Không tự đăng ký tài khoản | Tài khoản do HR hoặc ADMIN tạo; chỉ liên kết tài khoản với hồ sơ khi email đã xác minh (T-02) | Thử đăng ký trên trang đăng nhập | Một phần: Keycloak đã tắt, Cognito còn cho tự đăng ký. Sửa tuần 10 (`infra/idp-hardening`) |
+| NFR-5.9 | Không tự đăng ký tài khoản | Tài khoản do HR hoặc ADMIN tạo; chỉ liên kết tài khoản với hồ sơ khi email đã xác minh (T-02) | Thử đăng ký trên trang đăng nhập; unit test `email_verified` | Một phần: Keycloak đã tắt, Cognito còn cho tự đăng ký (`infra/idp-hardening`); API chỉ liên kết khi `email_verified` (25/11, AC-8.1.12) |
 | NFR-5.10 | Ghi nhận đăng nhập | Lưu đăng nhập thành công, thất bại, bị khóa và mọi lần cấp, thu hồi vai trò HR, ADMIN (T-03, T-06) | Xem event của IdP và audit | Một phần: cấp, thu hồi vai trò có audit (FR-8.7); đăng nhập chưa có, cách làm theo ADR-17 mục 6; trên Cognito gói Essentials chỉ ghi được lần thành công |
 
 **b) Phân quyền**

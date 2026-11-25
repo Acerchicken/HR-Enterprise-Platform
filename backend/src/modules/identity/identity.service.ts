@@ -14,6 +14,8 @@ import { UserAccount } from './user-account.entity';
  * Nhóm trong token (`realm_access.roles`, `cognito:groups`) không được dùng: nhóm trên IdP chỉ là bản sao để IdP bắt MFA
  * (AC-8.1.10). Dòng EMPLOYEE, MANAGER cũ trong database cũng bị bỏ qua vì hai vai trò này chỉ suy ra.
  */
+export const EMAIL_NOT_VERIFIED = 'Email đăng nhập chưa được xác minh nên chưa thể gắn với hồ sơ nhân viên. Liên hệ HR để được mời lại.';
+
 @Injectable()
 export class IdentityService {
   constructor(
@@ -26,8 +28,14 @@ export class IdentityService {
     const devLogin = token.subject.startsWith('dev|');
     let account = devLogin
       ? await this.accounts.findOneBy({ email: token.email })
-      : ((await this.accounts.findOneBy({ subject: token.subject })) ??
-        (await this.accounts.findOneBy({ email: token.email })));
+      : await this.accounts.findOneBy({ subject: token.subject });
+
+    if (!account && !devLogin) {
+      // Từ đây trở xuống là khớp theo email (gắn subject vào tài khoản có sẵn, hoặc tạo tài khoản và gắn hồ sơ).
+      // Threat model T-02, NFR-5.9: chỉ làm khi IdP đã xác minh email; tài khoản đã gắn subject thì không cần.
+      if (!token.emailVerified) throw new UnauthorizedException(EMAIL_NOT_VERIFIED); // spec UC8 E3: 401
+      account = await this.accounts.findOneBy({ email: token.email });
+    }
 
     if (!account) {
       // Just-in-time provisioning: lần đăng nhập đầu tiên, tìm nhân viên theo email công ty.
