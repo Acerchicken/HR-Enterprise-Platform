@@ -33,7 +33,7 @@ flowchart LR
         DB[("PostgreSQL\nemployee, leave, audit,\noutbox, processed_event")]
         Rabbit["RabbitMQ (local)"]
         SQS["SQS (đích cloud, chưa triển khai)"]
-        Worker["Notification worker"]
+        Worker["Notification service"]
     end
 
     subgraph MailBoundary["Ranh giới dịch vụ email"]
@@ -127,8 +127,8 @@ TV1 (API/web/worker), TV3 (cloud/IaC/CI), TV2 (nghiệp vụ).
 - Hồ sơ và mã hóa: `backend/src/modules/employee/{employee.controller,employee.service,employee-access}.ts`,
   `backend/src/common/field-crypto.ts`, `backend/src/modules/audit/audit.service.ts`.
 - Nghỉ phép và thông báo: `backend/src/modules/leave/{leave.controller,leave.service,leave-state-machine}.ts`,
-  `backend/src/modules/leave/outbox/{leave-events,outbox-publisher}.ts`,
-  `backend/src/worker/notification-worker.ts`.
+  `backend/src/modules/leave/outbox/{leave-events,outbox-publisher,notification-recipients}.ts`,
+  `services/notification/src/{handler,templates}.ts`, `services/notification/src/mail/sender.ts` (từ 26/11, ADR-15 bước 1).
 - Ranh giới local hiện tại: `backend/src/bootstrap.ts`, `backend/src/config/config.ts`, `docker-compose.yml`.
 - Nghiệp vụ/quyết định: `docs/business/leave-rules.md`, `docs/progress/tuan-07/README.md` (ADR-08/09/10),
   `docs/security/access-control-matrix.md`.

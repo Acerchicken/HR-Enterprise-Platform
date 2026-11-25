@@ -99,9 +99,6 @@ services:
       FIELD_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=
       QUEUE_DRIVER: rabbitmq
       RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
-      SMTP_HOST: mailpit
-      SMTP_PORT: 1025
-      SMTP_FROM: no-reply@hr.local
       STORAGE_BUCKET: hr-documents
       PROFILE_STORAGE_BUCKET: hr-profile-files-local
       STORAGE_ENDPOINT: http://s3mock:9090
@@ -127,8 +124,8 @@ services:
       timeout: 3s
       retries: 30
 
-  # Nhận event từ RabbitMQ: email nghỉ phép qua Mailpit (xem ở http://localhost:8025); đồng bộ tài khoản sang Keycloak
-  # (UC8 identity-sync: tạo, mời, khóa, mở, đổi email, vai trò). Thư mời của Keycloak cũng vào Mailpit.
+  # Nhận event tài khoản từ queue identity.sync và đồng bộ sang Keycloak (UC8 identity-sync: tạo, mời, khóa, mở, đổi email,
+  # vai trò); chạy job nhắc đơn, chốt phép. Thư mời của Keycloak vào Mailpit. Email nghiệp vụ do service notification gửi.
   worker:
     build: ./backend
     command: ["node", "dist/worker/main.js"]
@@ -142,9 +139,6 @@ services:
       FIELD_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=
       QUEUE_DRIVER: rabbitmq
       RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
-      SMTP_HOST: mailpit
-      SMTP_PORT: 1025
-      SMTP_FROM: no-reply@hr.local
       STORAGE_BUCKET: hr-documents
       PROFILE_STORAGE_BUCKET: hr-profile-files-local
       STORAGE_ENDPOINT: http://s3mock:9090
@@ -185,6 +179,30 @@ services:
       api:
         condition: service_healthy
     restart: "no"
+
+  # Gửi email (ADR-15 bước 1): nghe queue notification.leave (event nghỉ phép, hồ sơ đã có sẵn email người nhận), gửi qua
+  # Mailpit (xem ở http://localhost:8025). Dùng user hr ở local cho gọn; staging dùng user notification_svc chỉ có quyền trên
+  # schema notification.
+  notification:
+    build: ./services/notification
+    environment:
+      PORT: 3200
+      NOTIFICATION_DB_URL: postgres://hr:hr@db:5432/hr
+      DB_SSL: "off"
+      QUEUE_DRIVER: rabbitmq
+      RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
+      MAIL_DRIVER: smtp
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_FROM: no-reply@hr.local
+    depends_on:
+      api:
+        condition: service_healthy   # API chạy migration tạo schema notification
+      rabbitmq:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    restart: unless-stopped
 
   # Trợ lý chính sách (UC6): nhận event tài liệu qua queue assistant.document, trích văn bản, index vào schema assistant.
   # Dùng user hr ở local cho gọn; staging dùng user riêng assistant_svc chỉ có quyền trên schema assistant (ADR-16).

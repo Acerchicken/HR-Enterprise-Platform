@@ -44,7 +44,7 @@ qua email. Gửi lại do mạng lỗi không tạo đơn thứ hai.
   - Đơn ở trạng thái `SUBMITTED`; số ngày của đơn được cộng vào `pending` của chủ đơn.
   - Có một dòng lịch sử (`null` → `SUBMITTED`) và audit `LEAVE_SUBMIT`.
   - Có event `LeaveRequested` trong outbox. Tất cả ghi trong **một giao dịch**.
-  - Sau đó worker gửi email cho quản lý trực tiếp ([hợp đồng event](../../architecture/event-contract.md)).
+  - Sau đó notification service gửi email cho quản lý trực tiếp ([hợp đồng event](../../architecture/event-contract.md)).
 - **Điều kiện sau khi thất bại:** không có đơn, số dư không đổi, không có event.
 
 ## 4. Luồng chính: tạo đơn
@@ -76,7 +76,7 @@ sequenceDiagram
 | 7 | | Kiểm không trùng với đơn `SUBMITTED`, `PENDING_HR` hoặc `APPROVED` khác của chủ đơn; hai nửa ngày khác buổi không trùng (BR-02, BR-04) |
 | 8 | | Kiểm số ngày ≤ số dư còn lại (BR-01) |
 | 9 | | Ghi đơn `SUBMITTED`, cộng `pending`, chụp `requiresHrApproval` theo cấu hình loại phép (BR-16, UC4 A6), ghi lịch sử, audit, event outbox |
-| 10 | Thấy đơn mới trong "Đơn của tôi" | Trả 201 kèm đơn; worker gửi email cho quản lý trực tiếp |
+| 10 | Thấy đơn mới trong "Đơn của tôi" | Trả 201 kèm đơn; notification service gửi email cho quản lý trực tiếp |
 
 **Giao diện và sơ đồ luồng**
 
@@ -336,7 +336,7 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 Code lại toàn bộ UC3, UC4 trong một PR `feat/leave-uc3-uc4` (21/11/2026) theo mục 13 (thay cho bảy nhánh ở 13.6), sau kiểm chéo
 lần 2 (mục 15). Unit test: `leave-rules.spec.ts`, `leave-state-machine.spec.ts`, `leave-access.spec.ts`, `leave-events.spec.ts`,
-`notification-worker.spec.ts`; e2e: khối "UC3, UC4 nghỉ phép" trong `app.e2e-spec.ts`.
+`services/notification/src/handler.spec.ts`; e2e: khối "UC3, UC4 nghỉ phép" trong `app.e2e-spec.ts`.
 
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|

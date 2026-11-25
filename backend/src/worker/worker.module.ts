@@ -10,17 +10,18 @@ import { createIdpAdmin } from '../modules/identity/idp-admin/factory';
 import { IDP_ADMIN } from '../modules/identity/idp-admin/idp-admin';
 import { IdentitySync } from './identity-sync';
 import { LeaveJob } from './leave-job';
-import { NotificationWorker } from './notification-worker';
+import { IdentityWorker } from './identity-worker';
 import { TransferJob } from './transfer-job';
 
 /**
- * Process riêng của worker: không mở HTTP, chỉ cần DB (tra email qua EmployeeService), RabbitMQ và IdP (identity-sync).
+ * Process riêng của worker: không mở HTTP, chỉ cần DB, queue event tài khoản và IdP (identity-sync), cùng các job nền.
+ * Email do `services/notification` gửi (ADR-15 bước 1).
  * RateLimitModule: EmployeeModule cần RateLimitService (ProfileFileService); interceptor không có tác dụng vì worker không nhận request.
  */
 @Module({
   imports: [ConfigModule.register({ needsAuth: false }), TypeOrmModule.forRoot({ ...runtimeDataSourceOptions, migrationsRun: false }), RateLimitModule, EmployeeModule, LeaveCoreModule],
   providers: [
-    NotificationWorker,
+    IdentityWorker,
     TransferJob,
     LeaveJob,
     IdentitySync,

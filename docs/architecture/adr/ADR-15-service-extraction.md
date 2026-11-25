@@ -19,6 +19,13 @@
 - 23/11/2026: UC6 thu gọn còn trợ lý (Duong, 22/11), bỏ tìm tài liệu theo từ khóa (FR-6.2). Search service đổi tên thành
   **assistant service** (`services/assistant/`, schema `assistant`, DB user `assistant_svc`, queue `assistant.document`); index
   là đoạn văn bản có full-text và vector theo [ADR-16](ADR-16-policy-assistant.md). Phương án B và các tiêu chí khác giữ nguyên.
+- 26/11/2026: làm bước 1 (`feat/notification-service`), ghi lại cách hiện thực, quyết định không đổi:
+  - Người nhận gắn lúc **publisher đẩy event** (`NotificationRecipients`), không lưu trong outbox, theo dữ liệu hiện tại như
+    worker cũ. Trường `mail: [{ group, to }]`, **chỉ email, không tên** (email là câu báo chung, BR-15). HR nhận danh sách email
+    HR như các nhóm khác; gộp tối đa một email mỗi giờ do service làm.
+  - Event tài khoản (UC8) tách routing key `identity.*`, queue `identity.sync`; worker của backend giữ `identity-sync` và các
+    job. Event tài liệu đã đi `document.*` nên không tới notification service (tiêu chí "nhận và bỏ qua" thành "không nhận").
+  - Thử lại khi gửi lỗi (NFR-3.5): chờ ≤ 10 s mỗi lần, tối đa 3 lần có giãn cách, rồi DLQ.
 
 ## Nội dung quyết định
 
