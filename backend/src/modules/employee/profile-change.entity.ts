@@ -93,6 +93,10 @@ export class ProfileChangeRequest {
   @Column({ name: 'reject_reason', type: 'varchar', length: 500, nullable: true })
   rejectReason: string | null;
 
+  /** Lý do hệ thống hủy (UC1 E29: `TERMINATED` khi chủ hồ sơ nghỉ việc). Người gửi tự hủy thì `null`. */
+  @Column({ name: 'cancel_reason', type: 'varchar', length: 20, nullable: true })
+  cancelReason: string | null;
+
   /** Nhân viên đã đóng thông báo bị từ chối (spec 9.1). */
   @Column({ name: 'acknowledged_at', type: 'timestamptz', nullable: true })
   acknowledgedAt: Date | null;

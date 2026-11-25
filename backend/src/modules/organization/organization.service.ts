@@ -444,6 +444,19 @@ export class OrganizationService {
         throw new BadRequestException(`${role} phải thuộc chính đơn vị hoặc một đơn vị cha của nó (${e.full_name} ở nhánh khác)`);
       }
     }
+    // UC2 E22 (TV2 chốt 25/11): trưởng mới đang có điều chuyển chưa hiệu lực sang nhánh khác thì sắp hết tư cách.
+    if (head && ids.includes(head)) {
+      const [moving]: { department_id: string; effective_from: string }[] = await m.query(
+        `SELECT department_id, to_char(effective_from, 'YYYY-MM-DD') AS effective_from FROM employee.employment_assignment
+          WHERE employee_id = $1 AND status = 'SCHEDULED' AND parent_id IS NULL AND department_id <> ALL($2::uuid[])`,
+        [head, allowedUnits],
+      );
+      if (moving) {
+        throw new ConflictException(
+          `Người này sắp điều chuyển sang đơn vị khác (hiệu lực ${moving.effective_from}). Hãy hủy, đổi lịch điều chuyển hoặc chọn người khác`,
+        );
+      }
+    }
   }
 
   /** Tên trưởng đơn vị. Đọc thẳng bảng nhân viên (chỉ đọc) để tránh phụ thuộc vòng với module Employee. */

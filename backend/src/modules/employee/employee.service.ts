@@ -58,6 +58,35 @@ export class EmployeeService {
     @Inject(FIELD_CRYPTO) private readonly crypto: FieldCrypto,
   ) {}
 
+  /**
+   * UC1 E29 (TV2 chốt 25/11): chủ hồ sơ nghỉ việc thì yêu cầu sửa hồ sơ còn chờ tự chuyển `CANCELLED`, lý do `TERMINATED`.
+   * Giữ bản ghi; file kèm chưa dùng chuyển `REJECTED` như khi hủy; audit là thao tác hệ thống (`actorId = null`).
+   * HR duyệt yêu cầu cũ nhận 409 vì yêu cầu không còn `PENDING`.
+   */
+  private async cancelPendingChanges(m: EntityManager, employeeId: string) {
+    const [rows]: [{ id: string; section: string; action: string; file_ids: string[] }[], number] = await m.query(
+      `UPDATE employee.profile_change_request SET status = 'CANCELLED', cancel_reason = 'TERMINATED'
+        WHERE employee_id = $1 AND status = 'PENDING' RETURNING id, section, action, file_ids`,
+      [employeeId],
+    );
+    for (const r of rows) {
+      const keepFiles = r.action === 'DELETE';
+      if (!keepFiles && r.file_ids?.length) {
+        await m.query(`UPDATE employee.profile_file SET status = 'REJECTED' WHERE id = ANY($1::uuid[]) AND status = 'PENDING_REVIEW'`, [r.file_ids]);
+      }
+      await this.audit.record(
+        {
+          actorId: null,
+          action: 'PROFILE_CHANGE_CANCEL',
+          entityType: 'employee',
+          entityId: employeeId,
+          changedFields: { section: r.section, requestId: r.id, action: r.action, reason: 'TERMINATED' },
+        },
+        m,
+      );
+    }
+  }
+
   // ---------- Interface cho module Identity ----------
 
   findByWorkEmail(email: string) {
@@ -392,6 +421,7 @@ export class EmployeeService {
             `UPDATE employee.employment_assignment SET status = 'CLOSED', effective_to = GREATEST(effective_from, $2::date) WHERE employee_id = $1 AND status = 'ACTIVE'`,
             [id, vnToday()],
           );
+          await this.cancelPendingChanges(m, id);
         }
       } else {
         // AC-1.6.3: chỉ đổi trường nhạy cảm vẫn tăng version, để người đang mở form cũ nhận 409.
