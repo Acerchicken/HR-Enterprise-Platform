@@ -68,7 +68,8 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
         ]
         Resource = [
           aws_ecr_repository.api.arn,
-          aws_ecr_repository.assistant.arn
+          aws_ecr_repository.assistant.arn,
+          aws_ecr_repository.notification.arn
         ]
       },
       {
@@ -124,7 +125,8 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
         Resource = [
           aws_iam_role.ecs_execution_role.arn,
           aws_iam_role.worker_task_role.arn,
-          aws_iam_role.assistant_task_role.arn
+          aws_iam_role.assistant_task_role.arn,
+          aws_iam_role.notification_task_role.arn
         ]
       },
       {

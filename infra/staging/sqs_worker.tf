@@ -1,8 +1,9 @@
 # ==============================================================================
-# GHI CHÚ VỀ EMAIL VÀ OUTBOX WORKER TRÊN STAGING:
-# Theo quyết định ngày 14/11, Worker trên ECS gửi email thông báo nghỉ phép qua
-# Amazon SES API bằng AWS SDK (MAIL_DRIVER=ses), sử dụng trực tiếp IAM task role
-# mà không dùng SMTP credentials. Môi trường local vẫn giữ SMTP gửi tới Mailpit.
+# QUEUE VÀ WORKER TRÊN STAGING (ADR-15 bước 1, 26/11):
+# - Queue leave-notifications: API đẩy event nghỉ phép, hồ sơ (đã có email người nhận); notification service
+#   (notification.tf) nhận và gửi email qua Amazon SES API. Local vẫn SMTP tới Mailpit.
+# - Queue identity-sync: API đẩy event tài khoản, vai trò (UC8); worker của backend nhận và đồng bộ sang IdP.
+# Worker không còn gửi email.
 # ==============================================================================
 
 # Dead-Letter Queue (DLQ) for failed notification jobs
@@ -30,6 +31,33 @@ resource "aws_sqs_queue" "worker_queue" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-leave-notifications"
+  }
+}
+
+# Queue event tài khoản, vai trò (UC8 identity-sync), tách khỏi queue email từ 26/11 (staging-readiness F6)
+resource "aws_sqs_queue" "identity_dlq" {
+  name                      = "${var.project_name}-${var.environment}-identity-sync-dlq"
+  message_retention_seconds = 1209600 # 14 days
+  kms_master_key_id         = aws_kms_key.main.arn
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-identity-sync-dlq"
+  }
+}
+
+resource "aws_sqs_queue" "identity" {
+  name                       = "${var.project_name}-${var.environment}-identity-sync"
+  visibility_timeout_seconds = 120 # identity-sync thử lại IdP tối đa 5 lần trong một lượt nhận
+  message_retention_seconds  = 345600
+  kms_master_key_id          = aws_kms_key.main.arn
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.identity_dlq.arn
+    maxReceiveCount     = 5
+  })
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-identity-sync"
   }
 }
 
@@ -97,6 +125,7 @@ resource "aws_iam_policy" "ecs_exec_secrets" {
           aws_secretsmanager_secret.db_credentials.arn,
           aws_secretsmanager_secret.app_secrets.arn,
           aws_secretsmanager_secret.assistant.arn,
+          aws_secretsmanager_secret.notification.arn,
           aws_kms_key.main.arn
         ]
       }
@@ -142,8 +171,8 @@ resource "aws_iam_policy" "worker_sqs_policy" {
           "sqs:ChangeMessageVisibility"
         ]
         Resource = [
-          aws_sqs_queue.worker_queue.arn,
-          aws_sqs_queue.worker_dlq.arn
+          aws_sqs_queue.identity.arn,
+          aws_sqs_queue.identity_dlq.arn
         ]
       },
       {
@@ -173,7 +202,7 @@ resource "aws_iam_role_policy_attachment" "worker_sqs_attach" {
   policy_arn = aws_iam_policy.worker_sqs_policy.arn
 }
 
-# ECS Task Definition for Notification & Outbox Worker
+# ECS Task Definition for Worker (identity-sync, transfer and leave jobs)
 resource "aws_ecs_task_definition" "worker" {
   family                   = "${var.project_name}-${var.environment}-worker"
   network_mode             = "awsvpc"
@@ -200,10 +229,9 @@ resource "aws_ecs_task_definition" "worker" {
         { name = "QUEUE_DRIVER", value = "sqs" },
         { name = "AWS_REGION", value = var.aws_region },
         { name = "SQS_QUEUE_URL", value = aws_sqs_queue.worker_queue.url },
+        { name = "SQS_IDENTITY_QUEUE_URL", value = aws_sqs_queue.identity.url },
         { name = "STORAGE_BUCKET", value = aws_s3_bucket.documents.id },
-        { name = "STORAGE_REGION", value = var.aws_region },
-        { name = "MAIL_DRIVER", value = "ses" },
-        { name = "SMTP_FROM", value = var.sender_email }
+        { name = "STORAGE_REGION", value = var.aws_region }
       ]
 
       secrets = [

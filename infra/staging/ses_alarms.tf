@@ -7,10 +7,11 @@ resource "aws_ses_email_identity" "sender" {
   email = var.sender_email
 }
 
-# IAM Policy allowing ECS Worker to send emails via SES
+# IAM Policy allowing the notification service to send emails via SES (attached in notification.tf).
+# Tên resource giữ "worker_ses_policy" để không tạo lại policy; từ 26/11 chỉ task notification dùng.
 resource "aws_iam_policy" "worker_ses_policy" {
   name        = "${var.project_name}-${var.environment}-worker-ses-policy"
-  description = "Permissions for worker to send leave notification emails via SES"
+  description = "Permissions for notification service to send leave notification emails via SES"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -26,11 +27,6 @@ resource "aws_iam_policy" "worker_ses_policy" {
       }
     ]
   })
-}
-
-resource "aws_iam_role_policy_attachment" "worker_ses_attach" {
-  role       = aws_iam_role.worker_task_role.name
-  policy_arn = aws_iam_policy.worker_ses_policy.arn
 }
 
 # ------------------------------------------------------------------------------
@@ -147,5 +143,23 @@ resource "aws_cloudwatch_metric_alarm" "sqs_dlq" {
 
   dimensions = {
     QueueName = aws_sqs_queue.worker_dlq.name
+  }
+}
+
+# DLQ của queue identity-sync (UC8): đồng bộ tài khoản sang Cognito hỏng sau 5 lượt nhận (staging-readiness F6).
+resource "aws_cloudwatch_metric_alarm" "identity_dlq" {
+  alarm_name          = "${var.project_name}-${var.environment}-identity-dlq-messages"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "ApproximateNumberOfMessagesVisible"
+  namespace           = "AWS/SQS"
+  period              = 300
+  statistic           = "Maximum"
+  threshold           = 1
+  alarm_description   = "One or more account sync events (identity-sync) arrived in the Dead-Letter Queue"
+  alarm_actions       = [aws_sns_topic.system_alerts.arn]
+
+  dimensions = {
+    QueueName = aws_sqs_queue.identity_dlq.name
   }
 }
