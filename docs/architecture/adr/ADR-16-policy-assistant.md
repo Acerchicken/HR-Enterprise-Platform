@@ -2,7 +2,7 @@
 
 | Mục | Nội dung |
 |---|---|
-| Trạng thái | **Đề xuất** (Duong chọn ngày 23/11/2026) |
+| Trạng thái | **Đã chấp nhận** 23/11/2026 (PR #128; Duong chọn ngày 23/11/2026) |
 | Ngày quyết định | Ngày merge PR |
 | Thời điểm | Tuần 12 (23/11 – 30/11/2026) |
 | Người viết | TV1 (Dương) |
