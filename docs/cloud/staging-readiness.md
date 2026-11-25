@@ -32,13 +32,16 @@ Vì vậy **chưa chạy `terraform apply` lần đầu trước khi xong B1**. 
 | F1 | Email (UC1, UC3, UC4, UC8) | Worker gửi bằng nodemailer SMTP `secure: false`, không xác thực (`backend/src/worker/notification-worker.ts`). Không chỗ nào đọc `MAIL_DRIVER`; task worker chỉ đặt `MAIL_DRIVER=ses`, `SMTP_FROM`, nên `SMTP_HOST` về mặc định `localhost:1025` → mọi email lỗi, vào DLQ sau 5 lần | **Đề xuất:** code đọc `MAIL_DRIVER=ses` và gửi bằng `@aws-sdk/client-sesv2` (IAM `worker_ses_policy` đã có `ses:SendEmail`), local giữ SMTP. Cách khác: SMTP credentials SES + cổng 587 STARTTLS, nhưng code phải thêm `auth`, `requireTLS` và một secret nữa | TV1 (code), TV3 (kiểm IAM) | ☑ code 25/11 (`feat/mail-ses-trust-proxy`); TV3 kiểm IAM, SES sandbox khi apply |
 | F2 | Đồng bộ tài khoản sang Cognito (UC8 FR-8.3, 8.4, 8.6, 8.7) | Task worker không có `IDP_ADMIN_DRIVER`, `COGNITO_USER_POOL_ID` → driver `none`: không tạo, mời, khóa tài khoản, không đổi nhóm `hr`, `admin` (MFA theo nhóm không áp). Role worker không có quyền `cognito-idp:*` | Thêm `IDP_ADMIN_DRIVER=cognito`, `COGNITO_USER_POOL_ID = aws_cognito_user_pool.main.id` vào task worker; policy `cognito-idp:AdminCreateUser`, `AdminUpdateUserAttributes`, `AdminAddUserToGroup`, `AdminRemoveUserFromGroup`, `AdminDisableUser`, `AdminEnableUser`, `AdminUserGlobalSignOut`, `AdminGetUser` trên ARN user pool | TV3 | ☐ |
 | F3 | Bucket file hồ sơ (UC1 FR-1.10) | Không có bucket; App Runner không có `PROFILE_STORAGE_BUCKET` → mọi thao tác file hồ sơ trả 503 (phần khác chạy) | Bucket `hr-platform-staging-profile-files`: chặn public, SSE-KMS (`aws_kms_key.main`), CORS chỉ `PUT` từ domain CloudFront, lifecycle xóa object tag `deleted=true` sau 30 ngày; IAM App Runner `s3:GetObject`, `PutObject`, `DeleteObject`, **`PutObjectTagging`**; biến `PROFILE_STORAGE_BUCKET` | TV3 | ☐ |
-| F4 | Trợ lý chính sách (UC6) | Không có gì cho `services/assistant` trong Terraform và workflow. API thiếu `ASSISTANT_URL`, `ASSISTANT_INTERNAL_TOKEN`, `SQS_ASSISTANT_QUEUE_URL` → câu hỏi trả `fallback = true`, event tài liệu bị bỏ qua (log cảnh báo), không lỗi 5xx | Xem mục 4 | TV3 (hạ tầng), TV1 (workflow) | ☐ |
+| F4 | Trợ lý chính sách (UC6) | Không có gì cho `services/assistant` trong Terraform và workflow. API thiếu `ASSISTANT_URL`, `ASSISTANT_INTERNAL_TOKEN`, `SQS_ASSISTANT_QUEUE_URL` → câu hỏi trả `fallback = true`, event tài liệu bị bỏ qua (log cảnh báo), không lỗi 5xx | Xem mục 4 | TV1 (25/11, nhánh `infra/assistant-staging`), TV3 kiểm tra khi apply | ☑ Terraform + workflow (validate qua, chưa apply) |
 | F5 | IP người dùng trong audit (UC7 FR-7.1) | Không đặt `trust proxy` (`backend/src/main.ts`), nên `req.ip` là IP proxy của App Runner, không phải IP người dùng | Đặt `app.set('trust proxy', <số hop>)` theo biến `TRUST_PROXY` (staging: web gọi thẳng URL App Runner, có một lớp proxy của App Runner phía trước); kiểm lại bằng một thao tác rồi xem cột IP trên `/audit` | TV1 | ☑ code + Terraform `TRUST_PROXY=1` 25/11; kiểm lại cột IP trên `/audit` sau apply |
 
 ## 4. Trợ lý chính sách trên staging (F4 chi tiết)
 
 Theo [UC6 deploy.md](../features/UC6-policy-assistant/deploy.md) và ADR-16. Code đã sẵn (`services/assistant`, migration
-`AssistantSchema`); thiếu toàn bộ phần hạ tầng.
+`AssistantSchema`). **25/11:** toàn bộ bảng dưới đã có trong `infra/staging/assistant.tf` (cùng sửa `app_runner.tf`,
+`security_groups.tf`, `sqs_worker.tf`, `iam_oidc.tf`) và bước build image trong `deploy-staging.yml`; `terraform validate` qua,
+chưa `apply`. Tên nội bộ: Cloud Map `assistant.staging.hr.internal:3100`. Còn làm tay sau migration đầu: `ALTER ROLE
+assistant_svc LOGIN PASSWORD` với `ASSISTANT_DB_PASSWORD` trong secret `<project>/<env>/assistant`, rồi đồng bộ lần đầu.
 
 | Việc | Ghi chú |
 |---|---|
@@ -97,17 +100,17 @@ aws ecs run-task --cluster hr-platform-staging-cluster --task-definition hr-plat
 
 | Biến | API (App Runner) | Worker (ECS) | Assistant (ECS) | Mục |
 |---|---|---|---|---|
-| `NODE_ENV`, `DB_*`, `DB_SSL=require`, `AWS_REGION` | ✓ | ✓ | – (`ASSISTANT_DB_URL` ✗) | |
+| `NODE_ENV`, `DB_*`, `DB_SSL=require`, `AWS_REGION` | ✓ | ✓ | ✓ (`ASSISTANT_DB_URL` trong secret, 25/11) | |
 | `DB_PASSWORD`, `FIELD_ENCRYPTION_KEY` (secret) | ✓ | ✓ | – | |
 | `AUTH_MODE`, `OIDC_*`, `CORS_ORIGIN` | ✓ | – | – | |
 | `QUEUE_DRIVER=sqs`, `SQS_QUEUE_URL` | ✓ | ✓ | – | |
-| `STORAGE_BUCKET`, `STORAGE_REGION` | ✓ | ✓ | ✗ | F4 |
+| `STORAGE_BUCKET`, `STORAGE_REGION` | ✓ | ✓ | ✓ (25/11) | F4 |
 | `PROFILE_STORAGE_BUCKET` | ✗ | – | – | F3 |
 | `SMTP_FROM` | – | ✓ | – | |
 | `MAIL_DRIVER=ses` | – | ✓ (code đọc từ 25/11) | – | F1 |
 | `IDP_ADMIN_DRIVER=cognito`, `COGNITO_USER_POOL_ID` | – | ✗ | – | F2 |
-| `ASSISTANT_URL`, `ASSISTANT_INTERNAL_TOKEN` | ✗ | – | ✗ (token) | F4 |
-| `SQS_ASSISTANT_QUEUE_URL` | ✗ | – | ✗ | F4 |
-| `ASSISTANT_CONFIG_KEY`, `ASSISTANT_EMBEDDING_MODEL` | – | – | ✗ | F4 |
+| `ASSISTANT_URL`, `ASSISTANT_INTERNAL_TOKEN` | ✓ (25/11) | – | ✓ (token) | F4 |
+| `SQS_ASSISTANT_QUEUE_URL` | ✓ (25/11) | – | ✓ | F4 |
+| `ASSISTANT_CONFIG_KEY`, `ASSISTANT_EMBEDDING_MODEL` | – | – | ✓ (25/11) | F4 |
 | `TRUST_PROXY=1` | ✓ (25/11) | – | – | F5 |
 | `RATE_LIMIT_*` | Dùng mặc định | – | – | |

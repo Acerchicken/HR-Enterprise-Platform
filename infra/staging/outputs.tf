@@ -142,3 +142,28 @@ output "ses_sender_identity" {
   description = "Verified SES sender email address for notifications"
   value       = aws_ses_email_identity.sender.email
 }
+
+output "ecr_assistant_repository_url" {
+  description = "ECR repository của assistant service (UC6)"
+  value       = aws_ecr_repository.assistant.repository_url
+}
+
+output "assistant_service_name" {
+  description = "Tên ECS service assistant, dùng khi bật, tắt cho demo"
+  value       = aws_ecs_service.assistant.name
+}
+
+output "assistant_internal_url" {
+  description = "Địa chỉ API gọi assistant service trong VPC (Cloud Map)"
+  value       = "http://${aws_service_discovery_service.assistant.name}.${aws_service_discovery_private_dns_namespace.internal.name}:3100"
+}
+
+output "assistant_queue_url" {
+  description = "SQS nhận event document.* cho assistant service"
+  value       = aws_sqs_queue.assistant.url
+}
+
+output "assistant_secret_arn" {
+  description = "Secret chứa ASSISTANT_INTERNAL_TOKEN, ASSISTANT_CONFIG_KEY, mật khẩu assistant_svc"
+  value       = aws_secretsmanager_secret.assistant.arn
+}

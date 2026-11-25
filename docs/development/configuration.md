@@ -76,7 +76,7 @@ Dùng cho outbox publisher (trong API) và notification worker. Chi tiết: [h�
 | `RABBITMQ_URL` | (không có) | (không dùng) | **Có** khi `rabbitmq` | API, Worker | Ví dụ `amqp://hr:hr@localhost:5672` |
 | `SQS_QUEUE_URL` | (không có) | URL queue `hr-platform-staging-leave-notifications` | **Có** khi `sqs` | API, Worker | Quyền gửi/nhận lấy từ IAM role, không cần access key |
 | `AWS_REGION` | (không có) | `var.aws_region` (ví dụ `ap-southeast-1`) | **Có** khi `sqs` | API, Worker | Region của SQS; cũng là region mặc định cho kho tài liệu |
-| `SQS_ASSISTANT_QUEUE_URL` | (không có) | URL queue `assistant.document` (Terraform, chưa có: [staging-readiness F4](../cloud/staging-readiness.md#4-trợ-lý-chính-sách-trên-staging-f4-chi-tiết)) | Không | API, Assistant service | Queue nhận event tài liệu (UC6). API thiếu biến này thì bỏ qua event tài liệu khi dùng SQS; assistant service dùng nó khi `QUEUE_DRIVER=sqs` |
+| `SQS_ASSISTANT_QUEUE_URL` | (không có) | URL queue `<project>-<env>-assistant-document` (Terraform `assistant.tf`, 25/11: [staging-readiness F4](../cloud/staging-readiness.md#4-trợ-lý-chính-sách-trên-staging-f4-chi-tiết)) | Không | API, Assistant service | Queue nhận event tài liệu (UC6). API thiếu biến này thì bỏ qua event tài liệu khi dùng SQS; assistant service dùng nó khi `QUEUE_DRIVER=sqs` |
 
 ### Email (notification worker)
 
@@ -185,8 +185,8 @@ Rà lại ngày 25/11/2026 trước khi `apply`: [staging-readiness.md](../cloud
 thành phần (API, worker, assistant), có biến nào chưa có trong Terraform. Chính:
 
 - ~~Worker gửi mail bằng SMTP; `MAIL_DRIVER=ses` chưa được code đọc (F1)~~: đã sửa 25/11 (`feat/mail-ses-trust-proxy`), cùng `TRUST_PROXY=1` cho API (F5).
-- Worker thiếu `IDP_ADMIN_DRIVER`, `COGNITO_USER_POOL_ID` (F2); API thiếu `PROFILE_STORAGE_BUCKET` (F3), `ASSISTANT_URL`,
-  `ASSISTANT_INTERNAL_TOKEN`, `SQS_ASSISTANT_QUEUE_URL` (F4).
+- Worker thiếu `IDP_ADMIN_DRIVER`, `COGNITO_USER_POOL_ID` (F2); API thiếu `PROFILE_STORAGE_BUCKET` (F3). `ASSISTANT_URL`,
+  `ASSISTANT_INTERNAL_TOKEN`, `SQS_ASSISTANT_QUEUE_URL` (F4) đã có trong Terraform từ 25/11 (`infra/assistant-staging`).
 
 **Khi thêm biến mới:** đọc trong `config.ts` (có mặc định cho dev hoặc kiểm tra trong `assertValid`), thêm vào `.env.example`,
 `docker-compose.yml` nếu cần, Terraform hoặc workflow cho staging, và một dòng vào file này, trong cùng PR.

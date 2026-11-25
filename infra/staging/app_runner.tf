@@ -66,7 +66,8 @@ resource "aws_iam_policy" "apprunner_instance_policy" {
         ]
         Resource = [
           aws_secretsmanager_secret.db_credentials.arn,
-          aws_secretsmanager_secret.app_secrets.arn
+          aws_secretsmanager_secret.app_secrets.arn,
+          aws_secretsmanager_secret.assistant.arn
         ]
       },
       {
@@ -89,7 +90,8 @@ resource "aws_iam_policy" "apprunner_instance_policy" {
           "sqs:GetQueueUrl"
         ]
         Resource = [
-          aws_sqs_queue.worker_queue.arn
+          aws_sqs_queue.worker_queue.arn,
+          aws_sqs_queue.assistant.arn
         ]
       },
       {
@@ -161,12 +163,16 @@ resource "aws_apprunner_service" "api" {
           SQS_QUEUE_URL        = aws_sqs_queue.worker_queue.url
           STORAGE_BUCKET       = aws_s3_bucket.documents.id
           STORAGE_REGION       = var.aws_region
+          # UC6 (staging-readiness F4): assistant service qua Cloud Map; service tắt thì API trả fallback (FR-6.3).
+          ASSISTANT_URL           = "http://${aws_service_discovery_service.assistant.name}.${aws_service_discovery_private_dns_namespace.internal.name}:3100"
+          SQS_ASSISTANT_QUEUE_URL = aws_sqs_queue.assistant.url
         }
 
         # Sensitive secrets retrieved directly from AWS Secrets Manager
         runtime_environment_secrets = {
-          DB_PASSWORD          = "${aws_secretsmanager_secret.db_credentials.arn}:password::"
-          FIELD_ENCRYPTION_KEY = "${aws_secretsmanager_secret.app_secrets.arn}:FIELD_ENCRYPTION_KEY::"
+          DB_PASSWORD              = "${aws_secretsmanager_secret.db_credentials.arn}:password::"
+          FIELD_ENCRYPTION_KEY     = "${aws_secretsmanager_secret.app_secrets.arn}:FIELD_ENCRYPTION_KEY::"
+          ASSISTANT_INTERNAL_TOKEN = "${aws_secretsmanager_secret.assistant.arn}:ASSISTANT_INTERNAL_TOKEN::"
         }
       }
     }

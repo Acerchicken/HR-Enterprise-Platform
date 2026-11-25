@@ -61,3 +61,9 @@ variable "api_container_port" {
   type        = number
   default     = 3000
 }
+
+variable "assistant_desired_count" {
+  description = "Số task assistant service lúc tạo (0 = tắt để tiết kiệm; bật khi demo bằng aws ecs update-service, UC6 deploy.md mục 4a)"
+  type        = number
+  default     = 0
+}
