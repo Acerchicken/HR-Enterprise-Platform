@@ -92,6 +92,16 @@ describe('SqsEventBus', () => {
     expect(cmd.input.MessageDeduplicationId).toBeUndefined();
   });
 
+  it('traceparent (ADR-15 bước 4) đi trong message attribute; không có thì không gửi attribute', async () => {
+    const sqs = fakeSqs();
+    const tp = '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01';
+    const bus = new SqsEventBus(sqs as any, 'https://sqs/hr-worker');
+    await bus.publish({ ...event, traceparent: tp });
+    await bus.publish(event);
+    expect(sqs.sent[0].input.MessageAttributes.traceparent.StringValue).toBe(tp);
+    expect(sqs.sent[1].input.MessageAttributes.traceparent).toBeUndefined();
+  });
+
   it('queue FIFO: id outbox làm MessageDeduplicationId', async () => {
     const sqs = fakeSqs();
     await new SqsEventBus(sqs as any, 'https://sqs/hr-worker.fifo').publish(event);
@@ -165,7 +175,7 @@ describe('SqsEventConsumer', () => {
     const handler = jest.fn(async () => undefined);
     const ok = await new SqsEventConsumer(sqs as any, 'https://sqs/q', 0).pollOnce(handler);
     expect(ok).toBe(1);
-    expect(handler).toHaveBeenCalledWith({ id: 'evt-1', type: 'LeaveRequested', payload: { requestId: 'evt-1' } });
+    expect(handler).toHaveBeenCalledWith({ id: 'evt-1', type: 'LeaveRequested', payload: { requestId: 'evt-1' }, traceparent: null });
     const del = sqs.sent.find((c) => c instanceof DeleteMessageCommand);
     expect(del?.input.ReceiptHandle).toBe('rh-evt-1');
   });

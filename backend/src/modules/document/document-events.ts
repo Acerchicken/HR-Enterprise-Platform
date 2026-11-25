@@ -1,4 +1,5 @@
 import { EntityManager } from 'typeorm';
+import { writeOutbox } from '../../messaging/outbox';
 
 /**
  * Event của kho tài liệu cho assistant service (UC5 spec 13.2, ADR-15, ADR-16). Ghi vào outbox chung `leave.outbox` trong
@@ -49,5 +50,5 @@ export interface DocumentVisibilityPayload {
 export type DocumentEventPayload = DocumentPublishedPayload | DocumentUpdatedPayload | DocumentVisibilityPayload;
 
 export async function writeDocumentEvent(m: EntityManager, type: DocumentEventType, payload: DocumentEventPayload): Promise<void> {
-  await m.query(`INSERT INTO leave.outbox (event_type, aggregate_id, payload) VALUES ($1, $2, $3)`, [type, payload.documentId, payload]);
+  await writeOutbox(m, type, payload.documentId, payload);
 }

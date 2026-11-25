@@ -2,6 +2,7 @@ import { ConflictException } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { wouldRemoveLastAdmin } from '../identity/role-access';
 import { AuthUser } from '../identity/roles';
+import { writeOutbox } from '../../messaging/outbox';
 
 /**
  * Vòng đời tài khoản đăng nhập theo hồ sơ (UC8 FR-8.3, 8.4, AC-8.3.6; ADR-17 mục 4). Gọi trong giao dịch lưu hồ sơ: ghi
@@ -10,11 +11,7 @@ import { AuthUser } from '../identity/roles';
  */
 
 async function outbox(m: EntityManager, type: string, accountId: string, payload: object) {
-  await m.query(`INSERT INTO leave.outbox (event_type, aggregate_id, payload) VALUES ($1, $2, $3)`, [
-    type,
-    accountId,
-    JSON.stringify({ ...payload, occurredAt: new Date().toISOString() }),
-  ]);
+  await writeOutbox(m, type, accountId, { ...payload, occurredAt: new Date().toISOString() });
 }
 
 /** HR tạo hồ sơ (luồng 4.2): tài khoản `PENDING` + `EmployeeCreated`. Email đã có tài khoản (chưa gắn hồ sơ) thì gắn vào. */

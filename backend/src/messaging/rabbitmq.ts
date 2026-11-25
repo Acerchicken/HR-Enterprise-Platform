@@ -27,6 +27,7 @@ export class RabbitMqEventBus implements EventBus {
         persistent: true,
         contentType: 'application/json',
         timestamp: Math.floor(event.createdAt.getTime() / 1000),
+        ...(event.traceparent ? { headers: { traceparent: event.traceparent } } : {}),
       });
       await channel.waitForConfirms();
     } catch (e) {
@@ -104,7 +105,14 @@ export class RabbitMqEventConsumer implements EventConsumer {
       if (!msg) return;
       const id = msg.properties.messageId as string;
       Promise.resolve()
-        .then(() => handler({ id, type: msg.properties.type, payload: JSON.parse(msg.content.toString()) }))
+        .then(() =>
+          handler({
+            id,
+            type: msg.properties.type,
+            payload: JSON.parse(msg.content.toString()),
+            traceparent: (msg.properties.headers?.traceparent as string | undefined) ?? null,
+          }),
+        )
         .then(() => ch.ack(msg))
         .catch((e) => {
           this.logger.error(`Event ${id} lỗi, chuyển DLQ: ${e instanceof Error ? e.message : e}`);

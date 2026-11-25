@@ -1,6 +1,7 @@
 import { LoggerService, LogLevel } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { currentRequest } from './request-context';
+import { activeTraceId } from '../tracing/tracing';
 
 type Write = (line: string) => void;
 
@@ -67,6 +68,8 @@ export class JsonLogger implements LoggerService {
       stack ??= message.stack;
     }
     const traceId = currentRequest()?.traceId;
+    // Id trace OpenTelemetry (ADR-15 bước 4): tìm trace trên Jaeger/X-Ray từ một dòng log.
+    const otelTraceId = activeTraceId();
     this.write(
       JSON.stringify({
         time: new Date().toISOString(),
@@ -76,6 +79,7 @@ export class JsonLogger implements LoggerService {
         ...(context ? { context } : {}),
         msg,
         ...(traceId ? { traceId } : {}),
+        ...(otelTraceId ? { otelTraceId } : {}),
         ...(stack ? { stack } : {}),
       }),
     );

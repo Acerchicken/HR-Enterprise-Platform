@@ -99,6 +99,8 @@ services:
       FIELD_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=
       QUEUE_DRIVER: rabbitmq
       RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
+      # Truy vết (ADR-15 bước 4): để trống là tắt; bật bằng OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 khi chạy profile observability.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       STORAGE_BUCKET: hr-documents
       PROFILE_STORAGE_BUCKET: hr-profile-files-local
       STORAGE_ENDPOINT: http://s3mock:9090
@@ -139,6 +141,8 @@ services:
       FIELD_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=
       QUEUE_DRIVER: rabbitmq
       RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
+      # Truy vết (ADR-15 bước 4): để trống là tắt; bật bằng OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 khi chạy profile observability.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       STORAGE_BUCKET: hr-documents
       PROFILE_STORAGE_BUCKET: hr-profile-files-local
       STORAGE_ENDPOINT: http://s3mock:9090
@@ -191,6 +195,8 @@ services:
       DB_SSL: "off"
       QUEUE_DRIVER: rabbitmq
       RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
+      # Truy vết (ADR-15 bước 4): để trống là tắt; bật bằng OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 khi chạy profile observability.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       MAIL_DRIVER: smtp
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
@@ -215,6 +221,8 @@ services:
       DB_SSL: "off"
       QUEUE_DRIVER: rabbitmq
       RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
+      # Truy vết (ADR-15 bước 4): để trống là tắt; bật bằng OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 khi chạy profile observability.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       STORAGE_BUCKET: hr-documents
       STORAGE_ENDPOINT: http://s3mock:9090
       STORAGE_ACCESS_KEY_ID: test
@@ -246,6 +254,17 @@ services:
       - "5173:8080"
     depends_on:
       - api
+
+  # Xem trace (ADR-15 bước 4): chỉ chạy khi bật profile, giao diện http://localhost:16686.
+  #   OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 docker compose --profile observability up -d --build
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    profiles: ["observability"]
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"   # giao diện
+      - "4318:4318"     # OTLP/HTTP
 
 volumes:
   db-data:

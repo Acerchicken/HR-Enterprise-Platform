@@ -6,6 +6,7 @@ import { RoleEventPayload } from './identity-events';
 import { isSelfChange, wouldRemoveLastAdmin } from './role-access';
 import { AssignableRole, GrantRoleDto, RoleAssignmentQuery, RoleAssignmentView } from './role-admin.dto';
 import { AuthUser } from './roles';
+import { writeOutbox } from '../../messaging/outbox';
 
 const SELECT_VIEW = `SELECT r.user_id, a.employee_id, e.full_name, a.email, d.name AS department_name, r.role,
        r.granted_by, COALESCE(ge.full_name, ga.email) AS granted_by_name, r.granted_at, r.reason
@@ -111,11 +112,7 @@ export class RoleAdminService {
       { actorId: actor.employeeId, action, entityType: 'role_assignment', entityId: p.accountId, changedFields: { userId: p.accountId, role: p.role, reason } },
       m,
     );
-    await m.query(`INSERT INTO leave.outbox (event_type, aggregate_id, payload) VALUES ($1, $2, $3)`, [
-      event,
-      p.accountId,
-      JSON.stringify({ ...p, occurredAt: new Date().toISOString() }),
-    ]);
+    await writeOutbox(m, event, p.accountId, { ...p, occurredAt: new Date().toISOString() });
   }
 }
 

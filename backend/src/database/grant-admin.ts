@@ -6,6 +6,7 @@
  * Người đó phải có hồ sơ chưa nghỉ việc; tài khoản đăng nhập tạo luôn nếu chưa có (gắn `subject` ở lần đăng nhập đầu).
  */
 import dataSource from './data-source';
+import { writeOutbox } from '../messaging/outbox';
 
 async function main() {
   const email = (process.argv[2] ?? '').trim().toLowerCase();
@@ -38,10 +39,7 @@ async function main() {
         `INSERT INTO audit.audit_log (actor_id, action, entity_type, entity_id, changed_fields) VALUES (NULL, 'ROLE_GRANT', 'role_assignment', $1, $2)`,
         [acc.id, JSON.stringify({ userId: acc.id, role: 'ADMIN', reason })],
       );
-      await m.query(`INSERT INTO leave.outbox (event_type, aggregate_id, payload) VALUES ('RoleGranted', $1, $2)`, [
-        acc.id,
-        JSON.stringify({ accountId: acc.id, email, role: 'ADMIN', occurredAt: new Date().toISOString() }),
-      ]);
+      await writeOutbox(m, 'RoleGranted', acc.id, { accountId: acc.id, email, role: 'ADMIN', occurredAt: new Date().toISOString() });
       console.log(`Đã cấp ADMIN cho ${email}.`);
     });
   } finally {

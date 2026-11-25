@@ -26,4 +26,8 @@ export class OutboxEvent {
 
   @Column({ name: 'last_error', type: 'varchar', length: 500, nullable: true })
   lastError: string | null;
+
+  /** W3C `traceparent` của request đã tạo event (ADR-15 bước 4); NULL khi chưa bật tracing. */
+  @Column({ name: 'trace_context', type: 'varchar', length: 64, nullable: true })
+  traceContext: string | null;
 }

@@ -12,6 +12,8 @@ export interface IncomingEvent {
   id: string;
   type: string;
   payload: unknown;
+  /** W3C `traceparent` do outbox publisher của API gắn (ADR-15 bước 4); null khi API chưa bật tracing. */
+  traceparent?: string | null;
 }
 export type EventHandler = (event: IncomingEvent) => Promise<void>;
 
@@ -84,7 +86,14 @@ export class RabbitMqConsumer implements EventConsumer {
       if (!msg) return;
       const id = String(msg.properties.messageId ?? '');
       Promise.resolve()
-        .then(() => handler({ id, type: String(msg.properties.type ?? ''), payload: JSON.parse(msg.content.toString()) }))
+        .then(() =>
+          handler({
+            id,
+            type: String(msg.properties.type ?? ''),
+            payload: JSON.parse(msg.content.toString()),
+            traceparent: (msg.properties.headers?.traceparent as string | undefined) ?? null,
+          }),
+        )
         .then(() => ch.ack(msg))
         .catch((e) => {
           log.error('Event lỗi, chuyển DLQ', { eventId: id, error: errorText(e) });
@@ -152,7 +161,8 @@ export class SqsConsumer implements EventConsumer {
     const id = msg.MessageAttributes?.messageId?.StringValue ?? msg.MessageId ?? '';
     const type = msg.MessageAttributes?.type?.StringValue ?? '';
     try {
-      await handler({ id, type, payload: JSON.parse(msg.Body ?? 'null') });
+      const traceparent = msg.MessageAttributes?.traceparent?.StringValue ?? null;
+      await handler({ id, type, payload: JSON.parse(msg.Body ?? 'null'), traceparent });
     } catch (e) {
       log.error('Event lỗi, để SQS thử lại', { eventId: id, error: errorText(e) });
       return false;

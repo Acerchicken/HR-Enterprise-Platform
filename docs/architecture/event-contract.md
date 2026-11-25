@@ -12,6 +12,7 @@
 | 1.0 | 13/11/2026 | TV1 Duong | Bản đầu: 5 event nghỉ phép, RabbitMQ (local) và SQS (staging) |
 | 1.1 | 15/11/2026 | TV1 Duong | Thêm mục 7: thay đổi dự kiến theo ADR-15 (chưa áp dụng) |
 | 1.2 | 26/11/2026 | TV1 Duong | ADR-15 bước 1: payload có `mail` (người nhận), notification service, queue `identity.sync` |
+| 1.3 | 26/11/2026 | TV1 Duong | ADR-15 bước 4: `traceparent` trong outbox (`trace_context`), header RabbitMQ, attribute SQS |
 
 ## 1. Luồng tổng quát
 
@@ -157,6 +158,11 @@ Ngày 24/11/2026 là ngày lễ nên khoảng 24–25/11 chỉ trừ 1 ngày.
 | Loại event | property `type` | message attribute `type` |
 | Thời điểm tạo | property `timestamp` (giây Unix) | message attribute `createdAt` (ISO 8601) |
 | Kiểu nội dung | `contentType: application/json`, `persistent: true` | – |
+| W3C `traceparent` (ADR-15 bước 4, khi API bật tracing) | header `traceparent` | message attribute `traceparent` |
+
+`traceparent` là của span `publish <type>` trên API, span này là con của request đã ghi event (cột `leave.outbox.trace_context`,
+ghi bằng `writeOutbox` trong `messaging/outbox.ts`). Consumer tạo span `process <type>` là con của nó, nên trên Jaeger một trace đi
+từ request duyệt đơn tới notification service. Không có `traceparent` thì consumer bắt đầu trace mới.
 
 ## 4. Exchange, queue và driver
 
@@ -244,7 +250,7 @@ cùng PR code và cập nhật lại các mục ở trên:
 | Event tài khoản tách routing key `identity.*`, queue `identity.sync`: **đã làm 26/11** | Quy tắc 4 | Worker backend chỉ còn identity-sync và job |
 | ~~Thêm `document.outbox`~~ **Đã làm** (`feat/assistant-service`): event `document.<Event>` ghi vào `leave.outbox` chung (quy tắc 3) | Quy tắc 3 | Assistant service (UC6, ADR-16) nhận để cập nhật index. Tên event, payload: [UC5 spec 13.2](../features/UC5-document-repository/spec.md#132-event-cho-trợ-lý-adr-15) |
 | Queue `assistant.document` bind `document.*` vào `hr.events` (local): **đã làm** (mục 4). SNS topic `hr-events` trước các queue SQS (AWS): chưa, hiện API gửi thẳng vào hai queue | Quy tắc 4 | Fan-out: một event đến nhiều consumer; sửa Terraform và file này |
-| Thêm `traceparent` (W3C Trace Context) vào header RabbitMQ và message attribute SQS | Quy tắc 1 | Truy vết OpenTelemetry xuyên qua queue |
+| ~~Thêm `traceparent`~~ **Đã làm 26/11** (`feat/tracing-otel`): header RabbitMQ, message attribute SQS, cột `leave.outbox.trace_context` (mục 3) | Quy tắc 1 | Consumer cũ bỏ qua header lạ |
 
 ## 8. Event nghỉ phép dự kiến cho UC3, UC4 (thiết kế 18/11/2026, chưa áp dụng)
 

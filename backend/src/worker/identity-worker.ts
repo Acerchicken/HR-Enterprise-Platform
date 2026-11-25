@@ -6,6 +6,7 @@ import { EventConsumer } from '../messaging/event-bus';
 import { createEventConsumer } from '../messaging/factory';
 import { IdentityEventType, isIdentityEvent } from '../modules/identity/identity-events';
 import { IdentitySync } from './identity-sync';
+import { contextFromTraceparent, inSpan, SpanKind } from '../tracing/tracing';
 
 /**
  * Worker của backend nhận event tài khoản, vai trò (queue `identity.sync` khi local, `SQS_IDENTITY_QUEUE_URL` trên AWS) và
@@ -25,7 +26,14 @@ export class IdentityWorker implements OnApplicationShutdown {
 
   async start(consumer: EventConsumer = createEventConsumer(this.cfg)) {
     this.consumer = consumer;
-    await consumer.start((e) => this.handle(e.id, e.type, e.payload).then(() => undefined));
+    // ADR-15 bước 4: xử lý event là span con của span gửi đi (traceparent trong message).
+    await consumer.start((e) =>
+      inSpan(
+        `process ${e.type}`,
+        { kind: SpanKind.CONSUMER, parent: contextFromTraceparent(e.traceparent), attributes: { 'messaging.message.id': e.id, 'hr.event_type': e.type } },
+        () => this.handle(e.id, e.type, e.payload),
+      ).then(() => undefined),
+    );
   }
 
   /** Trả về true nếu đã xử lý, false nếu bỏ qua (trùng hoặc không phải event tài khoản). */

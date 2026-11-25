@@ -7,6 +7,7 @@ import { createEventBus } from '../../../messaging/factory';
 import { metrics } from '../../../common/json-logger';
 import { NotificationRecipients } from './notification-recipients';
 import { OutboxEvent } from './outbox.entity';
+import { contextFromTraceparent, inSpan, SpanKind, traceparentOf } from '../../../tracing/tracing';
 
 const POLL_MS = 1000;
 const BATCH = 50;
@@ -92,9 +93,20 @@ export class OutboxPublisher implements OnApplicationBootstrap, OnApplicationShu
         let count = 0;
         for (const row of rows) {
           try {
-            // ADR-15: event email mang sẵn người nhận để notification service không phải đọc dữ liệu module khác.
-            const payload = await this.recipients.attach(row.eventType, row.payload);
-            await bus.publish({ id: row.id, type: row.eventType, payload, createdAt: row.createdAt });
+            // ADR-15 bước 4: span gửi đi là con của request đã ghi event (trace_context), traceparent đi theo message.
+            await inSpan(
+              `publish ${row.eventType}`,
+              {
+                kind: SpanKind.PRODUCER,
+                parent: contextFromTraceparent(row.traceContext),
+                attributes: { 'messaging.system': this.cfg.queue.driver, 'messaging.message.id': row.id, 'hr.event_type': row.eventType },
+              },
+              async (span) => {
+                // ADR-15: event email mang sẵn người nhận để notification service không phải đọc dữ liệu module khác.
+                const payload = await this.recipients.attach(row.eventType, row.payload);
+                await bus.publish({ id: row.id, type: row.eventType, payload, createdAt: row.createdAt, traceparent: traceparentOf(span) });
+              },
+            );
             await m.update(OutboxEvent, { id: row.id }, { publishedAt: new Date(), attempts: row.attempts + 1, lastError: null });
             count++;
           } catch (e) {
