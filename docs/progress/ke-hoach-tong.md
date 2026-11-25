@@ -2,6 +2,7 @@
 
 > Tên cũ: `tuan-04-ke-hoach-tong.md` (đổi 14/11/2026). File lập ở tuần 4 (28/9 – 5/10) và cập nhật trong suốt dự án.
 > Mục 1 và 6 là báo cáo tuần 4, giữ làm lịch sử. Lịch đang áp dụng: [mục 7 – hoàn thành từng chức năng](#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13).
+> Đối chiếu với yêu cầu môn học (deliverable P1–P5, Project Scope) và việc còn thiếu tới buổi bảo vệ: [mục 8](#8-đối-chiếu-với-yêu-cầu-môn-học-2511).
 
 Nhóm chọn đề tài số 3 – **Enterprise HR Platform**. MVP tập trung vào một luồng nghiệp vụ end-to-end:
 nhân viên tạo đơn nghỉ phép → quản lý duyệt → HR xử lý → hoàn tất, có phân quyền theo vai trò, audit và kho tài liệu
@@ -74,6 +75,11 @@ UC7 → UC5 → UC6, chức năng nào cũng phải sẵn sàng lên cloud trư�
 
 **Cập nhật 16/11:** UC1 code xong ngày 16/11. Tuần 11 làm 5 UC (UC1, UC3, UC4, UC7, UC5), tuần 12 làm UC6 theo ADR-15
 (search service, từ 23/11 là assistant service theo ADR-16) và dựng staging ([mục 7.2](#72-thứ-tự-và-mốc)).
+
+**Cập nhật 25/11:** đối chiếu với slide yêu cầu môn học cho thấy P1, P2 đủ; P3 đủ tài liệu và code nhưng chưa deploy; các mục P4
+(load test trên cloud, thử lỗi, dashboard, SLI, chi phí thật) và P5 (bộ đánh giá, độ trễ và chi phí token) của tuần 11, 12 chưa làm
+vì nhóm ưu tiên làm xong từng chức năng. Các mục này được theo dõi riêng ở [mục 8](#8-đối-chiếu-với-yêu-cầu-môn-học-2511), hạn trước
+T3 (1/12).
 
 ## 5. Quyết định quan trọng
 
@@ -251,3 +257,60 @@ Báo cáo tuần ghi đúng việc đã làm, ví dụ "TV2 review `requirements
 | `test.md` của UC2 → UC7 | #76 | TV4 | TV4 Duy | Như trên, trước khi viết ca kiểm thử của bước tương ứng | Trước hạn mở PR ca kiểm thử của bước đó |
 
 TV1 xử lý mọi góp ý "cần sửa" trước khi merge #76, hoặc ở PR sau nếu #76 đã merge.
+
+## 8. Đối chiếu với yêu cầu môn học (25/11)
+
+> Lập 25/11/2026. Chi tiết từng slide, bằng chứng và câu trả lời chuẩn bị cho Architecture Defense:
+> [`defense/doi-chieu-yeu-cau-mon-hoc.md`](../defense/doi-chieu-yeu-cau-mon-hoc.md). Mã N1 → N13 trùng với mục 6 của file đó.
+> Báo cáo thứ 2 hằng tuần cập nhật cột "Trạng thái" của bảng 8.1 và chép các dòng 8.2 của tuần đó vào `tuan-NN/README.md`.
+
+Slide "Common Project Deliverables" của môn là **danh sách sản phẩm phải nộp theo vòng đời** P1 → P5, không phải lịch. Mục 4 ở trên
+đã xếp P1 → P5 vào tuần 5 → 12; mục 8.1 theo dõi từng ý của slide tới buổi bảo vệ.
+
+### 8.1 Trạng thái từng deliverable
+
+✅ có trên `dev` và chạy được ở local; 🟡 một phần (chưa đo, chưa lên cloud, thiếu một ý); ❌ chưa có.
+
+| Giai đoạn | Deliverable | Trạng thái 25/11 | Còn thiếu | Việc |
+|---|---|---|---|---|
+| P1 | Problem statement, users/stakeholders, FR, NFR có ngưỡng, workload, kiến trúc cloud ban đầu | ✅ | Cột trạng thái FR trong SRS lệch code | N10 |
+| P2 | Component architecture, API, data model, sync/async, integration | ✅ | SNS fan-out (ADR-15) chưa làm, notification service chưa tách | `feat/notification-service`, `infra/service-extraction` |
+| P3 | Threat model | 🟡 | Chưa phủ kho tài liệu, trợ lý, Cognito, AWS | N11 |
+| P3 | IAM / access control | ✅ | Quyền Cognito cho worker (F2) | N1 |
+| P3 | CI/CD | 🟡 | e2e chưa chạy trong CI; Deploy Staging chưa chạy lần nào | N1, N9 |
+| P3 | Containerization | ✅ | – | – |
+| P3 | IaC | 🟡 | Chưa `apply`; B1, F2 → F4 | N1 |
+| P3 | Deploy / rollback strategy | 🟡 | Chưa diễn tập rollback | N6 |
+| P4 | Load / performance test | 🟡 | #121 chưa merge, NFR-2.1 chưa đạt ở local; chưa đo trên staging, chưa đo 5× | N4 |
+| P4 | Reliability / failure scenario | 🟡 | Chưa diễn tập lỗi có biên bản | N6 |
+| P4 | Observability dashboard | ❌ | Dashboard, log JSON, phiên bản ở `/health`, metric outbox | N5 |
+| P4 | SLI / SLO | 🟡 | Đã định nghĩa (SRS 6.13), chưa đo | N5 |
+| P4 | Capacity & cost analysis | 🟡 | Chưa có chi phí thật, chưa tính task assistant và tiền LLM | N5 |
+| P5 | AI architecture | ✅ | – | – |
+| P5 | Evaluation dataset / metrics | ❌ | Bộ câu hỏi trễ hạn T3 (24/11) | N7 |
+| P5 | Security / guardrails | ✅ | Chưa có ca tấn công chạy thật | N7 |
+| P5 | Latency & token-cost analysis | ❌ | Service đã log token và thời gian, chưa có báo cáo | N7 |
+
+Ngoài P1 → P5, slide "Business Problem & Functional Scope" còn thiếu một ý: **nhân viên chưa tìm được tài liệu theo từ khóa**
+(use case 6 "Employee self-service search" của slide). Việc N2.
+
+### 8.2 Việc bổ sung tới buổi bảo vệ
+
+Việc đã có trong kế hoạch tuần 12 (`tuan-12/README.md`, nằm trong PR báo cáo tuần 11) giữ nguyên hạn; bảng dưới chỉ thêm việc mới và hạn mới. Các việc mới không thuộc
+danh sách cắt ở mục 7.8: chúng đứng **trước** `feat/approvals-inbox` vì giảng viên chấm trực tiếp.
+
+| Mã | Nhánh | Người | Việc | Mở PR | Merge | Review |
+|---|---|---|---|---|---|---|
+| N2 | `feat/document-search` | TV1 Duong | `q` cho `GET /documents` (tiêu đề, mô tả, không dấu), ô tìm trên `/documents`, e2e; thêm FR-5.4 vào SRS và UC5 | T6 (27/11) | T7 (28/11) | TV2, TV4 |
+| N3 | `fix/trust-proxy` | TV1 Duong | `TRUST_PROXY` để audit ghi đúng IP người dùng trên App Runner (F5) | T5 (26/11) | T6 (27/11) | TV3 |
+| N4 | `test/load-k6` (#121), `docs/load-test-staging` | TV4 Duy, TV3 Bảo | Sửa xin token đồng loạt, chạy lại NFR-2.1 ở local; trên staging: 50 request/giây 15 phút có tắt một instance, một lượt tăng dần tới 250 request/giây; App Runner tối thiểu 2 instance trong lúc đo và demo | T6 (27/11) local; T2 (30/11) staging | T3 (1/12) | TV1 |
+| N5 | `feat/observability-basics` | TV1 Duong | Log JSON có `traceId`, `/health` trả commit, metric outbox tồn, timeout kết nối và `statement_timeout` 5 s cho database | T7 (28/11) | CN (29/11) | TV3 |
+| N5 | `docs/slo-dashboard-cost` (đã có) | TV3 Bảo | Thêm vào việc đã giao: thống nhất NFR-7.1 với Budgets 50 USD và hạn mức thẻ; cộng task assistant và tiền LLM vào dự toán | T7 (28/11) | CN (29/11) | TV1 |
+| N6 | `docs/test-report-failure` | TV4 Duy, TV3 Bảo | Diễn tập trên staging: tắt worker (email gửi bù), khóa LLM sai (fallback), tắt assistant service, rollback bằng `image_tag`, khôi phục RDS theo thời điểm (đo RTO); ghi thời gian, ảnh | T2 (30/11) | T3 (1/12) | TV1 |
+| N7 | `docs/assistant-eval-set` (đã có, **trễ**) | TV2 Thanh | Hạn mới cho bộ ≥ 30 câu; thêm câu prompt injection nằm trong tài liệu | T5 (26/11), 21:00 | T6 (27/11) | TV1, TV4 |
+| N7 | `docs/assistant-eval-report` (đã có) | TV4 Duy | Thêm Recall@6, tỉ lệ chặn injection, p95 độ trễ, token và chi phí mỗi câu theo `usage` service đã log | T2 (30/11), 21:00 | T3 (1/12) | TV1, TV2 |
+| N9 | `ci/e2e` | TV3 Bảo | Job e2e có Postgres trong `ci.yml`; bật lại `push: [dev]` cho Deploy Staging khi staging ổn | CN (29/11) | T2 (30/11) | TV1 |
+| N10 | `docs/feature-status-final` (kéo sớm) | TV2 Thanh | Sửa cột trạng thái FR-2.2, 2.4, 3.7, 3.8, 4.3, 4.8, 4.9, 6.3, 6.4 trong SRS trước; phần còn lại giữ hạn T5 (3/12) | T6 (27/11) | T7 (28/11) | TV1 |
+| N11 | `docs/threat-model-uc5-uc6-cloud` | TV2 Thanh | Thêm mối đe dọa của kho tài liệu, trợ lý (prompt injection trực tiếp, gián tiếp; rò dữ liệu qua LLM; lộ khóa API), Cognito, AWS; sửa T-18 theo #120 | T6 (27/11) | T7 (28/11) | TV1 |
+| N12 | cùng PR báo cáo tuần 12 | TV1 Duong | ADR-15 → ADR-18 đổi sang "Đã chấp nhận" | T2 (30/11) | T2 (30/11) | – |
+| N13 | `docs/defense` | Cả nhóm, TV1 chủ trì | Slide bảo vệ từ mục 5, 7 của file đối chiếu; mỗi người tập câu hỏi thuộc vai trò mình; video demo dự phòng | T6 (4/12) tập lần 1 | T2 (7/12) bảo vệ | – |
