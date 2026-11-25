@@ -251,7 +251,7 @@ Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" l�
 | E19 | Gửi trùng | Job áp dụng điều chuyển chạy hai lần (hai task, deploy lại) hoặc lỗi giữa chừng | Mỗi điều chuyển một giao dịch, khóa dòng; điều chuyển đã áp dụng không áp lại; lỗi thì `TRANSFER_FAIL`, lần chạy sau thử lại | Cần kiểm |
 | E20 | Bảo mật | Từ khóa danh bạ có `%`, `_`, `\` hoặc dài quá 100 ký tự | Ký tự LIKE được thoát (tìm đúng chữ); quá dài thì 400 | Có |
 | E21 | Toàn vẹn | Ngừng hoạt động đơn vị Công ty (gốc) | 409 `CONFLICT` | Cần kiểm |
-| E22 | Tranh chấp | Gán trưởng cho người đang có điều chuyển chưa hiệu lực sang đơn vị khác | 409 `CONFLICT` "Người này sắp điều chuyển"; hủy/đổi lịch điều chuyển hoặc chọn người khác | Chưa đạt |
+| E22 | Tranh chấp | Gán trưởng cho người đang có điều chuyển chưa hiệu lực sang đơn vị khác | 409 `CONFLICT` "Người này sắp điều chuyển"; hủy/đổi lịch điều chuyển hoặc chọn người khác. Việc là trưởng không tự cấp quyền duyệt (ghi chú của TV2) | Chưa đạt |
 
 ## 7. Quy tắc áp dụng
 
