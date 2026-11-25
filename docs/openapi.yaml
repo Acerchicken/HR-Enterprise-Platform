@@ -111,7 +111,8 @@ paths:
           required: false
           in: query
           description: YYYY-MM-DD (tính cả ngày, giờ Việt Nam) hoặc ngày giờ ISO 8601;
-            tính cả mốc
+            tính cả mốc. Không có `actor`, `entityId` thì khoảng tối đa 366 ngày
+            (UC7 E6); page × size tối đa 10.000 (E7)
           schema:
             example: 2026-11-01
             type: string

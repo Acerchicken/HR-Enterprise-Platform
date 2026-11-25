@@ -8,6 +8,7 @@
 |---|---|---|---|
 | 1.0 | 13/11/2026 | TV1 Duong | Bản đầu: 7 schema, 17 bảng, theo 4 migration tới `Documents` (tuần 10) |
 | 1.1 | 18/11/2026 | TV1 Duong | UC1: thêm `iam.rate_limit_counter`, `employee.profile_item`, `employee.profile_change_request`, `employee.profile_file`, cột `employee.avatar_file_id` (3 migration, #85 → #87); đọc, ghi chéo schema trong code (mục 9) |
+| 1.2 | 25/11/2026 | TV1 Duong (Claude viết) | Migration `ExceptionGuards`: trigger `trg_audit_no_truncate`, cột `employee.profile_change_request.cancel_reason` (UC7 E10, UC1 E29) |
 
 ## 1. Tổng quan
 
@@ -308,6 +309,7 @@ erDiagram
     uuid submitted_by
     uuid reviewed_by
     varchar reject_reason
+    varchar cancel_reason "TERMINATED"
     varchar idempotency_key
   }
   profile_file {
@@ -410,6 +412,7 @@ Yêu cầu cập nhật hồ sơ (FR-1.9): nhân viên đề xuất, HR duyệt 
 | `reviewed_by`, `reviewed_at` | uuid, timestamptz | | HR duyệt, từ chối |
 | `reject_reason` | varchar(500) | | Chỉ chủ hồ sơ và HR thấy; **không** vào audit |
 | `acknowledged_at` | timestamptz | | Nhân viên đã đóng thông báo bị từ chối |
+| `cancel_reason` | varchar(20) | | `TERMINATED` khi hệ thống hủy vì chủ hồ sơ nghỉ việc (UC1 E29, migration `ExceptionGuards`); NULL khi người gửi tự hủy |
 | `idempotency_key` | varchar(100) | NN, UQ `(submitted_by, idempotency_key)` | Gửi lại cùng khóa trả yêu cầu cũ (AC-1.9.12) |
 
 Index:
@@ -659,7 +662,9 @@ erDiagram
   }
 ```
 
-Append-only (ADR-09): trigger `trg_audit_append_only` gọi hàm `audit.forbid_change()` và báo lỗi với mọi `UPDATE`/`DELETE`.
+Append-only (ADR-09): trigger `trg_audit_append_only` (theo dòng) gọi hàm `audit.forbid_change()` và báo lỗi với mọi
+`UPDATE`/`DELETE`; trigger `trg_audit_no_truncate` (theo câu lệnh, migration `ExceptionGuards`, UC7 E10) chặn `TRUNCATE`. Chủ
+bảng vẫn tắt được trigger (seed `--reset` ở dev làm vậy trong giao dịch); tách quyền database là NFR-5.14.
 Ghi trong cùng transaction với thao tác nghiệp vụ (`AuditService.record(entry, manager)`).
 
 | Cột | Kiểu | Ràng buộc | Mô tả |
@@ -874,7 +879,7 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | UQ một phần `ux_department_company`, CHECK `ck_department_company_root` | `org.department` | Đúng một Công ty, và Công ty là gốc duy nhất của cây (ADR-14) |
 | UQ một phần `ux_assignment_active`, `ux_assignment_scheduled` | `employee.employment_assignment` | Mỗi người một dòng đang hiệu lực, tối đa một điều chuyển chờ |
 | CHECK `effective_to >= effective_from - 1`, CHECK `reason`, `status` | `employee.employment_assignment` | Quá trình công tác không có khoảng ngày âm |
-| Trigger `trg_audit_append_only` | `audit.audit_log` | Không sửa, không xóa log |
+| Trigger `trg_audit_append_only`, `trg_audit_no_truncate` | `audit.audit_log` | Không sửa, xóa, `TRUNCATE` log |
 | UQ `(document_id, version_no)` | `document.document_version` | Không có hai file cùng số phiên bản |
 | UQ một phần `uq_profile_change_pending_place`, `uq_profile_change_pending_main` | `employee.profile_change_request` | Mỗi trường hoặc dòng chỉ một yêu cầu đang chờ |
 | UQ `(submitted_by, idempotency_key)` | `employee.profile_change_request` | Gửi trùng không tạo hai yêu cầu |

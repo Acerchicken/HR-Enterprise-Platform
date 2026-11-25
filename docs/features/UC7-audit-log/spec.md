@@ -143,12 +143,12 @@ Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" l�
 
 | Mã | Nhóm | Tình huống | Hệ thống phản hồi | Code |
 |---|---|---|---|---|
-| E5 | Dữ liệu vào | `from` sau `to` | 400 `BAD_REQUEST`. Hiện trả danh sách rỗng | Chưa đạt |
-| E6 | Hiệu năng | Chỉ lọc theo thời gian với khoảng dài hơn 366 ngày (tính cả hai đầu) | 400 `BAD_REQUEST`, yêu cầu thu hẹp khoảng hoặc thêm bộ lọc actor/đối tượng; khoảng dài hơn vẫn được phép nếu có actor hoặc entity/entityId cụ thể | Chưa đạt |
-| E7 | Hiệu năng | `page × size` vượt 10.000 (phân trang quá sâu) | 400 `BAD_REQUEST`, yêu cầu thu hẹp bộ lọc; đúng 10.000 vẫn được phép | Chưa đạt |
+| E5 | Dữ liệu vào | `from` sau `to` | 400 `BAD_REQUEST` | Có (kiểm trong controller, e2e) |
+| E6 | Hiệu năng | Chỉ lọc theo thời gian với khoảng dài hơn 366 ngày (tính cả hai đầu) | 400 `BAD_REQUEST`, yêu cầu thu hẹp khoảng hoặc thêm bộ lọc actor/đối tượng; khoảng dài hơn vẫn được phép nếu có actor hoặc entity/entityId cụ thể | Có (e2e) |
+| E7 | Hiệu năng | `page × size` vượt 10.000 (phân trang quá sâu) | 400 `BAD_REQUEST`, yêu cầu thu hẹp bộ lọc; đúng 10.000 vẫn được phép | Có (e2e) |
 | E8 | Bảo mật | `changedFields`, `entityId` có chữ dạng HTML | Giao diện hiển thị dạng chữ | Có |
 | E9 | Hệ thống ngoài | Worker ghi audit khi database mất kết nối | Message chưa xác nhận, queue giao lại; không mất audit, không ghi trùng (`processed_event`) | Cần kiểm |
-| E10 | Bảo mật | `TRUNCATE` bảng audit bằng tài khoản ứng dụng | Phải bị từ chối (NFR-5.14). Hiện chưa chặn: trigger theo dòng không bắt `TRUNCATE`, tài khoản ứng dụng là chủ bảng | Chưa đạt |
+| E10 | Bảo mật | `TRUNCATE` bảng audit bằng tài khoản ứng dụng | Bị từ chối: trigger theo câu lệnh `trg_audit_no_truncate` (migration `ExceptionGuards`). Chủ bảng vẫn tắt được trigger (seed `--reset` ở dev làm vậy); tách quyền database trên staging còn ở [staging-readiness L3](../../cloud/staging-readiness.md#6-lệch-so-với-yêu-cầu-không-chặn-demo) | Có (trigger, e2e); tách quyền: chưa |
 
 ## 7. Quy tắc áp dụng
 
@@ -235,8 +235,8 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Audit đăng nhập | Chưa có | TV3, `infra/idp-auth-events`, tuần 13 (AC-7.4.1) |
 | Audit cấp, thu hồi vai trò | Đã có (UC8 `feat/uc8-role-admin`) | – (AC-7.4.2) |
 | Thời gian lưu | Đã chốt 5 năm (BR-13) | Quy trình archive, legal hold trước production (ngoài MVP) |
-| Giới hạn truy vấn audit rộng (E6, E7) | TV2 chốt ngày 25/11/2026 | Chưa có giới hạn khoảng ngày và offset; TV1 bổ sung kiểm tra đầu vào, TV4 viết test biên |
-| Ngoại lệ bổ sung mục 6.1 (E5 → E10) | Rà 24/11/2026, TV2 chốt E6/E7 ngày 25/11 | chưa đạt: E5, E6, E7, E10; cần kiểm: E9. TV1 xử lý mã chưa đạt; TV4 viết test cho cả bảng |
+| Giới hạn truy vấn audit rộng (E6, E7) | Đã có (nhánh `fix/exceptions-chua-dat`) | 366 ngày khi chỉ lọc thời gian; `page × size` ≤ 10.000 |
+| Ngoại lệ bổ sung mục 6.1 (E5 → E10) | Rà 24/11/2026, TV2 chốt E6/E7 ngày 25/11 | E5, E6, E7, E10 đã có (nhánh `fix/exceptions-chua-dat`; E10 còn tách quyền database trên staging); cần kiểm: E9. TV4 viết test cho cả bảng |
 
 ## 13. Thiết kế màn hình tra cứu và quyết định
 

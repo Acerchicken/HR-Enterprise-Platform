@@ -209,7 +209,7 @@ Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" l�
 | Mã | Nhóm | Tình huống | Hệ thống phản hồi | Code |
 |---|---|---|---|---|
 | E15 | Tranh chấp | Hai đơn gửi gần như cùng lúc (hai tab, hai thiết bị) cùng dùng số dư cuối hoặc trùng ngày | Khóa dòng số dư trong giao dịch (`pessimistic_write`); đơn sau nhận E3 hoặc E5 | Có |
-| E16 | Dữ liệu vào | Ngày bắt đầu trước ngày vào làm hoặc sau 31/12 của năm kế tiếp; khoảng nghỉ dài hơn 1 năm | Hai điều kiện ngày trả 400 `BAD_REQUEST` kèm `fields`; khoảng dài hơn 1 năm không bị chặn toàn cục, chỉ áp dụng giới hạn nếu loại phép có quy tắc riêng đã cấu hình | Chưa đạt (kiểm tra ngày bắt đầu); không áp trần chung cho thời lượng |
+| E16 | Dữ liệu vào | Ngày bắt đầu trước ngày vào làm hoặc sau 31/12 của năm kế tiếp; khoảng nghỉ dài hơn 1 năm | Hai điều kiện ngày trả 400 `BAD_REQUEST` kèm `fields`; khoảng dài hơn 1 năm không bị chặn toàn cục, chỉ áp dụng giới hạn nếu loại phép có quy tắc riêng đã cấu hình | Có (e2e); không áp trần chung cho thời lượng |
 | E17 | Vòng đời dữ liệu | Chủ đơn bị cho nghỉ việc khi đơn còn chờ | Hệ thống hủy đơn (`LEAVE_SYSTEM_CANCEL`, lý do `TERMINATED`), trả số ngày khỏi `pending` | Có |
 | E18 | Vòng đời dữ liệu | Loại phép đã ngừng dùng | 400 `BAD_REQUEST` `fields.leaveTypeId` | Cần kiểm |
 | E19 | Phân quyền | Quản lý tạo đơn hộ cho người không phải cấp dưới trực tiếp; HR tạo đơn hộ cho chính mình | 403 `FORBIDDEN` | Cần kiểm |
@@ -350,7 +350,7 @@ lần 2 (mục 15). Unit test: `leave-rules.spec.ts`, `leave-state-machine.spec.
 | Nghỉ việc hủy đơn (AC-3.1.7), lịch lễ thay đổi (AC-3.4.3), 403 khi chưa gắn hồ sơ (E9) | Đã có | – |
 | Lưu trữ 5 năm, legal hold (BR-13) | Chưa có | Thiết kế sau MVP; ghi trong SRS mục 8 |
 | Bản vẽ `uc3-balances.png` chưa có cột "Chuyển từ năm trước" | Giao diện đã có cột | Vẽ lại khi rảnh |
-| Ngoại lệ bổ sung mục 6.1 (E15 → E21) | Rà 24/11/2026, TV2 chốt E16 ngày 25/11 | chưa đạt: E16 (ngày bắt đầu trước ngày vào làm hoặc sau 31/12 năm kế tiếp); cần kiểm: E18, E19, E20. Thời lượng >1 năm không bị chặn toàn cục. TV1 bổ sung kiểm tra ngày; TV4 viết test cho cả bảng |
+| Ngoại lệ bổ sung mục 6.1 (E15 → E21) | Rà 24/11/2026, TV2 chốt E16 ngày 25/11 | E16 đã có (nhánh `fix/exceptions-chua-dat`); thời lượng >1 năm không bị chặn toàn cục; cần kiểm: E18, E19, E20. TV4 viết test cho cả bảng |
 
 ## 13. Thiết kế
 

@@ -50,7 +50,11 @@ class AuditLogQuery extends PageQuery {
   @IsString()
   from?: string;
 
-  @ApiPropertyOptional({ description: 'YYYY-MM-DD (tính cả ngày, giờ Việt Nam) hoặc ngày giờ ISO 8601; tính cả mốc', example: '2026-11-01' })
+  @ApiPropertyOptional({
+    description:
+      'YYYY-MM-DD (tính cả ngày, giờ Việt Nam) hoặc ngày giờ ISO 8601; tính cả mốc. Không có `actor`, `entityId` thì khoảng tối đa 366 ngày (UC7 E6); page × size tối đa 10.000 (E7)',
+    example: '2026-11-01',
+  })
   @IsOptional()
   @IsString()
   to?: string;

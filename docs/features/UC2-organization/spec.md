@@ -247,11 +247,11 @@ Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" l�
 | E15 | Tranh chấp | Hai HR cùng sửa một đơn vị (gửi `version` cũ) | 409 `CONFLICT`; tải lại đơn vị | Cần kiểm |
 | E16 | Vòng đời dữ liệu | Điều chuyển tới đơn vị `INACTIVE` hoặc chức danh đã ngừng dùng; điều chuyển người đã nghỉ việc | 400 `BAD_REQUEST` | Cần kiểm |
 | E17 | Toàn vẹn | Quản lý mới trong điều chuyển là chính người đó hoặc cấp dưới (trực tiếp, gián tiếp) của họ | 400 `BAD_REQUEST` (vòng quản lý, như UC1 E5) | Cần kiểm |
-| E18 | Dữ liệu vào | Ngày hiệu lực điều chuyển sau cùng ngày lịch của năm kế tiếp tính theo ngày hiện tại ở Việt Nam | 400 `BAD_REQUEST`; đúng ngày mốc vẫn được nhận | Chưa đạt |
+| E18 | Dữ liệu vào | Ngày hiệu lực điều chuyển sau cùng ngày lịch của năm kế tiếp tính theo ngày hiện tại ở Việt Nam | 400 `BAD_REQUEST`; đúng ngày mốc vẫn được nhận | Có (e2e) |
 | E19 | Gửi trùng | Job áp dụng điều chuyển chạy hai lần (hai task, deploy lại) hoặc lỗi giữa chừng | Mỗi điều chuyển một giao dịch, khóa dòng; điều chuyển đã áp dụng không áp lại; lỗi thì `TRANSFER_FAIL`, lần chạy sau thử lại | Cần kiểm |
 | E20 | Bảo mật | Từ khóa danh bạ có `%`, `_`, `\` hoặc dài quá 100 ký tự | Ký tự LIKE được thoát (tìm đúng chữ); quá dài thì 400 | Có |
 | E21 | Toàn vẹn | Ngừng hoạt động đơn vị Công ty (gốc) | 409 `CONFLICT` | Cần kiểm |
-| E22 | Tranh chấp | Gán trưởng cho người đang có điều chuyển chưa hiệu lực sang đơn vị khác | 409 `CONFLICT` "Người này sắp điều chuyển"; hủy/đổi lịch điều chuyển hoặc chọn người khác. Việc là trưởng không tự cấp quyền duyệt (ghi chú của TV2) | Chưa đạt |
+| E22 | Tranh chấp | Gán trưởng cho người đang có điều chuyển chưa hiệu lực sang đơn vị khác | 409 `CONFLICT` "Người này sắp điều chuyển"; hủy/đổi lịch điều chuyển hoặc chọn người khác. Việc là trưởng không tự cấp quyền duyệt (ghi chú của TV2) | Có (e2e) |
 
 ## 7. Quy tắc áp dụng
 
@@ -446,8 +446,8 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 | Giải thể, sáp nhập đơn vị | Đã có ngừng hoạt động (E13 trả `details`), kích hoạt lại; sáp nhập = điều chuyển hết người rồi ngừng hoạt động | – |
 | Loại đơn vị, luật cha con (ADR-14) | Đã có (`feat/org-unit-types`): migration, luật cha con, cây có loại, trưởng, số người; chi tiết có `path`; lọc danh bạ gồm đơn vị con; seed Công ty, Trung tâm, Nhóm | – |
 | Audit phòng ban | Đã có | `changedFields` ghi giá trị mới (tên, mã, văn phòng, cha, trưởng đơn vị); không có dữ liệu cá nhân |
-| Giới hạn ngày điều chuyển tối đa một năm và chặn gán trưởng đang sắp chuyển đơn vị (E18, E22) | Chưa có | TV1 bổ sung ở PR code; mốc tính theo ngày Việt Nam |
-| Ngoại lệ bổ sung mục 6.1 (E14 → E22) | Rà 24/11/2026, TV2 chốt E18/E22 ngày 25/11 | chưa đạt: E18, E22; cần kiểm: E14, E15, E16, E17, E19, E21. TV1 xử lý E18/E22 trong PR code; TV4 viết test |
+| Giới hạn ngày điều chuyển tối đa một năm và chặn gán trưởng đang sắp chuyển đơn vị (E18, E22) | Đã có (nhánh `fix/exceptions-chua-dat`) | Mốc theo ngày Việt Nam, `transferHorizon` |
+| Ngoại lệ bổ sung mục 6.1 (E14 → E22) | Rà 24/11/2026, TV2 chốt E18/E22 ngày 25/11 | E18, E22 đã có (nhánh `fix/exceptions-chua-dat`); cần kiểm: E14, E15, E16, E17, E19, E21. TV4 viết test |
 
 ## 13. Thiết kế đề xuất cho phần chưa có
 

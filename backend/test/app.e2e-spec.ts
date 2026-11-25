@@ -1854,10 +1854,17 @@ describe('HRHelper API (e2e)', () => {
 
     it('gán trưởng cho người sắp điều chuyển sang nhánh khác: 409 (E22)', async () => {
       const a = await mk('Sắp Sang Marketing', leg.id, leg.headEmployeeId);
-      await post(a.id, body(a, { departmentId: mkt.id, managerId: mkt.headEmployeeId, effectiveDate: plus(5) })).expect(201);
+      const t = (await post(a.id, body(a, { departmentId: mkt.id, managerId: mkt.headEmployeeId, effectiveDate: plus(5) })).expect(201)).body;
       const res = await http.patch(`/api/v1/departments/${leg.id}`).set(HR).send({ headEmployeeId: a.id }).expect(409);
       expect(res.body.message).toMatch(/sắp điều chuyển/);
       expect((await http.get(`/api/v1/departments/${leg.id}`).set(HR)).body.head.id).toBe(leg.headEmployeeId);
+      // Hủy điều chuyển thì gán được; trả lại trưởng cũ.
+      await http.delete(`/api/v1/employees/${a.id}/transfers/${t.id}`).set(HR).expect((r) => expect(r.status).toBeLessThan(300));
+      try {
+        await http.patch(`/api/v1/departments/${leg.id}`).set(HR).send({ headEmployeeId: a.id }).expect(200);
+      } finally {
+        await http.patch(`/api/v1/departments/${leg.id}`).set(HR).send({ headEmployeeId: leg.headEmployeeId }).expect(200);
+      }
     });
 
     it('nghỉ việc hủy yêu cầu sửa hồ sơ đang chờ, lý do TERMINATED; HR duyệt yêu cầu cũ 409 (UC1 E29)', async () => {
