@@ -35,7 +35,7 @@ dán trên trang "Cấu hình trợ lý", lưu mã hóa trong `assistant.llm_con
 | Môi trường | Tài nguyên | File |
 |---|---|---|
 | Local | PostgreSQL build từ `infra/postgres-pgvector` (postgres:16-alpine thêm pgvector, giữ volume cũ dùng được); container `assistant` (port 3100), tự khai báo queue `assistant.document`; S3Mock như UC5 | `docker-compose.yml`, `services/assistant/Dockerfile` |
-| Staging | RDS bật extension `vector`; SQS `assistant.document` + DLQ, subscription SNS lọc `document.*`; task Fargate assistant khoảng 2 GB RAM (EmbeddingGemma q8; đo thật, vượt thì dùng q4); secret `ASSISTANT_CONFIG_KEY`; security group, NAT cho phép gọi HTTPS ra API của ba nhà cung cấp | `infra/staging/` (nhánh `infra/llm-secrets-cost`) |
+| Staging | RDS bật extension `vector`; SQS `assistant.document` + DLQ, subscription SNS lọc `document.*`; task Fargate assistant khoảng 2 GB RAM (EmbeddingGemma q8; đo thật, vượt thì dùng q4); secret `ASSISTANT_CONFIG_KEY`; security group, NAT cho phép gọi HTTPS ra API của ba nhà cung cấp | `infra/staging/` (nhánh `infra/llm-secrets-cost`; danh sách đủ ở [staging-readiness mục 4](../../cloud/staging-readiness.md#4-trợ-lý-chính-sách-trên-staging-f4-chi-tiết), chưa có gì trong Terraform 25/11) |
 
 ## 4. Các bước
 
@@ -50,7 +50,9 @@ dán trên trang "Cấu hình trợ lý", lưu mã hóa trong `assistant.llm_con
      `npm run assistant:sync`.
 2. Tạo API key ở nhà cung cấp định dùng, nạp credit trả trước hoặc đặt giới hạn chi tiêu ở đó. ADMIN dán khóa trên
    `/admin/assistant`, bấm "Kiểm tra kết nối" rồi lưu.
-3. Sau khi deploy assistant service: chạy lệnh đồng bộ lần đầu (UC5 13.2) để index tài liệu đã đăng trước đó.
+3. Sau khi deploy assistant service: chạy lệnh đồng bộ lần đầu (UC5 13.2) để index tài liệu đã đăng trước đó. Local:
+   `npm run assistant:sync`; staging: task ECS một lần `node dist/database/sync-document-events.js` ([staging-readiness mục 5](../../cloud/staging-readiness.md#5-lệnh-chạy-một-lần-trên-staging)).
+   Trên staging còn phải mở đăng nhập cho role: `ALTER ROLE assistant_svc LOGIN PASSWORD '<secret>';` (migration tạo `NOLOGIN`).
 4. Chạy bộ đánh giá của TV2 trên staging với từng nhà cung cấp định demo (ưu tiên DeepSeek, dữ liệu giả), ghi tỉ lệ đúng, độ trễ, chi phí mỗi câu vào báo cáo
    tuần 12.
 
@@ -66,7 +68,7 @@ khoảng 3–4 cent USD mỗi giờ (ước lượng, TV3 kiểm lại theo bả
 | Kiểm nhanh | Hỏi một câu mẫu trên `/documents`; trang `/admin/assistant` bấm "Kiểm tra kết nối" | Lúc task chưa lên, API trả `fallback = true` (E5), không lỗi 5xx |
 | Tắt | `aws ecs update-service ... --desired-count 0` ngay sau khi dùng | Index nằm trong RDS, bật lại dùng được ngay, không phải tính lại |
 | Tài liệu đăng lúc tắt | Event chờ trong SQS `assistant.document`, task bật lên thì xử lý | Queue đặt thời gian giữ message 14 ngày (tối đa của SQS); DLQ như ADR-15 |
-| NAT | Nếu NAT gateway chỉ tạo để gọi API nhà cung cấp LLM thì cũng tạo khi demo, xóa sau khi dùng (NAT tính tiền theo giờ khi còn tồn tại); dùng NAT có sẵn thì không thêm gì | TV3 chốt trong `infra/llm-secrets-cost` |
+| NAT | Staging đã có NAT instance `t4g.nano` (`network.tf`) cho subnet private: task assistant gọi ra API nhà cung cấp qua đó, không tạo thêm NAT | Tắt staging theo `infra/README.md` mục 5.3 thì dừng cả NAT instance |
 
 Không dùng auto scaling theo lịch: lịch demo không cố định, bật tay rẻ và dễ kiểm hơn.
 

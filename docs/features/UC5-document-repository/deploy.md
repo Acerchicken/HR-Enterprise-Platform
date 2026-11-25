@@ -36,7 +36,8 @@ Lệch giữa Terraform đã merge và yêu cầu (kiểm chéo 22/11, TV3 sửa
   `kms:GenerateDataKey`, `kms:Decrypt` cho App Runner đã có).
 - CORS cho phép `PUT`, `GET`, `HEAD`; ADR-13 chỉ cần `PUT` (tải xuống đi qua API).
 - `force_destroy = true` xóa cả file khi `terraform destroy`; chấp nhận được cho staging, ghi rõ để không mang lên môi trường thật.
-- Chưa có bucket file hồ sơ (`PROFILE_STORAGE_BUCKET`, UC1).
+- Chưa có bucket file hồ sơ (`PROFILE_STORAGE_BUCKET`, UC1; F3 trong [staging-readiness](../../cloud/staging-readiness.md)).
+- Chưa có queue `assistant.document` và `SQS_ASSISTANT_QUEUE_URL` cho API: event tài liệu bị bỏ qua trên staging (F4).
 
 ## 4. Các bước
 
@@ -61,5 +62,5 @@ Lệch giữa Terraform đã merge và yêu cầu (kiểm chéo 22/11, TV3 sửa
 
 ## 7. Còn thiếu
 
-- Terraform bucket đã merge nhưng chưa apply, còn lệch KMS và CORS (mục 3; [configuration.md mục 5](../../development/configuration.md#5-điểm-còn-thiếu-trên-staging-13112026)).
+- Terraform bucket đã merge nhưng chưa apply, còn lệch KMS và CORS (mục 3; [configuration.md mục 5](../../development/configuration.md#5-điểm-còn-thiếu-trên-staging)).
 - Không dọn phiên bản `PENDING` bỏ dở (đánh đổi ADR-13); có thể đặt lifecycle rule xóa object chưa xác nhận sau 1 ngày.

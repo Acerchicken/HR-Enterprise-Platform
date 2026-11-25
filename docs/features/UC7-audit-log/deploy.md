@@ -14,7 +14,8 @@
 
 ## 2. Biến môi trường
 
-Không có biến riêng. `traceId` lấy từ header `X-Trace-Id` (NFR-6.4). IP là `req.ip`: sau ALB cần `trust proxy` để là IP client, không phải IP của ALB.
+Không có biến riêng. `traceId` lấy từ header `X-Trace-Id` (NFR-6.4). IP là `req.ip`: sau proxy (App Runner trên staging) cần `trust proxy` để là IP client. Code chưa đặt, nên IP trên staging
+đang sai (F5 trong [staging-readiness](../../cloud/staging-readiness.md)).
 
 ## 3. Hạ tầng
 

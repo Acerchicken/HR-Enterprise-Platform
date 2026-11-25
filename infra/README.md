@@ -2,6 +2,10 @@
 
 Thư mục này chứa mã nguồn Infrastructure as Code (IaC) bằng **Terraform** để thiết lập toàn bộ môi trường Staging trên **Amazon Web Services (AWS)** cho dự án Enterprise HR Platform, tuân thủ quyết định kiến trúc [ADR-12](../docs/cloud/mapping.md).
 
+> [!WARNING]
+> **Trước `terraform apply` lần đầu** đọc [Rà soát trước khi deploy staging](../docs/cloud/staging-readiness.md) (25/11/2026):
+> `cognito.tf` phải bật MFA bắt buộc và thêm `/callback` trước khi tạo user pool (B1); email, đồng bộ Cognito, bucket hồ sơ, trợ lý chính sách còn thiếu (F1–F4).
+
 ---
 
 ## 1. Cấu trúc thư mục
@@ -76,7 +80,7 @@ cd infra/staging
 terraform init
 
 # Bước 1 (chỉ làm sau khi TV1 đã duyệt plan): tạo trước ECR Repositories bằng -target
-terraform apply -target=aws_ecr_repository.api -target=aws_ecr_repository.web -auto-approve
+terraform apply -target=aws_ecr_repository.api -auto-approve   # chỉ có repo hr-api; web deploy thẳng lên S3
 
 # Bước 2: Đăng nhập ECR và push image ban đầu (:latest)
 aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com
@@ -99,11 +103,11 @@ terraform apply plan.tfplan
 | **Mạng (Network)** | VPC, Subnets, IGW, NAT | 1 VPC (`10.0.0.0/16`), 2 Public Subnets, 2 Private Subnets. 1 NAT instance `t4g.nano` (Amazon Linux 2023 ARM, IMDSv2, không SSH key) tại Public Subnet 1 thay cho NAT Gateway để giữ chi phí dưới hạn mức (ADR-12, phương án B2); cho App Runner VPC Connector gọi Cognito JWKS, Secrets Manager, SQS và Fargate worker ra ngoài. |
 | **Cơ sở dữ liệu** | RDS PostgreSQL 16 | Instance `db.t4g.micro`, 20 GB gp3 SSD, Single-AZ trong Private Subnet, Backup tự động lưu 7 ngày. |
 | **Quản lý khóa & bí mật** | Secrets Manager & KMS | 1 Customer Managed KMS Key. Mật khẩu DB và khóa `FIELD_ENCRYPTION_KEY` (32 bytes base64) sinh ngẫu nhiên bảo mật, lưu trực tiếp vào Secrets Manager. |
-| **Container Registry** | Amazon ECR | 2 Repositories: `hr-api` và `hr-web`, bật scan lỗ hổng khi push image, giữ tối đa 10 tags mới nhất. |
+| **Container Registry** | Amazon ECR | 1 Repository `hr-api` (API và worker dùng chung image), bật scan lỗ hổng khi push image, giữ tối đa 10 tags mới nhất. Web build tĩnh lên S3, không cần ECR. Trợ lý chính sách cần thêm `hr-assistant` (chưa có, F4). |
 | **Backend API Compute** | AWS App Runner | Cấu hình 0.5 vCPU, 1 GB RAM, gắn VPC Connector nối trực tiếp RDS trong Private Subnet; nạp secrets từ Secrets Manager. |
 | **Async Worker Compute** | ECS Fargate & SQS | SQS Standard Queue + DLQ (maxReceiveCount = 5). ECS Cluster chạy 1 Task Fargate 24/7 (0.25 vCPU, 0.5 GB RAM, lệnh `node dist/worker/main.js`). |
 | **Frontend Web & Docs** | S3 & CloudFront | 2 S3 Buckets (Web SPA và Docs) chặn 100% public access. CloudFront OAC phân phối HTTPS toàn cầu, định tuyến SPA (rewrite 403/404 về `/index.html`). |
-| **Định danh & Phân quyền** | Cognito User Pool | User Pool OIDC với Authorization Code + PKCE. 4 nhóm: `employee`, `manager`, `hr`, `admin` và 4 tài khoản demo sẵn sàng kiểm thử. |
+| **Định danh & Phân quyền** | Cognito User Pool | User Pool OIDC với Authorization Code + PKCE. 3 nhóm `employee`, `hr`, `admin` (chỉ để bắt MFA theo vai trò; quyền lấy từ database, ADR-18; quản lý suy ra từ cây tổ chức) và 4 tài khoản demo. |
 | **Giám sát ngân sách** | AWS Budgets | Cảnh báo tự động gửi email tới ban quản trị khi chi phí chạm mốc **25 USD (50%)**, **40 USD (80%)**, và **50 USD (100%)**. |
 | **CI/CD Deployment** | IAM OIDC Provider | Xác thực GitHub Actions qua OIDC Federation (không tạo static access keys lâu dài), cấp quyền tối thiểu để push ECR, update App Runner, ECS, và S3. |
 
@@ -121,9 +125,9 @@ Do tài khoản AWS mới mặc định nằm trong **Amazon SES Sandbox**:
 ## 5. Hướng dẫn Deploy, Rollback và Tắt Staging để tiết kiệm chi phí
 
 ### 5.1. Triển khai ứng dụng (Deploy)
-Pipeline CI/CD `.github/workflows/deploy-staging.yml` sẽ tự động thực thi khi có commit trên nhánh `dev`:
-1. Build và gắn tag image backend/frontend theo commit SHA (`${{ github.sha }}`).
-2. Push images lên ECR `hr-api` và `hr-web`.
+Pipeline CI/CD `.github/workflows/deploy-staging.yml` hiện **chỉ chạy tay** (Actions → Deploy Staging → Run workflow; input `image_tag`, `run_seed`, `skip_migration`). Thêm lại trigger `push` vào `dev` khi staging chạy ổn (tuần 12). Các bước:
+1. Build image backend, gắn tag theo commit SHA (`${{ github.sha }}`) và `latest`.
+2. Push image lên ECR `hr-api`.
 3. Chạy database migration một lần bằng task ECS Fargate (`npx typeorm migration:run -d dist/database/data-source.js`).
 4. Cập nhật App Runner API và ECS Worker trỏ sang image SHA mới.
 5. Build Web SPA với các biến môi trường của staging, đồng bộ file lên S3 và tạo invalidation trên CloudFront.

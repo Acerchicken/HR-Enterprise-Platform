@@ -27,13 +27,14 @@
 |---|---|---|
 | Local | PostgreSQL, Keycloak, seed | `docker-compose.yml`, `keycloak/` |
 | Staging | RDS, Secrets Manager + KMS (khóa mã hóa trường), Cognito, App Runner | `infra/staging/rds.tf`, `kms_secrets.tf`, `cognito.tf`, `app_runner.tf` |
-| Staging *(TV3, chưa apply)* | Bucket `hr-profile-files-staging`: chặn public, SSE-KMS, CORS chỉ cho domain web (PUT), lifecycle xóa object tag `deleted=true` sau 30 ngày; quyền `s3:PutObject`, `GetObject`, `DeleteObject`, `PutObjectTagging` cho role App Runner; alarm CloudWatch khi số 429 tăng đột biến | TV3, `infra/profile-files` |
+| Staging *(TV3, chưa apply)* | Bucket `hr-profile-files-staging`: chặn public, SSE-KMS, CORS chỉ cho domain web (PUT), lifecycle xóa object tag `deleted=true` sau 30 ngày; quyền `s3:PutObject`, `GetObject`, `DeleteObject`, `PutObjectTagging` cho role App Runner; alarm CloudWatch khi số 429 tăng đột biến | TV3, `infra/profile-files` ([staging-readiness F3](../../cloud/staging-readiness.md#3-chức-năng-hỏng-nếu-không-sửa-làm-trước-demo)) |
 
 ## 4. Các bước
 
 - **Local:** `docker compose up -d --build`; seed tạo ~2.000 hồ sơ và 4 tài khoản mẫu.
-- **Staging lần đầu:** chạy Deploy Staging với `run_seed = true` để có dữ liệu mẫu. Tạo người dùng Cognito với email trùng
-  `workEmail` của hồ sơ, gán nhóm `hr`, `admin` nếu cần.
+- **Staging lần đầu:** chạy Deploy Staging với `run_seed = true` để có dữ liệu mẫu. 4 tài khoản demo Cognito do Terraform tạo
+  trùng email với seed. Người khác: HR tạo hồ sơ, worker tự mời trên Cognito (cần `IDP_ADMIN_DRIVER=cognito`,
+  [staging-readiness F2](../../cloud/staging-readiness.md#3-chức-năng-hỏng-nếu-không-sửa-làm-trước-demo)).
 - **Thêm trường nhạy cảm mới:** thêm migration, thêm vào danh sách mã hóa và danh sách che trong audit trong cùng PR.
 
 ## 5. Kiểm tra sau deploy
@@ -43,7 +44,7 @@
    có `VIEW_SENSITIVE`.
 3. HR tạo một nhân viên thử, rồi sửa số điện thoại: lưu được, `version` tăng.
 4. Nhân viên gửi yêu cầu thêm liên hệ khẩn cấp; HR mở "Việc cần duyệt" tab Sửa hồ sơ, duyệt; nhân viên nhận email (Mailpit
-   local, SES staging).
+   local, SES staging; staging cần sửa F1 trong [staging-readiness](../../cloud/staging-readiness.md) trước).
 5. Nhân viên tải một CV thử, gửi yêu cầu; HR duyệt, tải xuống; HR xóa: object có tag `deleted=true`.
 6. Gọi 21 lần tìm kiếm trong một phút bằng một tài khoản: lần 21 trả 429 kèm `Retry-After`.
 

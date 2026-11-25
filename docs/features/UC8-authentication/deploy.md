@@ -33,6 +33,10 @@ trên staging là phần của TV3 (mục 3).
 
 ## 3. Hạ tầng
 
+> Các dòng Staging dưới đây là **yêu cầu**. Rà 25/11: `cognito.tf`, `sqs_worker.tf` chưa có phần lớn (MFA, admin-only,
+> `explicit_auth_flows`, `/callback`, SES, token, quyền `cognito-idp`, biến worker). Xem B1, F2 trong
+> [staging-readiness](../../cloud/staging-readiness.md); B1 phải xong trước `apply` lần đầu.
+
 | Môi trường | Tài nguyên | File |
 |---|---|---|
 | Local | Realm `hr`, **đã có**: bỏ realm role `manager` (ADR-18), client `hr-api-admin` (service account có `manage-users`, `view-users`, `view-realm` của `realm-management`), SMTP Mailpit, `resetPasswordAllowed`, event đăng nhập. **Còn lại (TV3)**: `passwordPolicy`, `failureFactor: 5`, `ssoSessionMaxLifespan: 36000`, Conditional OTP cho `hr`, `admin` | `keycloak/realm-hr.json` |
@@ -51,7 +55,8 @@ trên staging là phần của TV3 (mục 3).
   `feat/uc8-roles-from-db`, đối chiếu nhóm `hr`, `admin` trên IdP với `iam.role_assignment` và thêm dòng còn thiếu (seed đã có 4
   tài khoản demo).
 - **ADMIN đầu tiên** (môi trường mới, ADR-18): `npm run grant-admin -- <email công ty>` (local) hoặc
-  `node dist/database/grant-admin.js <email>` trong container API (staging). Người đó phải có hồ sơ chưa nghỉ việc. Seed local đã
+  `node dist/database/grant-admin.js <email>` bằng task ECS một lần (staging; App Runner không vào container được,
+  lệnh ở [staging-readiness mục 5](../../cloud/staging-readiness.md#5-lệnh-chạy-một-lần-trên-staging)). Người đó phải có hồ sơ chưa nghỉ việc. Seed local đã
   có `admin@hr.local`.
 - **Local:** `docker compose up -d --build` import lại realm. Realm đã có thì xóa volume Keycloak hoặc import bằng tay, vì Keycloak
   không ghi đè realm đã tồn tại. Mở Mailpit (8025) để xem thư mời (tiêu đề mặc định của Keycloak "Update Your Account") và thư đặt lại mật khẩu. Sau khi có

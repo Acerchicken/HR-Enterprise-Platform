@@ -21,6 +21,7 @@ flowchart LR
 | 5. Hợp đồng API | [`openapi.yaml`](openapi.yaml) | Endpoint, request, response | – | OpenAPI 3 |
 | 6. Kiểm thử | [Ca kiểm thử nghỉ phép](business/leave-test-cases.md), [ca kiểm thử bảo mật](business/security-test-cases.md), biên bản [tuần 8](business/test-report-tuan-08.md), [tuần 9](business/test-report-tuan-09.md) | Kiểm gì, kết quả chạy thật | `TC-nn`, `SEC-nn` | ISO/IEC/IEEE 29119-3 |
 | 7. Cloud | [Ánh xạ dịch vụ và chi phí AWS](cloud/mapping.md) | Dịch vụ cloud cho từng khối, chi phí | – | – |
+| 7. Cloud | [Rà soát trước khi deploy staging](cloud/staging-readiness.md) | Chỗ thiếu trong Terraform, workflow, code trước khi `apply`; biến môi trường theo thành phần | – | – |
 | 8. Phát triển | [Biến môi trường](development/configuration.md), [mã lỗi API](development/error-codes.md), [CONVENTIONS](CONVENTIONS.md) | Cấu hình từng môi trường; lỗi API trả gì | – | – |
 
 Quy trình làm việc: [`CONVENTIONS.md`](CONVENTIONS.md). Kế hoạch tổng: [`progress/ke-hoach-tong.md`](progress/ke-hoach-tong.md) (mục 7: lịch hoàn thành từng chức năng). Báo cáo tuần: [`progress/`](progress/README.md).
