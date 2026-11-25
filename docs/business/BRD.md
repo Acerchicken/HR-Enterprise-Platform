@@ -3,7 +3,7 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform (trước tuần 9 gọi là Enterprise HR Platform) – môn Cloud Application Development |
-| Phiên bản tài liệu | 2.0 |
+| Phiên bản tài liệu | 2.1 |
 | Ngày | 12/11/2026 (tuần 10) |
 | Người soạn | TV1 (Dương), tổng hợp từ tài liệu của cả nhóm tuần 4–9 |
 | Trạng thái | Bản nộp, chờ nhóm và giảng viên góp ý |
@@ -17,6 +17,7 @@
 | 1.0 | 6/11/2026 | Bản đầu tiên, gom problem statement, functional requirements, NFR (tuần 5), data model (tuần 6), business rule (tuần 8–9) vào một tài liệu |
 | 1.1 | 11/11/2026 | Chốt retention đơn nghỉ/audit, quyền xem lý do nghỉ ốm/thai sản và nội dung email (BR-13 → BR-15) |
 | 2.0 | 12/11/2026 | Tách yêu cầu chức năng (mục 7), dữ liệu (mục 9), phi chức năng (mục 10) và ma trận truy vết (mục 14) sang [SRS](../requirements/SRS.md) theo ISO/IEC/IEEE 29148. BRD chỉ giữ yêu cầu ở mức nghiệp vụ; số mục giữ nguyên để link cũ không gãy |
+| 2.1 | 26/11/2026 | UC5 thêm FR-5.4: nhân viên tìm tài liệu theo từ khóa (use case "Employee self-service search" của đề bài) |
 
 **Cách đọc tài liệu:** BRD trả lời **doanh nghiệp cần gì và vì sao**: bối cảnh, mục tiêu, phạm vi, người dùng, quy trình,
 business rule, rủi ro, nghiệm thu. **Hệ thống phải làm gì, đo thế nào** nằm ở [SRS](../requirements/SRS.md); **hệ thống được xây thế nào**
@@ -142,7 +143,7 @@ nhận và trạng thái trên `dev`.
 | UC2 Thông tin tổ chức | FR-2.1 → FR-2.10 |
 | UC3 Tạo đơn nghỉ | FR-3.1 → FR-3.7 |
 | UC4 Duyệt đơn | FR-4.1 → FR-4.8 |
-| UC5 Kho tài liệu chính sách | FR-5.1 → FR-5.3 |
+| UC5 Kho tài liệu chính sách | FR-5.1 → FR-5.4 |
 | UC6 Trợ lý chính sách | FR-6.3, FR-6.4 |
 | UC7 Lịch sử thao tác | FR-7.1 → FR-7.3 |
 

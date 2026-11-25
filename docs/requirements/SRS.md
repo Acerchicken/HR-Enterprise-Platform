@@ -3,7 +3,7 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform – môn Cloud Application Development |
-| Phiên bản tài liệu | 1.8 |
+| Phiên bản tài liệu | 1.9 |
 | Ngày | 23/11/2026 (tuần 12) |
 | Người soạn | TV1 (Dương), tách từ BRD 1.0 |
 | Người review | TV2 (Thanh) nghiệp vụ, TV4 (Duy) khả năng kiểm thử |
@@ -15,6 +15,7 @@
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
+| 1.9 | 26/11/2026 | Thêm FR-5.4 (nhân viên tìm tài liệu theo từ khóa) sau khi đối chiếu với use case "Employee self-service search" của đề bài |
 | 1.8 | 23/11/2026 | UC6 thu gọn còn trợ lý chính sách (Duong, 22/11): bỏ FR-6.1, FR-6.2, FR-6.3 nâng lên S (Duong chốt 23/11) theo [ADR-16](../architecture/adr/ADR-16-policy-assistant.md); thêm FR-6.4 (ADMIN chọn nhà cung cấp AI: Claude, Gemini, DeepSeek; dán API key trong ứng dụng); NFR-1.3 tách tìm đồng nghiệp và trợ lý; NFR-5.21 thêm nhóm `assistant`; LLM do ADMIN chọn qua adapter |
 | 1.7 | 22/11/2026 | Kiểm chéo UC7: FR-7.1 mở rộng theo code (đơn vị, điều chuyển, số dư, ngày lễ, duyệt thay, tài liệu, tài khoản, vai trò); trạng thái FR-7.3; NFR-6.3 = 5 năm theo BR-13 (chốt câu hỏi số 3 mục 8); NFR-5.10 một phần |
 | 1.6 | 22/11/2026 | Kiểm chéo UC5: object storage chỉ dùng presigned URL để tải lên, tải xuống qua API (ADR-13); trạng thái FR-5.1 → 5.3; NFR-5.19 tách hạn URL tải lên (10 phút) và tải xuống (không phát link); NFR-5.23 đổi "20 MB" thành 20 MiB |
@@ -91,7 +92,7 @@ LLM API (Claude, Google Gemini hoặc DeepSeek do ADMIN chọn, cho trợ lý ch
 | UC2 Thông tin tổ chức | Danh bạ, cây đơn vị (Công ty, Trung tâm, Phòng, Nhóm), quản lý trực tiếp, quản lý đơn vị, chức danh, điều chuyển, quá trình công tác, trưởng/phó đơn vị | FR-2.1 → FR-2.10 |
 | UC3 Tạo đơn nghỉ | Xem số dư, tạo, hủy đơn, đề nghị hủy đơn đã duyệt, tạo đơn hộ, HR chỉnh hạn mức | FR-3.1 → FR-3.8 |
 | UC4 Duyệt đơn | Duyệt, từ chối, duyệt thay, HR duyệt thêm theo loại phép, HR hoàn tất, email thông báo, HR cập nhật lịch lễ | FR-4.1 → FR-4.9 |
-| UC5 Kho tài liệu | Đăng tài liệu theo phạm vi xem, phiên bản | FR-5.1 → FR-5.3 |
+| UC5 Kho tài liệu | Đăng tài liệu theo phạm vi xem, phiên bản, nhân viên tìm theo từ khóa | FR-5.1 → FR-5.4 |
 | UC6 Trợ lý chính sách | Hỏi đáp bằng câu tự nhiên trên trang "Tra cứu tài liệu", trả lời kèm trích dẫn, chỉ dựa trên tài liệu người hỏi được xem; ADMIN chọn nhà cung cấp AI | FR-6.3, FR-6.4 |
 | UC7 Lịch sử thao tác | Audit append-only, tra cứu audit | FR-7.1 → FR-7.3 |
 | UC8 Đăng nhập và tài khoản | Đăng nhập, đăng xuất qua identity provider, quên mật khẩu, MFA, tạo và khóa tài khoản theo hồ sơ, cấp và thu hồi vai trò | FR-8.1 → FR-8.7 |
@@ -234,6 +235,7 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-5.1 | HR tải lên tài liệu PDF/DOCX kèm tiêu đề, loại, phạm vi xem (toàn công ty, phòng ban, vai trò) | M | Chỉ HR tải lên được; file không đi qua API mà tải thẳng lên object storage | Có API (#64); giao diện `feat/document-ui` |
 | FR-5.2 | Nhân viên chỉ xem, tải tài liệu thuộc phạm vi của mình | M | Tài liệu ngoài phạm vi không hiện trong danh sách và link tải bị từ chối | Có API (#64); giao diện `feat/document-ui` |
 | FR-5.3 | Tài liệu có phiên bản; mặc định hiện phiên bản mới nhất | S | Đăng bản mới không mất bản cũ | Có API (#64); giao diện `feat/document-ui` |
+| FR-5.4 | Nhân viên tìm tài liệu theo từ khóa trong tiêu đề, không phân biệt hoa thường và dấu (use case "Employee self-service search" của đề bài, cùng tìm đồng nghiệp FR-2.1 và trợ lý FR-6.3) | M | Kết quả chỉ gồm tài liệu trong phạm vi người tìm; "nghi phep" khớp "nghỉ phép" | Đã có (`feat/document-search`) |
 
 ### 4.6 UC6 – Trợ lý chính sách (FR-6.x)
 
@@ -559,7 +561,7 @@ Chiều xuôi: mục tiêu (BRD) → yêu cầu (SRS) → thiết kế (SAD) →
 | MT-1 | UC1, UC2 | FR-1.1 → FR-1.14, FR-2.1 → FR-2.5 | Quy tắc hồ sơ, issue #21, #22 | Module Employee, Organization, Identity; ADR-10 | e2e `app.e2e-spec.ts`; biên bản kiểm thử tuần 7 |
 | MT-2 | UC3, UC4 | FR-3.1 → FR-3.8, FR-4.1 → FR-4.9 | BR-01 → BR-19 | Module Leave, Worker; outbox + queue (ADR-03) | 22 ca kiểm thử `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
 | MT-3 | UC1, UC7 | FR-1.3, FR-1.4, FR-7.1 → FR-7.3 | ADR-08, ADR-09 | Module Employee (`FieldCrypto`, ADR-08), Audit (ADR-09) | e2e audit, `VIEW_SENSITIVE`; ma trận phân quyền |
-| MT-4 | UC5, UC6 | FR-5.1 → FR-5.3, FR-6.3, FR-6.4 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13); assistant service (ADR-15, ADR-16) | Kế hoạch kiểm thử tuần 10, 12 |
+| MT-4 | UC5, UC6 | FR-5.1 → FR-5.4, FR-6.3, FR-6.4 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13); assistant service (ADR-15, ADR-16) | Kế hoạch kiểm thử tuần 10, 12 |
 | MT-3 | UC8 | FR-8.1 → FR-8.7, NFR-5.1 → NFR-5.13 | Threat model T-02, T-03, T-06 | Module Identity, Keycloak/Cognito, outbox + SNS/SQS (ADR-17, ADR-18) | `test.md` UC8; ca kiểm thử bảo mật |
 
 Thiết kế chi tiết từng module: [kiến trúc phần mềm mục 4](../architecture/SAD-2-software-architecture.md#4-danh-mục-module).
