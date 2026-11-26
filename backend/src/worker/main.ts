@@ -1,6 +1,8 @@
 /**
  * Worker (đồng bộ tài khoản sang IdP, job áp dụng điều chuyển, job nghỉ phép; email ở services/notification):  npm run start:worker (dev) · node dist/worker/main.js (Docker)
  */
+// Bật OpenTelemetry trước khi nạp các module được đo (ADR-15 bước 4).
+import '../tracing/register';
 import { NestFactory } from '@nestjs/core';
 import { JsonLogger, setMetricSink } from '../common/json-logger';
 import { loadConfig } from '../config/config';

@@ -3,7 +3,10 @@
  * Nghe queue `notification.leave` (RabbitMQ local, SQS trên AWS), gửi email theo danh sách người nhận có sẵn trong event
  * (SMTP/Mailpit local, SES trên AWS), chống trùng trên schema `notification`. HTTP chỉ có `GET /health`.
  */
+// Bật OpenTelemetry trước khi nạp http, pg (ADR-15 bước 4).
+import './tracing-register';
 import { loadConfig } from './config';
+import { contextFromTraceparent, inSpan, SpanKind } from './tracing';
 import { createPool } from './db';
 import { NotificationHandler } from './handler';
 import { createHealthServer } from './health';
@@ -16,7 +19,14 @@ async function main() {
   const pool = createPool(cfg.db);
   const handler = new NotificationHandler(pool, createMailSender(cfg.mail), cfg.hrDigestMinutes);
   const consumer = createConsumer(cfg.queue);
-  await consumer.start((e) => handler.handle(e).then(() => undefined));
+  // ADR-15 bước 4: xử lý event là span con của span gửi đi trên API (traceparent trong message).
+  await consumer.start((e) =>
+    inSpan(
+      `process ${e.type}`,
+      { kind: SpanKind.CONSUMER, parent: contextFromTraceparent(e.traceparent), attributes: { 'messaging.message.id': e.id, 'hr.event_type': e.type } },
+      () => handler.handle(e),
+    ).then(() => undefined),
+  );
 
   const server = createHealthServer(async () => {
     await pool.query('SELECT 1');

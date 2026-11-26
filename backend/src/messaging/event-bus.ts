@@ -12,6 +12,8 @@ export interface BusEvent {
   type: string;
   payload: unknown;
   createdAt: Date;
+  /** W3C `traceparent` của span gửi đi (ADR-15 bước 4): RabbitMQ header, SQS message attribute `traceparent`. */
+  traceparent?: string | null;
 }
 
 export interface EventBus {

@@ -32,7 +32,7 @@ import { ACTIVE_STATUSES, LeaveAction, LeaveStatus, transition } from './leave-s
 import { LeaveType } from './leave-type.entity';
 import { CancelRequestDto, CreateLeaveRequestDto, LeaveDecisionDto, LeaveRequestQuery, LeaveRequestView, RecalculateDto } from './leave.dto';
 import { CancelReason, LeaveEventPayload, LeaveEventType } from './outbox/leave-events';
-import { OutboxEvent } from './outbox/outbox.entity';
+import { writeOutbox } from '../../messaging/outbox';
 
 const AUDIT_ACTION: Record<LeaveAction, string> = {
   approve: 'LEAVE_APPROVE',
@@ -609,10 +609,6 @@ export class LeaveService {
 
   /** Ghi event vào outbox trong cùng giao dịch; payload chỉ để định tuyến (BR-15). */
   private async emit(m: EntityManager, eventType: LeaveEventType, r: LeaveRequest, extra: Omit<LeaveEventPayload, 'requestId' | 'employeeId' | 'occurredAt'>) {
-    await m.insert(OutboxEvent, {
-      eventType,
-      aggregateId: r.id,
-      payload: { requestId: r.id, employeeId: r.employeeId, occurredAt: new Date().toISOString(), ...extra },
-    });
+    await writeOutbox(m, eventType, r.id, { requestId: r.id, employeeId: r.employeeId, occurredAt: new Date().toISOString(), ...extra });
   }
 }

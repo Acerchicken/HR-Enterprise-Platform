@@ -48,6 +48,15 @@ Code, test và tài liệu xong trong ngày 25/11, sớm hơn hạn T5 (26/11). 
 | N12 | [#146](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/146) | – | |
 
 **Thứ tự merge:** #141 → #142, #145 (merge commit); các PR còn lại độc lập, merge thứ tự nào cũng được (đã thử gộp từng cặp, không xung đột).
+Cập nhật 26/11: #139 → #147 đã merge.
+
+### Ngày tiếp theo (26/11): ADR-15 bước 1 và bước 4
+
+| Việc | PR | Kiểm chứng | Ghi chú |
+|---|---|---|---|
+| `feat/notification-service`: tách gửi email thành `services/notification`, API gắn sẵn người nhận, thử lại có giãn cách (NFR-3.5), queue `identity.sync` cho UC8 | [#148](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/148) | Backend unit 194/194, e2e 154/154; service 25 test + 2 test với PostgreSQL thật (chạy cả bằng user `notification_svc`) | Chưa chạy `docker compose` (container không có Docker) |
+| `infra/notification-staging` (F6): task ECS notification, queue `identity-sync`, quyền SES chuyển sang task mới | [#149](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/149) | `terraform fmt`, `validate` qua | Merge cùng đợt với #148. TV3 `plan`/`apply`, rồi `ALTER ROLE notification_svc` |
+| `feat/tracing-otel`: OpenTelemetry cho API, worker, notification, assistant; `traceparent` qua outbox và queue; Jaeger local | PR `feat/tracing-otel` (xếp trên #148) | Backend unit 199/199, e2e 154/154; chạy API thật gửi trace ra OTLP: trace của request khớp `trace_context` trong outbox | X-Ray staging chưa nối (cần ADOT collector) |
 
 ## Bảng tổng hợp
 

@@ -7,7 +7,7 @@ import { LeaveCalendar } from './leave-calendar';
 import { LeaveRequest } from './leave-request.entity';
 import { reminderDueAt } from './leave-rules';
 import { LeaveService } from './leave.service';
-import { OutboxEvent } from './outbox/outbox.entity';
+import { writeOutbox } from '../../messaging/outbox';
 
 /**
  * Việc chạy nền của Leave (worker `LeaveJob`, UC3 13.2, UC4 13.5). Mỗi việc an toàn khi nhiều worker cùng chạy: khóa dòng
@@ -77,10 +77,11 @@ export class LeaveJobsService {
           .getMany();
         if (!r) return;
         await m.query(`UPDATE leave.leave_request SET reminded_at = now() WHERE id = $1`, [r.id]);
-        await m.insert(OutboxEvent, {
-          eventType: 'LeaveReminder',
-          aggregateId: r.id,
-          payload: { requestId: r.id, employeeId: r.employeeId, occurredAt: now.toISOString(), stage: r.status as 'SUBMITTED' | 'PENDING_HR' },
+        await writeOutbox(m, 'LeaveReminder', r.id, {
+          requestId: r.id,
+          employeeId: r.employeeId,
+          occurredAt: now.toISOString(),
+          stage: r.status as 'SUBMITTED' | 'PENDING_HR',
         });
         n++;
       });

@@ -50,6 +50,7 @@ export class SqsEventBus implements EventBus {
           messageId: { DataType: 'String', StringValue: event.id },
           type: { DataType: 'String', StringValue: event.type },
           createdAt: { DataType: 'String', StringValue: event.createdAt.toISOString() },
+          ...(event.traceparent ? { traceparent: { DataType: 'String', StringValue: event.traceparent } } : {}),
         },
         ...(fifo ? { MessageGroupId: GROUP[dest], MessageDeduplicationId: event.id } : {}),
       }),
@@ -119,8 +120,9 @@ export class SqsEventConsumer implements EventConsumer {
   private async handleOne(msg: Message, handler: EventHandler): Promise<boolean> {
     const id = msg.MessageAttributes?.messageId?.StringValue ?? msg.MessageId ?? '';
     const type = msg.MessageAttributes?.type?.StringValue ?? '';
+    const traceparent = msg.MessageAttributes?.traceparent?.StringValue ?? null;
     try {
-      await handler({ id, type, payload: JSON.parse(msg.Body ?? 'null') });
+      await handler({ id, type, payload: JSON.parse(msg.Body ?? 'null'), traceparent });
     } catch (e) {
       // Không xóa: SQS trả lại message sau visibility timeout, quá maxReceiveCount thì vào DLQ.
       this.logger.error(`Event ${id} lỗi, để SQS thử lại: ${e instanceof Error ? e.message : e}`);

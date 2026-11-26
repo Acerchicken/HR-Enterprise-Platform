@@ -537,6 +537,7 @@ erDiagram
     timestamptz published_at
     int attempts
     varchar last_error
+    varchar trace_context
   }
 ```
 
@@ -629,6 +630,7 @@ RabbitMQ (SQS trên staging), nên không có chuyện đơn đã duyệt mà m�
 | `published_at` | timestamptz | | NULL là chưa gửi |
 | `attempts` | integer | NN, mặc định 0 | Số lần gửi thử |
 | `last_error` | varchar(500) | | Lỗi lần gửi gần nhất |
+| `trace_context` | varchar(64) | | W3C `traceparent` của request đã ghi event (ADR-15 bước 4), ghi bằng `writeOutbox`; NULL khi chưa bật tracing |
 
 Index một phần: `ix_leave_outbox_unpublished (id) WHERE published_at IS NULL` – publisher chỉ quét dòng chưa gửi, bảng
 lớn dần cũng không chậm.
@@ -913,6 +915,7 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `1732750000000-AssistantEventOrder` | 12 | `assistant.document.meta_event_id`, `visibility_event_id` (thứ tự event); quyền mặc định của schema `assistant` cho `assistant_svc` |
 | `1732800000000-AssistantLlmConfig` | 12 | Bảng `assistant.llm_config`: nhà cung cấp AI, khóa API đã mã hóa (UC6 FR-6.4, `feat/assistant-config`) |
 | `1733000000000-NotificationServiceRole` | 12 | Role `notification_svc` (NOLOGIN) chỉ có quyền trên schema `notification`, kể cả bảng thêm sau; chỉ mục `ix_processed_event_type_at` (ADR-15 bước 1, `feat/notification-service`) |
+| `1733100000000-OutboxTraceContext` | 12 | `leave.outbox.trace_context` (W3C `traceparent`, ADR-15 bước 4, `feat/tracing-otel`) |
 
 Lệnh: `npm run migration:run` (dev, ts-node), `npm run migration:run:prod` (bản build, dùng trên staging),
 `npm run migration:revert` (lùi một migration). Dữ liệu mẫu: `npm run seed`.

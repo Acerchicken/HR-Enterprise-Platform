@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
 import { AccountEventPayload } from './identity-events';
 import { AuthUser } from './roles';
+import { writeOutbox } from '../../messaging/outbox';
 
 export type AccountStatus = 'NONE' | 'PENDING' | 'INVITED' | 'ACTIVE' | 'DISABLED' | 'FAILED';
 
@@ -84,10 +85,7 @@ export class AccountService {
         fullName: row.full_name,
         previousStatus: previous as AccountEventPayload['previousStatus'],
       };
-      await m.query(`INSERT INTO leave.outbox (event_type, aggregate_id, payload) VALUES ('AccountInviteRequested', $1, $2)`, [
-        accountId,
-        JSON.stringify({ ...payload, occurredAt: new Date().toISOString() }),
-      ]);
+      await writeOutbox(m, 'AccountInviteRequested', accountId, { ...payload, occurredAt: new Date().toISOString() });
       await this.audit.record(
         { actorId: actor.employeeId, action: 'ACCOUNT_INVITE', entityType: 'user_account', entityId: accountId, changedFields: { employeeId, previousStatus: previous } },
         m,

@@ -1,3 +1,5 @@
+// Bật OpenTelemetry trước khi nạp http, express, pg (ADR-15 bước 4); không đặt OTEL_EXPORTER_OTLP_ENDPOINT thì không làm gì.
+import './tracing/register';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';

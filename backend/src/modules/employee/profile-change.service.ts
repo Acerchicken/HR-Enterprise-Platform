@@ -22,6 +22,7 @@ import { ProfileEventType } from './profile-events';
 import { onLeavePeriods, seniority } from './profile-computed';
 import { CONTRACT_LABEL, FieldSpec, SECTION_SCHEMAS, SectionSchema, validateSection } from './profile-schema';
 import { canSeeLevel, findSection, relationTo, resolveRelation } from './profile-sections';
+import { writeOutbox } from '../../messaging/outbox';
 
 /** Mỗi nhân viên tối đa 20 yêu cầu đang chờ (AC-1.9.7, E21). */
 export const MAX_PENDING = 20;
@@ -936,11 +937,13 @@ export class ProfileChangeService {
 
   /** Event cho worker gửi email (outbox dùng chung `leave.outbox`, ghi cùng giao dịch). Payload không có giá trị hồ sơ. */
   private async outbox(m: EntityManager, type: ProfileEventType, r: ProfileChangeRequest) {
-    await m.query(`INSERT INTO leave.outbox (event_type, aggregate_id, payload) VALUES ($1, $2, $3)`, [
-      type,
-      r.id,
-      JSON.stringify({ requestId: r.id, employeeId: r.employeeId, section: r.section, status: r.status, occurredAt: new Date().toISOString() }),
-    ]);
+    await writeOutbox(m, type, r.id, {
+      requestId: r.id,
+      employeeId: r.employeeId,
+      section: r.section,
+      status: r.status,
+      occurredAt: new Date().toISOString(),
+    });
   }
 }
 
