@@ -53,7 +53,7 @@ Các việc ghi **Cần làm ngay** được gom ở [mục 6](#6-danh-sách-c�
 2. Tìm tài liệu theo từ khóa đã có trong PR #140; cần kiểm tra hành vi trên staging sau khi deploy.
 3. TV4 sửa #121 và chạy load test lại ở local rồi trên staging, kèm thử tắt một instance (T2 30/11).
 4. TV3 dựng dashboard CloudWatch theo SLI và báo chi phí thật sau 3 ngày chạy (CN 29/11).
-5. Bộ câu hỏi đánh giá đã mở PR #153; chờ TV1/TV4 duyệt. TV4 chạy đánh giá và lập báo cáo độ chính xác, độ trễ, token và chi phí (hạn dự kiến 30/11).
+5. Hoàn tất N7a khi PR #153 có đủ ít nhất 30 câu thuộc 5 loại, kèm tài liệu nguồn và được TV1 hoặc TV4 approve. Chạy đánh giá và lập báo cáo không thuộc tiêu chí hoàn tất N7a.
 
 ---
 
@@ -218,7 +218,7 @@ tổng), nên các mục P4, P5 bị đẩy lùi và chưa được theo dõi ri
 | Ý | Ở đâu | Trạng thái | Thiếu |
 |---|---|---|---|
 | AI architecture | [ADR-16](../architecture/adr/ADR-16-policy-assistant.md), [UC6 spec](../features/UC6-policy-assistant/spec.md), `services/assistant` | ✅ | – |
-| Evaluation dataset / metrics | Bộ 30 câu, 5 nhóm theo yêu cầu N7a, tại PR #153 và tài liệu nguồn giả trong cùng thư mục | 🟡 | PR đang chờ TV1/TV4 approve; chưa được tải vào kho, chưa chạy đánh giá. Cần báo cáo accuracy, citation correctness, Recall@6, refusal/injection success; latency p95 và token/cost mỗi câu. N7 |
+| Evaluation dataset | Bộ ít nhất 30 câu thuộc 5 loại theo N7a, tại PR #153, kèm tài liệu nguồn giả trong cùng thư mục | 🟡 | Hoàn tất N7a khi nội dung PR đủ yêu cầu và được TV1 hoặc TV4 approve. Chạy bộ câu hỏi và lập báo cáo metrics là việc riêng, không phải điều kiện hoàn tất N7a. |
 | Security / guardrails | `guardrails/` (G1 che PII đầu vào, G2 che PII đầu ra, G2b chặn lộ prompt, G3 bọc tài liệu), lọc phạm vi trong SQL, rate limit | 🟡 | Bộ câu hỏi tấn công có ở #153 nhưng chưa chạy; cần ghi kết quả thực tế trong báo cáo N7. |
 | Latency & token-cost analysis | Service đã log `ms`, `usage.inputTokens`, `outputTokens` cho mỗi câu (`answerer.ts`); NFR-1.3: p95 ≤ 6 s | 🟡 | Chưa có báo cáo đo thực tế; TV4 chạy sau khi dataset được duyệt. N7 |
 
@@ -446,7 +446,7 @@ Thành viên khác giữ hạn riêng. Phân việc từng người: [`progress/
 | N4 | Sửa #121: mỗi VU giữ token tới gần hết hạn (không xin token đồng loạt), chạy lại NFR-2.1 ở local; chạy load test trên staging (50 request/giây 15 phút) có **tắt một instance** giữa chừng; một lượt tăng dần 10 → 250 request/giây (5×). Bật App Runner tối thiểu 2 instance trong lúc đo và demo (ngoài giờ để 1 cho đỡ tiền), ghi rõ trong ADR-06 | TV4 Duy (đo), TV3 Bảo (cấu hình App Runner) | `test/load-k6` (#121), `docs/load-test-staging` | Local T6 27/11; staging T2 30/11 | Measurable NFRs, câu 3, 6; P4 load test | Phần staging, 5× mới |
 | N5 | Dashboard CloudWatch theo 5 SLI (SRS 6.13) + độ dài queue, DLQ; chi phí thật sau 3 ngày; thống nhất NFR-7.1 với Budgets và hạn mức thẻ; cộng task assistant vào dự toán. TV1 làm phần code: log JSON có `traceId` (NFR-8.1), `/health` trả commit (NFR-8.5), metric outbox tồn, timeout kết nối và `statement_timeout` 5 s cho database (SRS 6.14) | TV3 Bảo (dashboard, chi phí); TV1 Duong (code) | `docs/slo-dashboard-cost`; `feat/observability-basics` | T7 28/11 mở PR, CN 29/11 merge | Observability, Cost awareness, câu 10, 11 | Phần code mới |
 | N6 | Diễn tập lỗi trên staging, ghi thời gian và ảnh: tắt worker rồi tạo đơn (email gửi bù), cho LLM khóa sai (fallback), tắt assistant service, rollback bằng `image_tag`, khôi phục RDS về một thời điểm (đo RTO) | TV3 Bảo (thao tác), TV4 Duy (ghi biên bản) | `docs/test-report-failure` | T2 30/11 – T3 1/12 | Failure handling, câu 7, 8; P4 reliability | **Mới** |
-| N7 | Dataset ≥30 câu đã mở ở PR #153, gồm 5 nhóm; TV4 chạy đánh giá sau khi được duyệt và báo cáo accuracy, citation correctness, Recall@6, refusal/injection, p95 latency, token và cost mỗi câu | TV2 Thanh (dataset), TV4 Duy (chạy, báo cáo), TV1 hỗ trợ script | PR #153; báo cáo theo `docs/assistant-eval-report` | Dataset: chờ approve; báo cáo dự kiến 30/11 | Câu 12; P5 evaluation, latency & token cost | Đang chờ duyệt/chạy |
+| N7a | PR #153 có ít nhất 30 câu, đủ 5 loại, tài liệu nguồn giả; TV1 hoặc TV4 approve | TV2 Thanh (soạn dataset); TV1 hoặc TV4 (approve) | PR #153 | Chờ một trong hai người approve | P5 – evaluation dataset | Hoàn tất khi được approve; không yêu cầu chạy đánh giá/báo cáo |
 | N8 | Bổ sung Conditional OTP cho HR/ADMIN trên Keycloak local; xác minh Cognito MFA sau khi apply #150 | TV3 Bảo | Cognito config trong #150; phần Keycloak còn lại | Còn chờ apply/kiểm chứng staging và cấu hình OTP local | Security, câu 9 | Chưa xong vận hành |
 | N9 | Chạy 150 ca e2e trong CI (job có Postgres như job assistant); bật lại `push: [dev]` cho Deploy Staging khi staging ổn (L4) | TV3 Bảo | `ci/e2e` | CN 29/11 | Automated deployment, P3 CI/CD | **Mới** |
 | N10 | Đồng bộ trạng thái FR/tổng FR và ma trận truy vết trong SRS với code đã merge, gồm cập nhật theo #140, #150, #151 | TV2 Thanh | PR #154 đang mở; rà nội dung trước merge | Đồng bộ trạng thái IdP/tìm tài liệu và sửa mâu thuẫn tổng số FR trong #154 | Functional scope | Đang chờ cập nhật |
