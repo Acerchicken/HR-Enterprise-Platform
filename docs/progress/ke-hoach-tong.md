@@ -292,7 +292,7 @@ Slide "Common Project Deliverables" của môn là **danh sách sản phẩm ph�
 | P5 | Latency & token-cost analysis | ❌ | Service đã log token và thời gian, chưa có báo cáo | N7 |
 
 Ngoài P1 → P5, slide "Business Problem & Functional Scope" từng thiếu một ý: nhân viên chưa tìm được tài liệu theo từ khóa
-(use case 6 "Employee self-service search" của slide), việc N2. **Đã xong 26/11** qua PR #140 (FR-5.4).
+(use case 6 "Employee self-service search" của slide), việc N2. **Đã xong 25/11** qua PR #140 (FR-5.4).
 
 ### 8.2 Việc bổ sung tới buổi bảo vệ
 
