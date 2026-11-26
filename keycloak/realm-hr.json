@@ -7,7 +7,13 @@
   "loginWithEmailAllowed": true,
   "accessTokenLifespan": 900,
   "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "passwordPolicy": "length(8) and upperCase(1) and lowerCase(1) and digits(1) and notEmail",
   "bruteForceProtected": true,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 900,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 900,
   "resetPasswordAllowed": true,
   "smtpServer": {
     "host": "mailpit",

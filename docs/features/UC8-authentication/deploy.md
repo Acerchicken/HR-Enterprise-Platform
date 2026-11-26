@@ -39,11 +39,11 @@ trên staging là phần của TV3 (mục 3).
 
 | Môi trường | Tài nguyên | File |
 |---|---|---|
-| Local | Realm `hr`, **đã có**: bỏ realm role `manager` (ADR-18), client `hr-api-admin` (service account có `manage-users`, `view-users`, `view-realm` của `realm-management`), SMTP Mailpit, `resetPasswordAllowed`, event đăng nhập. **Còn lại (TV3)**: `passwordPolicy`, `failureFactor: 5`, `ssoSessionMaxLifespan: 36000`, Conditional OTP cho `hr`, `admin` | `keycloak/realm-hr.json` |
+| Local | Realm `hr`, **đã có**: bỏ realm role `manager` (ADR-18), client `hr-api-admin` (service account có `manage-users`, `view-users`, `view-realm` của `realm-management`), SMTP Mailpit, `resetPasswordAllowed`, event đăng nhập; `passwordPolicy`, `failureFactor: 5`, `waitIncrementSeconds: 900`, `ssoSessionMaxLifespan: 36000` (đã xong ở `infra/idp-hardening`). **Còn lại (TV3 N8)**: Conditional OTP cho `hr`, `admin` | `keycloak/realm-hr.json` |
 | Local | Worker đặt `IDP_ADMIN_DRIVER=keycloak` và biến Keycloak | `docker-compose.yml` |
-| Staging | User pool: `user_pool_tier = "ESSENTIALS"`, `allow_admin_create_user_only = true`, `require_uppercase = true`, `mfa_configuration = "ON"` + `software_token_mfa_configuration`, `account_recovery_setting` (`verified_email`), `email_configuration` qua SES, `temporary_password_validity_days = 7` | `infra/staging/cognito.tf` |
-| Staging | App client: `callback_urls` thêm `/callback` (localhost và CloudFront), `explicit_auth_flows = ["ALLOW_REFRESH_TOKEN_AUTH"]`, token 15 phút / refresh 10 giờ (`token_validity_units`) | `infra/staging/cognito.tf` |
-| Staging | Managed Login (domain `managed_login_version = 2`, branding logo HRHelper) | `infra/staging/cognito.tf` |
+| Staging | User pool: `user_pool_tier = "ESSENTIALS"`, `allow_admin_create_user_only = true`, `require_uppercase = true`, `mfa_configuration = "ON"` + `software_token_mfa_configuration`, `account_recovery_setting` (`verified_email`), `email_configuration` qua SES, `temporary_password_validity_days = 7` (đã cấu hình trong `infra/idp-hardening`) | `infra/staging/cognito.tf` |
+| Staging | App client: `callback_urls` thêm `/callback` (localhost và CloudFront), `explicit_auth_flows = ["ALLOW_REFRESH_TOKEN_AUTH"]`, token 15 phút / refresh 10 giờ (`token_validity_units`) (đã cấu hình trong `infra/idp-hardening`) | `infra/staging/cognito.tf` |
+| Staging | Managed Login (domain `managed_login_version = 2`, branding logo HRHelper) (đã cấu hình trong `infra/idp-hardening`) | `infra/staging/cognito.tf` |
 | Staging | SQS `identity-sync` + DLQ (5 lần), subscription SNS `hr-events` lọc `event_type` `EmployeeCreated`, `EmployeeTerminated`, `EmployeeReinstated`, `EmployeeEmailChanged`, `AccountInviteRequested`, `RoleGranted`, `RoleRevoked` (spec mục 9.2) | `infra/staging/sqs_worker.tf` |
 | Staging | IAM worker: `cognito-idp:AdminCreateUser`, `AdminUpdateUserAttributes`, `AdminAddUserToGroup`, `AdminRemoveUserFromGroup`, `AdminDisableUser`, `AdminEnableUser`, `AdminUserGlobalSignOut`, `AdminGetUser` trên ARN user pool | `infra/staging/sqs_worker.tf` |
 | Staging | Lambda Post-authentication → SNS `hr-events` (nhánh `infra/idp-auth-events`) | đề xuất `infra/staging/cognito_triggers.tf` |
@@ -58,10 +58,10 @@ trên staging là phần của TV3 (mục 3).
   `node dist/database/grant-admin.js <email>` bằng task ECS một lần (staging; App Runner không vào container được,
   lệnh ở [staging-readiness mục 5](../../cloud/staging-readiness.md#5-lệnh-chạy-một-lần-trên-staging)). Người đó phải có hồ sơ chưa nghỉ việc. Seed local đã
   có `admin@hr.local`.
-- **Local:** `docker compose up -d --build` import lại realm. Realm đã có thì xóa volume Keycloak hoặc import bằng tay, vì Keycloak
-  không ghi đè realm đã tồn tại. Mở Mailpit (8025) để xem thư mời (tiêu đề mặc định của Keycloak "Update Your Account") và thư đặt lại mật khẩu. Sau khi có
+- **Local:** Keycloak chỉ import `realm-hr.json` khi realm chưa có, nên sau khi đổi file realm (ví dụ `passwordPolicy`, chống dò mật khẩu ở #150) phải tạo lại
+  container: `docker compose up -d --force-recreate keycloak` (container không gắn volume dữ liệu nên realm được import lại từ đầu; tài khoản tạo thêm trên Keycloak sẽ mất). Mở Mailpit (8025) để xem thư mời (tiêu đề mặc định của Keycloak "Update Your Account") và thư đặt lại mật khẩu. Sau khi có
   Conditional OTP (TV3), đăng nhập `hr@hr.local` lần đầu sẽ phải quét mã QR TOTP.
-- **Staging:** SES phải xác minh địa chỉ gửi trước khi `apply` (SES sandbox chỉ gửi tới địa chỉ đã xác minh: xác minh luôn email
+- **Staging:** SES phải xác minh địa chỉ gửi trước khi tạo user pool: `terraform apply -target=aws_ses_email_identity.sender`, bấm link xác minh, rồi apply phần còn lại ([infra/README.md mục 3.1](../../../infra/README.md)) (SES sandbox chỉ gửi tới địa chỉ đã xác minh: xác minh luôn email
   của các thành viên dùng để demo). Mật khẩu demo đọc từ Secrets Manager `…/cognito-demo-credentials`; lần đầu đăng nhập phải
   đăng ký TOTP, ghi lại cách làm trong `infra/README.md`.
 
