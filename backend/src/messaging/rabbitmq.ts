@@ -4,8 +4,9 @@ import { EVENTS_EXCHANGE } from '../modules/leave/outbox/leave-events';
 import { routingKeyOf } from './routing';
 import { BusEvent, EventBus, EventConsumer, EventHandler } from './event-bus';
 
-export const QUEUE = 'notification.leave';
-export const DEAD_LETTER_QUEUE = 'notification.leave.dlq';
+/** Queue của worker backend: chỉ event tài khoản, vai trò (identity-sync). Email do `services/notification` nghe `notification.leave`. */
+export const QUEUE = 'identity.sync';
+export const DEAD_LETTER_QUEUE = 'identity.sync.dlq';
 
 /**
  * Publish lên exchange topic `hr.events` qua confirm channel: publish() chỉ resolve khi broker xác nhận.
@@ -58,7 +59,7 @@ export class RabbitMqEventBus implements EventBus {
 }
 
 /**
- * Nghe queue `notification.leave` (bind `leave.*`); handler lỗi thì nack không requeue → DLQ.
+ * Nghe queue `identity.sync` (bind `identity.*`); handler lỗi thì nack không requeue → DLQ.
  * Message nằm trong queue durable nên worker kết nối lại vẫn nhận được event gửi lúc mất kết nối.
  */
 export class RabbitMqEventConsumer implements EventConsumer {
@@ -97,7 +98,7 @@ export class RabbitMqEventConsumer implements EventConsumer {
     await ch.assertExchange(EVENTS_EXCHANGE, 'topic', { durable: true });
     await ch.assertQueue(DEAD_LETTER_QUEUE, { durable: true });
     await ch.assertQueue(QUEUE, { durable: true, deadLetterExchange: '', deadLetterRoutingKey: DEAD_LETTER_QUEUE });
-    await ch.bindQueue(QUEUE, EVENTS_EXCHANGE, 'leave.*');
+    await ch.bindQueue(QUEUE, EVENTS_EXCHANGE, 'identity.*');
     await ch.prefetch(10);
     await ch.consume(QUEUE, (msg) => {
       if (!msg) return;

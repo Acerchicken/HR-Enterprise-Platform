@@ -376,7 +376,7 @@ Driver chọn bằng `IDP_ADMIN_DRIVER=keycloak|cognito|none` (`none` cho `AUTH_
   `POST /admin/realms/hr/users` với `requiredActions: ["UPDATE_PASSWORD"]`, `PUT …/execute-actions-email`, `PUT …/users/{id}`
   (`enabled`, `email`), `POST …/users/{id}/logout`, `PUT|DELETE …/users/{id}/role-mappings/realm`.
 
-**Worker:** `NotificationWorker.handle` chuyển các event ở bảng 9.2 sang `IdentitySync` (`backend/src/worker/identity-sync.ts`,
+**Worker:** `IdentityWorker.handle` (queue `identity.sync`, routing key `identity.*` từ 26/11) chuyển các event ở bảng 9.2 sang `IdentitySync` (`backend/src/worker/identity-sync.ts`,
 cùng bảng `processed_event` để không xử lý hai lần). Lỗi mạng, 5xx, 429 thì thử lại ngay trong worker (`IDP_SYNC_ATTEMPTS`,
 mặc định 5 lần, chờ nhân đôi từ `IDP_SYNC_RETRY_DELAY_MS`); hết lượt, hoặc lỗi 4xx của IdP (ví dụ email không hợp lệ) thì ghi
 `idp_error`, audit `ACCOUNT_SYNC_FAILED` rồi ném lỗi để message vào DLQ. Trạng thái thành `FAILED` chỉ với `EmployeeCreated`,

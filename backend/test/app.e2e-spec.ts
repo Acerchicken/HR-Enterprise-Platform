@@ -93,6 +93,22 @@ describe('HRHelper API (e2e)', () => {
     expect(isDbTimeout(err)).toBe(true);
   });
 
+  it('event email mang sẵn người nhận khi đẩy lên queue, notification service không đọc module khác (ADR-15 bước 1)', async () => {
+    const { NotificationRecipients } = await import('../src/modules/leave/outbox/notification-recipients');
+    const r = app.get(NotificationRecipients);
+    const at = '2026-11-26T00:00:00.000Z';
+    const requested: any = await r.attach('LeaveRequested', { requestId: 'r-1', employeeId, occurredAt: at, onBehalf: true });
+    expect(requested.mail[0]).toMatchObject({ group: 'APPROVERS', to: expect.arrayContaining(['manager@hr.local']) });
+    expect(requested.mail[1]).toEqual({ group: 'OWNER', to: ['employee@hr.local'] });
+    const submitted: any = await r.attach('ProfileChangeSubmitted', { requestId: 'p-1', employeeId, section: 'contact', status: 'PENDING', occurredAt: at });
+    expect(submitted.mail).toEqual([{ group: 'HR', to: expect.arrayContaining(['hr@hr.local']) }]);
+    const decided: any = await r.attach('ProfileChangeDecided', { requestId: 'p-1', employeeId, section: 'contact', status: 'APPROVED', occurredAt: at });
+    expect(decided.mail).toEqual([{ group: 'OWNER', to: ['employee@hr.local'] }]);
+    // Event tài khoản, tài liệu không gửi email: giữ nguyên payload.
+    const role = { accountId: 'a-1', email: 'x@hr.local', role: 'HR' };
+    expect(await r.attach('RoleGranted', role)).toBe(role);
+  });
+
   it('thiếu token → 401 với format lỗi chuẩn', async () => {
     const res = await http.get('/api/v1/me').expect(401);
     expect(res.body).toMatchObject({ code: 'UNAUTHENTICATED', traceId: expect.any(String) });

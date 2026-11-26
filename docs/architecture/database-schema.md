@@ -25,7 +25,7 @@
 | `org` | `organization` | `department`, `department_deputy`, `position` | InitSchemas, OrgUnitTypes, OrgUnitRoles |
 | `employee` | `employee` | `employee`, `employee_sensitive`, `profile_item`, `profile_change_request`, `profile_file`, `employment_assignment` | InitSchemas, ProfileChangeRequests, ProfileFiles, EmploymentAssignment |
 | `leave` | `leave` | `leave_type`, `leave_balance`, `leave_request`, `leave_request_history`, `holiday`, `outbox` | InitSchemas, LeaveWorkflow, LeaveOutbox |
-| `notification` | `worker` (notification worker) | `processed_event` | LeaveOutbox |
+| `notification` | Notification service (`services/notification/`, ngoài backend, user `notification_svc`); worker backend ghi mốc job và event tài khoản | `processed_event` | LeaveOutbox, NotificationServiceRole |
 | `audit` | `audit` | `audit_log` | InitSchemas |
 | `document` | `document` | `document`, `document_scope`, `document_version` | Documents |
 | `assistant` | Assistant service (`services/assistant/`, ngoài backend) | `document`, `chunk`, `chunk_embedding`, `processed_event` | AssistantSchema |
@@ -637,7 +637,13 @@ lớn dần cũng không chậm.
 
 ### `notification.processed_event`
 
-Notification worker ghi event đã xử lý để bỏ qua bản trùng (hàng đợi giao **ít nhất một lần**).
+Ghi event đã xử lý để bỏ qua bản trùng (hàng đợi giao **ít nhất một lần**). Người ghi:
+
+- Notification service (user `notification_svc`, chỉ có quyền trên schema này): id event, `<id>#<nhóm>` cho từng nhóm người nhận
+  đã gửi, dòng `ProfileHrDigest` (`profile-digest-<khoảng>`) khi gửi email gộp cho HR (AC-1.9.13).
+- Worker của backend (user chính): id event tài khoản đã đồng bộ sang IdP, mốc ngày của job (`LeaveJob`).
+
+Chỉ mục `ix_processed_event_type_at (event_type, processed_at)` cho câu tìm email gộp gần nhất.
 
 | Cột | Kiểu | Ràng buộc | Mô tả |
 |---|---|---|---|
@@ -859,12 +865,11 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `TransferService.apply` | Đọc | `org.department.status` | Job kiểm đơn vị đích còn hoạt động ngay trong transaction áp dụng điều chuyển, không qua cache (AC-2.7.8) |
 | `ProfileChangeService.computed` (`long-leaves`) | Đọc | `leave.leave_request`, `leave.leave_type` | Ngày nghỉ dài (AC-1.13.3); Leave phụ thuộc Employee nên không gọi ngược |
 | `ProfileChangeService` (outbox) | Ghi | `leave.outbox` | Event email của yêu cầu cập nhật hồ sơ dùng chung outbox và publisher hiện có. **Nợ kỹ thuật:** quy tắc 3 của [hợp đồng event](event-contract.md#6-quy-tắc-khi-đổi-hợp-đồng) yêu cầu `employee.outbox` riêng |
-| Worker `handleProfile` | Đọc | `iam.user_account`, `iam.role_assignment` | Lấy email HR để báo có yêu cầu mới |
 | `RoleAdminService` (`list`, `grant`, `revoke`) | Đọc | `employee.employee` (`full_name`, `status`, `department_id`), `org.department.name` | Trang Phân quyền hiện tên, đơn vị (mức danh bạ); chặn cấp cho người đã nghỉ (UC8 E13), đếm ADMIN còn hoạt động (E12). Identity đã phụ thuộc Employee nhưng cần lọc, phân trang trong một câu SQL |
 | `RoleAdminService`, `grant-admin.ts` | Ghi | `leave.outbox` | Event `RoleGranted`, `RoleRevoked` (cùng nợ kỹ thuật như dòng outbox ở trên) |
 | `LeaveBalanceService.employeeFacts`, `LeaveService.facts`, `LeaveJobsService` | Đọc | `employee.employee` (`hire_date`, `status`, `manager_id`, `updated_at`), `employee.employment_assignment.effective_to` | Tính phép năm (BR-01), quản lý hiện tại lúc xử lý (BR-05), job hủy đơn của người đã nghỉ việc (UC3 AC-3.1.7) không dựa vào event `EmployeeTerminated` của UC8 |
 | `TransferService.terminationImpact` | Đọc | `leave.leave_request` | Hộp xác nhận nghỉ việc nêu số đơn sẽ bị hủy (UC3 AC-3.1.7); Leave phụ thuộc Employee nên không gọi ngược |
-| Worker `NotificationWorker.emailsOf` | Đọc | `leave.approval_delegation`, `iam.user_account`, `iam.role_assignment` | Người nhận email chung: người duyệt thay đang hiệu lực, nhóm HR |
+| `NotificationRecipients` (Leave, trong outbox publisher) | Đọc | `leave.approval_delegation`, `iam.user_account`, `iam.role_assignment`, `employee.employee.status` | Gắn email người nhận vào event (ADR-15 bước 1): người duyệt thay đang hiệu lực, nhóm HR đang làm việc. Notification service không đọc schema nào ngoài `notification` |
 
 ## 10. Ràng buộc nghiệp vụ ở database
 
@@ -907,6 +912,7 @@ nghỉ việc chuyển `TERMINATED`), nên không phát sinh tham chiếu treo.
 | `1732700000000-AssistantSchema` | 12 | Extension `vector`, `unaccent`; schema `assistant` (4 bảng), HNSW cho EmbeddingGemma, role `assistant_svc` (UC6 `feat/assistant-service`) |
 | `1732750000000-AssistantEventOrder` | 12 | `assistant.document.meta_event_id`, `visibility_event_id` (thứ tự event); quyền mặc định của schema `assistant` cho `assistant_svc` |
 | `1732800000000-AssistantLlmConfig` | 12 | Bảng `assistant.llm_config`: nhà cung cấp AI, khóa API đã mã hóa (UC6 FR-6.4, `feat/assistant-config`) |
+| `1733000000000-NotificationServiceRole` | 12 | Role `notification_svc` (NOLOGIN) chỉ có quyền trên schema `notification`, kể cả bảng thêm sau; chỉ mục `ix_processed_event_type_at` (ADR-15 bước 1, `feat/notification-service`) |
 
 Lệnh: `npm run migration:run` (dev, ts-node), `npm run migration:run:prod` (bản build, dùng trên staging),
 `npm run migration:revert` (lùi một migration). Dữ liệu mẫu: `npm run seed`.

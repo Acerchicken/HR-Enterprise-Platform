@@ -7,30 +7,37 @@ import {
   SQSClient,
 } from '@aws-sdk/client-sqs';
 import { BusEvent, EventBus, EventConsumer, EventHandler } from './event-bus';
-import { destinationOf } from './routing';
+import { destinationOf, EventDestination } from './routing';
 
 /**
  * Gửi event vào SQS. Queue FIFO (URL đuôi .fifo) thì dùng id outbox làm MessageDeduplicationId.
- * Event tài liệu đi vào queue của assistant service (`SQS_ASSISTANT_QUEUE_URL`); chưa cấu hình queue đó thì bỏ qua event
- * (không có ai nhận), để notification service không nhận nhầm.
+ * Mỗi đích một queue (routing.ts): notification `SQS_QUEUE_URL`, assistant `SQS_ASSISTANT_QUEUE_URL`, identity
+ * `SQS_IDENTITY_QUEUE_URL`. Đích chưa cấu hình queue thì bỏ qua event (không có ai nhận), không gửi nhầm sang queue khác.
  */
+const GROUP: Record<EventDestination, string> = { notification: 'leave', assistant: 'document', identity: 'identity' };
+
 export class SqsEventBus implements EventBus {
   private readonly logger = new Logger('SqsEventBus');
-  private warnedNoAssistantQueue = false;
+  private readonly warned = new Set<EventDestination>();
 
   constructor(
     private readonly client: Pick<SQSClient, 'send' | 'destroy'>,
     private readonly queueUrl: string,
     private readonly assistantQueueUrl: string | null = null,
+    private readonly identityQueueUrl: string | null = null,
   ) {}
 
   async publish(event: BusEvent): Promise<void> {
     const dest = destinationOf(event.type);
-    const url = dest === 'assistant' ? this.assistantQueueUrl : this.queueUrl;
+    const url = dest === 'assistant' ? this.assistantQueueUrl : dest === 'identity' ? this.identityQueueUrl : this.queueUrl;
     if (!url) {
-      if (!this.warnedNoAssistantQueue) {
-        this.warnedNoAssistantQueue = true;
-        this.logger.warn('Chưa đặt SQS_ASSISTANT_QUEUE_URL: bỏ qua event tài liệu, trợ lý (UC6) không được cập nhật');
+      if (!this.warned.has(dest)) {
+        this.warned.add(dest);
+        this.logger.warn(
+          dest === 'assistant'
+            ? 'Chưa đặt SQS_ASSISTANT_QUEUE_URL: bỏ qua event tài liệu, trợ lý (UC6) không được cập nhật'
+            : 'Chưa đặt SQS_IDENTITY_QUEUE_URL: bỏ qua event tài khoản, IdP không được đồng bộ (UC8)',
+        );
       }
       return;
     }
@@ -44,7 +51,7 @@ export class SqsEventBus implements EventBus {
           type: { DataType: 'String', StringValue: event.type },
           createdAt: { DataType: 'String', StringValue: event.createdAt.toISOString() },
         },
-        ...(fifo ? { MessageGroupId: dest === 'assistant' ? 'document' : 'leave', MessageDeduplicationId: event.id } : {}),
+        ...(fifo ? { MessageGroupId: GROUP[dest], MessageDeduplicationId: event.id } : {}),
       }),
     );
   }

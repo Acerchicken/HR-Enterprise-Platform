@@ -5,6 +5,7 @@ import { APP_CONFIG, AppConfig } from '../../../config/config';
 import { EVENT_BUS, EventBus } from '../../../messaging/event-bus';
 import { createEventBus } from '../../../messaging/factory';
 import { metrics } from '../../../common/json-logger';
+import { NotificationRecipients } from './notification-recipients';
 import { OutboxEvent } from './outbox.entity';
 
 const POLL_MS = 1000;
@@ -29,6 +30,7 @@ export class OutboxPublisher implements OnApplicationBootstrap, OnApplicationShu
   constructor(
     @Inject(APP_CONFIG) private readonly cfg: AppConfig,
     @InjectDataSource() private readonly ds: DataSource,
+    private readonly recipients: NotificationRecipients,
     @Optional() @Inject(EVENT_BUS) bus?: EventBus,
   ) {
     this.bus = bus ?? createEventBus(cfg);
@@ -90,7 +92,9 @@ export class OutboxPublisher implements OnApplicationBootstrap, OnApplicationShu
         let count = 0;
         for (const row of rows) {
           try {
-            await bus.publish({ id: row.id, type: row.eventType, payload: row.payload, createdAt: row.createdAt });
+            // ADR-15: event email mang sẵn người nhận để notification service không phải đọc dữ liệu module khác.
+            const payload = await this.recipients.attach(row.eventType, row.payload);
+            await bus.publish({ id: row.id, type: row.eventType, payload, createdAt: row.createdAt });
             await m.update(OutboxEvent, { id: row.id }, { publishedAt: new Date(), attempts: row.attempts + 1, lastError: null });
             count++;
           } catch (e) {

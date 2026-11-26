@@ -73,29 +73,28 @@ Local dùng Keycloak (realm `hr`), staging dùng Amazon Cognito.
 
 ### Queue
 
-Dùng cho outbox publisher (trong API) và notification worker. Chi tiết: [hợp đồng event](../architecture/event-contract.md).
+Dùng cho outbox publisher (trong API) và worker của backend (chỉ nghe event tài khoản, queue `identity.sync`). Email do
+[notification service](#2b-notification-service-servicesnotification-adr-15-bước-1) nhận từ queue riêng. Chi tiết:
+[hợp đồng event](../architecture/event-contract.md).
 
 | Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
 |---|---|---|---|---|---|
 | `QUEUE_DRIVER` | Suy ra: có `RABBITMQ_URL` → `rabbitmq`; có `SQS_QUEUE_URL` → `sqs`; không có gì → `none` | `sqs` | Worker: phải khác `none` | API, Worker | `none`: API vẫn ghi outbox nhưng không đẩy đi (dùng khi chạy test); worker không chạy được với `none` |
 | `RABBITMQ_URL` | (không có) | (không dùng) | **Có** khi `rabbitmq` | API, Worker | Ví dụ `amqp://hr:hr@localhost:5672` |
-| `SQS_QUEUE_URL` | (không có) | URL queue `hr-platform-staging-leave-notifications` | **Có** khi `sqs` | API, Worker | Quyền gửi/nhận lấy từ IAM role, không cần access key |
+| `SQS_QUEUE_URL` | (không có) | URL queue `hr-platform-staging-leave-notifications` | **Có** khi `sqs` | API | Queue nhận event nghỉ phép, hồ sơ (notification service nghe). Quyền gửi lấy từ IAM role, không cần access key |
+| `SQS_IDENTITY_QUEUE_URL` | (không có) | URL queue `identity-sync` (Terraform, PR notification service) | **Có** cho worker khi `sqs` | API, Worker | Queue event tài khoản, vai trò (UC8). API thiếu biến này thì bỏ qua event tài khoản khi dùng SQS (log cảnh báo một lần); worker không khởi động |
 | `AWS_REGION` | (không có) | `var.aws_region` (ví dụ `ap-southeast-1`) | **Có** khi `sqs` | API, Worker | Region của SQS; cũng là region mặc định cho kho tài liệu |
 | `SQS_ASSISTANT_QUEUE_URL` | (không có) | URL queue `<project>-<env>-assistant-document` (Terraform `assistant.tf`, 25/11: [staging-readiness F4](../cloud/staging-readiness.md#4-trợ-lý-chính-sách-trên-staging-f4-chi-tiết)) | Không | API, Assistant service | Queue nhận event tài liệu (UC6). API thiếu biến này thì bỏ qua event tài liệu khi dùng SQS; assistant service dùng nó khi `QUEUE_DRIVER=sqs` |
 
-### Email (notification worker)
+### Email
 
-| Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
-|---|---|---|---|---|---|
-| `MAIL_DRIVER` | `smtp` | `ses` (task worker) | Không | Worker | `smtp`: gửi qua `SMTP_HOST`/`SMTP_PORT` (local Mailpit). `ses`: gửi bằng Amazon SES API v2 (`@aws-sdk/client-sesv2`) với IAM task role, không cần SMTP credentials ([staging-readiness F1](../cloud/staging-readiness.md#3-chức-năng-hỏng-nếu-không-sửa-làm-trước-demo)). Nhiều người nhận thì đặt Bcc, chia lô 49 địa chỉ |
-| `SES_REGION` | `AWS_REGION` | (dùng `AWS_REGION`) | Không | Worker | Region của SES identity nếu khác region chạy worker |
-| `SMTP_HOST` | `localhost` | Không dùng (`MAIL_DRIVER=ses`) | Khi `smtp` | Worker | Local là Mailpit (giao diện xem mail http://localhost:8025) |
-| `SMTP_PORT` | `1025` | | Khi `smtp` | Worker | Kết nối không TLS (`secure: false`) |
-| `SMTP_FROM` | `no-reply@hr.local` | ✓ (email đã xác minh trong SES) | Staging | Worker | Địa chỉ người gửi, dùng cho cả hai driver |
+Backend không gửi email từ 26/11 (ADR-15 bước 1): API tính danh sách người nhận lúc đẩy event (`NotificationRecipients`), gắn vào
+`payload.mail`; [notification service](#2b-notification-service-servicesnotification-adr-15-bước-1) gửi. Các biến `MAIL_DRIVER`,
+`SMTP_*`, `SES_REGION` chuyển sang service đó.
 
 ### Đồng bộ tài khoản sang IdP (UC8 FR-8.3, 8.4, 8.6, 8.7)
 
-Worker `identity-sync` (trong tiến trình worker) tạo, mời, khóa, mở tài khoản và đổi nhóm trên IdP theo event trong outbox.
+`identity-sync` (trong tiến trình worker của backend, nghe queue `identity.sync`) tạo, mời, khóa, mở tài khoản và đổi nhóm trên IdP theo event trong outbox.
 
 | Biến | Mặc định | Staging | Bắt buộc | Dùng bởi | Ý nghĩa |
 |---|---|---|---|---|---|
@@ -162,6 +161,27 @@ Service riêng, đọc cấu hình bằng code của nó (không import `backend
 | `ASSISTANT_CONFIG_KEY` | (không có; docker-compose có khóa chỉ dùng local) | Secrets Manager | **Có** | 32 byte base64 (`openssl rand -base64 32`), mã hóa AES-256-GCM API key nhà cung cấp AI trong `assistant.llm_config` (FR-6.4, ADR-16 mục 7). Đổi hoặc mất khóa: ADMIN dán lại API key trên `/admin/assistant`. Nhà cung cấp, model, API key **không** đặt bằng biến môi trường |
 | `ASSISTANT_MODEL_DIR` | `./.model-cache` (Docker: `/app/.model-cache`) | Như Docker | Không | Thư mục model đã tải sẵn lúc build image; service không tải model khi chạy |
 
+## 2b. Notification service (`services/notification/`, ADR-15 bước 1)
+
+Service riêng gửi email, đọc cấu hình bằng code của nó (không import `backend/`). Thiếu biến bắt buộc thì không khởi động.
+
+| Biến | Mặc định | Staging | Bắt buộc | Ý nghĩa |
+|---|---|---|---|---|
+| `PORT` | `3200` | `3200` | Không | Chỉ `GET /health` |
+| `NOTIFICATION_DB_URL` | (không có) | `postgres://notification_svc:<secret>@<rds>/hr` | **Có** | Chỉ có quyền trên schema `notification` (migration `NotificationServiceRole`). Local dùng user `hr` |
+| `DB_SSL`, `DB_SSL_CA_FILE` | `off` | `verify` + CA của RDS | Không | Như backend |
+| `QUEUE_DRIVER` | Suy ra: có `SQS_QUEUE_URL` → `sqs`, không thì `rabbitmq` | `sqs` | Không | |
+| `RABBITMQ_URL` | (không có) | (không dùng) | **Có** khi `rabbitmq` | Nghe queue `notification.leave` (bind `leave.*`) |
+| `SQS_QUEUE_URL`, `AWS_REGION` | (không có), `ap-southeast-1` | URL queue `leave-notifications`, region | **Có** khi `sqs` | Cùng queue API gửi vào |
+| `MAIL_DRIVER` | `smtp` | `ses` | Không | `smtp`: gửi qua `SMTP_HOST`/`SMTP_PORT` (local Mailpit). `ses`: Amazon SES API v2 với IAM task role, không cần SMTP credentials ([staging-readiness F1](../cloud/staging-readiness.md#3-chức-năng-hỏng-nếu-không-sửa-làm-trước-demo)). Nhiều người nhận thì đặt Bcc (cả hai driver); SES chia lô 49 địa chỉ |
+| `SES_REGION` | `AWS_REGION` | (dùng `AWS_REGION`) | Không | Region của SES identity nếu khác |
+| `SMTP_HOST`, `SMTP_PORT` | `localhost`, `1025` | Không dùng | Khi `smtp` | Kết nối không TLS (`secure: false`), chỉ dùng local |
+| `SMTP_FROM` | `no-reply@hr.local` | ✓ (email đã xác minh trong SES) | Staging | Địa chỉ người gửi, dùng cho cả hai driver |
+| `MAIL_TIMEOUT_MS` | `10000` | `10000` | Không | Thời gian chờ mỗi lần gửi, 1000–10000 (NFR-3.5) |
+| `MAIL_ATTEMPTS` | `3` | `3` | Không | Số lần gửi tối đa mỗi lượt nhận event, 1–5; giữa các lần chờ `MAIL_RETRY_DELAY_MS`, gấp đôi mỗi lần. Hết lượt thì event vào DLQ |
+| `MAIL_RETRY_DELAY_MS` | `1000` | `1000` | Không | 0–60000 |
+| `HR_DIGEST_MINUTES` | `60` | `60` | Không | HR nhận tối đa một email báo có yêu cầu cập nhật hồ sơ trong khoảng này (AC-1.9.13) |
+
 ## 3. Frontend (Vite, đọc lúc build)
 
 Giá trị được **nhúng vào bundle khi build**: đổi biến thì phải build lại, và không đặt secret ở đây (ai cũng đọc được).
@@ -190,6 +210,7 @@ Rà lại ngày 25/11/2026 trước khi `apply`: [staging-readiness.md](../cloud
 thành phần (API, worker, assistant), có biến nào chưa có trong Terraform. Chính:
 
 - ~~Worker gửi mail bằng SMTP; `MAIL_DRIVER=ses` chưa được code đọc (F1)~~: đã sửa 25/11 (`feat/mail-ses-trust-proxy`), cùng `TRUST_PROXY=1` cho API (F5).
+  Từ 26/11 email do notification service gửi: staging cần task ECS, queue `identity-sync`, secret `notification_svc` (F6, PR Terraform riêng).
 - Worker thiếu `IDP_ADMIN_DRIVER`, `COGNITO_USER_POOL_ID` (F2); API thiếu `PROFILE_STORAGE_BUCKET` (F3). `ASSISTANT_URL`,
   `ASSISTANT_INTERNAL_TOKEN`, `SQS_ASSISTANT_QUEUE_URL` (F4) đã có trong Terraform từ 25/11 (`infra/assistant-staging`).
 

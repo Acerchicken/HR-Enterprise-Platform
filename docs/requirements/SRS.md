@@ -365,7 +365,7 @@ khi instance vừa khởi động.
 | NFR-3.2 | Không có điểm hỏng đơn lẻ ở tầng API | Tối thiểu 2 instance; mất 1 instance thì tỉ lệ lỗi < 1% và tự thay instance mới trong < 5 phút | Tắt 1 instance trong load test (ADR-06) | Kế hoạch tuần 11 |
 | NFR-3.3 | Phát hành phiên bản mới không dừng dịch vụ | Lỗi 5xx < 1% trong lúc deploy; migration tương thích ngược; quay về image trước trong < 15 phút | Deploy giữa load test; thử rollback | Một phần: pipeline có bước gắn tag image để rollback |
 | NFR-3.4 | Lỗi của queue, email, LLM không làm hỏng nghiệp vụ chính | Tạo, duyệt, hủy đơn vẫn chạy; email gửi bù khi dịch vụ hoạt động lại | Tắt queue rồi tạo đơn | Đã có: outbox + queue (ADR-03) |
-| NFR-3.5 | Gọi hệ thống ngoài có giới hạn thời gian và thử lại | Timeout ≤ 10 s; thử lại tối đa 3 lần, giãn cách tăng dần; hết lượt thì vào DLQ | Unit test; tắt SMTP trong test | Một phần: có DLQ; database có `statement_timeout` 5 s và chờ kết nối 5 s rồi trả 503 (25/11); email chưa có giãn cách tăng dần |
+| NFR-3.5 | Gọi hệ thống ngoài có giới hạn thời gian và thử lại | Timeout ≤ 10 s; thử lại tối đa 3 lần, giãn cách tăng dần; hết lượt thì vào DLQ | Unit test; tắt SMTP trong test | Có (26/11): email do notification service gửi, chờ ≤ 10 s mỗi lần, thử tối đa 3 lần chờ 1 s, 2 s, rồi DLQ (`services/notification/src/mail/retry.spec.ts`, `sender.spec.ts`); database có `statement_timeout` 5 s và chờ kết nối 5 s rồi trả 503 (25/11); IdP thử lại giãn cách (`IDP_SYNC_*`); LLM timeout 10 s không thử lại (trả về danh sách tài liệu) |
 | NFR-3.6 | Load balancer biết instance nào hỏng | `GET /api/v1/health` trả 200 khi API và database sẵn sàng, không cần đăng nhập | e2e test | Đã có |
 
 ### 6.5 NFR-4 – Sao lưu và phục hồi

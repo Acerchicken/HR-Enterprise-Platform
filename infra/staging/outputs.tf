@@ -172,3 +172,23 @@ output "assistant_secret_arn" {
   description = "Secret chứa ASSISTANT_INTERNAL_TOKEN, ASSISTANT_CONFIG_KEY, mật khẩu assistant_svc"
   value       = aws_secretsmanager_secret.assistant.arn
 }
+
+output "ecr_notification_repository_url" {
+  description = "ECR repository của notification service (ADR-15 bước 1)"
+  value       = aws_ecr_repository.notification.repository_url
+}
+
+output "notification_service_name" {
+  description = "Tên ECS service notification"
+  value       = aws_ecs_service.notification.name
+}
+
+output "identity_queue_url" {
+  description = "SQS nhận event tài khoản, vai trò cho worker (identity-sync)"
+  value       = aws_sqs_queue.identity.url
+}
+
+output "notification_secret_arn" {
+  description = "Secret chứa mật khẩu và URL kết nối của notification_svc"
+  value       = aws_secretsmanager_secret.notification.arn
+}

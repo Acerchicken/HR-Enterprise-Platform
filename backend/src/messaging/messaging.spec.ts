@@ -1,6 +1,6 @@
 import { DeleteMessageCommand, ReceiveMessageCommand, SendMessageCommand } from '@aws-sdk/client-sqs';
 import { loadConfig } from '../config/config';
-import { createEventBus } from './factory';
+import { createEventBus, createEventConsumer } from './factory';
 import { RabbitMqEventBus } from './rabbitmq';
 import { SqsEventBus, SqsEventConsumer } from './sqs';
 
@@ -125,6 +125,30 @@ describe('Event tài liệu (UC6, ADR-15)', () => {
   it('SQS_ASSISTANT_QUEUE_URL đọc từ cấu hình', () => {
     const cfg = loadConfig({ QUEUE_DRIVER: 'sqs', SQS_QUEUE_URL: 'https://sqs/a', SQS_ASSISTANT_QUEUE_URL: 'https://sqs/b', AWS_REGION: 'ap-southeast-1' });
     expect(cfg.queue.sqsAssistantQueueUrl).toBe('https://sqs/b');
+  });
+});
+
+describe('Event tài khoản (UC8, ADR-15 bước 1)', () => {
+  const idEvent = { id: 'evt-7', type: 'RoleGranted', payload: { accountId: 'a-1' }, createdAt: new Date('2026-11-26T00:00:00Z') };
+
+  it('RabbitMQ: routing key identity.<event>, không vào queue email notification.leave', async () => {
+    await new RabbitMqEventBus('amqp://x').publish(idEvent);
+    expect(amqpMock.__channel.publish).toHaveBeenCalledWith('hr.events', 'identity.RoleGranted', expect.any(Buffer), expect.objectContaining({ messageId: 'evt-7' }));
+  });
+
+  it('SQS: vào queue identity; chưa cấu hình thì bỏ qua, không gửi nhầm cho notification service', async () => {
+    const sqs = fakeSqs();
+    await new SqsEventBus(sqs as any, 'https://sqs/hr-worker', null, 'https://sqs/hr-identity').publish(idEvent);
+    expect((sqs.sent[0] as SendMessageCommand).input.QueueUrl).toBe('https://sqs/hr-identity');
+    const none = fakeSqs();
+    await new SqsEventBus(none as any, 'https://sqs/hr-worker').publish(idEvent);
+    expect(none.sent).toHaveLength(0);
+  });
+
+  it('worker backend với SQS cần SQS_IDENTITY_QUEUE_URL', () => {
+    const base = { QUEUE_DRIVER: 'sqs', SQS_QUEUE_URL: 'https://sqs/a', AWS_REGION: 'ap-southeast-1' };
+    expect(() => createEventConsumer(loadConfig(base))).toThrow('SQS_IDENTITY_QUEUE_URL');
+    expect(loadConfig({ ...base, SQS_IDENTITY_QUEUE_URL: 'https://sqs/i' }).queue.sqsIdentityQueueUrl).toBe('https://sqs/i');
   });
 });
 

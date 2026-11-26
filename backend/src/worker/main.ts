@@ -1,10 +1,10 @@
 /**
- * Worker (email thông báo, job áp dụng điều chuyển, job nghỉ phép):  npm run start:worker (dev) · node dist/worker/main.js (Docker)
+ * Worker (đồng bộ tài khoản sang IdP, job áp dụng điều chuyển, job nghỉ phép; email ở services/notification):  npm run start:worker (dev) · node dist/worker/main.js (Docker)
  */
 import { NestFactory } from '@nestjs/core';
 import { JsonLogger, setMetricSink } from '../common/json-logger';
 import { loadConfig } from '../config/config';
-import { NotificationWorker } from './notification-worker';
+import { IdentityWorker } from './identity-worker';
 import { LeaveJob } from './leave-job';
 import { TransferJob } from './transfer-job';
 import { WorkerModule } from './worker.module';
@@ -17,7 +17,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
   app.get(TransferJob).start();
   app.get(LeaveJob).start();
-  await app.get(NotificationWorker).start();
+  await app.get(IdentityWorker).start();
 }
 bootstrap().catch((e) => {
   console.error(e);

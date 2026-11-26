@@ -12,7 +12,7 @@ Cập nhật: 18/11/2026 (tuần 11, sau UC1 #80, #84 → #90), theo code trên 
   Thay đổi đơn + số dư + audit nằm trong một transaction cục bộ, không cần saga hay transaction phân tán.
 - **Ranh giới module chặt** để sau này tách được thành service: không inject repository của module khác, không foreign key
   chéo schema, module khác chỉ gọi service được `exports` ([CONVENTIONS mục 1](../CONVENTIONS.md#1-ranh-giới-module-quan-trọng-nhất)).
-- **Đồng bộ cho nghiệp vụ, bất đồng bộ cho tác vụ phụ** (ADR-03): duyệt đơn trả kết quả ngay; email đi qua outbox → queue → worker.
+- **Đồng bộ cho nghiệp vụ, bất đồng bộ cho tác vụ phụ** (ADR-03): duyệt đơn trả kết quả ngay; email đi qua outbox → queue → notification service (`services/notification/`, ADR-15 bước 1).
 - **Worker** là process riêng dùng lại module của API (cùng codebase, cùng image), không mở HTTP.
 
 ## 2. Công nghệ
@@ -25,7 +25,7 @@ Cập nhật: 18/11/2026 (tuần 11, sau UC1 #80, #84 → #90), theo code trên 
 | Xác thực | `jose` (kiểm JWT bằng JWKS) | OIDC resource server |
 | Kiểm tra dữ liệu vào | `class-validator`, `class-transformer` | DTO, `ValidationPipe` |
 | Tài liệu API | `@nestjs/swagger` → `docs/openapi.yaml` | Sinh từ code (`npm run openapi`) |
-| Queue, email | `amqplib` (RabbitMQ, local), `@aws-sdk/client-sqs` (SQS, AWS) chọn bằng `QUEUE_DRIVER` qua `src/messaging/`; `nodemailer` (SMTP) | Publisher outbox, worker |
+| Queue, email | `amqplib` (RabbitMQ, local), `@aws-sdk/client-sqs` (SQS, AWS) chọn bằng `QUEUE_DRIVER` qua `src/messaging/`. Email: `nodemailer` (SMTP, local), `@aws-sdk/client-sesv2` (SES) trong notification service | Publisher outbox, worker, notification service |
 | Frontend | React 18, React Router 6, Vite 5 | SPA |
 | Đăng nhập web | `oidc-client-ts` | Authorization Code + PKCE |
 | Kiểm thử | Jest, Supertest | Unit test, e2e với database thật |
@@ -45,7 +45,7 @@ backend/src/
 │   ├── organization/          đơn vị (loại, trưởng, phó), chức danh, cây tổ chức
 │   ├── audit/                 ghi và tra cứu audit
 │   └── leave/                 đơn nghỉ, state machine, business rule, outbox/
-└── worker/                    process worker: nhận event, gửi email; job áp dụng điều chuyển tới ngày
+└── worker/                    process worker: đồng bộ tài khoản sang IdP (queue identity.sync); job điều chuyển, nghỉ phép
 backend/test/                  e2e test
 
 frontend/src/
@@ -68,8 +68,9 @@ Cấu trúc bên trong một module (ví dụ `employee`): `*.entity.ts` (bảng
 | Employee | Hồ sơ theo mục (`summary`, API từng mục, quyền theo mục gồm quản lý gián tiếp), yêu cầu cập nhật và HR duyệt, mục HR quản lý, thông tin tự tính, file hồ sơ, nhật ký thay đổi, danh bạ, điều chuyển có ngày hiệu lực và quá trình công tác (UC2) | `employee`: `employee`, `employee_sensitive`, `profile_item`, `profile_change_request`, `profile_file`, `employment_assignment` | `EmployeeService` (`managerIdOf`, `directReportIds`, `namesOf`, `contactOf`, `hasDirectReports`, `placementOf`); `TransferService.applyDue` (cho worker) | Organization, Audit, RateLimit | 31 (3 controller: `EmployeeController`, `ProfileChangeController`, `ProfileFileController`) |
 | Organization | Đơn vị có loại (ADR-14), trưởng, phó, ngừng hoạt động; danh mục chức danh; cây tổ chức; cache tham chiếu | `org`: `department`, `department_deputy`, `position` | `OrganizationService` (`lookups`, `descendantIds`, `rolesOf`, `removeRolesOf`, `headRolesBrokenByMove`, `applyMove`) | Audit | 8 |
 | Audit | Ghi log trong transaction của module gọi (tự lấy `traceId`, IP từ request context); tra cứu có lọc theo vai trò (UC7 D1) | `audit`: `audit_log` (trigger chặn sửa/xóa, BRIN theo `at`) | `AuditService.record(entry, manager)` | – | 1 |
-| Leave | Đơn, số dư, ngày lễ, state machine, outbox, publisher | `leave`: `leave_type`, `leave_balance`, `leave_request`, `leave_request_history`, `holiday`, `outbox` | – | Employee, Audit | 12 |
-| Worker (Notification, TransferJob, LeaveJob) | Nhận event, gửi email chung (nghỉ phép BR-15; kết quả yêu cầu hồ sơ, đổi tài khoản ngân hàng, báo HR gộp 1 email/giờ), chống trùng; 5 phút một lần áp dụng điều chuyển đã tới ngày (`TransferJob`); 5 phút một lần hủy đơn của người đã nghỉ việc, nhắc đơn chờ (BR-17), một lần mỗi ngày giờ Việt Nam tính lại số dư phép năm và chuyển phép (`LeaveJob`, khóa advisory nên nhiều worker không chạy trùng, đánh dấu ngày trong `processed_event` sau khi chạy xong) | `notification`: `processed_event` | – | Employee | – |
+| Leave | Đơn, số dư, ngày lễ, state machine, outbox, publisher (gắn email người nhận vào event, `NotificationRecipients`) | `leave`: `leave_type`, `leave_balance`, `leave_request`, `leave_request_history`, `holiday`, `outbox` | – | Employee, Audit | 12 |
+| Worker (IdentityWorker, TransferJob, LeaveJob) | Nhận event tài khoản, đồng bộ sang IdP, chống trùng (email chuyển sang notification service từ 26/11); 5 phút một lần áp dụng điều chuyển đã tới ngày (`TransferJob`); 5 phút một lần hủy đơn của người đã nghỉ việc, nhắc đơn chờ (BR-17), một lần mỗi ngày giờ Việt Nam tính lại số dư phép năm và chuyển phép (`LeaveJob`, khóa advisory nên nhiều worker không chạy trùng, đánh dấu ngày trong `processed_event` sau khi chạy xong) | `notification`: `processed_event` | – | Employee | – |
+| Notification service (`services/notification/`, ngoài backend) | Nhận event nghỉ phép, hồ sơ; gửi email chung theo danh sách người nhận có sẵn trong event (BR-15, NFR-5.18), HR gộp 1 email/giờ (AC-1.9.13); chống trùng theo event và nhóm; thử lại có giãn cách (NFR-3.5) | `notification`: `processed_event` (user `notification_svc`) | – | Không (chỉ queue) | `GET /health` |
 | Common: RateLimit | Giới hạn tần suất theo người dùng (`RateLimitInterceptor` toàn cục, `@RateLimit(nhóm)`, `RateLimitService.consume`) | `iam`: `rate_limit_counter` (cửa sổ ngày) | `RateLimitService` | – | – |
 
 Danh sách operation đầy đủ ở [`openapi.yaml`](../openapi.yaml); quyền từng API: [ma trận phân quyền](../security/access-control-matrix.md).
@@ -167,7 +168,7 @@ sequenceDiagram
 | Hai đơn song song cùng vượt kiểm tra số dư | **Advisory lock** theo nhân viên trong transaction tạo đơn | `leave.service.ts` |
 | Bấm duyệt hai lần | **Thao tác lặp không đổi gì** (BR-11): state machine trả `unchanged` trước khi kiểm `version` | State machine |
 | Event không được mất khi queue lỗi | **Transactional outbox** + publisher confirm, `FOR UPDATE SKIP LOCKED` | `leave/outbox/` |
-| Queue giao một event nhiều lần | **Consumer idempotent**: lưu id event đã xử lý | `worker/notification-worker.ts` |
+| Queue giao một event nhiều lần | **Consumer idempotent**: lưu id event đã xử lý (và từng nhóm người nhận đã gửi) | `services/notification/src/handler.ts`, `worker/identity-worker.ts` |
 | Dữ liệu tham chiếu đọc nhiều | **Cache-aside** in-memory 10 phút (ADR-07) | `common/ttl-cache.ts`, Organization |
 
 Tên event, payload, exchange/queue và cách chống trùng: [hợp đồng event và queue](event-contract.md).
@@ -220,7 +221,8 @@ thêm mục mới không phải sửa giao diện.
 - **Thêm module:** thư mục mới trong `modules/`, schema riêng, migration riêng; chỉ gọi module khác qua service được export;
   thêm dòng vào ma trận phân quyền.
 - **Thêm event:** khai báo trong `leave/outbox/leave-events.ts` (hoặc file event của module), ghi outbox trong transaction,
-  thêm xử lý ở worker, giữ consumer idempotent.
+  chọn routing key ở `messaging/routing.ts`; event gửi email thì thêm nhóm người nhận (`recipientsOf`, `NotificationRecipients`)
+  và mẫu email ở `services/notification/src/templates.ts`; giữ consumer idempotent.
 - **Thêm trường chính của hồ sơ:** migration → entity → DTO → `employee-fields.ts` ở frontend → OpenAPI → ma trận phân quyền →
   ca kiểm thử.
 - **Thêm mục hồ sơ:** khai báo ở `profile-sections.ts` (nhóm, mức xem, `available`) và `profile-schema.ts` (trường, ai nhập,

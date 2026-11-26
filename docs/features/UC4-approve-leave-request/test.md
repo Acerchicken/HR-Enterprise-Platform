@@ -14,8 +14,9 @@ email kiểm tay ở Mailpit.
 | Mức | File | Nội dung |
 |---|---|---|
 | Unit | `backend/src/modules/leave/leave-state-machine.spec.ts` | Chuyển trạng thái, quyết định ngược trả lỗi |
-| Unit | `backend/src/worker/notification-worker.spec.ts` | Người nhận email, chống gửi trùng, gửi lỗi thì đưa lại từ DLQ vẫn gửi được |
-| Unit | `backend/src/modules/leave/outbox/leave-events.spec.ts` | Người nhận theo loại event; nội dung email (xem lưu ý ở mục 7) |
+| Unit | `services/notification/src/handler.spec.ts`, `mail/*.spec.ts` | Gửi theo nhóm người nhận trong event, chống gửi trùng (cả khi lỗi giữa chừng), thử lại có giãn cách, gửi lỗi thì vào DLQ (NFR-3.5) |
+| e2e | `app.e2e-spec.ts` › "event email mang sẵn người nhận…" | Publisher gắn người nhận: người duyệt, chủ đơn, nhóm HR (ADR-15 bước 1) |
+| Unit | `backend/src/modules/leave/outbox/leave-events.spec.ts` | Nhóm người nhận theo loại event (nội dung email nay ở `services/notification/src/templates.spec.ts`) |
 | Unit | `backend/src/messaging/messaging.spec.ts` | Handler lỗi thì thử lại rồi DLQ |
 | e2e | `backend/test/app.e2e-spec.ts`, nhóm "UC3, UC4 nghỉ phép", "quản lý trực tiếp và CEO" | Liệt kê ở mục 3 |
 
@@ -36,9 +37,9 @@ email kiểm tay ở Mailpit.
 | AC-4.5.3 | "UC3, UC4 nghỉ phép" › "từ ngày bắt đầu không tự hủy được…; hoàn tất trước khi qua ngày kết thúc → 409" | TC-29 | Có |
 | AC-4.5.4 | "UC3, UC4 nghỉ phép" › "đề nghị hủy đơn đã duyệt…" | TC-28 | Có |
 | AC-4.5.5 → AC-4.5.7 | "UC3, UC4 nghỉ phép" › "đề nghị hủy đơn đã duyệt…", "nghỉ không lương trên 3 ngày…" (AC-4.5.6); AC-4.5.7 unit `leave-state-machine.spec.ts` | Cần thêm (TV4) | Có |
-| AC-4.6.1, AC-4.6.2 | Unit `notification-worker.spec.ts` | Kiểm Mailpit | Có |
-| AC-4.6.3 | Unit `leave-events.spec.ts` "BR-15", `notification-worker.spec.ts`; e2e kiểm payload outbox | – | Có |
-| AC-4.6.5 | Unit `leave-events.spec.ts` (người nhận `APPROVERS` của CEO là nhóm HR, worker `emailsOf`) | Kiểm Mailpit | Có |
+| AC-4.6.1, AC-4.6.2 | Unit `handler.spec.ts` (notification service); e2e "event email mang sẵn người nhận…" | Kiểm Mailpit | Có |
+| AC-4.6.3 | Unit `templates.spec.ts` "BR-15" (notification service), `handler.spec.ts`; e2e kiểm payload outbox | – | Có |
+| AC-4.6.5 | Unit `leave-events.spec.ts` (người nhận `APPROVERS` của CEO là nhóm HR, `NotificationRecipients`) | Kiểm Mailpit | Có |
 | AC-4.6.4 | Unit `messaging.spec.ts` | Tắt RabbitMQ rồi duyệt đơn | Có unit |
 | AC-4.6.6 | "UC3, UC4 nghỉ phép" › "nhắc đơn chờ quá một ngày làm việc…" | TC-32 | Có |
 | AC-4.7.1, AC-4.7.2 | "người ngoài không xem được đơn của nhân viên" | SEC-57, SEC-58 | Có |
@@ -58,6 +59,7 @@ Ca đổi quản lý (AC-4.2.6) cần HR đổi `managerId` của nhân viên kh
 cd backend
 npm test -- leave worker messaging
 npm run test:e2e
+cd ../services/notification && npm test   # thêm TEST_DB_URL để chạy cả test với PostgreSQL
 ```
 
 Ca lỗi queue (AC-4.6.4): `docker compose stop rabbitmq`, duyệt một đơn (vẫn thành công), `docker compose start rabbitmq`,
@@ -76,6 +78,6 @@ kiểm email đến Mailpit.
 - AC-4.3.x, AC-4.6.3, AC-4.7.3 khi `feat/leave-delegation`, `feat/leave-privacy` xong.
 - Thực hiện TC-28, TC-29 và TC-32 sau khi TV1 hoàn thành; đây là tiêu chí nghiệp vụ, chưa phải kết quả test tự động.
 
-**Lưu ý:** unit test "nội dung email có thời gian, số ngày và ghi chú" trong `leave-events.spec.ts` đang kiểm đúng điều BR-15
-cấm. Nhánh `feat/leave-privacy` phải đổi test này thành "email không có loại phép, ngày, lý do".
+**Lưu ý (cập nhật 26/11):** test "nội dung email có thời gian, số ngày và ghi chú" đã được thay bằng "BR-15: email không có
+loại phép, ngày, lý do" và chuyển sang `services/notification/src/templates.spec.ts`.
 - Ngoại lệ bổ sung [spec mục 6.1](spec.md#61-ngoại-lệ-bổ-sung-rà-24112026) (E19 → E26): mỗi mã ít nhất một ca e2e hoặc unit. ca của E19, E20, E21, E23, E24, E25, E26 xác nhận code đã đúng, sai thì chuyển sang "Chưa đạt" trong spec.
