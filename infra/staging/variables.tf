@@ -67,3 +67,9 @@ variable "assistant_desired_count" {
   type        = number
   default     = 0
 }
+
+variable "apprunner_min_instances" {
+  description = "Minimum number of App Runner instances (1 for cost saving in staging, 2 for load test and demo per ADR-06, NFR-3.2)"
+  type        = number
+  default     = 1
+}

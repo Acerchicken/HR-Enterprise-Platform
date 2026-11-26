@@ -69,6 +69,11 @@ output "s3_documents_bucket" {
   value       = aws_s3_bucket.documents.bucket
 }
 
+output "s3_profile_files_bucket" {
+  description = "S3 Bucket hosting employee profile attachments (UC1 FR-1.10, F3)"
+  value       = aws_s3_bucket.profile_files.bucket
+}
+
 output "cloudfront_domain_name" {
   description = "CloudFront distribution domain name serving the Frontend Web SPA"
   value       = "https://${aws_cloudfront_distribution.web.domain_name}"

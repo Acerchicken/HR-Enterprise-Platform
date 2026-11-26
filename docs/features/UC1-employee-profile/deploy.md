@@ -27,7 +27,7 @@
 |---|---|---|
 | Local | PostgreSQL, Keycloak, seed | `docker-compose.yml`, `keycloak/` |
 | Staging | RDS, Secrets Manager + KMS (khóa mã hóa trường), Cognito, App Runner | `infra/staging/rds.tf`, `kms_secrets.tf`, `cognito.tf`, `app_runner.tf` |
-| Staging *(TV3, chưa apply)* | Bucket `hr-profile-files-staging`: chặn public, SSE-KMS, CORS chỉ cho domain web (PUT), lifecycle xóa object tag `deleted=true` sau 30 ngày; quyền `s3:PutObject`, `GetObject`, `DeleteObject`, `PutObjectTagging` cho role App Runner; alarm CloudWatch khi số 429 tăng đột biến | TV3, `infra/profile-files` ([staging-readiness F3](../../cloud/staging-readiness.md#3-chức-năng-hỏng-nếu-không-sửa-làm-trước-demo)) |
+| Staging *(TV3, đã cấu hình trong `infra/profile-files`, chờ apply)* | Bucket `hr-platform-staging-profile-files`: chặn public, SSE-KMS, CORS chỉ cho domain web (PUT), lifecycle xóa object tag `deleted=true` sau 30 ngày; quyền `s3:PutObject`, `GetObject`, `DeleteObject`, `PutObjectTagging` cho role App Runner; alarm CloudWatch khi số 429 tăng đột biến | TV3, `infra/profile-files` ([staging-readiness F3](../../cloud/staging-readiness.md#3-chức-năng-hỏng-nếu-không-sửa-làm-trước-demo)) |
 
 ## 4. Các bước
 

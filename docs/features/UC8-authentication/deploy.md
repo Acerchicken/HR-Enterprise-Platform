@@ -45,7 +45,7 @@ trên staging là phần của TV3 (mục 3).
 | Staging | App client: `callback_urls` thêm `/callback` (localhost và CloudFront), `explicit_auth_flows = ["ALLOW_REFRESH_TOKEN_AUTH"]`, token 15 phút / refresh 10 giờ (`token_validity_units`) (đã cấu hình trong `infra/idp-hardening`) | `infra/staging/cognito.tf` |
 | Staging | Managed Login (domain `managed_login_version = 2`, branding logo HRHelper) (đã cấu hình trong `infra/idp-hardening`) | `infra/staging/cognito.tf` |
 | Staging | SQS `identity-sync` + DLQ (5 lần), subscription SNS `hr-events` lọc `event_type` `EmployeeCreated`, `EmployeeTerminated`, `EmployeeReinstated`, `EmployeeEmailChanged`, `AccountInviteRequested`, `RoleGranted`, `RoleRevoked` (spec mục 9.2) | `infra/staging/sqs_worker.tf` |
-| Staging | IAM worker: `cognito-idp:AdminCreateUser`, `AdminUpdateUserAttributes`, `AdminAddUserToGroup`, `AdminRemoveUserFromGroup`, `AdminDisableUser`, `AdminEnableUser`, `AdminUserGlobalSignOut`, `AdminGetUser` trên ARN user pool | `infra/staging/sqs_worker.tf` |
+| Staging | IAM worker: `cognito-idp:AdminCreateUser`, `AdminUpdateUserAttributes`, `AdminAddUserToGroup`, `AdminRemoveUserFromGroup`, `AdminDisableUser`, `AdminEnableUser`, `AdminUserGlobalSignOut`, `AdminGetUser`, `ListUsers` trên ARN user pool | `infra/staging/sqs_worker.tf` |
 | Staging | Lambda Post-authentication → SNS `hr-events` (nhánh `infra/idp-auth-events`) | đề xuất `infra/staging/cognito_triggers.tf` |
 
 ## 4. Các bước

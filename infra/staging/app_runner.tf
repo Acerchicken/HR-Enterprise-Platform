@@ -116,6 +116,29 @@ resource "aws_iam_policy" "apprunner_instance_policy" {
         Resource = [
           aws_s3_bucket.documents.arn
         ]
+      },
+      {
+        Sid    = "ProfileFilesStorageAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:PutObjectTagging"
+        ]
+        Resource = [
+          "${aws_s3_bucket.profile_files.arn}/*"
+        ]
+      },
+      {
+        Sid    = "ProfileFilesBucketList"
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.profile_files.arn
+        ]
       }
     ]
   })
@@ -126,9 +149,24 @@ resource "aws_iam_role_policy_attachment" "apprunner_instance_attach" {
   policy_arn = aws_iam_policy.apprunner_instance_policy.arn
 }
 
+# Auto Scaling Configuration for App Runner (ADR-06, NFR-3.2)
+# Configurable minimum instances: 1 for staging cost savings, 2 for load test and demo
+resource "aws_apprunner_auto_scaling_configuration_version" "api" {
+  auto_scaling_configuration_name = "${var.project_name}-${var.environment}-api-asg"
+
+  min_size        = var.apprunner_min_instances
+  max_size        = 5
+  max_concurrency = 100
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-api-asg"
+  }
+}
+
 # App Runner Service for Backend API
 resource "aws_apprunner_service" "api" {
-  service_name = "${var.project_name}-${var.environment}-api"
+  service_name                   = "${var.project_name}-${var.environment}-api"
+  auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.api.arn
 
   source_configuration {
     authentication_configuration {
@@ -166,6 +204,7 @@ resource "aws_apprunner_service" "api" {
           SQS_IDENTITY_QUEUE_URL = aws_sqs_queue.identity.url
           STORAGE_BUCKET         = aws_s3_bucket.documents.id
           STORAGE_REGION         = var.aws_region
+          PROFILE_STORAGE_BUCKET = aws_s3_bucket.profile_files.id
           # UC6 (staging-readiness F4): assistant service qua Cloud Map; service tắt thì API trả fallback (FR-6.3).
           ASSISTANT_URL           = "http://${aws_service_discovery_service.assistant.name}.${aws_service_discovery_private_dns_namespace.internal.name}:3100"
           SQS_ASSISTANT_QUEUE_URL = aws_sqs_queue.assistant.url
