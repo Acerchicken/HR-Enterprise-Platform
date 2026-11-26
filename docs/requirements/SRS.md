@@ -3,8 +3,8 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform – môn Cloud Application Development |
-| Phiên bản tài liệu | 1.9 |
-| Ngày | 23/11/2026 (tuần 12) |
+| Phiên bản tài liệu | 2.0 |
+| Ngày | 26/11/2026 (tuần 12) |
 | Người soạn | TV1 (Dương), tách từ BRD 1.0 |
 | Người review | TV2 (Thanh) nghiệp vụ, TV4 (Duy) khả năng kiểm thử |
 | Trạng thái | Bản nháp, chờ review trên PR |
@@ -15,6 +15,7 @@
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
+| 2.0 | 26/11/2026 | Đối chiếu trạng thái FR với code đã merge vào `dev`: UC2 #107, UC3/UC4 #120, UC5 #126/#140, UC6 #130/#131/#133; cập nhật tổng số FR và phạm vi MT-1. |
 | 1.9 | 26/11/2026 | Thêm FR-5.4 (nhân viên tìm tài liệu theo từ khóa) sau khi đối chiếu với use case "Employee self-service search" của đề bài |
 | 1.8 | 23/11/2026 | UC6 thu gọn còn trợ lý chính sách (Duong, 22/11): bỏ FR-6.1, FR-6.2, FR-6.3 nâng lên S (Duong chốt 23/11) theo [ADR-16](../architecture/adr/ADR-16-policy-assistant.md); thêm FR-6.4 (ADMIN chọn nhà cung cấp AI: Claude, Gemini, DeepSeek; dán API key trong ứng dụng); NFR-1.3 tách tìm đồng nghiệp và trợ lý; NFR-5.21 thêm nhóm `assistant`; LLM do ADMIN chọn qua adapter |
 | 1.7 | 22/11/2026 | Kiểm chéo UC7: FR-7.1 mở rộng theo code (đơn vị, điều chuyển, số dư, ngày lễ, duyệt thay, tài liệu, tài khoản, vai trò); trạng thái FR-7.3; NFR-6.3 = 5 năm theo BR-13 (chốt câu hỏi số 3 mục 8); NFR-5.10 một phần |
@@ -172,11 +173,11 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-1.7 | Nghỉ việc: không cho nghỉ khi còn cấp dưới; người đã nghỉ không truy cập được | M | 400 khi còn cấp dưới; token còn hạn của người đã nghỉ bị 403 | Đã có (#84) |
 | FR-1.8 | Trang hồ sơ chia nhóm (cá nhân, công việc, tài chính, phúc lợi, khác), màu chủ đạo cyan, mục chưa có tiêu đề đỏ; trang mặc định chỉ tải dữ liệu đang hiện, mỗi mục chỉ tải khi bấm vào | S | Đúng bố cục spec 9.1; mỗi người xem chỉ thấy mục được phép | Đã có (#80) |
 | FR-1.9 | Nhân viên đề xuất thêm, sửa, xóa liên hệ khẩn cấp, thân nhân, chuyên môn, tài khoản ngân hàng, nơi khám bệnh, ảnh, CV; HR so cũ và mới rồi duyệt hoặc từ chối, duyệt mới ghi vào hồ sơ | S | Yêu cầu `PENDING` không đổi hồ sơ; duyệt ghi trong một giao dịch, có audit; từ chối bắt buộc lý do; tối đa 20 yêu cầu chờ mỗi người | Đã có (#86) |
-| FR-1.10 | Tải file lên hồ sơ (CV, bằng cấp, giấy tờ, ảnh đại diện) | S | Chỉ PDF, DOCX, JPG, PNG ≤ 10 MiB, kiểm theo nội dung; tối đa 50 file, 200 MiB mỗi người; tải xuống qua API | Đã có (#87); bucket staging chờ TV3 |
+| FR-1.10 | Tải file lên hồ sơ (CV, bằng cấp, giấy tờ, ảnh đại diện) | S | Chỉ PDF, DOCX, JPG, PNG ≤ 10 MiB, kiểm theo nội dung; tối đa 50 file, 200 MiB mỗi người; tải xuống qua API | Một phần: API đã có (#87); bucket staging còn chờ hạ tầng TV3 (#151 đang mở) |
 | FR-1.11 | Nhật ký thay đổi hồ sơ cho chủ hồ sơ và HR | S | Mỗi thao tác đúng một bản ghi, không có giá trị hay tên file gốc | Đã có (#86, #87) |
 | FR-1.12 | HR quản lý hợp đồng, lương theo thời gian, bảo hiểm, phụ cấp, khen thưởng kỷ luật | C | Hợp đồng không trùng khoảng ngày; nhân viên chỉ xem | Đã có (#89) |
 | FR-1.13 | Thông tin tự tính: quá trình công tác, các mốc thâm niên, ngày nghỉ dài | C | Quá trình công tác đọc từ bảng quá trình công tác (FR-2.8); thâm niên từ `hireDate`; ngày nghỉ dài từ đơn nghỉ | Đã có (#90; quá trình công tác đổi nguồn ở `feat/employee-transfer`) |
-| FR-1.14 | Giới hạn tần suất và hạn mức cho thao tác hồ sơ | M | 30 lệnh ghi/phút, 10 URL tải lên/giờ, 100 lượt xem nhạy cảm/giờ; vượt trả 429 | Đã có (#85), trừ cảnh báo dashboard (TV3) |
+| FR-1.14 | Giới hạn tần suất và hạn mức cho thao tác hồ sơ | M | 30 lệnh ghi/phút, 10 URL tải lên/giờ, 100 lượt xem nhạy cảm/giờ; vượt trả 429 | Một phần: giới hạn thao tác đã có (#85); cảnh báo dashboard còn thiếu (TV3) |
 
 ### 4.2 UC2 – Thông tin tổ chức (FR-2.x)
 
@@ -185,14 +186,14 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
 | FR-2.1 | Danh bạ: tìm theo tên, email, mã; lọc phòng ban; phân trang | M | Không hiện nhân viên đã nghỉ việc; tối đa 100 dòng/trang | Đã có |
-| FR-2.2 | Xem toàn bộ cây tổ chức và thành viên từng đơn vị | M | Cây có một gốc là đơn vị Công ty; quyết định issue #21: không cần nhập mã; hiện loại đơn vị (ADR-14) | Đã có cây; chưa có loại đơn vị |
+| FR-2.2 | Xem toàn bộ cây tổ chức và thành viên từng đơn vị | M | Cây có một gốc là đơn vị Công ty; quyết định issue #21: không cần nhập mã; hiện loại đơn vị (ADR-14) | Đã có (#107) |
 | FR-2.3 | Xem quản lý trực tiếp và nhân viên trực thuộc của một người | M | Danh sách cấp dưới đúng với dữ liệu | Đã có |
-| FR-2.4 | HR, ADMIN tạo và sửa đơn vị (Công ty, Trung tâm, Phòng, Nhóm) theo luật loại cha, loại con (ADR-14) | S | Đổi đơn vị cha không tạo vòng; Trung tâm thuộc Công ty, Phòng thuộc Công ty hoặc Trung tâm, Nhóm thuộc Phòng | Một phần: API có, chưa có loại đơn vị |
+| FR-2.4 | HR, ADMIN tạo và sửa đơn vị (Công ty, Trung tâm, Phòng, Nhóm) theo luật loại cha, loại con (ADR-14) | S | Đổi đơn vị cha không tạo vòng; Trung tâm thuộc Công ty, Phòng thuộc Công ty hoặc Trung tâm, Nhóm thuộc Phòng | Đã có (#107) |
 | FR-2.5 | Mỗi nhân viên có đúng một quản lý trực tiếp, trừ CEO | M | Tạo/sửa nhân viên thiếu quản lý (không phải CEO) bị từ chối (issue #22) | Đã có (tuần 10) |
 | FR-2.6 | HR quản lý danh mục chức danh, cấp bậc; ngừng dùng thay vì xóa | S | Chức danh đang dùng không xóa được (409) | Đã có (`feat/department-admin-ui`) |
 | FR-2.7 | HR điều chuyển nhân viên (phòng ban, chức danh, quản lý) có ngày hiệu lực, kể cả ngày tương lai | S | Áp dụng đúng ngày; kiểm như FR-2.5; đơn nghỉ đang chờ sang quản lý mới | Đã có (`feat/employee-transfer`); email cho quản lý mới làm cùng dịch vụ thông báo |
 | FR-2.8 | Quá trình công tác của từng nhân viên (phòng ban, chức danh, quản lý theo thời gian) | S | Mỗi lần tuyển, điều chuyển là một dòng, chỉ thêm; chủ hồ sơ, quản lý (trực tiếp và gián tiếp), HR xem | Đã có (`feat/employee-transfer`) |
-| FR-2.9 | Trưởng và phó cho mọi cấp đơn vị (Tổng Giám đốc và tối đa 5 Phó TGĐ; Giám đốc và tối đa 3 Phó GĐ trung tâm; Trưởng và tối đa 3 Phó phòng; Trưởng nhóm), có "Quyền trưởng" và kiêm nhiệm | S | Người thuộc đơn vị đó hoặc đơn vị cha; không tự cho quyền duyệt (quyền theo quản lý trực tiếp, BR-05) | Đã có (`feat/department-admin-ui`); duyệt thay (AC-2.9.3) làm cùng UC4 |
+| FR-2.9 | Trưởng và phó cho mọi cấp đơn vị (Tổng Giám đốc và tối đa 5 Phó TGĐ; Giám đốc và tối đa 3 Phó GĐ trung tâm; Trưởng và tối đa 3 Phó phòng; Trưởng nhóm), có "Quyền trưởng" và kiêm nhiệm | S | Người thuộc đơn vị đó hoặc đơn vị cha; không tự cho quyền duyệt (quyền theo quản lý trực tiếp, BR-05) | Đã có (`feat/department-admin-ui`); phân công duyệt thay theo AC-2.9.3 được xử lý ở UC4 (#120) |
 | FR-2.10 | Ngừng hoạt động đơn vị thay cho xóa (giải thể, sáp nhập) | C | Không ngừng được khi còn nhân viên đang làm việc hoặc đơn vị con đang hoạt động; đơn vị đã ngừng vẫn hiện trong quá trình công tác | Đã có (`feat/department-admin-ui`) |
 
 ### 4.3 UC3 – Tạo đơn nghỉ (FR-3.x)
@@ -207,8 +208,8 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-3.4 | Số ngày tính theo ngày làm việc, bỏ cuối tuần và ngày lễ | M | 29/4–4/5/2026 tính 2 ngày; đơn chỉ gồm ngày nghỉ bù 27/4 bị từ chối (BR-03) | Đã có |
 | FR-3.5 | Gửi lại do mạng lỗi không tạo đơn thứ hai | M | Cùng `Idempotency-Key` trả lại đơn cũ (BR-11) | Đã có |
 | FR-3.6 | Nhân viên hủy đơn chưa có quyết định; không tự hủy đơn đã duyệt | M | Hủy trả lại số ngày; hủy đơn đã duyệt trả 409 (BR-07, BR-08) | Đã có |
-| FR-3.7 | HR và quản lý trực tiếp tạo đơn hộ nhân viên | S | Số dư là của nhân viên; nhân viên nhận email, vẫn tự hủy được; lịch sử ghi người tạo hộ (BR-12) | Kế hoạch tuần 10 |
-| FR-3.8 | HR chỉnh mức nền phép năm (12, 14, 16 ngày) và hạn mức nghỉ ốm theo hồ sơ BHXH | S | Phép năm tính lại theo BR-01; hạn mức nhỏ hơn đã dùng cộng đang chờ trả 409; có audit (BR-18) | Thiết kế 18/11 (UC3 spec 13.2, 13.3) |
+| FR-3.7 | HR và quản lý trực tiếp tạo đơn hộ nhân viên | S | Số dư là của nhân viên; nhân viên nhận email, vẫn tự hủy được; lịch sử ghi người tạo hộ (BR-12) | Đã có (#120) |
+| FR-3.8 | HR chỉnh mức nền phép năm (12, 14, 16 ngày) và hạn mức nghỉ ốm theo hồ sơ BHXH | S | Phép năm tính lại theo BR-01; hạn mức nhỏ hơn đã dùng cộng đang chờ trả 409; có audit (BR-18) | Đã có (#120) |
 
 ### 4.4 UC4 – Duyệt đơn (FR-4.x)
 
@@ -218,13 +219,13 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 |---|---|---|---|---|
 | FR-4.1 | Quản lý xem danh sách đơn chờ duyệt của cấp dưới trực tiếp | M | Không thấy đơn của người không trực thuộc | Đã có |
 | FR-4.2 | Duyệt hoặc từ chối kèm ghi chú; chỉ quản lý trực tiếp tại thời điểm xử lý | M | Người khác trả 403; duyệt lại lần hai không đổi gì; quyết định ngược lại trả 409 (BR-05, BR-09, BR-11) | Đã có |
-| FR-4.3 | Người duyệt thay khi quản lý vắng mặt, do HR chỉ định theo khoảng ngày | S | Người thay thấy và xử lý đơn trong thời hạn được giao (BR-06) | Kế hoạch tuần 10 |
+| FR-4.3 | Người duyệt thay khi quản lý vắng mặt, do HR chỉ định theo khoảng ngày | S | Người thay thấy và xử lý đơn trong thời hạn được giao (BR-06) | Đã có (#120) |
 | FR-4.4 | HR duyệt đơn của CEO (người duy nhất không có quản lý) | S | Chỉ áp dụng cho đơn của CEO (issue #22) | Đã có (tuần 10) |
 | FR-4.5 | HR hoàn tất đơn đã duyệt | M | Số ngày giữ chỗ chuyển thành đã dùng; đơn chưa duyệt trả 409 (BR-10) | Đã có |
 | FR-4.6 | Email thông báo: đơn mới → quản lý; duyệt, từ chối, hoàn tất → nhân viên; hủy → quản lý | M | Email tới đúng người; không gửi trùng khi hệ thống gửi lại event | Đã có |
 | FR-4.7 | Xem chi tiết đơn và lịch sử trạng thái | M | Chỉ chủ đơn, quản lý trực tiếp, HR xem được | Đã có |
-| FR-4.8 | HR duyệt thêm sau quản lý với loại phép được cấu hình (thai sản; nghỉ không lương trên 3 ngày) | S | Quản lý duyệt → `PENDING_HR`; HR duyệt → `APPROVED`, từ chối phải có lý do; HR không duyệt đơn của chính mình (BR-16) | Chưa có, kế hoạch tuần 12 |
-| FR-4.9 | HR cập nhật lịch lễ, nghỉ bù và tính lại đơn bị ảnh hưởng | S | Sửa lịch không tự đổi đơn; HR tính lại từng đơn có lý do, không vượt số dư (BR-19) | Thiết kế 18/11 (UC4 spec 13.6) |
+| FR-4.8 | HR duyệt thêm sau quản lý với loại phép được cấu hình (thai sản; nghỉ không lương trên 3 ngày) | S | Quản lý duyệt → `PENDING_HR`; HR duyệt → `APPROVED`, từ chối phải có lý do; HR không duyệt đơn của chính mình (BR-16) | Đã có (#120) |
+| FR-4.9 | HR cập nhật lịch lễ, nghỉ bù và tính lại đơn bị ảnh hưởng | S | Sửa lịch không tự đổi đơn; HR tính lại từng đơn có lý do, không vượt số dư (BR-19) | Đã có (#120) |
 
 ### 4.5 UC5 – Kho tài liệu chính sách (FR-5.x)
 
@@ -232,9 +233,9 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-5.1 | HR tải lên tài liệu PDF/DOCX kèm tiêu đề, loại, phạm vi xem (toàn công ty, phòng ban, vai trò) | M | Chỉ HR tải lên được; file không đi qua API mà tải thẳng lên object storage | Có API (#64); giao diện `feat/document-ui` |
-| FR-5.2 | Nhân viên chỉ xem, tải tài liệu thuộc phạm vi của mình | M | Tài liệu ngoài phạm vi không hiện trong danh sách và link tải bị từ chối | Có API (#64); giao diện `feat/document-ui` |
-| FR-5.3 | Tài liệu có phiên bản; mặc định hiện phiên bản mới nhất | S | Đăng bản mới không mất bản cũ | Có API (#64); giao diện `feat/document-ui` |
+| FR-5.1 | HR tải lên tài liệu PDF/DOCX kèm tiêu đề, loại, phạm vi xem (toàn công ty, phòng ban, vai trò) | M | Chỉ HR tải lên được; file không đi qua API mà tải thẳng lên object storage | Đã có API (#64) và giao diện kho tài liệu (#126) |
+| FR-5.2 | Nhân viên chỉ xem, tải tài liệu thuộc phạm vi của mình | M | Tài liệu ngoài phạm vi không hiện trong danh sách và link tải bị từ chối | Đã có API (#64) và giao diện kho tài liệu (#126) |
+| FR-5.3 | Tài liệu có phiên bản; mặc định hiện phiên bản mới nhất | S | Đăng bản mới không mất bản cũ | Đã có API (#64) và giao diện kho tài liệu (#126) |
 | FR-5.4 | Nhân viên tìm tài liệu theo từ khóa trong tiêu đề, không phân biệt hoa thường và dấu (use case "Employee self-service search" của đề bài, cùng tìm đồng nghiệp FR-2.1 và trợ lý FR-6.3) | M | Kết quả chỉ gồm tài liệu trong phạm vi người tìm; "nghi phep" khớp "nghỉ phép" | Đã có (`feat/document-search`) |
 
 ### 4.6 UC6 – Trợ lý chính sách (FR-6.x)
@@ -245,8 +246,8 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 |---|---|---|---|---|
 | FR-6.1 | *(Bỏ khỏi UC6 ngày 22/11/2026)* | – | – | – |
 | FR-6.2 | *(Bỏ ngày 22/11/2026, trùng UC5)* Tìm tài liệu theo từ khóa trong tiêu đề và nội dung | – | – | Không làm |
-| FR-6.3 | Trợ lý trả lời câu hỏi về chính sách HR, có trích dẫn tài liệu nguồn ([ADR-16](../architecture/adr/ADR-16-policy-assistant.md)) | S | Chỉ dùng tài liệu người hỏi được xem; không có đáp án thì nói không tìm thấy; LLM lỗi thì trả danh sách tài liệu liên quan; che dữ liệu cá nhân trong câu hỏi trước khi gửi nhà cung cấp AI (guardrail) | Kế hoạch tuần 12 |
-| FR-6.4 | ADMIN chọn nhà cung cấp AI (trước mắt Claude, Google Gemini, DeepSeek), model và dán API key trong ứng dụng; kiểm tra kết nối; thêm nhà cung cấp mới chỉ cần thêm adapter | S | Khóa mã hóa, không bao giờ trả lại (chỉ 4 ký tự cuối); có audit mỗi lần đổi; đổi có hiệu lực không cần deploy | Kế hoạch tuần 12–13 |
+| FR-6.3 | Trợ lý trả lời câu hỏi về chính sách HR, có trích dẫn tài liệu nguồn ([ADR-16](../architecture/adr/ADR-16-policy-assistant.md)) | S | Chỉ dùng tài liệu người hỏi được xem; không có đáp án thì nói không tìm thấy; LLM lỗi thì trả danh sách tài liệu liên quan; che dữ liệu cá nhân trong câu hỏi trước khi gửi nhà cung cấp AI (guardrail) | Đã có (#130, #131) |
+| FR-6.4 | ADMIN chọn nhà cung cấp AI (trước mắt Claude, Google Gemini, DeepSeek), model và dán API key trong ứng dụng; kiểm tra kết nối; thêm nhà cung cấp mới chỉ cần thêm adapter | S | Khóa mã hóa, không bao giờ trả lại (chỉ 4 ký tự cuối); có audit mỗi lần đổi; đổi có hiệu lực không cần deploy | Đã có (#133) |
 
 ### 4.7 UC7 – Lịch sử thao tác (FR-7.x)
 
@@ -272,7 +273,7 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-8.6 | HR xem trạng thái tài khoản đăng nhập, gửi lại lời mời | S | Vai trò khác bị 403; ghi audit | Đã có |
 | FR-8.7 | ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, có lý do; vai trò chỉ lấy từ database, đồng bộ sang nhóm trên IdP | M | Có audit `ROLE_GRANT`, `ROLE_REVOKE`; tự cấp cho mình bị 403; thu hồi ADMIN cuối cùng bị 409; nhóm trong token bị bỏ qua | Đã có (đồng bộ nhóm trên IdP ở local; staging tuần 12) |
 
-**Tổng hợp FR:** 34 yêu cầu chức năng ở UC1 → UC7 (cộng 6 yêu cầu UC8 thêm 17/11); 23 đã có, 4 một phần (API có, chưa có giao diện), 7 theo kế hoạch tuần 10–12 (cập nhật 10/11).
+**Tổng hợp FR:** Có 57 yêu cầu đang áp dụng trong UC1 → UC8 (14 + 10 + 8 + 9 + 4 + 2 + 3 + 7). Trong đó 49 đã có trên `dev`, 6 một phần (2 hạng mục UC1 còn dashboard/hạ tầng staging và 4 hạng mục UC8 còn hoàn thiện staging), 2 theo kế hoạch (FR-8.2, FR-8.5). FR-6.1 và FR-6.2 được giữ làm mã lịch sử đã bỏ, không tính vào tổng.
 
 ## 5. Yêu cầu dữ liệu
 
@@ -558,7 +559,7 @@ Chiều xuôi: mục tiêu (BRD) → yêu cầu (SRS) → thiết kế (SAD) →
 
 | Mục tiêu (BRD) | Use case | Yêu cầu (SRS) | Business rule | Thiết kế (SAD) | Kiểm chứng |
 |---|---|---|---|---|---|
-| MT-1 | UC1, UC2 | FR-1.1 → FR-1.14, FR-2.1 → FR-2.5 | Quy tắc hồ sơ, issue #21, #22 | Module Employee, Organization, Identity; ADR-10 | e2e `app.e2e-spec.ts`; biên bản kiểm thử tuần 7 |
+| MT-1 | UC1, UC2 | FR-1.1 → FR-1.14, FR-2.1 → FR-2.10 | Quy tắc hồ sơ, issue #21, #22, ADR-14 | Module Employee, Organization, Identity; ADR-10, ADR-14 | e2e `app.e2e-spec.ts`; biên bản kiểm thử tuần 7 |
 | MT-2 | UC3, UC4 | FR-3.1 → FR-3.8, FR-4.1 → FR-4.9 | BR-01 → BR-19 | Module Leave, Worker; outbox + queue (ADR-03) | 22 ca kiểm thử `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
 | MT-3 | UC1, UC7 | FR-1.3, FR-1.4, FR-7.1 → FR-7.3 | ADR-08, ADR-09 | Module Employee (`FieldCrypto`, ADR-08), Audit (ADR-09) | e2e audit, `VIEW_SENSITIVE`; ma trận phân quyền |
 | MT-4 | UC5, UC6 | FR-5.1 → FR-5.4, FR-6.3, FR-6.4 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13); assistant service (ADR-15, ADR-16) | Kế hoạch kiểm thử tuần 10, 12 |
