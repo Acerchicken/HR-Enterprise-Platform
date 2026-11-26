@@ -6,7 +6,7 @@
 
 Đánh giá các luồng: đăng nhập OIDC; hồ sơ nhân viên; nghỉ phép/email; kho tài liệu UC5; trợ lý chính sách UC6; và hạ tầng AWS staging. Đối chiếu mã nguồn trên `dev` ngày 26/11/2026. Đây là đánh giá thiết kế và cấu hình trong repository, không phải kiểm thử xâm nhập hay xác nhận trạng thái AWS đang chạy.
 
-Kho tài liệu và trợ lý đã có API/service trong `dev`; Cognito, S3, SQS, App Runner, ECS, Secrets Manager và KMS được mô tả bằng Terraform ở `infra/staging`. Hiệu lực thực tế của cấu hình cloud cần được xác nhận ở tài khoản AWS. Local vẫn dùng Keycloak, MinIO, PostgreSQL, RabbitMQ và Mailpit. T-19 → T-23 ghi nhận rủi ro UC6; T-24 → T-33 bổ sung UC5, prompt injection và các rủi ro cloud.
+Kho tài liệu và trợ lý đã có API/service trong `dev`; notification service xử lý email nghiệp vụ theo #148; Cognito, S3, SQS, App Runner, ECS, Secrets Manager và KMS được mô tả bằng Terraform ở `infra/staging`. Hiệu lực thực tế của cấu hình cloud cần được xác nhận ở tài khoản AWS. Local dùng Keycloak, S3Mock, PostgreSQL, RabbitMQ và Mailpit. T-19 → T-23 ghi nhận rủi ro UC6; T-24 → T-33 bổ sung UC5, prompt injection và các rủi ro cloud.
 
 ## Sơ đồ luồng dữ liệu và ranh giới tin cậy
 
@@ -31,13 +31,15 @@ flowchart LR
         S3["S3 private bucket\ntài liệu / object theo ID"]
         Rabbit["RabbitMQ (local)"]
         SQS["SQS (AWS staging theo IaC)"]
-        Worker["Notification service"]
+        IdentityWorker["Identity-sync worker"]
+        Notification["Notification service"]
         Assistant["Assistant service / ECS\nFTS + pgvector"]
         Secrets["Secrets Manager + KMS"]
     end
 
     subgraph ExternalServices["Nhà cung cấp bên ngoài"]
-        SMTP["Mailpit local / SES hoặc SMTP"]
+        SMTP["Mailpit local / SES (staging)"]
+        IdPAdmin["Keycloak / Cognito Admin API"]
         LLM["Nhà cung cấp LLM\nClaude / Gemini / DeepSeek"]
     end
 
@@ -49,12 +51,16 @@ flowchart LR
     API <-->|"SQL nghiệp vụ, audit, outbox"| DB
     DB -->|"Outbox sau commit"| Publisher
     Publisher -->|"Event nghỉ phép / document.*"| SQS
-    SQS --> Worker
+    SQS -->|"notification.leave"| Notification
+    SQS -->|"identity.sync"| IdentityWorker
     SQS -->|"Event tài liệu để index"| Assistant
-    Publisher -->|"AMQP local"| Rabbit
-    Rabbit --> Worker
-    Worker <-->|"Tra email, ghi processed_event"| DB
-    Worker --> SMTP
+    Publisher -->|"AMQP local: event theo loại"| Rabbit
+    Rabbit -->|"notification.leave"| Notification
+    Rabbit -->|"identity.sync"| IdentityWorker
+    Rabbit -->|"assistant.document"| Assistant
+    Notification <-->|"Đọc người nhận; ghi notification.processed_event"| DB
+    Notification --> SMTP
+    IdentityWorker -->|"Admin API: tạo/khóa/mở tài khoản, đồng bộ role"| IdPAdmin
     Browser -.->|"Presigned PUT, bearer URL 10 phút"| S3
     API -->|"Phát URL PUT; kiểm quyền rồi stream GET"| S3
     Assistant -->|"Đọc object để lập chỉ mục"| S3
@@ -65,7 +71,7 @@ flowchart LR
     Secrets -->|"ASSISTANT_CONFIG_KEY, token, DB URL"| Assistant
 ```
 
-Ranh giới cần bảo vệ gồm client Internet → API; trình duyệt ↔ IdP; API ↔ S3/assistant; publisher → SQS/RabbitMQ; assistant → PostgreSQL/S3 và nhà cung cấp LLM; worker → PostgreSQL/email. Presigned URL là bearer credential có thời hạn; nội dung tài liệu và phản hồi từ LLM đều là dữ liệu không tin cậy. Mũi tên nét đứt biểu thị luồng tới dịch vụ ngoài ranh giới tin cậy, không hàm ý dịch vụ chưa triển khai. Sơ đồ mô tả IaC và luồng ứng dụng, không xác nhận trạng thái AWS thực tế. Local dùng HTTP và SMTP không mã hóa; production phải dùng TLS.
+Ranh giới cần bảo vệ gồm client Internet → API; trình duyệt ↔ IdP; API ↔ S3/assistant; publisher → SQS/RabbitMQ; notification service → PostgreSQL/SMTP hoặc SES; identity-sync worker → PostgreSQL và Keycloak/Cognito Admin API; assistant → PostgreSQL/S3 và nhà cung cấp LLM. Presigned URL là bearer credential có thời hạn; nội dung tài liệu và phản hồi từ LLM đều là dữ liệu không tin cậy. Mũi tên nét đứt biểu thị luồng tới dịch vụ ngoài ranh giới tin cậy, không hàm ý dịch vụ chưa triển khai. Sơ đồ mô tả IaC và luồng ứng dụng, không xác nhận trạng thái AWS thực tế. Local dùng HTTP và SMTP không mã hóa; production phải dùng TLS.
 
 ## Biện pháp hiện có
 
@@ -80,7 +86,7 @@ Ranh giới cần bảo vệ gồm client Internet → API; trình duyệt ↔ I
   trực tiếp; HR hoàn tất; state machine, version, history và audit được thực thi trong transaction.
 - **Kho tài liệu:** HR-only tạo/sửa; API xác thực loại/kích thước và nội dung trước khi READY; scope kiểm tại truy vấn danh sách, xem, tải và trợ lý; download qua API.
 - **Trợ lý:** API tính scope hiện tại; truy hồi FTS/vector lọc scope trong SQL; guard che một số PII, chuẩn hóa nội dung và giới hạn citation vào đoạn đã gửi; không lưu câu hỏi/đáp án.
-- **Email và audit:** outbox ghi cùng transaction với nghiệp vụ; publisher dùng publisher-confirm và worker chống xử lý event trùng, lỗi gửi chuyển DLQ. Audit có trigger chặn `UPDATE`/`DELETE` ở PostgreSQL. Đây không phải bảo vệ chống người có quyền superuser database.
+- **Email và audit:** outbox ghi cùng transaction với nghiệp vụ; notification service nhận event nghỉ phép từ SQS trên staging hoặc RabbitMQ local, tra người nhận, gửi qua SES/Mailpit và ghi `notification.processed_event` để chống xử lý trùng; lỗi gửi được thử lại/chuyển DLQ. Backend worker chỉ nghe `identity-sync` để đồng bộ tài khoản và vai trò sang Keycloak/Cognito qua Admin API. Audit có trigger chặn `UPDATE`/`DELETE` ở PostgreSQL; đây không phải bảo vệ chống người có quyền superuser database. Notification service trên staging dùng role DB chỉ có quyền trên schema `notification`.
 
 ## Danh sách mối đe dọa
 
@@ -119,8 +125,8 @@ TV1 (API/web/worker), TV3 (cloud/IaC/CI), TV2 (nghiệp vụ).
 | T-27 | Trợ lý chính sách (UC6) | Tampering | Prompt injection trực tiếp yêu cầu bỏ qua phân quyền, tiết lộ system prompt/secret hoặc bịa chính sách. | Truy hồi chỉ đưa đoạn đã lọc scope; system prompt cấm theo chỉ dẫn của câu hỏi; G3 bỏ ký tự vô hình, G2 chặn một số rò prompt; trích dẫn bị giới hạn vào nguồn trả về (#131). | Không có bộ lọc nào xác định chắc chắn mọi injection ngữ nghĩa; các câu Q25–Q27 phải chạy qua từng provider và kiểm tra không có secret, trích dẫn giả hay câu trả lời bịa. | Cao | TV1, TV2, TV4 |
 | T-28 | Trợ lý chính sách (UC6) | Tampering | Prompt injection gián tiếp trong tài liệu được index hướng mô hình tiết lộ bí mật, đổi đáp án hoặc làm lộ dữ liệu khác. | Nội dung đoạn được đóng khung như dữ liệu, thoát ký tự `<`/`>`; adapter Claude dùng khối `search_result`; phạm vi vẫn lọc ở SQL trước khi gọi LLM (#131). | Ranh giới prompt không phải sandbox. Kiểm thử payload trong DOCX/PDF với các provider; theo dõi phiên bản tài liệu đã index, cách ly tài liệu bất thường và giữ quyền HR ẩn tài liệu nhanh chóng. | Cao | TV1, TV2, TV4 |
 | T-29 | Trợ lý chính sách (UC6) | Information disclosure | LLM có thể suy diễn ngoài bằng chứng, gắn trích dẫn hợp lệ vào ý sai hoặc tạo thông tin nhạy cảm dù truy hồi không lấy tài liệu ngoài scope. | Chỉ gửi tối đa các đoạn truy hồi đã lọc; máy chủ loại citation không thuộc danh sách nguồn; không có citation hợp lệ thì fallback; G2 che số PII ngoài đoạn nguồn (#131). | Citation có thật không đảm bảo nội dung được trích dẫn hỗ trợ kết luận. Chấm đúng ý và citation riêng theo bộ đánh giá; không trả lời tình huống cá nhân, bổ sung kiểm tra độ hỗ trợ trước production nếu tỷ lệ bịa đáng kể. | Cao | TV1, TV4 |
-| T-30 | Cognito (AWS staging) | Spoofing | Tự đăng ký tài khoản làm tăng tài khoản rác hoặc tạo danh tính không gắn với nhân viên, dò luồng API và tiêu thụ tài nguyên. | IaC hiện đặt `allow_admin_create_user_only = false`; API yêu cầu email xác minh khi liên kết danh tính; không có hồ sơ đang làm việc thì UC6 không gọi assistant service. | Tắt self-registration nếu chỉ HR mời nhân viên; nếu cần đăng ký mở thì thêm allowlist/domain và quy trình liên kết có duyệt, rate limit, phát hiện tài khoản mồ côi. Xác nhận quyết định trước mở staging công khai. | Trung bình | TV1, TV3 |
-| T-31 | S3 tài liệu (AWS staging) | Information disclosure | Cấu hình bucket hoặc policy sai làm tài liệu HR tải công khai, vượt qua phân quyền ứng dụng. | `aws_s3_bucket_public_access_block` bật đủ bốn chặn; bucket mã hóa server-side AES256; không phát link tải S3 cho nhân viên; quyền đọc qua API/service role (`s3_cloudfront.tf`). | IaC không chứng minh trạng thái tài khoản thật hoặc không có policy drift. Bật account-level Block Public Access, rà bucket policy/ACL và AWS Config/CloudTrail cảnh báo truy cập công khai trước production. | Cao | TV3 |
+| T-30 | Cognito (AWS staging) | Spoofing | Tự đăng ký tài khoản làm tăng tài khoản rác hoặc tạo danh tính không gắn với nhân viên, dò luồng API và tiêu thụ tài nguyên. | IaC trong #150 đặt `allow_admin_create_user_only = true` (tắt public self-sign-up, chỉ luồng cấp tài khoản qua Admin API) và bật MFA TOTP bắt buộc; API yêu cầu email xác minh khi liên kết danh tính; không có hồ sơ đang làm việc thì UC6 không gọi assistant service. | #150 đã merge nhưng chưa xác nhận trên tài khoản AWS sau `apply`; kiểm tra self-sign-up bị tắt và MFA TOTP thực sự bắt buộc, đồng thời phát hiện cấu hình drift trước khi mở staging cho người dùng. | Thấp | TV1, TV3 |
+| T-31 | S3 tài liệu (AWS staging) | Information disclosure | Cấu hình bucket hoặc policy sai làm tài liệu HR tải công khai, vượt qua phân quyền ứng dụng. | `aws_s3_bucket_public_access_block` bật đủ bốn chặn; bucket hiện mã hóa server-side SSE-S3 (`AES256`); không phát link tải S3 cho nhân viên; quyền đọc qua API/service role (`s3_cloudfront.tf`). | [staging-readiness.md mục L1](../cloud/staging-readiness.md) ghi NFR-5.16 yêu cầu SSE-KMS nhưng bucket hiện mới dùng SSE-S3; chuyển sang SSE-KMS, giới hạn quyền dùng KMS key, rồi rà bucket policy/ACL và cảnh báo truy cập công khai trước production. IaC cũng cần được xác nhận trên tài khoản thật sau apply. | Cao | TV3 |
 | T-32 | IAM / AWS staging | Elevation of privilege | Role App Runner/ECS bị chiếm có thể đọc secret, tài liệu hoặc giải mã dữ liệu vượt nhu cầu tối thiểu. | Role tách theo API, assistant, worker; một số quyền giới hạn ARN secret, queue và bucket; assistant task chỉ nhận một queue và quyền S3/KMS khai báo trong `assistant.tf`. | API role đọc nhiều secret, assistant role đọc object trong cả bucket và dùng KMS key chung. Tách secret/key theo workload, bó hẹp S3 prefix, rà trust policy và quyền CI deploy; kiểm tra policy thực tế định kỳ. | Cao | TV3 |
 | T-33 | Secrets và Terraform state (AWS staging) | Information disclosure | Lộ state, log CI hoặc quyền đọc Secrets Manager có thể làm lộ DB password, token nội bộ, khóa mã hóa LLM và thông tin nhà cung cấp. | Giá trị secret lấy từ random resource, truyền bằng secret reference cho runtime, lưu trong Secrets Manager mã hóa KMS; không đưa giá trị secret ra Terraform outputs (`assistant.tf`, `kms_secrets.tf`). | Terraform quản lý secret version nên state có thể chứa giá trị nhạy cảm. Bảo vệ backend state bằng mã hóa, IAM tối thiểu, locking và audit; cấm lưu state trong repo/artifact/log; có quy trình rotate toàn bộ credential sau sự cố. | Cao | TV3 |
 
