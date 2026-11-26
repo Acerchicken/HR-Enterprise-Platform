@@ -5,9 +5,26 @@
 Đồ án môn Cloud Application Development – đề tài số 3. Hệ thống HR nội bộ cho doanh nghiệp ~2,000 nhân viên:
 hồ sơ nhân viên, sơ đồ tổ chức, đơn nghỉ phép có duyệt, kho tài liệu chính sách, tìm kiếm, audit.
 
-Trạng thái (tuần 10, 13/11/2026): đã có đăng nhập OIDC (Keycloak local, Cognito cho staging), hồ sơ nhân viên, sơ đồ tổ chức,
-audit, quy trình nghỉ phép đầy đủ (tạo, duyệt, từ chối, hủy, hoàn tất) kèm email thông báo qua outbox + queue + worker, kho tài
-liệu HR, dữ liệu mẫu 2,000 nhân viên, Terraform cho staging AWS. Tiến độ từng tuần: [docs/progress/](docs/progress/README.md).
+Trạng thái (tuần 12, 26/11/2026, bản phát hành `week-11`): 7/7 use case bắt buộc của đề tài đã dev xong (hồ sơ nhân viên, sơ đồ
+tổ chức, nghỉ phép có duyệt, kho tài liệu và tìm kiếm, audit), thêm UC8 đăng nhập và tài khoản, trợ lý chính sách (RAG). Chưa UC
+nào "xong" theo [kế hoạch tổng 7.1](docs/progress/ke-hoach-tong.md#71-vì-sao-đổi-và-thế-nào-là-xong) vì staging AWS chưa chạy và
+chưa có biên bản kiểm thử. Tiến độ từng tuần: [docs/progress/](docs/progress/README.md).
+
+## Đối chiếu với yêu cầu môn học
+
+**[Đối chiếu HRHelper với yêu cầu môn học và chuẩn bị Architecture Defense](docs/defense/doi-chieu-yeu-cau-mon-hoc.md)**: mỗi
+slide của đề bài, đề tài đã đạt tới đâu, còn thiếu gì, ai làm, hạn nào, kèm bằng chứng (PR, file, test).
+
+| Slide của đề bài | Xem ở |
+|---|---|
+| Tóm tắt kết luận và năm việc quyết định điểm | [Mục 0](docs/defense/doi-chieu-yeu-cau-mon-hoc.md#0-tóm-tắt) |
+| Business Problem & Functional Scope (7 use case) | [Mục 1](docs/defense/doi-chieu-yeu-cau-mon-hoc.md#1-business-problem--functional-scope) |
+| Engineering Requirements – Security & Workflow | [Mục 2](docs/defense/doi-chieu-yeu-cau-mon-hoc.md#2-engineering-requirements--security--workflow) |
+| Common Project Deliverables (P1–P5) | [Mục 3](docs/defense/doi-chieu-yeu-cau-mon-hoc.md#3-common-project-deliverables-p1p5) |
+| Project Scope: What We Expect | [Mục 4](docs/defense/doi-chieu-yeu-cau-mon-hoc.md#4-project-scope-what-we-expect) |
+| How Projects Will Be Reviewed (12 câu hỏi) | [Mục 5](docs/defense/doi-chieu-yeu-cau-mon-hoc.md#5-how-projects-will-be-reviewed-câu-trả-lời-chuẩn-bị-sẵn) |
+| Việc cần làm ngay | [Mục 6](docs/defense/doi-chieu-yeu-cau-mon-hoc.md#6-danh-sách-cần-làm-ngay) |
+| Kịch bản demo | [Mục 7](docs/defense/doi-chieu-yeu-cau-mon-hoc.md#7-kịch-bản-demo-cho-các-required-demonstrations) |
 
 ## Kiến trúc (tóm tắt)
 
