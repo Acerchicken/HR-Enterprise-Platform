@@ -3,10 +3,23 @@ import { createRemoteJWKSet, jwtVerify, JWTPayload } from 'jose';
 import { TtlCache } from '../../common/ttl-cache';
 import { APP_CONFIG, AppConfig } from '../../config/config';
 
+/**
+ * Token chỉ cho biết người gọi là ai. Vai trò không lấy từ token (nhóm trên IdP chỉ để IdP bắt MFA):
+ * `IdentityService` đọc vai trò từ database (ADR-18).
+ */
 export interface VerifiedToken {
   subject: string;
   email: string;
-  roles: string[];
+  /**
+   * IdP đã xác minh email (`email_verified`). Chỉ khi true mới được khớp tài khoản với hồ sơ theo email (threat model T-02):
+   * nếu không, ai đó tự đặt email của người khác trên IdP có thể nhận hồ sơ của họ. Thiếu claim thì coi là chưa xác minh.
+   */
+  emailVerified: boolean;
+}
+
+/** Keycloak trả boolean; Cognito userinfo trả chuỗi "true"/"false". */
+export function isVerified(v: unknown): boolean {
+  return v === true || v === 'true';
 }
 
 type Claims = JWTPayload & Record<string, unknown>;
@@ -17,11 +30,15 @@ export function claimAt(payload: Claims, path: string): unknown {
 }
 
 /**
- * Lấy client, role, email từ payload đã kiểm chữ ký. Hàm thuần để test cả hai kiểu token:
- * - Keycloak: `azp`, `realm_access.roles`, `email`
- * - Cognito access token: `client_id`, `cognito:groups`, `token_use=access`, không có `email`
+ * Lấy client, email từ payload đã kiểm chữ ký. Hàm thuần để test cả hai kiểu token:
+ * - Keycloak: `azp`, `email`, `email_verified`
+ * - Cognito access token: `client_id`, `token_use=access`, không có `email`
+ * Claim nhóm (`realm_access.roles`, `cognito:groups`) cố ý không đọc (ADR-18, AC-8.1.10).
  */
-export function readClaims(payload: Claims, auth: AppConfig['auth']): { client: string; roles: string[]; email: string | null } {
+export function readClaims(
+  payload: Claims,
+  auth: AppConfig['auth'],
+): { client: string; email: string | null; emailVerified: boolean } {
   if (payload.token_use !== undefined && payload.token_use !== 'access') {
     throw new UnauthorizedException('Chỉ chấp nhận access token');
   }
@@ -29,9 +46,8 @@ export function readClaims(payload: Claims, auth: AppConfig['auth']): { client: 
   if (typeof client !== 'string' || !auth.allowedClients.includes(client)) {
     throw new UnauthorizedException('Token không cấp cho ứng dụng này');
   }
-  const roles = claimAt(payload, auth.rolesClaim);
   const email = typeof payload.email === 'string' && payload.email ? payload.email.toLowerCase() : null;
-  return { client, roles: Array.isArray(roles) ? roles.map(String) : [], email };
+  return { client, email, emailVerified: email ? isVerified(payload.email_verified) : false };
 }
 
 /**
@@ -44,7 +60,7 @@ export function readClaims(payload: Claims, auth: AppConfig['auth']): { client: 
 @Injectable()
 export class TokenVerifier {
   private jwks?: Parameters<typeof jwtVerify>[1];
-  private readonly emails = new TtlCache<string>(10 * 60_000);
+  private readonly emails = new TtlCache<{ email: string; emailVerified: boolean }>(10 * 60_000);
 
   constructor(@Inject(APP_CONFIG) private readonly cfg: AppConfig) {
     if (cfg.auth.mode === 'oidc') {
@@ -56,7 +72,7 @@ export class TokenVerifier {
     if (this.cfg.auth.mode === 'dev') {
       if (!token.startsWith('dev:')) throw new UnauthorizedException('Token dev phải có dạng dev:<email>');
       const email = token.slice(4).trim().toLowerCase();
-      return { subject: `dev|${email}`, email, roles: [] };
+      return { subject: `dev|${email}`, email, emailVerified: true };
     }
 
     let payload: Claims;
@@ -67,19 +83,19 @@ export class TokenVerifier {
     }
     if (!payload.sub) throw new UnauthorizedException('Token thiếu sub');
     const claims = readClaims(payload, this.cfg.auth);
-    const email = claims.email ?? (await this.emailFromUserinfo(payload.sub, token));
-    return { subject: payload.sub, email, roles: claims.roles };
+    if (claims.email) return { subject: payload.sub, email: claims.email, emailVerified: claims.emailVerified };
+    return { subject: payload.sub, ...(await this.emailFromUserinfo(payload.sub, token)) };
   }
 
-  private async emailFromUserinfo(sub: string, token: string): Promise<string> {
+  private async emailFromUserinfo(sub: string, token: string): Promise<{ email: string; emailVerified: boolean }> {
     const url = this.cfg.auth.userinfoUrl;
     if (!url) throw new UnauthorizedException('Token thiếu email');
     return this.emails.getOrLoad(sub, async () => {
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
       if (!res?.ok) throw new UnauthorizedException('Không lấy được email từ IdP');
-      const info = (await res.json()) as { sub?: string; email?: string };
+      const info = (await res.json()) as { sub?: string; email?: string; email_verified?: unknown };
       if (info.sub !== sub || !info.email) throw new UnauthorizedException('Userinfo không khớp token');
-      return info.email.toLowerCase();
+      return { email: info.email.toLowerCase(), emailVerified: isVerified(info.email_verified) };
     });
   }
 }

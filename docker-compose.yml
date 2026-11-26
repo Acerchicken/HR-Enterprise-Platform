@@ -4,12 +4,15 @@
 #   Keycloak: http://localhost:8080   (admin / admin)
 #   RabbitMQ: http://localhost:15672  (hr / hr)
 #   Mailpit:  http://localhost:8025   (hộp thư giả lập)
+#   Trợ lý:   http://localhost:3100/health (assistant service, UC6)
 # Trên cloud, db và keycloak được thay bằng managed PostgreSQL và managed identity provider (ADR-00).
 name: hr-platform
 
 services:
   db:
-    image: postgres:16-alpine
+    # postgres:16-alpine thêm pgvector cho trợ lý chính sách (UC6); xem infra/postgres-pgvector/Dockerfile.
+    build: ./infra/postgres-pgvector
+    image: hr-platform-db:16-pgvector
     environment:
       POSTGRES_USER: hr
       POSTGRES_PASSWORD: hr
@@ -65,6 +68,19 @@ services:
       # Local không có TLS: cho phép SMTP auth không mã hóa, nếu không Mailpit thoát ngay khi khởi động.
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
+  # S3Mock (Adobe): giả lập AWS S3 ở local cho kho tài liệu chính sách HR và hồ sơ (UC5).
+  # Cả nhóm pull được không cần đăng nhập; tự tạo sẵn bucket hr-documents mà không cần container init phụ.
+  s3mock:
+    image: adobe/s3mock:3.3.0
+    environment:
+      initialBuckets: hr-documents,hr-profile-files-local
+      root: /s3mockroot
+      retainFilesOnExit: "true"
+    ports:
+      - "9090:9090"
+    volumes:
+      - s3mock-data:/s3mockroot
+
   api:
     build: ./backend
     environment:
@@ -83,9 +99,16 @@ services:
       FIELD_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=
       QUEUE_DRIVER: rabbitmq
       RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
-      SMTP_HOST: mailpit
-      SMTP_PORT: 1025
-      SMTP_FROM: no-reply@hr.local
+      # Truy vết (ADR-15 bước 4): để trống là tắt; bật bằng OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 khi chạy profile observability.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      STORAGE_BUCKET: hr-documents
+      PROFILE_STORAGE_BUCKET: hr-profile-files-local
+      STORAGE_ENDPOINT: http://s3mock:9090
+      STORAGE_PUBLIC_ENDPOINT: http://localhost:9090
+      STORAGE_ACCESS_KEY_ID: test
+      STORAGE_SECRET_ACCESS_KEY: test
+      ASSISTANT_URL: http://assistant:3100
+      ASSISTANT_INTERNAL_TOKEN: dev-only-assistant-internal-token   # chỉ dùng local
     ports:
       - "3000:3000"
     depends_on:
@@ -95,13 +118,16 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_healthy
+      s3mock:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1/health || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 30
 
-  # Nhận event nghỉ phép từ RabbitMQ, gửi email qua Mailpit (xem ở http://localhost:8025).
+  # Nhận event tài khoản từ queue identity.sync và đồng bộ sang Keycloak (UC8 identity-sync: tạo, mời, khóa, mở, đổi email,
+  # vai trò); chạy job nhắc đơn, chốt phép. Thư mời của Keycloak vào Mailpit. Email nghiệp vụ do service notification gửi.
   worker:
     build: ./backend
     command: ["node", "dist/worker/main.js"]
@@ -115,15 +141,29 @@ services:
       FIELD_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZCE=
       QUEUE_DRIVER: rabbitmq
       RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
-      SMTP_HOST: mailpit
-      SMTP_PORT: 1025
-      SMTP_FROM: no-reply@hr.local
+      # Truy vết (ADR-15 bước 4): để trống là tắt; bật bằng OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 khi chạy profile observability.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      STORAGE_BUCKET: hr-documents
+      PROFILE_STORAGE_BUCKET: hr-profile-files-local
+      STORAGE_ENDPOINT: http://s3mock:9090
+      STORAGE_PUBLIC_ENDPOINT: http://localhost:9090
+      STORAGE_ACCESS_KEY_ID: test
+      STORAGE_SECRET_ACCESS_KEY: test
+      IDP_ADMIN_DRIVER: keycloak
+      KEYCLOAK_ADMIN_URL: http://keycloak:8080
+      KEYCLOAK_REALM: hr
+      KEYCLOAK_ADMIN_CLIENT_ID: hr-api-admin
+      KEYCLOAK_ADMIN_CLIENT_SECRET: dev-only-hr-api-admin-secret   # khớp keycloak/realm-hr.json, chỉ dùng local
     depends_on:
       api:
         condition: service_healthy
+      keycloak:
+        condition: service_started
       rabbitmq:
         condition: service_healthy
       mailpit:
+        condition: service_started
+      s3mock:
         condition: service_started
     restart: unless-stopped
 
@@ -144,6 +184,65 @@ services:
         condition: service_healthy
     restart: "no"
 
+  # Gửi email (ADR-15 bước 1): nghe queue notification.leave (event nghỉ phép, hồ sơ đã có sẵn email người nhận), gửi qua
+  # Mailpit (xem ở http://localhost:8025). Dùng user hr ở local cho gọn; staging dùng user notification_svc chỉ có quyền trên
+  # schema notification.
+  notification:
+    build: ./services/notification
+    environment:
+      PORT: 3200
+      NOTIFICATION_DB_URL: postgres://hr:hr@db:5432/hr
+      DB_SSL: "off"
+      QUEUE_DRIVER: rabbitmq
+      RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
+      # Truy vết (ADR-15 bước 4): để trống là tắt; bật bằng OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 khi chạy profile observability.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      MAIL_DRIVER: smtp
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_FROM: no-reply@hr.local
+    depends_on:
+      api:
+        condition: service_healthy   # API chạy migration tạo schema notification
+      rabbitmq:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    restart: unless-stopped
+
+  # Trợ lý chính sách (UC6): nhận event tài liệu qua queue assistant.document, trích văn bản, index vào schema assistant.
+  # Dùng user hr ở local cho gọn; staging dùng user riêng assistant_svc chỉ có quyền trên schema assistant (ADR-16).
+  # Build lần đầu tải model EmbeddingGemma (~300 MB) vào image.
+  assistant:
+    build: ./services/assistant
+    environment:
+      PORT: 3100
+      ASSISTANT_DB_URL: postgres://hr:hr@db:5432/hr
+      DB_SSL: "off"
+      QUEUE_DRIVER: rabbitmq
+      RABBITMQ_URL: amqp://hr:hr@rabbitmq:5672
+      # Truy vết (ADR-15 bước 4): để trống là tắt; bật bằng OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 khi chạy profile observability.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      STORAGE_BUCKET: hr-documents
+      STORAGE_ENDPOINT: http://s3mock:9090
+      STORAGE_ACCESS_KEY_ID: test
+      STORAGE_SECRET_ACCESS_KEY: test
+      ASSISTANT_EMBEDDING_MODEL: embeddinggemma-300m
+      ASSISTANT_INTERNAL_TOKEN: dev-only-assistant-internal-token   # chỉ dùng local, khớp api
+      # Khóa mã hóa API key nhà cung cấp AI (FR-6.4). Chỉ dùng local; staging lấy từ Secrets Manager.
+      # Nhà cung cấp, model, API key do ADMIN chọn trên trang "Cấu hình trợ lý" (/admin/assistant).
+      ASSISTANT_CONFIG_KEY: aDvkXTJ5YiraWyq5F42xETHIE/aZ/40esbmCcSqICg8=   # chỉ dùng local
+    ports:
+      - "3100:3100"
+    depends_on:
+      api:
+        condition: service_healthy   # API chạy migration tạo schema assistant
+      rabbitmq:
+        condition: service_healthy
+      s3mock:
+        condition: service_started
+    restart: unless-stopped
+
   web:
     build:
       context: ./frontend
@@ -156,6 +255,18 @@ services:
     depends_on:
       - api
 
+  # Xem trace (ADR-15 bước 4): chỉ chạy khi bật profile, giao diện http://localhost:16686.
+  #   OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 docker compose --profile observability up -d --build
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    profiles: ["observability"]
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"   # giao diện
+      - "4318:4318"     # OTLP/HTTP
+
 volumes:
   db-data:
   rabbitmq-data:
+  s3mock-data:

@@ -28,8 +28,9 @@ tiếp. Rủi ro thứ ba là **lạm dụng**: tải file độc hại, spam y�
 |---|---|---|---|
 | AC-1.1.1 | "nhân viên xem hồ sơ người khác chỉ thấy thông tin danh bạ" | SEC-17 → SEC-34 | Có |
 | AC-1.1.2 | "quản lý trực tiếp thấy thông tin cá nhân, không thấy trường nhạy cảm" | SEC | Có |
+| AC-1.1.4 | "quản lý gián tiếp (quản lý của quản lý) xem mức QL như quản lý trực tiếp, không xem mức CN"; unit test `resolveRelation` | – | Có |
 | AC-1.1.3 | "xem hồ sơ: chủ hồ sơ PERSONAL, HR mức HR, ADMIN chỉ mức danh bạ…" | SEC | Có |
-| AC-1.2.2 | "nhân viên tự sửa số điện thoại; không sửa được lương hay hồ sơ người khác" | SEC | Có |
+| AC-1.2.2 | "nhân viên không ghi thẳng hồ sơ, kể cả điện thoại: 403", "mục HR quản lý, hồ sơ người khác… → 403" | SEC | Có |
 | AC-1.2.3 | "dữ liệu sai → 400", "lỗi validation trả thêm fields theo từng trường" | – | Có |
 | AC-1.3.1 | "HR xem trường nhạy cảm (đã giải mã) và lượt xem được audit" | SEC | Có |
 | AC-1.3.2 | "xem hồ sơ: … nhân viên không xem trường nhạy cảm" | SEC | Có |
@@ -90,3 +91,4 @@ npm run test:e2e               # cần docker compose (db, keycloak) đã chạy
 - AC-1.10.x: ca bảo mật file trong `docs/security-test-cases-week11` (TV4), chạy khi `feat/profile-files` xong.
 - AC-1.14.x: ca rate limit trong `docs/security-test-cases-week11`.
 - AC-1.3.4, AC-1.4.3, AC-1.4.4, AC-1.6.2, AC-1.6.3, AC-1.7.1, AC-1.7.2: viết khi `fix/employee-org-integrity` xong.
+- Ngoại lệ bổ sung [spec mục 6.1](spec.md#61-ngoại-lệ-bổ-sung-rà-24112026) (E23 → E32): mỗi mã ít nhất một ca e2e hoặc unit. Với E29, tạo yêu cầu cập nhật rồi cho nhân viên nghỉ việc: yêu cầu tự `CANCELLED` với reason `TERMINATED`, vẫn xem được lịch sử/audit, HR duyệt yêu cầu cũ nhận 409. **E29 đã có e2e** ("nghỉ việc hủy yêu cầu sửa hồ sơ đang chờ…", chạy xanh 25/11); các mã khác còn chờ TV4.

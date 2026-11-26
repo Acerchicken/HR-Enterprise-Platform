@@ -39,6 +39,8 @@ Hai đến ba câu: ai làm gì, để đạt điều gì.
 
 ## 6. Ngoại lệ
 
+Rà theo các nhóm ở [README](README.md#rà-ngoại-lệ). Ngoại lệ chung của mọi API (401, 413, trường lạ…) không lặp lại.
+
 | Mã | Tình huống | Hệ thống phản hồi |
 |---|---|---|
 | E1 | | HTTP … `CODE` |

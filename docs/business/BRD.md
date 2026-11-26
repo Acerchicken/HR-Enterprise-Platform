@@ -3,7 +3,7 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform (trước tuần 9 gọi là Enterprise HR Platform) – môn Cloud Application Development |
-| Phiên bản tài liệu | 2.0 |
+| Phiên bản tài liệu | 2.1 |
 | Ngày | 12/11/2026 (tuần 10) |
 | Người soạn | TV1 (Dương), tổng hợp từ tài liệu của cả nhóm tuần 4–9 |
 | Trạng thái | Bản nộp, chờ nhóm và giảng viên góp ý |
@@ -17,6 +17,7 @@
 | 1.0 | 6/11/2026 | Bản đầu tiên, gom problem statement, functional requirements, NFR (tuần 5), data model (tuần 6), business rule (tuần 8–9) vào một tài liệu |
 | 1.1 | 11/11/2026 | Chốt retention đơn nghỉ/audit, quyền xem lý do nghỉ ốm/thai sản và nội dung email (BR-13 → BR-15) |
 | 2.0 | 12/11/2026 | Tách yêu cầu chức năng (mục 7), dữ liệu (mục 9), phi chức năng (mục 10) và ma trận truy vết (mục 14) sang [SRS](../requirements/SRS.md) theo ISO/IEC/IEEE 29148. BRD chỉ giữ yêu cầu ở mức nghiệp vụ; số mục giữ nguyên để link cũ không gãy |
+| 2.1 | 26/11/2026 | UC5 thêm FR-5.4: nhân viên tìm tài liệu theo từ khóa (use case "Employee self-service search" của đề bài) |
 
 **Cách đọc tài liệu:** BRD trả lời **doanh nghiệp cần gì và vì sao**: bối cảnh, mục tiêu, phạm vi, người dùng, quy trình,
 business rule, rủi ro, nghiệm thu. **Hệ thống phải làm gì, đo thế nào** nằm ở [SRS](../requirements/SRS.md); **hệ thống được xây thế nào**
@@ -86,14 +87,14 @@ flowchart LR
 | UC3 Tạo đơn nghỉ | Nhân viên tạo, gửi, hủy đơn | MT-2 |
 | UC4 Duyệt đơn | Quản lý trực tiếp duyệt/từ chối, HR hoàn tất | MT-2 |
 | UC5 Kho tài liệu | HR đăng tài liệu chính sách, phân phạm vi xem | MT-4 |
-| UC6 Tra cứu chung và trợ lý | Ô tìm đồng nghiệp trên mọi trang; trang "Tra cứu tài liệu" gồm tìm tài liệu và trợ lý chính sách (mở rộng) | MT-4 |
+| UC6 Trợ lý chính sách | Nhân viên hỏi đáp bằng câu tự nhiên, câu trả lời kèm trích dẫn tài liệu mình được xem (thu gọn 22/11/2026) | MT-4 |
 | UC7 Lịch sử thao tác | Audit log append-only, tra cứu cho HR/Admin | MT-3 |
 
 ### 4.2 Ngoài phạm vi version 1
 
 - Tính lương, chấm công, tuyển dụng, đánh giá năng lực (ADR-05).
 - Xuất dữ liệu nghỉ phép sang hệ thống Payroll (chỉ mô phỏng bằng file nếu còn thời gian).
-- HR điều chỉnh hoặc hủy đơn đã duyệt (BR-08 ghi rõ chưa thuộc MVP).
+- Chủ đơn đề nghị hủy đơn đã duyệt; quản lý trực tiếp hoặc HR xác nhận trước ngày bắt đầu theo BR-08. Điều chỉnh sau ngày bắt đầu cần HR xác minh thực tế nghỉ.
 - Ứng dụng di động riêng, đa ngôn ngữ, đa doanh nghiệp.
 - Production nhiều vùng (multi-AZ); version 1 chạy staging một vùng (ADR-06).
 
@@ -129,7 +130,7 @@ flowchart TD
 ```
 
 Mọi bước ghi lịch sử (ai, lúc nào, từ trạng thái nào sang trạng thái nào, ghi chú) và audit log trong cùng giao dịch với thay
-đổi dữ liệu. Business rule chi tiết BR-01 → BR-12: [`leave-rules.md`](leave-rules.md).
+đổi dữ liệu. Business rule chi tiết BR-01 → BR-19: [`leave-rules.md`](leave-rules.md).
 
 ## 7. Yêu cầu chức năng
 
@@ -142,15 +143,15 @@ nhận và trạng thái trên `dev`.
 | UC2 Thông tin tổ chức | FR-2.1 → FR-2.10 |
 | UC3 Tạo đơn nghỉ | FR-3.1 → FR-3.7 |
 | UC4 Duyệt đơn | FR-4.1 → FR-4.8 |
-| UC5 Kho tài liệu chính sách | FR-5.1 → FR-5.3 |
-| UC6 Tra cứu chung và trợ lý | FR-6.1 → FR-6.3 |
+| UC5 Kho tài liệu chính sách | FR-5.1 → FR-5.4 |
+| UC6 Trợ lý chính sách | FR-6.3, FR-6.4 |
 | UC7 Lịch sử thao tác | FR-7.1 → FR-7.3 |
 
 ## 8. Business rule
 
 | Nhóm | Quy tắc | Nguồn |
 |---|---|---|
-| Nghỉ phép | BR-01 số dư · BR-02 trùng lịch · BR-03 ngày làm việc, ngày lễ · BR-04 nửa ngày · BR-05 người duyệt hợp lệ · BR-06 người duyệt thay · BR-07, BR-08 hủy đơn · BR-09 từ chối · BR-10 HR hoàn tất · BR-11 lịch sử và thao tác lặp · BR-12 tạo đơn hộ | [`leave-rules.md`](leave-rules.md) |
+| Nghỉ phép | BR-01 số dư · BR-02 trùng lịch · BR-03 ngày làm việc, ngày lễ · BR-04 nửa ngày · BR-05 người duyệt hợp lệ · BR-06 người duyệt thay · BR-07, BR-08 hủy đơn · BR-09 từ chối · BR-10 HR hoàn tất · BR-11 lịch sử và thao tác lặp · BR-12 tạo đơn hộ · BR-13 retention · BR-14 quyền xem lý do sức khỏe · BR-15 email tối thiểu · BR-16 HR duyệt thêm · BR-17 nhắc đơn chờ · BR-18 hạn mức nghỉ ốm · BR-19 thay đổi lịch lễ | [`leave-rules.md`](leave-rules.md) |
 | Loại phép | 8 loại: phép năm, nghỉ ốm, cưới, con cưới, tang, thai sản (nữ, nam), không lương; số ngày, có lương hay không, giấy tờ | [`leave-types-holidays.md`](leave-types-holidays.md) |
 | Ngày lễ | Danh sách ngày lễ 2026 theo Bộ luật Lao động và thông báo của Bộ Nội vụ; ngày lễ không trừ phép | [`leave-types-holidays.md`](leave-types-holidays.md) |
 | Hồ sơ | Nhân viên chỉ sửa liên hệ; trường nhạy cảm chỉ HR; mỗi nhân viên đúng một quản lý trực tiếp, trừ CEO | FR tuần 5, issue #22 |
@@ -191,11 +192,11 @@ truy vết, chi phí, vận hành, bảo trì, khả dụng, tuân thủ; kèm S
 | Chi phí cloud vượt hạn mức thẻ | Tài khoản bị khóa, mất staging | AWS Budgets cảnh báo; tắt tài nguyên ngoài giờ demo; phương án dự phòng Azure |
 | Lộ dữ liệu nhạy cảm | Vi phạm quy định, mất uy tín | Mã hóa tầng ứng dụng, phân quyền hai lớp, audit, threat model |
 | Biên bản kiểm thử không phản ánh lần chạy thật | Lỗi lọt tới demo | Quy tắc chỉ ghi kết quả đã chạy, có ngày và commit; review trước khi merge |
-| Phạm vi tuần 10–12 lớn (tài liệu, tìm kiếm, AI) | Không kịp tuần 13 | Ưu tiên M trước; FR-6.3 (C) có thể cắt |
+| Phạm vi tuần 10–12 lớn (tài liệu, AI) | Không kịp tuần 13 | Ưu tiên M trước; UC6 bỏ tìm tài liệu theo từ khóa (22/11); trợ lý có bản cắt chỉ dùng full-text (ADR-16) |
 
 ## 13. Tiêu chí nghiệm thu version 1
 
-1. Luồng nghỉ phép chạy trên staging: tạo → duyệt/từ chối → hoàn tất, có email, đúng BR-01 → BR-12.
+1. Luồng nghỉ phép chạy trên staging: tạo → duyệt/từ chối → hoàn tất, có email, đúng BR-01 → BR-19.
 2. Mọi yêu cầu mức **M** ở [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng-fr) đạt tiêu chí chấp nhận, có e2e test hoặc biên bản kiểm thử chức năng.
 3. Mọi dòng của ma trận phân quyền có ca kiểm thử được phép và bị chặn.
 4. Load test tuần 11 đạt NFR-1, NFR-3 (SRS mục 6).

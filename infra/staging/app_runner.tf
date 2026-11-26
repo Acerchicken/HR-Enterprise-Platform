@@ -66,7 +66,8 @@ resource "aws_iam_policy" "apprunner_instance_policy" {
         ]
         Resource = [
           aws_secretsmanager_secret.db_credentials.arn,
-          aws_secretsmanager_secret.app_secrets.arn
+          aws_secretsmanager_secret.app_secrets.arn,
+          aws_secretsmanager_secret.assistant.arn
         ]
       },
       {
@@ -89,7 +90,54 @@ resource "aws_iam_policy" "apprunner_instance_policy" {
           "sqs:GetQueueUrl"
         ]
         Resource = [
-          aws_sqs_queue.worker_queue.arn
+          aws_sqs_queue.worker_queue.arn,
+          aws_sqs_queue.assistant.arn,
+          aws_sqs_queue.identity.arn
+        ]
+      },
+      {
+        Sid    = "DocumentStorageAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.documents.arn}/*"
+        ]
+      },
+      {
+        Sid    = "DocumentBucketList"
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.documents.arn
+        ]
+      },
+      {
+        Sid    = "ProfileFilesStorageAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:PutObjectTagging"
+        ]
+        Resource = [
+          "${aws_s3_bucket.profile_files.arn}/*"
+        ]
+      },
+      {
+        Sid    = "ProfileFilesBucketList"
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.profile_files.arn
         ]
       }
     ]
@@ -101,9 +149,24 @@ resource "aws_iam_role_policy_attachment" "apprunner_instance_attach" {
   policy_arn = aws_iam_policy.apprunner_instance_policy.arn
 }
 
+# Auto Scaling Configuration for App Runner (ADR-06, NFR-3.2)
+# Configurable minimum instances: 1 for staging cost savings, 2 for load test and demo
+resource "aws_apprunner_auto_scaling_configuration_version" "api" {
+  auto_scaling_configuration_name = "${var.project_name}-${var.environment}-api-asg"
+
+  min_size        = var.apprunner_min_instances
+  max_size        = 5
+  max_concurrency = 100
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-api-asg"
+  }
+}
+
 # App Runner Service for Backend API
 resource "aws_apprunner_service" "api" {
-  service_name = "${var.project_name}-${var.environment}-api"
+  service_name                   = "${var.project_name}-${var.environment}-api"
+  auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.api.arn
 
   source_configuration {
     authentication_configuration {
@@ -118,7 +181,7 @@ resource "aws_apprunner_service" "api" {
       image_configuration {
         port = tostring(var.api_container_port)
 
-        runtime_environment_variables = {
+        runtime_environment_variables = merge({
           NODE_ENV             = "production"
           PORT                 = tostring(var.api_container_port)
           DB_HOST              = aws_db_instance.postgres.address
@@ -126,23 +189,32 @@ resource "aws_apprunner_service" "api" {
           DB_NAME              = var.db_name
           DB_USER              = var.db_username
           DB_SSL               = "require"
+          TRUST_PROXY          = "1" # staging-readiness F5: một lớp proxy của App Runner trước API
           AWS_REGION           = var.aws_region
           AUTH_MODE            = "oidc"
           OIDC_ISSUER          = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.main.id}"
           OIDC_JWKS_URI        = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.main.id}/.well-known/jwks.json"
           OIDC_ALLOWED_CLIENTS = aws_cognito_user_pool_client.web.id
           OIDC_CLIENT_CLAIM    = "client_id"
-          OIDC_ROLES_CLAIM     = "cognito:groups"
           OIDC_USERINFO_URL    = "https://${aws_cognito_user_pool_domain.main.domain}.auth.${var.aws_region}.amazoncognito.com/oauth2/userInfo"
           CORS_ORIGIN          = "https://${aws_cloudfront_distribution.web.domain_name}"
           QUEUE_DRIVER         = "sqs"
           SQS_QUEUE_URL        = aws_sqs_queue.worker_queue.url
-        }
+          # Event tài khoản, vai trò (UC8) đi queue riêng cho worker (staging-readiness F6).
+          SQS_IDENTITY_QUEUE_URL = aws_sqs_queue.identity.url
+          STORAGE_BUCKET         = aws_s3_bucket.documents.id
+          STORAGE_REGION         = var.aws_region
+          PROFILE_STORAGE_BUCKET = aws_s3_bucket.profile_files.id
+          # UC6 (staging-readiness F4): assistant service qua Cloud Map; service tắt thì API trả fallback (FR-6.3).
+          ASSISTANT_URL           = "http://${aws_service_discovery_service.assistant.name}.${aws_service_discovery_private_dns_namespace.internal.name}:3100"
+          SQS_ASSISTANT_QUEUE_URL = aws_sqs_queue.assistant.url
+        }, local.otel_apprunner_env)
 
         # Sensitive secrets retrieved directly from AWS Secrets Manager
         runtime_environment_secrets = {
-          DB_PASSWORD          = "${aws_secretsmanager_secret.db_credentials.arn}:password::"
-          FIELD_ENCRYPTION_KEY = "${aws_secretsmanager_secret.app_secrets.arn}:FIELD_ENCRYPTION_KEY::"
+          DB_PASSWORD              = "${aws_secretsmanager_secret.db_credentials.arn}:password::"
+          FIELD_ENCRYPTION_KEY     = "${aws_secretsmanager_secret.app_secrets.arn}:FIELD_ENCRYPTION_KEY::"
+          ASSISTANT_INTERNAL_TOKEN = "${aws_secretsmanager_secret.assistant.arn}:ASSISTANT_INTERNAL_TOKEN::"
         }
       }
     }
@@ -153,6 +225,12 @@ resource "aws_apprunner_service" "api" {
       egress_type       = "VPC"
       vpc_connector_arn = aws_apprunner_vpc_connector.main.arn
     }
+  }
+
+  # ADR-15 bước 4: X-Ray (tracing.tf).
+  observability_configuration {
+    observability_enabled           = var.xray_tracing_enabled
+    observability_configuration_arn = aws_apprunner_observability_configuration.xray.arn
   }
 
   instance_configuration {

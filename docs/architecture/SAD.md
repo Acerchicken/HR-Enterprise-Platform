@@ -42,4 +42,8 @@ Mỗi ADR là một file trong [`adr/`](adr/README.md) (mẫu, trạng thái, qu
 | ADR-11 | Điều chỉnh phân vai | Dự án | Đã chấp nhận | [ADR-11-role-adjustment.md](adr/ADR-11-role-adjustment.md) |
 | ADR-12 | Cloud provider | Hệ thống | Đã chấp nhận | [ADR-12-cloud-provider.md](adr/ADR-12-cloud-provider.md) |
 | ADR-13 | Kho tài liệu: tải lên trực tiếp, tải xuống qua API, lọc phạm vi trong truy vấn | Phần mềm | Đã chấp nhận | [ADR-13-document-storage.md](adr/ADR-13-document-storage.md) |
-| ADR-15 | Tách Notification và Search thành service riêng qua event | Cả hai | Đề xuất | [ADR-15-service-extraction.md](adr/ADR-15-service-extraction.md) |
+| ADR-14 | Cây đơn vị tổ chức có loại đơn vị, số cấp linh hoạt | Nghiệp vụ | Đã chấp nhận | [ADR-14-org-unit-types.md](adr/ADR-14-org-unit-types.md) |
+| ADR-15 | Tách Notification và Search (nay là Assistant) thành service riêng qua event | Cả hai | Đã chấp nhận | [ADR-15-service-extraction.md](adr/ADR-15-service-extraction.md) |
+| ADR-16 | Trợ lý chính sách: truy hồi lai full-text và pgvector, LLM chọn được trong ứng dụng qua adapter | Cả hai | Đã chấp nhận | [ADR-16-policy-assistant.md](adr/ADR-16-policy-assistant.md) |
+| ADR-17 | Đăng nhập, MFA, vòng đời tài khoản qua IdP managed (Keycloak local, Cognito staging) | Cả hai | Đã chấp nhận | [ADR-17-authentication.md](adr/ADR-17-authentication.md) |
+| ADR-18 | Phân quyền: RBAC ở controller, kiểm theo dữ liệu ở service, vai trò HR/ADMIN từ database | Phần mềm | Đã chấp nhận | [ADR-18-authorization.md](adr/ADR-18-authorization.md) |

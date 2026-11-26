@@ -1,10 +1,12 @@
 import { Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
-import { EVENTS_EXCHANGE, LeaveEventType, routingKey } from '../modules/leave/outbox/leave-events';
+import { EVENTS_EXCHANGE } from '../modules/leave/outbox/leave-events';
+import { routingKeyOf } from './routing';
 import { BusEvent, EventBus, EventConsumer, EventHandler } from './event-bus';
 
-export const QUEUE = 'notification.leave';
-export const DEAD_LETTER_QUEUE = 'notification.leave.dlq';
+/** Queue của worker backend: chỉ event tài khoản, vai trò (identity-sync). Email do `services/notification` nghe `notification.leave`. */
+export const QUEUE = 'identity.sync';
+export const DEAD_LETTER_QUEUE = 'identity.sync.dlq';
 
 /**
  * Publish lên exchange topic `hr.events` qua confirm channel: publish() chỉ resolve khi broker xác nhận.
@@ -19,12 +21,13 @@ export class RabbitMqEventBus implements EventBus {
   async publish(event: BusEvent): Promise<void> {
     try {
       const channel = await this.ensureChannel();
-      channel.publish(EVENTS_EXCHANGE, routingKey(event.type as LeaveEventType), Buffer.from(JSON.stringify(event.payload)), {
+      channel.publish(EVENTS_EXCHANGE, routingKeyOf(event.type), Buffer.from(JSON.stringify(event.payload)), {
         messageId: event.id,
         type: event.type,
         persistent: true,
         contentType: 'application/json',
         timestamp: Math.floor(event.createdAt.getTime() / 1000),
+        ...(event.traceparent ? { headers: { traceparent: event.traceparent } } : {}),
       });
       await channel.waitForConfirms();
     } catch (e) {
@@ -57,7 +60,7 @@ export class RabbitMqEventBus implements EventBus {
 }
 
 /**
- * Nghe queue `notification.leave` (bind `leave.*`); handler lỗi thì nack không requeue → DLQ.
+ * Nghe queue `identity.sync` (bind `identity.*`); handler lỗi thì nack không requeue → DLQ.
  * Message nằm trong queue durable nên worker kết nối lại vẫn nhận được event gửi lúc mất kết nối.
  */
 export class RabbitMqEventConsumer implements EventConsumer {
@@ -96,13 +99,20 @@ export class RabbitMqEventConsumer implements EventConsumer {
     await ch.assertExchange(EVENTS_EXCHANGE, 'topic', { durable: true });
     await ch.assertQueue(DEAD_LETTER_QUEUE, { durable: true });
     await ch.assertQueue(QUEUE, { durable: true, deadLetterExchange: '', deadLetterRoutingKey: DEAD_LETTER_QUEUE });
-    await ch.bindQueue(QUEUE, EVENTS_EXCHANGE, 'leave.*');
+    await ch.bindQueue(QUEUE, EVENTS_EXCHANGE, 'identity.*');
     await ch.prefetch(10);
     await ch.consume(QUEUE, (msg) => {
       if (!msg) return;
       const id = msg.properties.messageId as string;
       Promise.resolve()
-        .then(() => handler({ id, type: msg.properties.type, payload: JSON.parse(msg.content.toString()) }))
+        .then(() =>
+          handler({
+            id,
+            type: msg.properties.type,
+            payload: JSON.parse(msg.content.toString()),
+            traceparent: (msg.properties.headers?.traceparent as string | undefined) ?? null,
+          }),
+        )
         .then(() => ch.ack(msg))
         .catch((e) => {
           this.logger.error(`Event ${id} lỗi, chuyển DLQ: ${e instanceof Error ? e.message : e}`);

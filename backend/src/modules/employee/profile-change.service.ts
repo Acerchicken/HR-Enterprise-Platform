@@ -19,9 +19,10 @@ import { FIELD_CRYPTO, RequestMeta } from './employee.service';
 import { ChangeAction, ProfileChangeRequest, ProfileFile, ProfileItem } from './profile-change.entity';
 import { FileView, fileView, ProfileFileService } from './profile-file.service';
 import { ProfileEventType } from './profile-events';
-import { careerTimeline, OrgChange, onLeavePeriods, seniority } from './profile-computed';
+import { onLeavePeriods, seniority } from './profile-computed';
 import { CONTRACT_LABEL, FieldSpec, SECTION_SCHEMAS, SectionSchema, validateSection } from './profile-schema';
-import { canSeeLevel, findSection, relationTo } from './profile-sections';
+import { canSeeLevel, findSection, relationTo, resolveRelation } from './profile-sections';
+import { writeOutbox } from '../../messaging/outbox';
 
 /** Mỗi nhân viên tối đa 20 yêu cầu đang chờ (AC-1.9.7, E21). */
 export const MAX_PENDING = 20;
@@ -65,6 +66,8 @@ export interface RequestView {
   submittedAt: Date;
   reviewedAt: Date | null;
   rejectReason?: string | null;
+  /** `TERMINATED`: hệ thống hủy vì chủ hồ sơ nghỉ việc (UC1 E29). */
+  cancelReason: string | null;
   fileIds: string[];
   files?: FileView[];
 }
@@ -125,6 +128,16 @@ export class ProfileChangeService {
     return new Map(rows.map((r) => [r.section, Number(r.n)]));
   }
 
+  /** Số yêu cầu của chính mình bị HR từ chối mà chưa đóng thông báo (dải "Việc cần làm", frontend.md 2.2, AC-0.2.2). */
+  rejectedUnacknowledged(employeeId: string): Promise<number> {
+    return this.requests.count({ where: { employeeId, status: 'REJECTED', acknowledgedAt: IsNull() } });
+  }
+
+  /** Số yêu cầu của chính mình đang chờ HR ("2 yêu cầu cập nhật hồ sơ chờ HR" ở dải "Việc cần làm"). */
+  ownPending(employeeId: string): Promise<number> {
+    return this.requests.count({ where: { employeeId, status: 'PENDING' } });
+  }
+
   /** Yêu cầu đang chờ và yêu cầu bị từ chối chưa đóng của một mục (AC-1.9.2). Người khác (kể cả quản lý) không thấy. */
   async openRequests(employeeId: string, section: string): Promise<RequestView[]> {
     const list = await this.requests.find({
@@ -148,7 +161,7 @@ export class ProfileChangeService {
   async readSection(employeeId: string, code: string, viewer: AuthUser, reveal: boolean, meta: RequestMeta = {}) {
     const e = await this.employees.findOneBy({ id: employeeId });
     if (!e) throw new NotFoundException('Không tìm thấy nhân viên');
-    const relation = relationTo(viewer, e);
+    const relation = await resolveRelation(this.employees, viewer, e);
     const def = findSection(code);
     const schema = SECTION_SCHEMAS[code];
     if (!def || !def.available || !schema || schema.kind === 'main' || !canSeeLevel(relation, def.level)) {
@@ -697,7 +710,7 @@ export class ProfileChangeService {
   ) {
     const e = await this.employees.findOneBy({ id: employeeId });
     if (!e) throw new NotFoundException('Không tìm thấy nhân viên');
-    const relation = relationTo(viewer, e);
+    const relation = await resolveRelation(this.employees, viewer, e);
     // AC-1.11.2: chỉ chủ hồ sơ và HR; quản lý trực tiếp, người khác 403.
     if (relation !== 'OWNER' && relation !== 'HR') throw new ForbiddenException('Chỉ chủ hồ sơ và HR xem lịch sử thay đổi');
     const page = await this.audit.history({ entityType: 'employee', entityId: employeeId, ...q, actions: HISTORY_ACTIONS });
@@ -739,6 +752,7 @@ export class ProfileChangeService {
       proposedSensitive: Object.fromEntries(keys.map((k) => [k, { hasValue: true, value: null }])),
       submittedAt: r.submittedAt,
       reviewedAt: r.reviewedAt,
+      cancelReason: r.cancelReason ?? null,
       fileIds: r.fileIds ?? [],
       ...(withReason ? { rejectReason: r.rejectReason } : {}),
     };
@@ -756,7 +770,7 @@ export class ProfileChangeService {
   async computed(employeeId: string, code: string, viewer: AuthUser) {
     const e = await this.employees.findOneBy({ id: employeeId });
     if (!e) throw new NotFoundException('Không tìm thấy nhân viên');
-    const relation = relationTo(viewer, e);
+    const relation = await resolveRelation(this.employees, viewer, e);
     const def = findSection(code);
     if (!def || !def.available || !canSeeLevel(relation, def.level)) throw new NotFoundException('Không tìm thấy mục hồ sơ');
     const base = { section: code, kind: 'computed' as const, canEdit: relation === 'HR' };
@@ -786,26 +800,29 @@ export class ProfileChangeService {
       return { ...base, rows };
     }
 
-    // career-history
+    // career-history (UC2 FR-2.8): nguồn chính là bảng quá trình công tác; audit chỉ còn để tra cứu.
     const lookups = await this.org.lookups();
-    const auto = careerTimeline(
-      e.hireDate,
-      { departmentId: e.departmentId, positionId: e.positionId, managerId: e.managerId },
-      changesOf(['departmentId', 'positionId', 'managerId']).map((a) => ({ at: a.at, changes: a.cf as OrgChange['changes'] })),
-    );
-    const managerIds = [...new Set(auto.map((p) => p.managerId).filter((x): x is string => !!x))];
-    const names = managerIds.length
-      ? new Map((await this.employees.find({ where: { id: In(managerIds) }, select: { id: true, fullName: true } })).map((m) => [m.id, m.fullName]))
-      : new Map<string, string>();
+    const rows: { department_id: string; position_id: string; manager_id: string | null; from: string; to: string | null; reason: string; status: string; manager_name: string | null }[] =
+      await this.items.query(
+        `SELECT a.department_id, a.position_id, a.manager_id, to_char(a.effective_from, 'YYYY-MM-DD') AS "from",
+                to_char(a.effective_to, 'YYYY-MM-DD') AS "to", a.reason, a.status, m.full_name AS manager_name
+           FROM employee.employment_assignment a LEFT JOIN employee.employee m ON m.id = a.manager_id
+          WHERE a.employee_id = $1 AND a.status IN ('ACTIVE', 'CLOSED', 'SCHEDULED')
+            AND (a.effective_to IS NULL OR a.effective_to >= a.effective_from)
+          ORDER BY a.effective_from DESC, a.created_at DESC`,
+        [employeeId],
+      );
     const manual = await this.items.find({ where: { employeeId, section: 'career-history', deletedAt: IsNull() } });
     const periods = [
-      ...auto.map((p) => ({
+      ...rows.map((p) => ({
         from: p.from,
         to: p.to,
-        department: p.departmentId ? (lookups.department.get(p.departmentId)?.name ?? null) : null,
-        position: p.positionId ? (lookups.position.get(p.positionId)?.title ?? null) : null,
-        manager: p.managerId ? (names.get(p.managerId) ?? null) : null,
-        reason: p.reason,
+        department: lookups.department.get(p.department_id)?.name ?? null,
+        unitType: lookups.department.get(p.department_id)?.unitType ?? null,
+        position: lookups.position.get(p.position_id)?.title ?? null,
+        manager: p.manager_name,
+        reason: CAREER_REASON[p.reason] ?? p.reason,
+        upcoming: p.status === 'SCHEDULED',
         source: 'AUTO' as const,
       })),
       ...manual.map((m) => ({
@@ -815,6 +832,8 @@ export class ProfileChangeService {
         position: (m.data.position as string) ?? null,
         manager: (m.data.manager as string | undefined) ?? null,
         reason: String(m.data.reason ?? ''),
+        unitType: null,
+        upcoming: false,
         source: 'HR' as const,
       })),
     ].sort((a, b) => b.from.localeCompare(a.from));
@@ -928,11 +947,13 @@ export class ProfileChangeService {
 
   /** Event cho worker gửi email (outbox dùng chung `leave.outbox`, ghi cùng giao dịch). Payload không có giá trị hồ sơ. */
   private async outbox(m: EntityManager, type: ProfileEventType, r: ProfileChangeRequest) {
-    await m.query(`INSERT INTO leave.outbox (event_type, aggregate_id, payload) VALUES ($1, $2, $3)`, [
-      type,
-      r.id,
-      JSON.stringify({ requestId: r.id, employeeId: r.employeeId, section: r.section, status: r.status, occurredAt: new Date().toISOString() }),
-    ]);
+    await writeOutbox(m, type, r.id, {
+      requestId: r.id,
+      employeeId: r.employeeId,
+      section: r.section,
+      status: r.status,
+      occurredAt: new Date().toISOString(),
+    });
   }
 }
 
@@ -954,3 +975,12 @@ const HISTORY_ACTIONS = [
 const HISTORY_META = new Set(['section', 'requestId', 'itemId', 'action', 'fields']);
 
 export type { FieldSpec };
+
+/** Lý do trong quá trình công tác (AC-2.8.1). */
+const CAREER_REASON: Record<string, string> = {
+  HIRE: 'Tuyển mới',
+  TRANSFER: 'Điều chuyển',
+  PROMOTION: 'Thăng chức',
+  MANAGER_CHANGE: 'Đổi quản lý',
+  CORRECTION: 'Điều chỉnh',
+};

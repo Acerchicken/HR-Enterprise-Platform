@@ -56,6 +56,21 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "documents" {
   }
 }
 
+# CORS for direct browser upload via presigned PUT (FR-5.1, ADR-13)
+resource "aws_s3_bucket_cors_configuration" "documents" {
+  bucket = aws_s3_bucket.documents.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT", "GET", "HEAD"]
+    allowed_origins = [
+      "https://${aws_cloudfront_distribution.web.domain_name}"
+    ]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3600
+  }
+}
+
 # CloudFront Origin Access Control (OAC) for secure S3 origin access
 resource "aws_cloudfront_origin_access_control" "web" {
   name                              = "${var.project_name}-${var.environment}-web-oac"
@@ -151,4 +166,72 @@ resource "aws_s3_bucket_policy" "web" {
       }
     ]
   })
+}
+
+# ==============================================================================
+# S3 Bucket for Employee Profile Files (UC1 FR-1.10, capability F3)
+# ==============================================================================
+resource "aws_s3_bucket" "profile_files" {
+  bucket        = "${var.project_name}-${var.environment}-profile-files-${random_string.suffix.result}"
+  force_destroy = true # Staging environment cleanup
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-profile-files"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "profile_files" {
+  bucket = aws_s3_bucket.profile_files.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "profile_files" {
+  bucket = aws_s3_bucket.profile_files.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.main.arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
+# CORS: allow method PUT only from CloudFront distribution domain (F3, ADR-13)
+resource "aws_s3_bucket_cors_configuration" "profile_files" {
+  bucket = aws_s3_bucket.profile_files.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT"]
+    allowed_origins = [
+      "https://${aws_cloudfront_distribution.web.domain_name}"
+    ]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3600
+  }
+}
+
+# Lifecycle rule: delete objects tagged with deleted=true after 30 days (UC1 FR-1.10)
+resource "aws_s3_bucket_lifecycle_configuration" "profile_files" {
+  bucket = aws_s3_bucket.profile_files.id
+
+  rule {
+    id     = "delete-tagged-deleted-files"
+    status = "Enabled"
+
+    filter {
+      tag {
+        key   = "deleted"
+        value = "true"
+      }
+    }
+
+    expiration {
+      days = 30
+    }
+  }
 }

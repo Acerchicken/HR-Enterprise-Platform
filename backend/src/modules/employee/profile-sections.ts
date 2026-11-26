@@ -51,11 +51,39 @@ export function findSection(code: string): SectionDef | undefined {
   return BY_CODE.get(code);
 }
 
+/** Quan hệ tính được không cần database: HR, chủ hồ sơ, quản lý trực tiếp. Quản lý gián tiếp dùng `resolveRelation`. */
 export function relationTo(viewer: AuthUser, target: { id: string; managerId: string | null }): Relation {
   if (hasRole(viewer, 'HR')) return 'HR';
   if (viewer.employeeId && viewer.employeeId === target.id) return 'OWNER';
   if (viewer.employeeId && viewer.employeeId === target.managerId) return 'MANAGER';
   return 'OTHER';
+}
+
+/** Chuỗi quản lý dài nhất được dò; FR-2.5 không cho vòng nên chỉ là chốt an toàn. */
+export const MAX_CHAIN_DEPTH = 20;
+
+/**
+ * Như `relationTo`, cộng quản lý gián tiếp (chốt 18/11/2026): người xem nằm trên chuỗi quản lý trực tiếp của target (quản lý
+ * của quản lý…) cũng là `MANAGER`, xem được mục mức QL. Quyền duyệt đơn nghỉ không đổi, vẫn chỉ quản lý trực tiếp (BR-05).
+ */
+export async function resolveRelation(
+  db: { query: (sql: string, params?: unknown[]) => Promise<unknown[]> },
+  viewer: AuthUser,
+  target: { id: string; managerId: string | null },
+): Promise<Relation> {
+  const direct = relationTo(viewer, target);
+  if (direct !== 'OTHER' || !viewer.employeeId || !target.managerId) return direct;
+  const rows = await db.query(
+    `WITH RECURSIVE chain(id, depth) AS (
+       SELECT manager_id, 1 FROM employee.employee WHERE id = $1 AND manager_id IS NOT NULL
+       UNION ALL
+       SELECT e.manager_id, c.depth + 1 FROM employee.employee e JOIN chain c ON e.id = c.id
+        WHERE e.manager_id IS NOT NULL AND c.depth < $3
+     )
+     SELECT 1 FROM chain WHERE id = $2 LIMIT 1`,
+    [target.managerId, viewer.employeeId, MAX_CHAIN_DEPTH],
+  );
+  return rows.length ? 'MANAGER' : 'OTHER';
 }
 
 const LEVEL_VIEWERS: Record<SectionLevel, readonly Relation[]> = {

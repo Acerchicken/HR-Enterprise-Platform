@@ -4,7 +4,7 @@ import { Request, Response } from 'express';
 import { RequestMeta } from '../employee/employee.service';
 import { CurrentUser, Roles } from '../identity/auth.decorators';
 import { AuthUser } from '../identity/roles';
-import { CreateDocumentDto, DocumentQuery, FileSpecDto, UpdateDocumentDto } from './document.dto';
+import { CreateDocumentDto, DocumentQuery, FileSpecDto, ManageDocumentQuery, UpdateDocumentDto } from './document.dto';
 import { DocumentService } from './document.service';
 
 const meta = (req: Request & { traceId?: string }): RequestMeta => ({ ip: req.ip ?? null, traceId: req.traceId ?? null });
@@ -27,7 +27,7 @@ export class DocumentController {
 
   @Get('documents/manage')
   @Roles('HR')
-  manageList(@Query() q: DocumentQuery) {
+  manageList(@Query() q: ManageDocumentQuery) {
     return this.docs.manageList(q);
   }
 

@@ -7,6 +7,8 @@ import { AppConfig } from './config/config';
 /** Cấu hình dùng chung cho main.ts, e2e test và script xuất OpenAPI. */
 export function configureApp(app: INestApplication, cfg: AppConfig) {
   app.setGlobalPrefix('api/v1');
+  // staging-readiness F5: sau App Runner/ALB, req.ip lấy từ X-Forwarded-For đúng số lớp proxy (cfg.trustProxy).
+  if (cfg.trustProxy > 0) (app as NestExpressApplication).set('trust proxy', cfg.trustProxy);
   // UC1 E16, AC-1.14.6: body JSON tối đa 64 KiB, vượt thì 413.
   (app as NestExpressApplication).useBodyParser('json', { limit: '64kb' });
   app.enableCors({ origin: cfg.corsOrigin.split(','), exposedHeaders: ['X-Trace-Id', 'Retry-After'] });

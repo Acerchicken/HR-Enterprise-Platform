@@ -4,12 +4,12 @@
 |---|---|
 | Mục tiêu kinh doanh | MT-4 (nhân viên tự phục vụ, biết bản chính sách mới nhất) |
 | Tác nhân chính | HR (đăng, quản lý tài liệu); nhân viên (xem, tải) |
-| Tác nhân phụ, hệ thống ngoài | Object storage (MinIO ở local, S3 trên AWS) |
+| Tác nhân phụ, hệ thống ngoài | Object storage (S3Mock ở local, S3 trên AWS); assistant service của UC6 nhận event tài liệu (ADR-15, ADR-16) |
 | Yêu cầu (SRS) | FR-5.1 → FR-5.3 |
-| Quy tắc | [DR-01 → DR-06, DR-08](../../business/document-rules.md), [ADR-13](../../architecture/adr/ADR-13-document-storage.md) |
+| Quy tắc | [DR-01 → DR-06, DR-08](../../business/document-rules.md), [ADR-13](../../architecture/adr/ADR-13-document-storage.md), [ADR-14](../../architecture/adr/ADR-14-org-unit-types.md) (đơn vị), [ADR-15](../../architecture/adr/ADR-15-service-extraction.md) (event), [ADR-18](../../architecture/adr/ADR-18-authorization.md) (phân quyền) |
 | Mức ưu tiên | M (FR-5.3 là S) |
-| Trạng thái | Đã có API (PR #64, 12/11); chưa có giao diện; staging chưa cấu hình kho |
-| Phiên bản | 1.0 – 13/11/2026 |
+| Trạng thái | Đã có API (PR #64, 12/11) và giao diện (22/11, nhánh `feat/document-ui`); chưa phát event cho trợ lý UC6 (`feat/assistant-service`); Terraform bucket đã merge (#70) nhưng chưa apply |
+| Phiên bản | 1.1 – 22/11/2026 (1.1: kiểm chéo với UC1, UC2, UC3, UC4, UC7, UC8, ADR-14, ADR-15, ADR-18, schema, error-codes; thêm 9.2, 13.2 → 13.4; Duong chốt D1 → D5 theo đề xuất ngày 22/11) |
 
 ## 1. Mô tả ngắn
 
@@ -22,9 +22,18 @@ xóa.
 
 | Tác nhân | Được làm gì | Giới hạn theo dữ liệu |
 |---|---|---|
-| Nhân viên (mọi vai trò) | Xem danh sách, chi tiết, các phiên bản; tải file | Chỉ tài liệu chưa ẩn, có phiên bản sẵn sàng, khớp ít nhất một phạm vi (DR-02); kiểm lại ở mỗi lần gọi (DR-06) |
+| Nhân viên (mọi vai trò) | Xem danh sách, chi tiết, các phiên bản; tải file | Chỉ tài liệu chưa ẩn, có phiên bản sẵn sàng, khớp ít nhất một phạm vi (DR-02); kiểm lại ở mỗi lần gọi (DR-06). Cần tài khoản gắn hồ sơ chưa `TERMINATED` (UC1, UC8) |
 | HR | Thêm: tạo tài liệu, thêm phiên bản, sửa tiêu đề, loại, phạm vi; ẩn, khôi phục; xem metadata mọi tài liệu ở trang quản lý | Không tự có quyền tải nội dung ngoài phạm vi (DR-03) |
-| ADMIN | Như nhân viên | Không quản lý kho |
+| ADMIN | Như nhân viên | Không quản lý kho. Tài khoản chỉ có vai trò ADMIN, không gắn hồ sơ (UC8), nhận danh sách rỗng, kể cả tài liệu có phạm vi vai trò `ADMIN` |
+
+Phạm vi xem dùng hai khái niệm của module khác, cùng tính lại ở mỗi request:
+
+- **Đơn vị** (UC2, ADR-14): `scope.departmentIds` nhận đơn vị mọi loại (`COMPANY`, `CENTER`, `DEPARTMENT`, `TEAM`). Người xem
+  khớp khi đơn vị hiện tại của họ là đơn vị đó hoặc đơn vị con cháu. Điều chuyển có ngày hiệu lực (UC2 FR-2.7) chỉ đổi quyền khi
+  job áp dụng điều chuyển chạy (tối đa 5 phút sau 0:00 ngày hiệu lực), không đổi lúc HR lên lịch.
+- **Vai trò** (UC8, ADR-10, ADR-18): `EMPLOYEE` là mọi người có hồ sơ đang làm việc; `MANAGER` là người **có cấp dưới trực
+  tiếp**, không phải trưởng, phó đơn vị; `HR`, `ADMIN` là vai trò được cấp trong ứng dụng. Thu hồi HR thì mất quyền xem tài liệu
+  phạm vi `HR` ở request kế tiếp.
 
 ## 3. Điều kiện
 
@@ -69,6 +78,22 @@ sequenceDiagram
 | 8 | | Đạt: phiên bản thành `READY`, ghi audit `DOCUMENT_PUBLISH`. Tài liệu bắt đầu hiện với người trong phạm vi |
 | 9 | HR thấy tài liệu ở trang quản lý | Trả metadata tài liệu |
 
+**Giao diện và sơ đồ luồng**
+
+Chạy từng bước: [f1](flows/flows.html#f1), [g1](flows/flows.html#g1) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: hộp đăng tài liệu: phạm vi, file, tiến độ tải lên*
+
+![hộp đăng tài liệu: phạm vi, file, tiến độ tải lên](mockups/uc5-upload.png)
+
+*Sơ đồ f1: HR đăng tài liệu mới (luồng chính)*
+
+![HR đăng tài liệu mới (luồng chính)](flows/uc5-f1.png)
+
+*Sơ đồ g1: trạng thái phiên bản*
+
+![trạng thái phiên bản](flows/uc5-g1.png)
+
 ## 5. Luồng thay thế
 
 - **A1, nhân viên xem và tải (FR-5.2):**
@@ -84,19 +109,84 @@ sequenceDiagram
   danh sách, tìm kiếm, tải xuống. Audit `DOCUMENT_HIDE`, `DOCUMENT_RESTORE`.
 - **A5, HR quản lý:** `GET /documents/manage` và `GET /documents/manage/{id}` thấy mọi tài liệu, kể cả đã ẩn, chỉ metadata.
 
+**Minh họa luồng thay thế: A1**
+
+Chạy từng bước: [f2](flows/flows.html#f2), [g2](flows/flows.html#g2) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: trang "Tra cứu tài liệu" /documents*
+
+![trang "Tra cứu tài liệu" /documents](mockups/uc56-documents.png)
+
+*Màn hình: chi tiết tài liệu và các phiên bản*
+
+![chi tiết tài liệu và các phiên bản](mockups/uc5-detail.png)
+
+*Màn hình: tài liệu và trợ lý là hai tab trên điện thoại*
+
+![tài liệu và trợ lý là hai tab trên điện thoại](mockups/uc56-mobile.png)
+
+*Sơ đồ f2: nhân viên xem, tải (A1)*
+
+![nhân viên xem, tải (A1)](flows/uc5-f2.png)
+
+*Sơ đồ g2: ai thấy một tài liệu (DR-02, DR-08)*
+
+![ai thấy một tài liệu (DR-02, DR-08)](flows/uc5-g2.png)
+
+**Minh họa luồng thay thế: A2**
+
+Chạy từng bước: [f3](flows/flows.html#f3) (mở `flows.html` bằng trình duyệt).
+
+*Sơ đồ f3: thêm phiên bản (A2)*
+
+![thêm phiên bản (A2)](flows/uc5-f3.png)
+
+**Minh họa luồng thay thế: A3, A4, A5**
+
+Chạy từng bước: [f4](flows/flows.html#f4), [f5](flows/flows.html#f5) (mở `flows.html` bằng trình duyệt).
+
+*Màn hình: HR quản lý tài liệu /documents/manage*
+
+![HR quản lý tài liệu /documents/manage](mockups/uc5-manage.png)
+
+*Sơ đồ f4: sửa thông tin, phạm vi (A3)*
+
+![sửa thông tin, phạm vi (A3)](flows/uc5-f4.png)
+
+*Sơ đồ f5: ẩn, khôi phục, quản lý (A4, A5)*
+
+![ẩn, khôi phục, quản lý (A4, A5)](flows/uc5-f5.png)
+
 ## 6. Ngoại lệ
+
+Ngoại lệ chung của mọi API không lặp lại ở đây ([error-codes.md](../../development/error-codes.md#lỗi-chung)): 401 chưa đăng nhập hoặc token hết hạn; 403 tài khoản đã nghỉ việc (UC8 E4); 400 khi gửi trường lạ (chống gán hàng loạt) hoặc ID không phải UUID; 413 body quá 64 KiB; 500 kèm `traceId`. Cách rà ngoại lệ: [README mục "Rà ngoại lệ"](../README.md#rà-ngoại-lệ).
 
 | Mã | Tình huống | Hệ thống phản hồi |
 |---|---|---|
 | E1 | Vai trò không phải HR tạo, sửa, ẩn tài liệu | 403 `FORBIDDEN` |
-| E2 | Thiếu tiêu đề, phạm vi rỗng, loại không hợp lệ, file không phải PDF/DOCX, quá 20 MiB | 400 `BAD_REQUEST` kèm `fields` |
+| E2 | Thiếu tiêu đề, phạm vi rỗng, loại không hợp lệ, file không phải PDF/DOCX, quá 20 MiB, đơn vị không tồn tại | 400 `BAD_REQUEST` kèm `fields` (`title`, `type`, `scope`, `scope.departmentIds`, `fileName`, `contentType`, `sizeBytes`). **Hiện code chỉ có `fields` khi lỗi ở DTO**; lỗi kiểm ở service (đuôi file, content type, phạm vi rỗng, đơn vị không tồn tại) chưa có `fields`, sửa trong `feat/document-ui` (13.3) |
 | E3 | Xác nhận khi chưa tải file lên | 400 `BAD_REQUEST`; phiên bản vẫn `PENDING`, tải lên rồi xác nhận lại |
 | E3b | File sai dung lượng khai báo hoặc định dạng thật không khớp (ví dụ ZIP đổi đuôi `.pdf`) | Phiên bản `REJECTED`, file bị xóa; 400 `BAD_REQUEST` |
 | E4 | Xác nhận lại phiên bản đã `REJECTED` | 409 `CONFLICT`; tạo phiên bản mới. Xác nhận lại phiên bản đã `READY` thì trả lại tài liệu, không đổi gì |
 | E5 | Xem hoặc tải tài liệu ngoài phạm vi, đã ẩn, hoặc ID không tồn tại | 404 `NOT_FOUND`, không phân biệt các trường hợp (DR-08) |
 | E6 | Sửa metadata với `version` cũ | 409 `CONFLICT` |
-| E7 | Kho file chưa cấu hình | 503 `HTTP_503` ("Kho tài liệu chưa được cấu hình") ở các API đụng tới file |
-| E8 | URL tải lên quá 10 phút | Storage từ chối PUT; HR tạo phiên bản mới |
+| E7 | Kho file chưa cấu hình | 503 `HTTP_503` ("Kho tài liệu chưa được cấu hình") ở các API đụng tới file: tạo, thêm phiên bản, xác nhận, tải xuống. Danh sách, chi tiết, trang quản lý, sửa metadata, ẩn, khôi phục vẫn chạy (NFR-3.4) |
+| E8 | URL tải lên quá 10 phút | Storage từ chối PUT; HR tạo phiên bản mới. Phiên bản cũ ở `PENDING` để lại, nên số phiên bản nhân viên thấy có thể nhảy (13.3) |
+
+### 6.1 Ngoại lệ bổ sung (rà 24/11/2026)
+
+Rà theo các nhóm ở [README](../README.md#rà-ngoại-lệ). Cột "Code" là hiện trạng: **Có** đã đối chiếu code hoặc thiết kế đã chốt; **Cần kiểm** chưa đối chiếu, test phải xác nhận; **Chưa đạt** code chưa làm đúng (mục 12); **Đề xuất** cần TV2 chốt nghiệp vụ.
+
+| Mã | Nhóm | Tình huống | Hệ thống phản hồi | Code |
+|---|---|---|---|---|
+| E9 | Bảo mật | Tên file có `/`, `\`, `..`, ký tự điều khiển, hoặc dài quá 255 ký tự | 400 `BAD_REQUEST` `fields.fileName`; object key luôn sinh từ ID | Cần kiểm |
+| E10 | Bảo mật | Sau khi nhận URL, PUT một file khác (đổi nội dung trước khi xác nhận) | `confirm` kiểm dung lượng, magic number trên object đang có; sai thì `REJECTED` (E3b) | Có |
+| E11 | Bảo mật | DOCX có macro (`.docm` đổi đuôi, có `vbaProject.bin`); PDF có JavaScript | DOCX có macro thì `REJECTED`; PDF luôn tải về dạng attachment, không mở trong trình duyệt (D5) | Cần kiểm |
+| E12 | Tranh chấp | Hai HR cùng thêm phiên bản cho một tài liệu | Số phiên bản cấp tuần tự, không trùng (khóa dòng tài liệu) | Cần kiểm |
+| E13 | Gửi trùng | Ẩn tài liệu đã ẩn, khôi phục tài liệu đang hiện | 200, không ghi audit, không phát event | Cần kiểm |
+| E14 | Hệ thống ngoài | Object mất trên storage (xóa ngoài ứng dụng) khi tải xuống | 404 `NOT_FOUND` cho người dùng, log lỗi kèm `traceId` cho người vận hành; không 500 | Cần kiểm |
+| E15 | Bảo mật | Từ khóa `q` ở trang quản lý có `%`, `_` | Ký tự LIKE được thoát (tìm đúng chữ) | Có |
+| E16 | Phân quyền | HR bị thu hồi vai trò khi đang mở trang quản lý | 403 ở thao tác kế tiếp (vai trò đọc từ database mỗi request, ADR-18) | Có |
 
 ## 7. Quy tắc áp dụng
 
@@ -106,26 +196,31 @@ sequenceDiagram
 - DR-06 quyền đổi ngay khi đổi phòng ban, DR-08 không lộ metadata.
 - [ADR-13](../../architecture/adr/ADR-13-document-storage.md): tải lên bằng presigned URL, tải xuống qua API, lọc phạm vi
   ngay trong truy vấn SQL.
+- [ADR-18](../../architecture/adr/ADR-18-authorization.md): lớp 1 `@Roles('HR')` ở controller cho thao tác quản lý; lớp 3 điều
+  kiện phạm vi trong `WHERE` (`visibleQuery` trong `document.service.ts`). Hàm thuần `canView` trong `document-rules.ts` chỉ dùng
+  cho unit test, nên phải giữ cùng logic với câu SQL (13.3).
+- [ADR-15](../../architecture/adr/ADR-15-service-extraction.md): module document phát event qua outbox chung cho assistant
+  service (13.2).
 
 ## 8. Dữ liệu vào
 
 | Trường | Bắt buộc | Kiểm tra |
 |---|---|---|
-| `title` | Có | Không rỗng |
+| `title` | Có | 1 → 200 ký tự, bỏ khoảng trắng hai đầu |
 | `type` | Có | `POLICY`, `PROCESS`, `GUIDE`, `FORM`, `NOTICE` |
 | `scope.all` | Một trong ba | `true` là toàn công ty |
-| `scope.departmentIds` | Một trong ba | UUID phòng ban; gồm phòng ban con |
+| `scope.departmentIds` | Một trong ba | Tối đa 50 UUID đơn vị `ACTIVE` (mọi loại, ADR-14; D3); gồm đơn vị con cháu |
 | `scope.roles` | Một trong ba | `EMPLOYEE`, `MANAGER`, `HR`, `ADMIN` |
-| `fileName`, `contentType`, `sizeBytes` | Có (khi tạo, thêm phiên bản) | PDF hoặc DOCX; 1 byte → 20 MiB |
+| `fileName`, `contentType`, `sizeBytes` | Có (khi tạo, thêm phiên bản) | Đuôi `.pdf` với `application/pdf`, hoặc `.docx` với `application/vnd.openxmlformats-officedocument.wordprocessingml.document`; 1 byte → 20 MiB |
 | `version` (khi sửa) | Có | Version hiện tại của tài liệu |
 
 ## 9. Giao diện và API
 
 | Luồng | Màn hình | API |
 |---|---|---|
-| Chính, A2 | `/documents/manage`, hộp "Đăng tài liệu", "Thêm phiên bản" (chưa có) | `POST /documents`, `POST /documents/{id}/versions`, `POST …/confirm` |
-| A1 | `/documents` (trang "Tra cứu tài liệu", chung với UC6), `/documents/{id}` (chưa có) | `GET /documents`, `GET /documents/{id}`, `GET …/download` |
-| A3, A4, A5 | `/documents/manage` (chưa có) | `PATCH /documents/{id}`, `POST …/hide`, `POST …/restore`, `GET /documents/manage` |
+| Chính, A2 | `/documents/manage`, hộp "Đăng tài liệu", "Thêm phiên bản" | `POST /documents`, `POST /documents/{id}/versions`, `POST …/confirm` |
+| A1 | `/documents` (trang "Tra cứu tài liệu", chung với UC6), `/documents/{id}` | `GET /documents`, `GET /documents/{id}`, `GET …/download` |
+| A3, A4, A5 | `/documents/manage`, hộp "Sửa thông tin, phạm vi" | `PATCH /documents/{id}`, `POST …/hide`, `POST …/restore`, `GET /documents/manage` |
 
 ### 9.1 Bản vẽ giao diện
 
@@ -135,29 +230,77 @@ mẫu. Ô vàng là ghi chú cho người đọc. Chỗ nào bản vẽ khác ch
 
 **Trang "Tra cứu tài liệu" `/documents`: danh sách (A1) cùng ô tìm và khung trợ lý của UC6**
 
-![Trang tra cứu tài liệu](../mockups/uc56-documents.png)
+![Trang tra cứu tài liệu](mockups/uc56-documents.png)
 
 **Chi tiết `/documents/{id}` với các phiên bản (A1, FR-5.3)**
 
-![Chi tiết tài liệu](../mockups/uc5-detail.png)
+![Chi tiết tài liệu](mockups/uc5-detail.png)
 
 **HR quản lý tài liệu `/documents/manage` (A3, A4, A5)**
 
-![Quản lý tài liệu](../mockups/uc5-manage.png)
+![Quản lý tài liệu](mockups/uc5-manage.png)
 
 **HR đăng tài liệu: phạm vi, file, tiến độ tải lên (luồng chính)**
 
-![Hộp đăng tài liệu](../mockups/uc5-upload.png)
+![Hộp đăng tài liệu](mockups/uc5-upload.png)
 
 **Trên điện thoại: tài liệu và trợ lý là hai tab**
 
-![Tra cứu tài liệu trên điện thoại](../mockups/uc56-mobile.png)
+![Tra cứu tài liệu trên điện thoại](mockups/uc56-mobile.png)
+
+### 9.2 Hợp đồng API
+
+Tất cả dưới `/api/v1`, cần đăng nhập. Bảng ghi đúng code hiện tại (PR #64); `docs/openapi.yaml` sinh từ code nhưng chưa có
+schema response cho nhóm này. Lỗi theo dạng chung `{code, message, traceId, fields?}`
+([error-codes.md](../../development/error-codes.md#kho-tài-liệu-document)).
+
+| API | Ai gọi | Vào | Ra | Lỗi |
+|---|---|---|---|---|
+| `GET /documents?type=&q=&page=&size=` | Mọi người | `q`: 1–100 ký tự, tìm trong tiêu đề, không phân biệt hoa thường và dấu (FR-5.4) | Trang `{id, title, type, updatedAt, latest: Version \| null}`, mới cập nhật trước | – (không có hồ sơ thì rỗng) |
+| `GET /documents/{id}` | Mọi người | – | Như trên + `versions[]` (chỉ `READY`, mới nhất trước) | 404 (E5) |
+| `GET /documents/{id}/download` | Mọi người | – | File bản `READY` mới nhất; `Content-Disposition: attachment` tên file UTF-8; `Cache-Control: private, no-store` | 404, 503 |
+| `GET /documents/{id}/versions/{versionId}/download` | Mọi người | – | File của phiên bản đó (phải `READY`) | 404, 503 |
+| `GET /documents/manage?type=&q=&state=&page=&size=` | HR | `q`: như trên; `state`: `VISIBLE` (chưa ẩn, có bản `READY`), `HIDDEN`, `NOT_READY` (chưa có bản `READY`) | Trang `DocumentAdmin`: như trên + `hidden`, `version`, `scope {all, departmentIds, roles, departments: [{id, name, active}]}`, `versions[]` mọi trạng thái | 400, 403 |
+| `GET /documents/manage/{id}` | HR | – | `DocumentAdmin` (kể cả đã ẩn) | 403, 404 |
+| `POST /documents` | HR | `{title, type, scope {all?, departmentIds?, roles?}, fileName, contentType, sizeBytes}` | 201 `{document: DocumentAdmin, upload: UploadTicket}` | 400 (E2), 403, 503 |
+| `POST /documents/{id}/versions` | HR | `{fileName, contentType, sizeBytes}` | 201 `UploadTicket` `{versionId, versionNo, url…}` | 400, 403, 404, 503 |
+| `POST /documents/{id}/versions/{versionId}/confirm` | HR | – | 200 `DocumentAdmin` | 400 (E3, E3b), 404, 409 (E4), 503 |
+| `PATCH /documents/{id}` | HR | `{version, title?, type?, scope?}` (`scope` thay cả bộ) | 200 `DocumentAdmin` | 400, 403, 404, 409 (E6) |
+| `POST /documents/{id}/hide`, `/restore` | HR | – | 200 `DocumentAdmin` | 403, 404 |
+
+`Version`: `{id, versionNo, fileName, contentType, sizeBytes, status, createdAt}`.
+
+**Audit** (`entityType = document`, [UC7 spec](../UC7-audit-log/spec.md)): `DOCUMENT_CREATE` (`changedFields`: tiêu đề, loại,
+phạm vi), `DOCUMENT_PUBLISH` (số phiên bản, tên file), `DOCUMENT_UPDATE` (trường đổi), `DOCUMENT_HIDE`, `DOCUMENT_RESTORE`. Thêm
+phiên bản chưa ghi audit cho tới khi xác nhận; phiên bản bị `REJECTED` không ghi audit. Tải xuống không ghi audit (tài liệu chính
+sách không phải dữ liệu nhạy cảm).
+
+Lỗi 400 ở service có `fields` theo tên trường của request (`scope`, `scope.departmentIds`, `fileName`, `contentType`,
+`sizeBytes`), helper chung `common/field-error.ts`.
+
+**Event:** chưa có. Thiết kế ở 13.2.
+
+### 9.3 Sơ đồ luồng
+
+Bấm "Chạy" để xem từng bước: [`flows/flows.html`](flows/flows.html) (tải về hoặc mở từ repo đã clone). Ảnh PNG nằm cùng thư mục,
+xuất lại bằng `flows/render.js` (Playwright) hoặc `flows/render.ps1` (Edge, Windows). Đánh chỉ mục tài liệu cho trợ lý ở
+[UC6 mục 9.3](../UC6-policy-assistant/spec.md#93-sơ-đồ-luồng).
+
+| Luồng | Sơ đồ |
+|---|---|
+| HR đăng tài liệu mới (luồng chính, E1 → E4, E7, E8) | [uc5-f1.png](flows/uc5-f1.png) |
+| Nhân viên xem, tải (A1, E5, DR-02, DR-06, DR-08) | [uc5-f2.png](flows/uc5-f2.png) |
+| Thêm phiên bản (A2, DR-04) | [uc5-f3.png](flows/uc5-f3.png) |
+| Sửa thông tin, phạm vi (A3, E6) | [uc5-f4.png](flows/uc5-f4.png) |
+| Ẩn, khôi phục, trang quản lý (A4, A5, DR-05) | [uc5-f5.png](flows/uc5-f5.png) |
+| Trạng thái phiên bản (E3, E3b, E4, E8) | [uc5-g1.png](flows/uc5-g1.png) |
+| Ai thấy một tài liệu (DR-02, DR-08) | [uc5-g2.png](flows/uc5-g2.png) |
 
 ## 10. Yêu cầu phi chức năng liên quan
 
-- NFR-5.16: mã hóa file khi lưu. NFR-5.19: bucket chặn public. URL tải lên hết hạn sau 10 phút, đủ để tải file
-  20 MiB trên mạng chậm; tải xuống không dùng presigned URL (ADR-13). SRS NFR-5.19 đang ghi "≤ 5 phút" cho mọi presigned URL,
-  TV2 sửa lại cho khớp.
+- NFR-5.16: mã hóa file khi lưu. Terraform staging hiện dùng SSE-S3 (`AES256`), chưa dùng khóa KMS (deploy.md mục 3).
+- NFR-5.19: bucket chặn public. URL tải lên hết hạn sau 10 phút, đủ để tải file 20 MiB trên mạng chậm; tải xuống không dùng
+  presigned URL (ADR-13). SRS 1.6 đã sửa NFR-5.19 cho khớp (22/11).
 - NFR-5.23: kiểm loại file theo nội dung.
 - NFR-3.4: storage lỗi không ảnh hưởng chức năng khác (kịch bản lỗi trong SRS mục 6.14).
 - Đánh đổi của ADR-13: tải xuống tốn băng thông API. Đo khi load test tuần 11.
@@ -170,24 +313,90 @@ Chiến lược, test đã có, bảng phủ tiêu chí và ca còn thiếu: [te
 
 | Nội dung | Trạng thái | Việc còn lại |
 |---|---|---|
-| API đăng, phiên bản, phạm vi, tải qua API, ẩn, khôi phục | Đã có (PR #64) | TV2 cập nhật trạng thái FR-5.x trong SRS |
-| Giao diện kho tài liệu | Chưa có | TV1, nhánh `feat/document-ui` (tuần 12) |
-| Dọn phiên bản `PENDING` bỏ dở | Chưa có | Đánh đổi đã ghi trong ADR-13 |
-| Staging: biến `STORAGE_*`, bucket tài liệu | Chưa có | TV3, `infra/documents-email` |
+| API đăng, phiên bản, phạm vi, tải qua API, ẩn, khôi phục | Đã có (PR #64) | SRS đã cập nhật trạng thái FR-5.x (22/11) |
+| Giao diện kho tài liệu; `fields` ở lỗi 400; chặn đơn vị `INACTIVE` (D3) | Đã có (22/11) | – |
+| Nhân viên tìm tài liệu theo từ khóa, không cần dấu (FR-5.4) | Đã có (`feat/document-search`, 26/11) | – |
+| Event tài liệu cho assistant service (outbox chung) | Đã có (`feat/assistant-service`) | TV1 (13.2, D1) |
+| Dọn phiên bản `PENDING` bỏ dở | Chưa có | Đánh đổi đã ghi trong ADR-13; đề xuất lifecycle rule ở bucket (deploy.md mục 7) |
+| Local: object storage | Đã có | S3Mock trong docker-compose (PR #68) |
+| Staging: biến `STORAGE_*`, bucket tài liệu | Terraform đã merge (PR #70), chưa apply | TV3 apply tuần 12; đổi mã hóa sang KMS, bỏ `GET`, `HEAD` khỏi CORS (deploy.md mục 3) |
 | Ngày hiệu lực, ngày hết hiệu lực của chính sách | Chưa có trong yêu cầu | Thực tế chính sách có ngày áp dụng; TV2 quyết định có thêm vào metadata không |
 | Nhân viên xác nhận đã đọc chính sách | Chưa có trong yêu cầu | Thường có ở cổng chính sách HR; ngoài MVP, ghi lại để cân nhắc |
+| Ngoại lệ bổ sung mục 6.1 (E9 → E16) | Rà 24/11/2026 | cần kiểm: E9, E11, E12, E13, E14. TV4 viết test cho cả bảng, sửa code ca chưa đạt |
 
-## 13. Thiết kế đề xuất cho phần chưa có: giao diện
+## 13. Thiết kế đề xuất cho phần chưa có
 
-> Đề xuất để có chỗ bám khi code. TV1 chốt trong PR `feat/document-ui`. API đã có, không cần đổi.
+### 13.1 Giao diện
+
+> Đã làm ngày 22/11/2026. Khác đề xuất ban đầu: đăng, sửa, thêm phiên bản là **hộp thoại** trên `/documents/manage` theo bản vẽ
+> uc5-upload, không có trang `/documents/manage/new`, `/documents/manage/:id`. Code: `frontend/src/pages/documents/`,
+> `frontend/src/api/documents.ts`; tải lên, tải về dùng chung `frontend/src/api/transfer.ts` với file hồ sơ UC1.
 
 | Màn hình | Ai | Nội dung | API |
 |---|---|---|---|
 | `/documents` | Mọi người | Ô tìm kiếm (UC6), lọc loại, bảng: tiêu đề, loại, phiên bản mới nhất, ngày cập nhật; phân trang. Rỗng thì ghi "Chưa có tài liệu nào dành cho bạn", không gợi ý gì thêm (DR-08) | `GET /documents?type=&page=` |
 | `/documents/:id` | Mọi người | Tiêu đề, loại, nút tải bản mới nhất, danh sách phiên bản cũ có nút tải. 404 thì hiện "Không tìm thấy tài liệu", giống hệt cho mọi trường hợp | `GET /documents/{id}`, `GET …/download`, `GET …/versions/{versionId}/download` |
-| `/documents/manage` | HR | Mọi tài liệu kể cả đã ẩn, cột trạng thái (hiện, ẩn), phiên bản `PENDING`, `REJECTED` | `GET /documents/manage` |
-| `/documents/manage/new` | HR | Form: tiêu đề, loại, phạm vi (toàn công ty / chọn phòng ban trong cây / chọn vai trò), chọn file. Kiểm đuôi và dung lượng ngay ở trình duyệt; thanh tiến độ khi PUT; xác nhận tự động khi PUT xong | `POST /documents`, PUT presigned URL, `POST …/confirm` |
-| `/documents/manage/:id` | HR | Sửa tiêu đề, loại, phạm vi (gửi `version`); thêm phiên bản; ẩn, khôi phục có hộp xác nhận | `PATCH /documents/{id}`, `POST …/versions`, `POST …/hide`, `POST …/restore` |
+| `/documents/manage` | HR | Mọi tài liệu kể cả đã ẩn; ô tìm tiêu đề, lọc loại, ba tab Đang hiện / Đã ẩn / Chưa có bản sẵn sàng; cột phạm vi (đơn vị đã ngừng hiện xám), trạng thái (Đang hiện, Đã ẩn, Đang tải lên, Lỗi tải lên) | `GET /documents/manage?q=&state=` |
+| Hộp "Đăng tài liệu" | HR | Tiêu đề, loại, phạm vi (toàn công ty / đơn vị chọn theo cây / vai trò), chọn file. Kiểm đuôi và dung lượng ngay ở trình duyệt; thanh tiến độ khi PUT; xác nhận tự động khi PUT xong. Tải lên lỗi sau khi đã tạo tài liệu thì bấm lại sẽ thêm phiên bản cho chính tài liệu đó | `POST /documents`, PUT presigned URL, `POST …/confirm` |
+| Hộp "Sửa thông tin, phạm vi", "Thêm phiên bản" | HR | Sửa tiêu đề, loại, phạm vi (gửi `version`); thêm phiên bản chỉ có phần file; ẩn, khôi phục có hộp xác nhận | `PATCH /documents/{id}`, `POST …/versions`, `POST …/hide`, `POST …/restore` |
 
 Lỗi khi tải lên: PUT thất bại hoặc URL hết hạn (sau 10 phút) thì giao diện báo "Tải lên không thành công" và cho tạo phiên bản
 mới; phiên bản cũ ở `PENDING` được bỏ lại (ADR-13).
+
+Theo giao diện chung: trang `/documents` mở từ ô "Tra cứu tài liệu" ở trang chủ, không đặt trên nav bar (UC6, quyết định
+14/11); `/documents/manage` nằm trong nhóm của HR. Phạm vi đơn vị chọn trong danh sách đơn vị của UC2 (`GET /departments`, chỉ
+`ACTIVE`, xếp và thụt lề theo cây). Ô chọn vai trò ghi chú `MANAGER` là "người có cấp dưới trực tiếp" (D4). Không có xem trước, chỉ có nút tải (D5).
+
+### 13.2 Event cho trợ lý (ADR-15)
+
+> Tên mục giữ nguyên để không gãy link. Từ 22/11/2026 consumer là **assistant service** của trợ lý UC6 (ADR-16); UC6 không còn
+> tìm tài liệu theo từ khóa.
+
+Assistant service của UC6 không đọc schema `document`, nên phải nhận đủ dữ liệu qua event. Module document ghi event vào
+outbox chung `leave.outbox` **trong cùng transaction** với thay đổi (như module identity, employee; xem quy tắc 3 của
+[event-contract](../../architecture/event-contract.md#6-quy-tắc-khi-đổi-hợp-đồng)), routing key `document.<Event>`, cùng
+publisher. Code: `backend/src/modules/document/document-events.ts` (`feat/assistant-service`; ban đầu thiết kế
+`document.outbox` riêng, đổi để không phải thêm publisher thứ hai).
+
+| Event (`type`) | Phát khi | Payload |
+|---|---|---|
+| `DocumentPublished` | Phiên bản thành `READY` (`confirm`) | `documentId`, `versionId`, `versionNo`, `objectKey`, `contentType`, `title`, `type`, `scope {all, departmentIds, roles}`, `hidden`, `occurredAt` |
+| `DocumentUpdated` | `PATCH` đổi tiêu đề, loại hoặc phạm vi | `documentId`, `title`, `type`, `scope`, `occurredAt` |
+| `DocumentHidden`, `DocumentRestored` | Ẩn, khôi phục | `documentId`, `occurredAt` |
+
+- Assistant service giữ bản sao **phạm vi của tài liệu**, không giữ đơn vị của nhân viên; khi tìm, API tính đơn vị, vai trò hiện
+  tại của người dùng rồi gửi kèm (ADR-15 mục 2), nên DR-06 vẫn có hiệu lực ngay.
+- Phạm vi trong event là phạm vi **sau** thay đổi, gửi cả bộ: consumer ghi đè, không cần ghép. Thứ tự giữ theo `id` outbox.
+- Thao tác không đổi gì (xác nhận lại bản `READY`, `PATCH` không đổi trường nào) không phát event.
+- Tài liệu đã `READY` trước khi có event (dữ liệu tuần 10, 11) cần lệnh đồng bộ một lần: ghi `DocumentPublished` cho bản
+  `READY` mới nhất của mọi tài liệu, rồi `DocumentHidden` cho tài liệu đã ẩn: `npm run assistant:sync` (local) hoặc
+  `node dist/database/sync-document-events.js` (container API). Chạy lại an toàn.
+- Không gửi email cho event tài liệu (D2): notification service nhận event nhưng bỏ qua loại `document.*`.
+
+Lệch với UC6 ghi ngày 22/11 đã sửa ngày 23/11 (nhánh `docs/adr-16-policy-assistant`): index nằm ở schema `assistant` của
+assistant service ([UC6 spec 13.1](../UC6-policy-assistant/spec.md#131-dữ-liệu-schema-assistant)), không thêm cột vào
+`document.document_version`.
+
+### 13.3 Ca biên phát hiện khi kiểm chéo (22/11/2026)
+
+| # | Ca | Hiện tại | Đề xuất |
+|---|---|---|---|
+| 1 | Lỗi 400 ở service không có `fields` (E2) | Đã sửa 22/11: `common/field-error.ts`, dùng chung với module leave (leave trước đó trả `fields` dạng mảng, sai hợp đồng) | – |
+| 2 | Phạm vi chọn đơn vị `INACTIVE` (UC2 FR-2.10) | Đã chặn theo D3 (22/11) | – |
+| 3 | URL tải lên hết hạn hoặc PUT lỗi | Phiên bản `PENDING` để lại, số phiên bản `READY` nhảy (1 → 3) | Giữ (ADR-13). Nhân viên thấy đúng số "Phiên bản 3"; trang quản lý hiện cả bản `PENDING`, `REJECTED` để HR hiểu vì sao nhảy |
+| 4 | Tài liệu mới tạo nhưng không bao giờ tải file lên | Nằm mãi ở trang quản lý, không xóa được | Chấp nhận cho version 1; HR ẩn đi. Trang quản lý có tab "Chưa có bản sẵn sàng" (đã làm) |
+| 5 | `canView` (unit test) và `visibleQuery` (SQL thật) là hai bản logic | Sửa một bên quên bên kia thì unit test vẫn xanh | e2e là nguồn đúng; sửa phạm vi thì sửa cả hai trong cùng PR |
+| 6 | `updated_at` đổi cả khi ẩn, khôi phục, sửa tiêu đề | Danh sách "mới cập nhật trước" đẩy tài liệu chỉ sửa tiêu đề lên đầu | Chấp nhận; DR-07 chỉ quy định thứ tự trong tìm kiếm, làm ở UC6 |
+| 7 | e2e nhóm "kho tài liệu" bị bỏ qua khi không có `STORAGE_BUCKET` | Đã sửa 22/11: không đặt `STORAGE_BUCKET` thì dùng bucket giả trong bộ nhớ (`test/fake-storage.ts`) | – |
+
+### 13.4 Điểm cần quyết
+
+Duong chốt cả năm điểm theo đề xuất ngày 22/11/2026.
+
+| # | Câu hỏi | Quyết định | Người chốt |
+|---|---|---|---|
+| D1 | Nhánh nào phát event tài liệu (13.2)? Kế hoạch 7.7 chưa có nhánh này | Làm đầu nhánh `feat/search-service` (TV1), vì search service là consumer duy nhất. Từ 23/11 nhánh đổi tên `feat/assistant-service` (ADR-16) | Duong, 22/11 |
+| D2 | Có báo nhân viên khi có tài liệu mới hoặc bản mới không? BRD mục 2 nêu "nhân viên không biết bản mới nhất"; tiêu chí nghiệm thu ADR-15 ghi "upload một tài liệu: notification service xử lý"; nhưng FR-5.x không có yêu cầu này | **Không gửi email ở version 1**: người nhận có thể tới ~2.000 người và notification service không được đọc hồ sơ (ADR-15), nên payload phải mang cả danh sách. Sửa câu tiêu chí ADR-15 thành "search service và notification service cùng nhận event, notification bỏ qua `document.*`" để vẫn chứng minh fan-out (đã sửa ADR-15) | Duong, 22/11 |
+| D3 | Phạm vi trỏ tới đơn vị `INACTIVE` | Tạo, sửa phạm vi: chỉ nhận đơn vị `ACTIVE`, sai thì 400 `fields.scope.departmentIds`. Phạm vi cũ trỏ tới đơn vị đã ngừng: giữ nguyên (đơn vị ngừng hoạt động không còn người), trang quản lý gắn nhãn "Đơn vị đã ngừng hoạt động" (AC-5.1.9) | Duong, 22/11 |
+| D4 | Phạm vi theo trưởng, phó đơn vị (UC2 FR-2.9) thay cho `MANAGER` | Không thêm ở version 1; form chọn phạm vi ghi rõ `MANAGER` là người có cấp dưới trực tiếp | Duong, 22/11 |
+| D5 | Xem trước PDF trong trình duyệt (DR-05, DR-06, DR-08 có nhắc "xem trước") | Không làm ở version 1; nếu làm thì thêm `?inline=true` trên cùng API tải, chỉ cho PDF | Duong, 22/11 |

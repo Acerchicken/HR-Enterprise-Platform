@@ -3,8 +3,8 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform – môn Cloud Application Development |
-| Phiên bản tài liệu | 1.2 |
-| Ngày | 13/11/2026 (tuần 10) |
+| Phiên bản tài liệu | 2.1 |
+| Ngày | 26/11/2026 (tuần 12) |
 | Người soạn | TV1 (Dương), tách từ BRD 1.0 |
 | Người review | TV2 (Thanh) nghiệp vụ, TV4 (Duy) khả năng kiểm thử |
 | Trạng thái | Bản nháp, chờ review trên PR |
@@ -15,6 +15,15 @@
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
+| 2.1 | 26/11/2026 | Rà lại trạng thái FR sau #150/#151: cập nhật phần Cognito và file hồ sơ đang chờ apply; thống nhất FR-8.7 và tổng hợp thành 49 đã có, 8 một phần, 0 kế hoạch; sửa MT-2 theo 32 ca kiểm thử. |
+| 2.0 | 26/11/2026 | Đối chiếu trạng thái FR với code đã merge vào `dev`: UC2 #107, UC3/UC4 #120, UC5 #126/#140, UC6 #130/#131/#133; cập nhật tổng số FR và phạm vi MT-1. |
+| 1.9 | 26/11/2026 | Thêm FR-5.4 (nhân viên tìm tài liệu theo từ khóa) sau khi đối chiếu với use case "Employee self-service search" của đề bài |
+| 1.8 | 23/11/2026 | UC6 thu gọn còn trợ lý chính sách (Duong, 22/11): bỏ FR-6.1, FR-6.2, FR-6.3 nâng lên S (Duong chốt 23/11) theo [ADR-16](../architecture/adr/ADR-16-policy-assistant.md); thêm FR-6.4 (ADMIN chọn nhà cung cấp AI: Claude, Gemini, DeepSeek; dán API key trong ứng dụng); NFR-1.3 tách tìm đồng nghiệp và trợ lý; NFR-5.21 thêm nhóm `assistant`; LLM do ADMIN chọn qua adapter |
+| 1.7 | 22/11/2026 | Kiểm chéo UC7: FR-7.1 mở rộng theo code (đơn vị, điều chuyển, số dư, ngày lễ, duyệt thay, tài liệu, tài khoản, vai trò); trạng thái FR-7.3; NFR-6.3 = 5 năm theo BR-13 (chốt câu hỏi số 3 mục 8); NFR-5.10 một phần |
+| 1.6 | 22/11/2026 | Kiểm chéo UC5: object storage chỉ dùng presigned URL để tải lên, tải xuống qua API (ADR-13); trạng thái FR-5.1 → 5.3; NFR-5.19 tách hạn URL tải lên (10 phút) và tải xuống (không phát link); NFR-5.23 đổi "20 MB" thành 20 MiB |
+| 1.5 | 18/11/2026 | Cập nhật trạng thái FR-8.1, 8.3, 8.4, 8.6, 8.7 sau ba nhánh code UC8 (`feat/uc8-roles-from-db`, `feat/uc8-role-admin`, `feat/uc8-account-lifecycle`) |
+| 1.4 | 18/11/2026 | Thêm FR-8.7 (ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, theo [ADR-18](../architecture/adr/ADR-18-authorization.md)); nhánh code của FR-8.1, 8.3, 8.4, 8.6 đổi sang `feat/uc8-*` tuần 11 |
+| 1.3 | 17/11/2026 | Thêm UC8 – Đăng nhập và tài khoản (mục 4.8, FR-8.1 → FR-8.6) theo [ADR-17](../architecture/adr/ADR-17-authentication.md); cập nhật trạng thái NFR-5.1 → 5.10; chốt câu hỏi số 2 (MFA) ở mục 8 |
 | 1.2 | 13/11/2026 | Thêm tài liệu theo tính năng UC1 → UC7 trong `docs/features/`: mỗi tính năng có `requirements.md` (user story, tiêu chí chấp nhận), `spec.md` (đặc tả use case), `deploy.md`, `test.md`; link từ mục 4 |
 | 1.1 | 13/11/2026 | Tách rõ FR và NFR (định nghĩa, tiêu đề mục, bảng phân biệt). Viết lại mục 6: 11 nhóm NFR, 74 yêu cầu có ngưỡng đo, cách kiểm chứng và trạng thái; bảo mật chia 5 phần (đăng nhập và phiên, phân quyền, bảo vệ dữ liệu, bảo mật ứng dụng web, secret); thêm SLI/SLO/SLA (6.13) và kịch bản lỗi (6.14) |
 | 1.0 | 12/11/2026 | Tách từ BRD 1.0: yêu cầu chức năng (BRD mục 7), dữ liệu (mục 9), phi chức năng (mục 10), ma trận truy vết (mục 14). Thêm mô tả tổng quan, giao diện ngoài, phương pháp kiểm chứng và cột thiết kế trong ma trận truy vết. Nội dung yêu cầu giữ nguyên |
@@ -23,7 +32,7 @@
 
 | Loại | Trả lời câu hỏi | Ví dụ | Mã | Nằm ở |
 |---|---|---|---|---|
-| **FR** – yêu cầu chức năng (Functional Requirement) | Hệ thống **làm gì**? | "Nhân viên tạo đơn nghỉ" | `FR-x.y`: x là số use case (UC1 → UC7), y là số thứ tự trong use case. Ví dụ FR-3.2 là yêu cầu thứ 2 của UC3 | [Mục 4](#4-yêu-cầu-chức-năng-fr) |
+| **FR** – yêu cầu chức năng (Functional Requirement) | Hệ thống **làm gì**? | "Nhân viên tạo đơn nghỉ" | `FR-x.y`: x là số use case (UC1 → UC8), y là số thứ tự trong use case. Ví dụ FR-3.2 là yêu cầu thứ 2 của UC3 | [Mục 4](#4-yêu-cầu-chức-năng-fr) |
 | **NFR** – yêu cầu phi chức năng (Non-Functional Requirement) | Hệ thống làm **tốt đến mức nào**? | "Tạo đơn phản hồi dưới 500 ms", "Khóa tài khoản sau 5 lần sai mật khẩu" | `NFR-n` là nhóm chất lượng, `NFR-n.m` là một yêu cầu trong nhóm. Ví dụ NFR-5.3 là yêu cầu thứ 3 của nhóm bảo mật | [Mục 6](#6-yêu-cầu-phi-chức-năng-nfr) |
 
 Mã khác: `MT-n` là mục tiêu kinh doanh (trong BRD), `BR-nn` là business rule chi tiết trong
@@ -65,7 +74,7 @@ phạm vi (tính lương, chấm công, tuyển dụng, ứng dụng di động,
 - Thuật ngữ nghiệp vụ: [BRD mục 16](../business/BRD.md#16-thuật-ngữ).
 - Business rule nghỉ phép: [`leave-rules.md`](../business/leave-rules.md); loại phép, ngày lễ:
   [`leave-types-holidays.md`](../business/leave-types-holidays.md); kho tài liệu: [`document-rules.md`](../business/document-rules.md).
-- Phân quyền từng API: [ma trận phân quyền](../security/access-control-matrix.md); mối đe dọa: [threat model](../security/threat-model.md).
+- Mô hình phân quyền: [authorization.md](../security/authorization.md) (ADR-18). Phân quyền từng API: [ma trận phân quyền](../security/access-control-matrix.md); mối đe dọa: [threat model](../security/threat-model.md).
 - Quy ước API: [`CONVENTIONS.md` mục 4](../CONVENTIONS.md#4-api).
 
 ## 2. Mô tả tổng quan
@@ -74,7 +83,7 @@ phạm vi (tính lương, chấm công, tuyển dụng, ứng dụng di động,
 
 HRHelper là ứng dụng web nội bộ chạy trên cloud, thay cho Excel và email (hiện trạng ở [BRD mục 2](../business/BRD.md#2-bối-cảnh-và-vấn-đề)).
 Hệ thống làm việc với các hệ thống ngoài: identity provider (đăng nhập OIDC), dịch vụ gửi email, object storage (file tài liệu),
-LLM API (trợ lý, tuần 12) và hệ thống Payroll (ngoài phạm vi version 1). Sơ đồ ngữ cảnh:
+LLM API (Claude, Google Gemini hoặc DeepSeek do ADMIN chọn, cho trợ lý chính sách, tuần 12, ADR-16) và hệ thống Payroll (ngoài phạm vi version 1). Sơ đồ ngữ cảnh:
 [kiến trúc hệ thống mục 2](../architecture/SAD-1-system-architecture.md#2-ngữ-cảnh-hệ-thống-c4-mức-1).
 
 ### 2.2 Chức năng chính
@@ -82,12 +91,13 @@ LLM API (trợ lý, tuần 12) và hệ thống Payroll (ngoài phạm vi versio
 | Use case | Hệ thống phải cho phép | Yêu cầu chức năng (FR) |
 |---|---|---|
 | UC1 Hồ sơ nhân viên | Xem hồ sơ theo mức, trang hồ sơ chia nhóm, nhân viên đề xuất cập nhật và tải file, HR xác nhận, nhật ký thay đổi, HR quản lý hồ sơ và trường nhạy cảm, chống spam | FR-1.1 → FR-1.14 |
-| UC2 Thông tin tổ chức | Danh bạ, cây đơn vị (Công ty, Trung tâm, Phòng, Nhóm), quản lý trực tiếp, quản lý đơn vị, chức danh, điều chuyển, quá trình công tác, trưởng/phó đơn vị | FR-2.1 → FR-2.9 |
-| UC3 Tạo đơn nghỉ | Xem số dư, tạo, hủy đơn, tạo đơn hộ | FR-3.1 → FR-3.7 |
-| UC4 Duyệt đơn | Duyệt, từ chối, duyệt thay, HR duyệt thêm theo loại phép, HR hoàn tất, email thông báo | FR-4.1 → FR-4.8 |
-| UC5 Kho tài liệu | Đăng tài liệu theo phạm vi xem, phiên bản | FR-5.1 → FR-5.3 |
-| UC6 Tra cứu chung và trợ lý | Ô tìm đồng nghiệp trên nav bar; trang "Tra cứu tài liệu" gồm tìm trong nội dung tài liệu và trợ lý chính sách | FR-6.1 → FR-6.3 |
+| UC2 Thông tin tổ chức | Danh bạ, cây đơn vị (Công ty, Trung tâm, Phòng, Nhóm), quản lý trực tiếp, quản lý đơn vị, chức danh, điều chuyển, quá trình công tác, trưởng/phó đơn vị | FR-2.1 → FR-2.10 |
+| UC3 Tạo đơn nghỉ | Xem số dư, tạo, hủy đơn, đề nghị hủy đơn đã duyệt, tạo đơn hộ, HR chỉnh hạn mức | FR-3.1 → FR-3.8 |
+| UC4 Duyệt đơn | Duyệt, từ chối, duyệt thay, HR duyệt thêm theo loại phép, HR hoàn tất, email thông báo, HR cập nhật lịch lễ | FR-4.1 → FR-4.9 |
+| UC5 Kho tài liệu | Đăng tài liệu theo phạm vi xem, phiên bản, nhân viên tìm theo từ khóa | FR-5.1 → FR-5.4 |
+| UC6 Trợ lý chính sách | Hỏi đáp bằng câu tự nhiên trên trang "Tra cứu tài liệu", trả lời kèm trích dẫn, chỉ dựa trên tài liệu người hỏi được xem; ADMIN chọn nhà cung cấp AI | FR-6.3, FR-6.4 |
 | UC7 Lịch sử thao tác | Audit append-only, tra cứu audit | FR-7.1 → FR-7.3 |
+| UC8 Đăng nhập và tài khoản | Đăng nhập, đăng xuất qua identity provider, quên mật khẩu, MFA, tạo và khóa tài khoản theo hồ sơ, cấp và thu hồi vai trò | FR-8.1 → FR-8.7 |
 
 ### 2.3 Lớp người dùng
 
@@ -126,8 +136,8 @@ mình được dùng; chức năng bị chặn ở giao diện vẫn phải bị
 |---|---|---|---|
 | Identity provider | OIDC; API kiểm chữ ký token bằng JWKS | Đồng bộ | Không đăng nhập mới được; token còn hạn vẫn dùng |
 | Dịch vụ email | Queue → worker → SMTP | Bất đồng bộ | Gửi lại, không gửi trùng; trạng thái đơn không đổi (FR-4.6) |
-| Object storage | Presigned URL tải lên/tải xuống | Tải lên đồng bộ | File không đi qua API (FR-5.1) |
-| LLM API | REST có timeout | Đồng bộ | Hết thời gian thì chỉ tới tài liệu gốc (FR-6.3) |
+| Object storage | Presigned URL để tải lên; tải xuống qua API, kiểm quyền mỗi lần (ADR-13) | Tải lên đồng bộ | File tải lên không đi qua API (FR-5.1); storage lỗi thì API tài liệu trả 503, chức năng khác vẫn chạy (NFR-3.4) |
+| LLM API do ADMIN chọn (ADR-16) | REST có timeout | Đồng bộ | Hết thời gian thì trả danh sách tài liệu liên quan (FR-6.3) |
 
 Chi tiết cách tích hợp: [kiến trúc hệ thống mục 2](../architecture/SAD-1-system-architecture.md#2-ngữ-cảnh-hệ-thống-c4-mức-1).
 
@@ -156,19 +166,19 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
 | FR-1.1 | Xem hồ sơ theo 3 mức: danh bạ (mọi người), cá nhân (chính mình, quản lý trực tiếp), đầy đủ (HR) | M | Người ngoài (không phải HR, không phải quản lý trực tiếp) thấy điện thoại, email công ty, không thấy ngày sinh, địa chỉ; quản lý thấy thông tin cá nhân cấp dưới; ADMIN chỉ thấy mức danh bạ | Đã có |
-| FR-1.2 | Nhân viên sửa số điện thoại, địa chỉ của mình qua yêu cầu cập nhật; HR duyệt mới ghi | M | Gửi yêu cầu trả 202, hồ sơ chưa đổi; sửa trường khác hoặc hồ sơ người khác bị 403 | Chưa đạt: code đang lưu thẳng |
+| FR-1.2 | Nhân viên sửa số điện thoại, địa chỉ của mình qua yêu cầu cập nhật; HR duyệt mới ghi | M | Gửi yêu cầu trả 202, hồ sơ chưa đổi; sửa trường khác hoặc hồ sơ người khác bị 403 | Đã có (#86) |
 | FR-1.3 | HR xem CCCD, số tài khoản, lương; mỗi lượt xem ghi audit | M | Vai trò khác bị 403; audit có `VIEW_SENSITIVE` | Đã có |
-| FR-1.4 | HR sửa mọi trường hồ sơ, kể cả trường nhạy cảm | M | Audit chỉ ghi tên trường nhạy cảm, không ghi giá trị | Một phần: API có, giao diện tuần 10 |
-| FR-1.5 | HR tạo nhân viên mới (phòng ban, chức danh, quản lý trực tiếp, trường nhạy cảm) | M | Thiếu dữ liệu bắt buộc trả 400; quản lý tạo vòng lặp bị chặn | Một phần: API có, giao diện tuần 10 |
-| FR-1.6 | Hai người cùng sửa một hồ sơ không ghi đè nhau | S | Gửi `version` cũ trả 409 | Đã có |
-| FR-1.7 | Nghỉ việc: không cho nghỉ khi còn cấp dưới; người đã nghỉ không truy cập được | M | 400 khi còn cấp dưới; token còn hạn của người đã nghỉ bị 403 | Chưa đạt |
-| FR-1.8 | Trang hồ sơ chia nhóm (cá nhân, công việc, tài chính, phúc lợi, khác), màu chủ đạo cyan, mục chưa có tiêu đề đỏ; trang mặc định chỉ tải dữ liệu đang hiện, mỗi mục chỉ tải khi bấm vào | S | Đúng bố cục spec 9.1; mỗi người xem chỉ thấy mục được phép | Chưa có |
-| FR-1.9 | Nhân viên đề xuất thêm, sửa, xóa liên hệ khẩn cấp, thân nhân, chuyên môn, tài khoản ngân hàng, nơi khám bệnh, ảnh, CV; HR so cũ và mới rồi duyệt hoặc từ chối, duyệt mới ghi vào hồ sơ | S | Yêu cầu `PENDING` không đổi hồ sơ; duyệt ghi trong một giao dịch, có audit; từ chối bắt buộc lý do; tối đa 20 yêu cầu chờ mỗi người | Chưa có |
-| FR-1.10 | Tải file lên hồ sơ (CV, bằng cấp, giấy tờ, ảnh đại diện) | S | Chỉ PDF, DOCX, JPG, PNG ≤ 10 MiB, kiểm theo nội dung; tối đa 50 file, 200 MiB mỗi người; tải xuống qua API | Chưa có |
-| FR-1.11 | Nhật ký thay đổi hồ sơ cho chủ hồ sơ và HR | S | Mỗi thao tác đúng một bản ghi, không có giá trị hay tên file gốc | Chưa có |
-| FR-1.12 | HR quản lý hợp đồng, lương theo thời gian, bảo hiểm, phụ cấp, khen thưởng kỷ luật | C | Hợp đồng không trùng khoảng ngày; nhân viên chỉ xem | Chưa có, sau MVP |
-| FR-1.13 | Thông tin tự tính: quá trình công tác, các mốc thâm niên, ngày nghỉ dài | C | Lấy từ audit, `hireDate`, đơn nghỉ | Chưa có, sau MVP |
-| FR-1.14 | Giới hạn tần suất và hạn mức cho thao tác hồ sơ | M | 30 lệnh ghi/phút, 10 URL tải lên/giờ, 100 lượt xem nhạy cảm/giờ; vượt trả 429 | Chưa có |
+| FR-1.4 | HR sửa mọi trường hồ sơ, kể cả trường nhạy cảm | M | Audit chỉ ghi tên trường nhạy cảm, không ghi giá trị | Đã có (#63, #84) |
+| FR-1.5 | HR tạo nhân viên mới (phòng ban, chức danh, quản lý trực tiếp, trường nhạy cảm) | M | Thiếu dữ liệu bắt buộc trả 400; quản lý tạo vòng lặp bị chặn | Đã có (#63) |
+| FR-1.6 | Hai người cùng sửa một hồ sơ không ghi đè nhau | S | Gửi `version` cũ trả 409 | Đã có (#84, #86) |
+| FR-1.7 | Nghỉ việc: không cho nghỉ khi còn cấp dưới; người đã nghỉ không truy cập được | M | 400 khi còn cấp dưới; token còn hạn của người đã nghỉ bị 403 | Đã có (#84) |
+| FR-1.8 | Trang hồ sơ chia nhóm (cá nhân, công việc, tài chính, phúc lợi, khác), màu chủ đạo cyan, mục chưa có tiêu đề đỏ; trang mặc định chỉ tải dữ liệu đang hiện, mỗi mục chỉ tải khi bấm vào | S | Đúng bố cục spec 9.1; mỗi người xem chỉ thấy mục được phép | Đã có (#80) |
+| FR-1.9 | Nhân viên đề xuất thêm, sửa, xóa liên hệ khẩn cấp, thân nhân, chuyên môn, tài khoản ngân hàng, nơi khám bệnh, ảnh, CV; HR so cũ và mới rồi duyệt hoặc từ chối, duyệt mới ghi vào hồ sơ | S | Yêu cầu `PENDING` không đổi hồ sơ; duyệt ghi trong một giao dịch, có audit; từ chối bắt buộc lý do; tối đa 20 yêu cầu chờ mỗi người | Đã có (#86) |
+| FR-1.10 | Tải file lên hồ sơ (CV, bằng cấp, giấy tờ, ảnh đại diện) | S | Chỉ PDF, DOCX, JPG, PNG ≤ 10 MiB, kiểm theo nội dung; tối đa 50 file, 200 MiB mỗi người; tải xuống qua API | Một phần: API đã có (#87); bucket staging đã cấu hình (#151), chờ apply và smoke test |
+| FR-1.11 | Nhật ký thay đổi hồ sơ cho chủ hồ sơ và HR | S | Mỗi thao tác đúng một bản ghi, không có giá trị hay tên file gốc | Đã có (#86, #87) |
+| FR-1.12 | HR quản lý hợp đồng, lương theo thời gian, bảo hiểm, phụ cấp, khen thưởng kỷ luật | C | Hợp đồng không trùng khoảng ngày; nhân viên chỉ xem | Đã có (#89) |
+| FR-1.13 | Thông tin tự tính: quá trình công tác, các mốc thâm niên, ngày nghỉ dài | C | Quá trình công tác đọc từ bảng quá trình công tác (FR-2.8); thâm niên từ `hireDate`; ngày nghỉ dài từ đơn nghỉ | Đã có (#90; quá trình công tác đổi nguồn ở `feat/employee-transfer`) |
+| FR-1.14 | Giới hạn tần suất và hạn mức cho thao tác hồ sơ | M | 30 lệnh ghi/phút, 10 URL tải lên/giờ, 100 lượt xem nhạy cảm/giờ; vượt trả 429 | Một phần: giới hạn thao tác đã có (#85); cảnh báo dashboard còn thiếu (TV3) |
 
 ### 4.2 UC2 – Thông tin tổ chức (FR-2.x)
 
@@ -177,15 +187,15 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
 | FR-2.1 | Danh bạ: tìm theo tên, email, mã; lọc phòng ban; phân trang | M | Không hiện nhân viên đã nghỉ việc; tối đa 100 dòng/trang | Đã có |
-| FR-2.2 | Xem toàn bộ cây tổ chức và thành viên từng đơn vị | M | Cây có một gốc là đơn vị Công ty; quyết định issue #21: không cần nhập mã; hiện loại đơn vị (ADR-14) | Đã có cây; chưa có loại đơn vị |
+| FR-2.2 | Xem toàn bộ cây tổ chức và thành viên từng đơn vị | M | Cây có một gốc là đơn vị Công ty; quyết định issue #21: không cần nhập mã; hiện loại đơn vị (ADR-14) | Đã có (#107) |
 | FR-2.3 | Xem quản lý trực tiếp và nhân viên trực thuộc của một người | M | Danh sách cấp dưới đúng với dữ liệu | Đã có |
-| FR-2.4 | HR, ADMIN tạo và sửa đơn vị (Công ty, Trung tâm, Phòng, Nhóm) theo luật loại cha, loại con (ADR-14) | S | Đổi đơn vị cha không tạo vòng; Trung tâm thuộc Công ty, Phòng thuộc Công ty hoặc Trung tâm, Nhóm thuộc Phòng | Một phần: API có, chưa có loại đơn vị |
+| FR-2.4 | HR, ADMIN tạo và sửa đơn vị (Công ty, Trung tâm, Phòng, Nhóm) theo luật loại cha, loại con (ADR-14) | S | Đổi đơn vị cha không tạo vòng; Trung tâm thuộc Công ty, Phòng thuộc Công ty hoặc Trung tâm, Nhóm thuộc Phòng | Đã có (#107) |
 | FR-2.5 | Mỗi nhân viên có đúng một quản lý trực tiếp, trừ CEO | M | Tạo/sửa nhân viên thiếu quản lý (không phải CEO) bị từ chối (issue #22) | Đã có (tuần 10) |
-| FR-2.6 | HR quản lý danh mục chức danh, cấp bậc; ngừng dùng thay vì xóa | S | Chức danh đang dùng không xóa được (409) | Một phần: chỉ có danh sách |
-| FR-2.7 | HR điều chuyển nhân viên (phòng ban, chức danh, quản lý) có ngày hiệu lực, kể cả ngày tương lai | S | Áp dụng đúng ngày; kiểm như FR-2.5; đơn nghỉ đang chờ sang quản lý mới | Chưa có, kế hoạch tuần 13 |
-| FR-2.8 | Quá trình công tác của từng nhân viên (phòng ban, chức danh, quản lý theo thời gian) | S | Mỗi lần tuyển, điều chuyển là một dòng, chỉ thêm; chủ hồ sơ, quản lý, HR xem | Chưa có, kế hoạch tuần 13 |
-| FR-2.9 | Trưởng và phó cho mọi cấp đơn vị (Tổng Giám đốc và tối đa 5 Phó TGĐ; Giám đốc và tối đa 3 Phó GĐ trung tâm; Trưởng và tối đa 3 Phó phòng; Trưởng nhóm), có "Quyền trưởng" và kiêm nhiệm | S | Người thuộc đơn vị đó hoặc đơn vị cha; không tự cho quyền duyệt (quyền theo quản lý trực tiếp, BR-05) | Chưa có, kế hoạch tuần 13 |
-| FR-2.10 | Ngừng hoạt động đơn vị thay cho xóa (giải thể, sáp nhập) | C | Không ngừng được khi còn nhân viên đang làm việc hoặc đơn vị con đang hoạt động; đơn vị đã ngừng vẫn hiện trong quá trình công tác | Chưa có |
+| FR-2.6 | HR quản lý danh mục chức danh, cấp bậc; ngừng dùng thay vì xóa | S | Chức danh đang dùng không xóa được (409) | Đã có (`feat/department-admin-ui`) |
+| FR-2.7 | HR điều chuyển nhân viên (phòng ban, chức danh, quản lý) có ngày hiệu lực, kể cả ngày tương lai | S | Áp dụng đúng ngày; kiểm như FR-2.5; đơn nghỉ đang chờ sang quản lý mới | Đã có (`feat/employee-transfer`); email cho quản lý mới làm cùng dịch vụ thông báo |
+| FR-2.8 | Quá trình công tác của từng nhân viên (phòng ban, chức danh, quản lý theo thời gian) | S | Mỗi lần tuyển, điều chuyển là một dòng, chỉ thêm; chủ hồ sơ, quản lý (trực tiếp và gián tiếp), HR xem | Đã có (`feat/employee-transfer`) |
+| FR-2.9 | Trưởng và phó cho mọi cấp đơn vị (Tổng Giám đốc và tối đa 5 Phó TGĐ; Giám đốc và tối đa 3 Phó GĐ trung tâm; Trưởng và tối đa 3 Phó phòng; Trưởng nhóm), có "Quyền trưởng" và kiêm nhiệm | S | Người thuộc đơn vị đó hoặc đơn vị cha; không tự cho quyền duyệt (quyền theo quản lý trực tiếp, BR-05) | Đã có (`feat/department-admin-ui`); phân công duyệt thay theo AC-2.9.3 được xử lý ở UC4 (#120) |
+| FR-2.10 | Ngừng hoạt động đơn vị thay cho xóa (giải thể, sáp nhập) | C | Không ngừng được khi còn nhân viên đang làm việc hoặc đơn vị con đang hoạt động; đơn vị đã ngừng vẫn hiện trong quá trình công tác | Đã có (`feat/department-admin-ui`) |
 
 ### 4.3 UC3 – Tạo đơn nghỉ (FR-3.x)
 
@@ -193,13 +203,14 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-3.1 | Xem số dư phép theo loại: được hưởng, đã dùng, đang chờ, còn lại | M | Còn lại = được hưởng − đã dùng − đang chờ | Đã có |
+| FR-3.1 | Xem số dư phép theo loại: được hưởng, chuyển từ năm trước (phép năm), đã dùng, đang chờ, còn lại | M | Còn lại = được hưởng + chuyển từ năm trước − đã dùng − đang chờ; phần chuyển sang dùng trước, hết hạn cuối năm (BR-01) | Đã có; chuyển phép chốt 21/11 |
 | FR-3.2 | Tạo đơn: loại phép, khoảng ngày, nghỉ nửa ngày, lý do | M | Không đủ số dư trả 400 (BR-01) | Đã có |
 | FR-3.3 | Không cho đơn trùng lịch với đơn đang chờ hoặc đã duyệt | M | Trùng ngày trả 409; hai nửa ngày khác buổi không trùng (BR-02, BR-04) | Đã có |
 | FR-3.4 | Số ngày tính theo ngày làm việc, bỏ cuối tuần và ngày lễ | M | 29/4–4/5/2026 tính 2 ngày; đơn chỉ gồm ngày nghỉ bù 27/4 bị từ chối (BR-03) | Đã có |
 | FR-3.5 | Gửi lại do mạng lỗi không tạo đơn thứ hai | M | Cùng `Idempotency-Key` trả lại đơn cũ (BR-11) | Đã có |
 | FR-3.6 | Nhân viên hủy đơn chưa có quyết định; không tự hủy đơn đã duyệt | M | Hủy trả lại số ngày; hủy đơn đã duyệt trả 409 (BR-07, BR-08) | Đã có |
-| FR-3.7 | HR và quản lý trực tiếp tạo đơn hộ nhân viên | S | Số dư là của nhân viên; nhân viên nhận email, vẫn tự hủy được; lịch sử ghi người tạo hộ (BR-12) | Kế hoạch tuần 10 |
+| FR-3.7 | HR và quản lý trực tiếp tạo đơn hộ nhân viên | S | Số dư là của nhân viên; nhân viên nhận email, vẫn tự hủy được; lịch sử ghi người tạo hộ (BR-12) | Đã có (#120) |
+| FR-3.8 | HR chỉnh mức nền phép năm (12, 14, 16 ngày) và hạn mức nghỉ ốm theo hồ sơ BHXH | S | Phép năm tính lại theo BR-01; hạn mức nhỏ hơn đã dùng cộng đang chờ trả 409; có audit (BR-18) | Đã có (#120) |
 
 ### 4.4 UC4 – Duyệt đơn (FR-4.x)
 
@@ -209,12 +220,13 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 |---|---|---|---|---|
 | FR-4.1 | Quản lý xem danh sách đơn chờ duyệt của cấp dưới trực tiếp | M | Không thấy đơn của người không trực thuộc | Đã có |
 | FR-4.2 | Duyệt hoặc từ chối kèm ghi chú; chỉ quản lý trực tiếp tại thời điểm xử lý | M | Người khác trả 403; duyệt lại lần hai không đổi gì; quyết định ngược lại trả 409 (BR-05, BR-09, BR-11) | Đã có |
-| FR-4.3 | Người duyệt thay khi quản lý vắng mặt, do HR chỉ định theo khoảng ngày | S | Người thay thấy và xử lý đơn trong thời hạn được giao (BR-06) | Kế hoạch tuần 10 |
+| FR-4.3 | Người duyệt thay khi quản lý vắng mặt, do HR chỉ định theo khoảng ngày | S | Người thay thấy và xử lý đơn trong thời hạn được giao (BR-06) | Đã có (#120) |
 | FR-4.4 | HR duyệt đơn của CEO (người duy nhất không có quản lý) | S | Chỉ áp dụng cho đơn của CEO (issue #22) | Đã có (tuần 10) |
 | FR-4.5 | HR hoàn tất đơn đã duyệt | M | Số ngày giữ chỗ chuyển thành đã dùng; đơn chưa duyệt trả 409 (BR-10) | Đã có |
 | FR-4.6 | Email thông báo: đơn mới → quản lý; duyệt, từ chối, hoàn tất → nhân viên; hủy → quản lý | M | Email tới đúng người; không gửi trùng khi hệ thống gửi lại event | Đã có |
 | FR-4.7 | Xem chi tiết đơn và lịch sử trạng thái | M | Chỉ chủ đơn, quản lý trực tiếp, HR xem được | Đã có |
-| FR-4.8 | HR duyệt thêm sau quản lý với loại phép được cấu hình (thai sản; nghỉ không lương trên 3 ngày) | S | Quản lý duyệt → `PENDING_HR`; HR duyệt → `APPROVED`, từ chối phải có lý do; HR không duyệt đơn của chính mình (BR-16) | Chưa có, kế hoạch tuần 12 |
+| FR-4.8 | HR duyệt thêm sau quản lý với loại phép được cấu hình (thai sản; nghỉ không lương trên 3 ngày) | S | Quản lý duyệt → `PENDING_HR`; HR duyệt → `APPROVED`, từ chối phải có lý do; HR không duyệt đơn của chính mình (BR-16) | Đã có (#120) |
+| FR-4.9 | HR cập nhật lịch lễ, nghỉ bù và tính lại đơn bị ảnh hưởng | S | Sửa lịch không tự đổi đơn; HR tính lại từng đơn có lý do, không vượt số dư (BR-19) | Đã có (#120) |
 
 ### 4.5 UC5 – Kho tài liệu chính sách (FR-5.x)
 
@@ -222,19 +234,21 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-5.1 | HR tải lên tài liệu PDF/DOCX kèm tiêu đề, loại, phạm vi xem (toàn công ty, phòng ban, vai trò) | M | Chỉ HR tải lên được; file không đi qua API mà tải thẳng lên object storage | Kế hoạch tuần 10 |
-| FR-5.2 | Nhân viên chỉ xem, tải tài liệu thuộc phạm vi của mình | M | Tài liệu ngoài phạm vi không hiện trong danh sách và link tải bị từ chối | Kế hoạch tuần 10 |
-| FR-5.3 | Tài liệu có phiên bản; mặc định hiện phiên bản mới nhất | S | Đăng bản mới không mất bản cũ | Kế hoạch tuần 10 |
+| FR-5.1 | HR tải lên tài liệu PDF/DOCX kèm tiêu đề, loại, phạm vi xem (toàn công ty, phòng ban, vai trò) | M | Chỉ HR tải lên được; file không đi qua API mà tải thẳng lên object storage | Đã có API (#64) và giao diện kho tài liệu (#126) |
+| FR-5.2 | Nhân viên chỉ xem, tải tài liệu thuộc phạm vi của mình | M | Tài liệu ngoài phạm vi không hiện trong danh sách và link tải bị từ chối | Đã có API (#64) và giao diện kho tài liệu (#126) |
+| FR-5.3 | Tài liệu có phiên bản; mặc định hiện phiên bản mới nhất | S | Đăng bản mới không mất bản cũ | Đã có API (#64) và giao diện kho tài liệu (#126) |
+| FR-5.4 | Nhân viên tìm tài liệu theo từ khóa trong tiêu đề, không phân biệt hoa thường và dấu (use case "Employee self-service search" của đề bài, cùng tìm đồng nghiệp FR-2.1 và trợ lý FR-6.3) | M | Kết quả chỉ gồm tài liệu trong phạm vi người tìm; "nghi phep" khớp "nghỉ phép" | Đã có (`feat/document-search`) |
 
-### 4.6 UC6 – Tra cứu chung và trợ lý (FR-6.x)
+### 4.6 UC6 – Trợ lý chính sách (FR-6.x)
 
-Đặc tả: [features/UC6-self-service-search/spec.md](../features/UC6-self-service-search/spec.md) (yêu cầu kèm tiêu chí: [requirements.md](../features/UC6-self-service-search/requirements.md)).
+Đặc tả: [features/UC6-policy-assistant/spec.md](../features/UC6-policy-assistant/spec.md) (yêu cầu kèm tiêu chí: [requirements.md](../features/UC6-policy-assistant/requirements.md)).
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-6.1 | Ô tìm đồng nghiệp trên nav bar: gợi ý tối đa 5 đồng nghiệp, Enter sang Danh bạ. Tìm tài liệu (FR-6.2) và trợ lý (FR-6.3) ở trang riêng "Tra cứu tài liệu" | M | Dùng lại tìm kiếm của FR-2.1; không có người đã nghỉ việc | Một phần: chỉ có tìm trong trang Danh bạ |
-| FR-6.2 | Tìm tài liệu theo từ khóa trong tiêu đề và nội dung, lọc theo quyền | M | Không trả tài liệu ngoài phạm vi | Kế hoạch tuần 10 |
-| FR-6.3 | Trợ lý trả lời câu hỏi về chính sách HR, có trích dẫn tài liệu nguồn | C | Chỉ dùng tài liệu người hỏi được xem; không trả lời được thì chỉ tới tài liệu gốc | Kế hoạch tuần 12 |
+| FR-6.1 | *(Bỏ khỏi UC6 ngày 22/11/2026)* | – | – | – |
+| FR-6.2 | *(Bỏ ngày 22/11/2026, trùng UC5)* Tìm tài liệu theo từ khóa trong tiêu đề và nội dung | – | – | Không làm |
+| FR-6.3 | Trợ lý trả lời câu hỏi về chính sách HR, có trích dẫn tài liệu nguồn ([ADR-16](../architecture/adr/ADR-16-policy-assistant.md)) | S | Chỉ dùng tài liệu người hỏi được xem; không có đáp án thì nói không tìm thấy; LLM lỗi thì trả danh sách tài liệu liên quan; che dữ liệu cá nhân trong câu hỏi trước khi gửi nhà cung cấp AI (guardrail) | Đã có (#130, #131) |
+| FR-6.4 | ADMIN chọn nhà cung cấp AI (trước mắt Claude, Google Gemini, DeepSeek), model và dán API key trong ứng dụng; kiểm tra kết nối; thêm nhà cung cấp mới chỉ cần thêm adapter | S | Khóa mã hóa, không bao giờ trả lại (chỉ 4 ký tự cuối); có audit mỗi lần đổi; đổi có hiệu lực không cần deploy | Đã có (#133) |
 
 ### 4.7 UC7 – Lịch sử thao tác (FR-7.x)
 
@@ -242,11 +256,25 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-7.1 | Ghi audit cho tạo/sửa hồ sơ, đọc trường nhạy cảm, mọi bước của đơn nghỉ | M | Audit ghi cùng giao dịch với thao tác; không ghi giá trị nhạy cảm | Đã có |
+| FR-7.1 | Ghi audit cho tạo/sửa hồ sơ, đọc trường nhạy cảm, mọi bước của đơn nghỉ, thay đổi tổ chức và điều chuyển, số dư phép, ngày lễ, người duyệt thay, kho tài liệu, tài khoản và vai trò (danh sách ở UC7 spec mục 2) | M | Audit ghi cùng giao dịch với thao tác; không ghi giá trị nhạy cảm; có `traceId` của request | Đã có |
 | FR-7.2 | Audit chỉ được thêm, không ai sửa/xóa | M | Lệnh UPDATE/DELETE trên bảng audit bị database chặn | Đã có |
-| FR-7.3 | HR, ADMIN tra cứu audit theo đối tượng, người thực hiện, khoảng thời gian | M | Vai trò khác trả 403 | Một phần: API có, giao diện tuần 10 |
+| FR-7.3 | HR, ADMIN tra cứu audit theo đối tượng, người thực hiện, khoảng thời gian | M | Vai trò khác trả 403 | Đã có (`feat/audit-ui`, 23/11) |
 
-**Tổng hợp FR:** 34 yêu cầu chức năng; 23 đã có, 4 một phần (API có, chưa có giao diện), 7 theo kế hoạch tuần 10–12 (cập nhật 10/11).
+### 4.8 UC8 – Đăng nhập và tài khoản (FR-8.x)
+
+Đặc tả: [features/UC8-authentication/spec.md](../features/UC8-authentication/spec.md) (yêu cầu kèm tiêu chí: [requirements.md](../features/UC8-authentication/requirements.md)). Quyết định: [ADR-17](../architecture/adr/ADR-17-authentication.md). Thêm ngày 17/11/2026; yêu cầu bảo mật dùng chung vẫn ở NFR-5.
+
+| Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
+|---|---|---|---|---|
+| FR-8.1 | Đăng nhập, đăng xuất qua identity provider; tự đăng xuất sau 30 phút không thao tác | M | Không có form mật khẩu trong web; đăng nhập 4 tài khoản demo ở local và staging | Một phần: local đã có, kể cả tự đăng xuất; Cognito callback đã cấu hình (#150), chờ apply và smoke test staging |
+| FR-8.2 | Quên mật khẩu tự phục vụ qua email đã xác minh | M | Thư đặt lại tới; email không tồn tại có cùng thông báo | Một phần: local đã bật đặt lại mật khẩu; Cognito recovery qua email đã cấu hình (#150), chờ apply và kiểm chứng gửi thư |
+| FR-8.3 | Tạo tài khoản đăng nhập khi HR tạo hồ sơ, gửi email mời, bắt đổi mật khẩu tạm | M | Thư mời tới trong 1 phút; không tạo trùng khi event lặp | Một phần: local đã có; đồng bộ tài khoản Cognito/IAM đã merge (#150, #151); luồng mời và email trên staging chờ apply/kiểm chứng |
+| FR-8.4 | Khóa tài khoản và thu hồi phiên khi nghỉ việc; mở lại khi khôi phục | M | Trong 1 phút không đăng nhập lại được; token còn hạn bị 403 | Một phần: API chặn 403 (FR-1.7); local đã có; tích hợp worker đồng bộ Cognito đã merge (#151), chờ apply và kiểm chứng staging |
+| FR-8.5 | MFA bằng ứng dụng TOTP | M | HR, ADMIN bị hỏi mã ở cả hai môi trường | Một phần: Cognito MFA bắt buộc đã cấu hình (#150), chờ apply; Conditional OTP cho `hr`, `admin` trên Keycloak local còn thiếu |
+| FR-8.6 | HR xem trạng thái tài khoản đăng nhập, gửi lại lời mời | S | Vai trò khác bị 403; ghi audit | Đã có |
+| FR-8.7 | ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, có lý do; vai trò chỉ lấy từ database, đồng bộ sang nhóm trên IdP | M | Có audit `ROLE_GRANT`, `ROLE_REVOKE`; tự cấp cho mình bị 403; thu hồi ADMIN cuối cùng bị 409; nhóm trong token bị bỏ qua | Một phần: chức năng ứng dụng và local đã có; worker/IAM đồng bộ Cognito đã merge (#151), chờ apply và kiểm chứng staging |
+
+**Tổng hợp FR:** Có 57 yêu cầu đang áp dụng trong UC1 → UC8 (14 + 10 + 8 + 9 + 4 + 2 + 3 + 7). Trong đó 49 đã có trên `dev`, 8 một phần (2 hạng mục UC1 còn dashboard/hạ tầng staging và 6 hạng mục UC8 còn apply, kiểm chứng staging hoặc hoàn thiện Conditional OTP), 0 theo kế hoạch. FR-6.1 và FR-6.2 được giữ làm mã lịch sử đã bỏ, không tính vào tổng.
 
 ## 5. Yêu cầu dữ liệu
 
@@ -317,7 +345,7 @@ khi instance vừa khởi động.
 |---|---|---|---|---|
 | NFR-1.1 | Thời gian phản hồi API đọc (hồ sơ, danh bạ, số dư, danh sách đơn) | p95 < 300 ms, p99 < 1 s | Load test tuần 11 | Kế hoạch tuần 11 |
 | NFR-1.2 | Thời gian phản hồi API ghi (tạo, duyệt, hủy đơn; sửa hồ sơ) | p95 < 500 ms, p99 < 1,5 s | Load test tuần 11 | Kế hoạch tuần 11 |
-| NFR-1.3 | Tìm kiếm đồng nghiệp và tài liệu | p95 < 1 s với 2.000 nhân viên, 500 tài liệu | Load test tuần 11 | Kế hoạch tuần 11 |
+| NFR-1.3 | Tìm đồng nghiệp; trợ lý chính sách | Tìm đồng nghiệp p95 < 1 s với 2.000 nhân viên; trợ lý p95 ≤ 6 s với 500 tài liệu khi LLM bình thường | Load test tuần 11; bộ đánh giá trợ lý tuần 13 | Kế hoạch tuần 11, 13 |
 | NFR-1.4 | Email thông báo tới hộp thư sau khi đơn đổi trạng thái | p95 < 1 phút | Đo thời gian giữa audit và email trong load test | Một phần: luồng đã chạy, chưa đo |
 | NFR-1.5 | Trang web hiển thị lần đầu | < 3 s trên mạng 4G (Largest Contentful Paint) | Lighthouse trên staging | Chưa có |
 | NFR-1.6 | Danh sách luôn phân trang để không trả dữ liệu quá lớn | Tối đa 100 dòng mỗi trang | e2e test | Đã có |
@@ -339,7 +367,7 @@ khi instance vừa khởi động.
 | NFR-3.2 | Không có điểm hỏng đơn lẻ ở tầng API | Tối thiểu 2 instance; mất 1 instance thì tỉ lệ lỗi < 1% và tự thay instance mới trong < 5 phút | Tắt 1 instance trong load test (ADR-06) | Kế hoạch tuần 11 |
 | NFR-3.3 | Phát hành phiên bản mới không dừng dịch vụ | Lỗi 5xx < 1% trong lúc deploy; migration tương thích ngược; quay về image trước trong < 15 phút | Deploy giữa load test; thử rollback | Một phần: pipeline có bước gắn tag image để rollback |
 | NFR-3.4 | Lỗi của queue, email, LLM không làm hỏng nghiệp vụ chính | Tạo, duyệt, hủy đơn vẫn chạy; email gửi bù khi dịch vụ hoạt động lại | Tắt queue rồi tạo đơn | Đã có: outbox + queue (ADR-03) |
-| NFR-3.5 | Gọi hệ thống ngoài có giới hạn thời gian và thử lại | Timeout ≤ 10 s; thử lại tối đa 3 lần, giãn cách tăng dần; hết lượt thì vào DLQ | Unit test; tắt SMTP trong test | Một phần: có DLQ, chưa có giãn cách tăng dần |
+| NFR-3.5 | Gọi hệ thống ngoài có giới hạn thời gian và thử lại | Timeout ≤ 10 s; thử lại tối đa 3 lần, giãn cách tăng dần; hết lượt thì vào DLQ | Unit test; tắt SMTP trong test | Có (26/11): email do notification service gửi, chờ ≤ 10 s mỗi lần, thử tối đa 3 lần chờ 1 s, 2 s, rồi DLQ (`services/notification/src/mail/retry.spec.ts`, `sender.spec.ts`); database có `statement_timeout` 5 s và chờ kết nối 5 s rồi trả 503 (25/11); IdP thử lại giãn cách (`IDP_SYNC_*`); LLM timeout 10 s không thử lại (trả về danh sách tài liệu) |
 | NFR-3.6 | Load balancer biết instance nào hỏng | `GET /api/v1/health` trả 200 khi API và database sẵn sàng, không cần đăng nhập | e2e test | Đã có |
 
 ### 6.5 NFR-4 – Sao lưu và phục hồi
@@ -362,16 +390,16 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 
 | Mã | Yêu cầu | Ngưỡng | Kiểm chứng | Trạng thái |
 |---|---|---|---|---|
-| NFR-5.1 | Chỉ đăng nhập qua identity provider (OIDC, Authorization Code + PKCE S256); ứng dụng không nhận, không lưu mật khẩu | Không API nào nhận mật khẩu | Review code; e2e | Đã có (Keycloak local, Cognito staging) |
+| NFR-5.1 | Chỉ đăng nhập qua identity provider (OIDC, Authorization Code + PKCE S256); ứng dụng không nhận, không lưu mật khẩu | Không API nào nhận mật khẩu | Review code; e2e | Đã có ở local; staging cần sửa `callback_urls` và bỏ `ALLOW_USER_PASSWORD_AUTH` (`infra/idp-hardening`, ADR-17) |
 | NFR-5.2 | Chính sách mật khẩu | Tối thiểu 8 ký tự, có chữ hoa, chữ thường và số; không trùng email; không bắt đổi định kỳ (theo NIST SP 800-63B) | Thử đặt mật khẩu yếu | Một phần: Cognito chưa bắt chữ hoa, Keycloak chưa đặt chính sách. Sửa tuần 10 (`infra/idp-hardening`) |
 | NFR-5.3 | Chống dò mật khẩu | Sai 5 lần liên tiếp trong 15 phút thì khóa tạm tài khoản 15 phút; thông báo lỗi không cho biết sai email hay sai mật khẩu | Thử sai 6 lần | Một phần: Keycloak bật chống dò nhưng chưa đặt ngưỡng 5 lần. Sửa tuần 10 (`infra/idp-hardening`) |
-| NFR-5.4 | Xác thực hai lớp (MFA) cho tài khoản đặc quyền | Bắt buộc với HR và ADMIN (ứng dụng TOTP); nhân viên tự chọn | Đăng nhập bằng tài khoản HR | Kế hoạch tuần 11 (`infra/idp-mfa`) |
+| NFR-5.4 | Xác thực hai lớp (MFA) cho tài khoản đặc quyền | Bắt buộc với HR và ADMIN (ứng dụng TOTP); nhân viên tự chọn. Trên Cognito bắt buộc cho mọi tài khoản vì Cognito không bắt theo nhóm (ADR-17) | Đăng nhập bằng tài khoản HR | Kế hoạch tuần 11 (`infra/idp-mfa`) |
 | NFR-5.5 | Thời hạn phiên | Access token ≤ 15 phút; phiên hết sau 30 phút không thao tác; tối đa 10 giờ thì phải đăng nhập lại; token tự gia hạn khi đang dùng | Review cấu hình IdP | Một phần: Keycloak đúng 15 và 30 phút; Cognito đang để mặc định. Sửa tuần 10 (`infra/idp-hardening`) |
 | NFR-5.6 | Đăng xuất | Kết thúc phiên ở identity provider và xóa token ở trình duyệt | Đăng xuất rồi bấm Back | Đã có |
 | NFR-5.7 | Giữ token an toàn ở trình duyệt | Token chỉ trong `sessionStorage` (đóng tab là mất), không trong `localStorage`, URL hay log | Review code | Đã có |
 | NFR-5.8 | API kiểm token ở mọi request | Kiểm chữ ký (JWKS), issuer, hạn dùng, client (`azp`/`aud`); sai thì 401 | e2e test token giả, token hết hạn | Đã có |
-| NFR-5.9 | Không tự đăng ký tài khoản | Tài khoản do HR hoặc ADMIN tạo; chỉ liên kết tài khoản với hồ sơ khi email đã xác minh (T-02) | Thử đăng ký trên trang đăng nhập | Một phần: Keycloak đã tắt, Cognito còn cho tự đăng ký. Sửa tuần 10 (`infra/idp-hardening`) |
-| NFR-5.10 | Ghi nhận đăng nhập | Lưu đăng nhập thành công, thất bại, bị khóa và mọi lần cấp, thu hồi vai trò HR, ADMIN (T-03, T-06) | Xem event của IdP và audit | Chưa có |
+| NFR-5.9 | Không tự đăng ký tài khoản | Tài khoản do HR hoặc ADMIN tạo; chỉ liên kết tài khoản với hồ sơ khi email đã xác minh (T-02) | Thử đăng ký trên trang đăng nhập; unit test `email_verified` | Một phần: Keycloak đã tắt, Cognito còn cho tự đăng ký (`infra/idp-hardening`); API chỉ liên kết khi `email_verified` (25/11, AC-8.1.12) |
+| NFR-5.10 | Ghi nhận đăng nhập | Lưu đăng nhập thành công, thất bại, bị khóa và mọi lần cấp, thu hồi vai trò HR, ADMIN (T-03, T-06) | Xem event của IdP và audit | Một phần: cấp, thu hồi vai trò có audit (FR-8.7); đăng nhập chưa có, cách làm theo ADR-17 mục 6; trên Cognito gói Essentials chỉ ghi được lần thành công |
 
 **b) Phân quyền**
 
@@ -390,16 +418,16 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 | NFR-5.16 | Mã hóa khi lưu | Database, object storage, backup, queue mã hóa bằng khóa KMS | Review Terraform | Một phần: đã khai báo, chưa apply |
 | NFR-5.17 | Mã hóa trường nhạy cảm ở tầng ứng dụng | CCCD, số tài khoản, lương dùng AES-256-GCM; khóa trong secret manager, có quy trình xoay khóa (ADR-08) | Đọc thẳng bảng trong database thấy dữ liệu đã mã hóa | Một phần: mã hóa đã có, khóa ở local còn giá trị mặc định |
 | NFR-5.18 | Không lộ dữ liệu nhạy cảm qua kênh phụ | Không ghi giá trị nhạy cảm, token vào log, audit, email; email không nêu loại phép ốm, thai sản (T-16) | Review log, email mẫu | Một phần |
-| NFR-5.19 | Link tải tài liệu an toàn | Presigned URL hết hạn ≤ 5 phút; bucket chặn truy cập public | Thử dùng lại link sau 5 phút | Kế hoạch tuần 10 |
+| NFR-5.19 | Link tải tài liệu an toàn | Presigned URL **tải lên** hết hạn ≤ 10 phút (đủ cho file 20 MiB trên mạng chậm); **tải xuống không phát link**, file đi qua API sau khi kiểm quyền (ADR-13, DR-06); bucket chặn truy cập public | Thử PUT bằng URL sau 10 phút; mở URL object không chữ ký | Có ở code (#64); staging chờ `terraform apply` |
 
 **d) Bảo mật ứng dụng web**
 
 | Mã | Yêu cầu | Ngưỡng | Kiểm chứng | Trạng thái |
 |---|---|---|---|---|
 | NFR-5.20 | Kiểm tra đầu vào ở server | Từ chối trường không khai báo; truy vấn database tham số hóa qua ORM, không ghép chuỗi SQL | e2e gửi trường lạ; review code | Đã có |
-| NFR-5.21 | Giới hạn tần suất gọi (chống lạm dụng, T-05, T-11) | 100 request/phút cho mỗi người dùng, 20 request/phút cho tìm kiếm; hồ sơ: 30 lệnh ghi/phút, 10 URL tải lên/giờ, 100 lượt xem nhạy cảm/giờ (UC1 FR-1.14); vượt thì 429 | Load test vượt ngưỡng | Kế hoạch tuần 11 (`feat/security-headers-ratelimit`) |
-| NFR-5.22 | Header bảo mật và CORS | CSP, HSTS, `X-Content-Type-Options: nosniff`, chặn nhúng iframe; CORS chỉ cho domain web | Quét header trên staging | Một phần: CORS đã có, header bảo mật làm tuần 11 (`feat/security-headers-ratelimit`) |
-| NFR-5.23 | Kiểm soát file tải lên | Tài liệu chính sách (UC5): PDF, DOCX, tối đa 20 MB. File hồ sơ (UC1): PDF, DOCX, JPG, PNG, tối đa 10 MiB, ảnh đại diện 2 MiB. Kiểm tra loại file theo nội dung, không chỉ theo đuôi | Thử tải file `.exe` đổi đuôi | Kế hoạch tuần 10 |
+| NFR-5.21 | Giới hạn tần suất gọi (chống lạm dụng, T-05, T-11) | 100 request/phút cho mỗi người dùng, 20 request/phút cho tìm kiếm; trợ lý: 10 câu/phút, 100 câu/ngày, cấu hình trợ lý (tải model, kiểm tra kết nối): 20 lượt/giờ (UC6, ADR-16); hồ sơ: 30 lệnh ghi/phút, 10 URL tải lên/giờ, 100 lượt xem nhạy cảm/giờ (UC1 FR-1.14); vượt thì 429 | Load test vượt ngưỡng | Đã có (#85) |
+| NFR-5.22 | Header bảo mật và CORS | CSP, HSTS, `X-Content-Type-Options: nosniff`, chặn nhúng iframe; CORS chỉ cho domain web | Quét header trên staging | Đã có (#85): header API và web |
+| NFR-5.23 | Kiểm soát file tải lên | Tài liệu chính sách (UC5): PDF, DOCX, tối đa 20 MiB. File hồ sơ (UC1): PDF, DOCX, JPG, PNG, tối đa 10 MiB, ảnh đại diện 2 MiB. Kiểm tra loại file theo nội dung, không chỉ theo đuôi | Thử tải file `.exe` đổi đuôi | Đã có: tài liệu (UC5), file hồ sơ (#87) |
 | NFR-5.24 | Thông báo lỗi không lộ thông tin nội bộ | Chỉ trả `{ code, message, traceId }`, không trả stack trace hay câu SQL | e2e test lỗi 500 | Đã có |
 
 **e) Secret và chuỗi cung ứng phần mềm**
@@ -416,7 +444,7 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 |---|---|---|---|---|
 | NFR-6.1 | Có audit cho thao tác quan trọng | 100% thao tác ghi hồ sơ, đọc trường nhạy cảm, mọi bước của đơn nghỉ; ghi ai, làm gì, đối tượng nào, lúc nào, traceId | e2e test | Đã có |
 | NFR-6.2 | Audit không sửa, không xóa được | Database chặn UPDATE, DELETE trên bảng audit (ADR-09) | e2e test | Đã có |
-| NFR-6.3 | Thời gian lưu audit | Tối thiểu 2 năm (đề xuất, chờ chốt ở mục 8) | Review chính sách lưu trữ | Chưa có |
+| NFR-6.3 | Thời gian lưu audit | 5 năm kể từ lúc ghi, có legal hold (BR-13; mốc nội bộ, HR/pháp chế xác nhận trước production) | Review chính sách lưu trữ | Chưa có quy trình archive; bảng append-only giữ đủ |
 | NFR-6.4 | Mỗi request có mã truy vết | Header `X-Trace-Id` trả về client và có trong mọi dòng log của request | e2e test | Đã có |
 
 ### 6.8 NFR-7 – Chi phí
@@ -431,11 +459,11 @@ Căn cứ tham khảo: OWASP ASVS 4.0 (mức 2) và NIST SP 800-63B cho phần m
 
 | Mã | Yêu cầu | Ngưỡng | Kiểm chứng | Trạng thái |
 |---|---|---|---|---|
-| NFR-8.1 | Log tập trung | Log dạng JSON, có traceId, giữ 14 ngày, tìm được theo traceId | Tìm một request trên CloudWatch | Một phần: có traceId, log chưa ở dạng JSON |
-| NFR-8.2 | Metric chính | Request/giây, p95, tỉ lệ 5xx, độ dài queue, số message trong DLQ, số event outbox chưa gửi, CPU và kết nối database | Dashboard | Kế hoạch tuần 11 |
+| NFR-8.1 | Log tập trung | Log dạng JSON, có traceId, giữ 14 ngày, tìm được theo traceId | Tìm một request trên CloudWatch | Một phần (25/11): log JSON có traceId và access log (`LOG_FORMAT`, mặc định ở production); giữ 14 ngày đặt ở log group (Terraform) |
+| NFR-8.2 | Metric chính | Request/giây, p95, tỉ lệ 5xx, độ dài queue, số message trong DLQ, số event outbox chưa gửi, CPU và kết nối database | Dashboard | Một phần (25/11): metric `OutboxPending`, `OutboxOldestAgeSeconds` (CloudWatch EMF); request/giây, p95, 5xx đo từ access log; dashboard chưa có (N5b) |
 | NFR-8.3 | Cảnh báo | Báo khi tỉ lệ 5xx > 1% trong 5 phút, p95 > 1 s trong 10 phút, DLQ có message, outbox tồn quá 15 phút | Kích hoạt thử từng cảnh báo | Kế hoạch tuần 11 |
 | NFR-8.4 | Sổ tay xử lý sự cố (runbook) | Có runbook cho từng tình huống ở mục 6.14 | Review tài liệu | Kế hoạch tuần 12 |
-| NFR-8.5 | Thông tin phiên bản đang chạy | Biết được commit hoặc tag đang chạy ở mỗi môi trường | Gọi health check | Chưa có |
+| NFR-8.5 | Thông tin phiên bản đang chạy | Biết được commit hoặc tag đang chạy ở mỗi môi trường | Gọi health check | Đã có (25/11): `GET /health` trả `version` = commit SHA build vào image |
 
 ### 6.10 NFR-9 – Bảo trì và kiểm thử
 
@@ -532,10 +560,11 @@ Chiều xuôi: mục tiêu (BRD) → yêu cầu (SRS) → thiết kế (SAD) →
 
 | Mục tiêu (BRD) | Use case | Yêu cầu (SRS) | Business rule | Thiết kế (SAD) | Kiểm chứng |
 |---|---|---|---|---|---|
-| MT-1 | UC1, UC2 | FR-1.1 → FR-1.14, FR-2.1 → FR-2.5 | Quy tắc hồ sơ, issue #21, #22 | Module Employee, Organization, Identity; ADR-10 | e2e `app.e2e-spec.ts`; biên bản kiểm thử tuần 7 |
-| MT-2 | UC3, UC4 | FR-3.1 → FR-3.7, FR-4.1 → FR-4.8 | BR-01 → BR-12, BR-16 | Module Leave, Worker; outbox + queue (ADR-03) | 22 ca kiểm thử `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
+| MT-1 | UC1, UC2 | FR-1.1 → FR-1.14, FR-2.1 → FR-2.10 | Quy tắc hồ sơ, issue #21, #22, ADR-14 | Module Employee, Organization, Identity; ADR-10, ADR-14 | e2e `app.e2e-spec.ts`; biên bản kiểm thử tuần 7 |
+| MT-2 | UC3, UC4 | FR-3.1 → FR-3.8, FR-4.1 → FR-4.9 | BR-01 → BR-19 | Module Leave, Worker; outbox + queue (ADR-03) | 32 ca kiểm thử TC-01 → TC-32 trong `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
 | MT-3 | UC1, UC7 | FR-1.3, FR-1.4, FR-7.1 → FR-7.3 | ADR-08, ADR-09 | Module Employee (`FieldCrypto`, ADR-08), Audit (ADR-09) | e2e audit, `VIEW_SENSITIVE`; ma trận phân quyền |
-| MT-4 | UC5, UC6 | FR-5.1 → FR-5.3, FR-6.1 → FR-6.3 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13) | Kế hoạch kiểm thử tuần 10, 12 |
+| MT-4 | UC5, UC6 | FR-5.1 → FR-5.4, FR-6.3, FR-6.4 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13); assistant service (ADR-15, ADR-16) | Kế hoạch kiểm thử tuần 10, 12 |
+| MT-3 | UC8 | FR-8.1 → FR-8.7, NFR-5.1 → NFR-5.13 | Threat model T-02, T-03, T-06 | Module Identity, Keycloak/Cognito, outbox + SNS/SQS (ADR-17, ADR-18) | `test.md` UC8; ca kiểm thử bảo mật |
 
 Thiết kế chi tiết từng module: [kiến trúc phần mềm mục 4](../architecture/SAD-2-software-architecture.md#4-danh-mục-module).
 NFR-1 → NFR-11 dẫn tới quyết định kiến trúc ở [kiến trúc hệ thống mục 1](../architecture/SAD-1-system-architecture.md#1-yêu-cầu-dẫn-dắt-kiến-trúc).
@@ -547,7 +576,7 @@ Câu hỏi riêng của SRS, cần chốt trước nghiệm thu:
 | # | Câu hỏi | Đề xuất | Ảnh hưởng |
 |---|---|---|---|
 | 1 | SLA với phòng HR | 99,0% trong giờ làm việc, như bảng ở mục 6.13 | NFR-3.1, mục 6.13 |
-| 2 | MFA cho HR, ADMIN có bắt buộc từ version 1 không | Bắt buộc trên staging, tắt ở local cho tiện demo | NFR-5.4 |
-| 3 | Thời gian lưu audit | 2 năm | NFR-6.3 |
+| 2 | MFA cho HR, ADMIN có bắt buộc từ version 1 không | **Đã chốt 17/11/2026 (ADR-17):** bắt buộc. Local: Keycloak bắt OTP với role `hr`, `admin`; staging: Cognito bắt buộc mọi tài khoản | NFR-5.4, FR-8.5 |
+| 3 | Thời gian lưu audit | **Đã chốt (TV2, [quy tắc toàn vẹn tổ chức mục 4](../business/org-integrity-rules.md#4-thời-gian-lưu-audit)):** 5 năm theo BR-13 | NFR-6.3 |
 
 Các câu hỏi chưa chốt khác ảnh hưởng tới yêu cầu nằm ở [BRD mục 15](../business/BRD.md#15-vấn-đề-còn-mở-và-quyết-định-đã-chốt). Khi chốt, cập nhật FR hoặc BR liên quan và tăng phiên bản tài liệu này.

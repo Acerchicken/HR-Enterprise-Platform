@@ -31,6 +31,10 @@ env:
   ECS_WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE || 'hr-platform-staging-worker' }}
   ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY || 'hr-platform-staging-worker' }}
   ECR_REPOSITORY: hr-api
+  ECR_ASSISTANT_REPOSITORY: hr-assistant
+  ECS_ASSISTANT_SERVICE: ${{ vars.ECS_ASSISTANT_SERVICE || 'hr-platform-staging-assistant' }}
+  ECR_NOTIFICATION_REPOSITORY: hr-notification
+  ECS_NOTIFICATION_SERVICE: ${{ vars.ECS_NOTIFICATION_SERVICE || 'hr-platform-staging-notification' }}
   INPUT_IMAGE_TAG: ${{ github.event.inputs.image_tag }}
   INPUT_RUN_SEED: ${{ github.event.inputs.run_seed }}
   INPUT_SKIP_MIGRATION: ${{ github.event.inputs.skip_migration }}
@@ -90,6 +94,16 @@ jobs:
             --image-manifest "$MANIFEST"
           echo "Successfully retagged ${IMAGE_TAG} -> latest on ECR."
 
+          # Notification service (ADR-15 bước 1) build cùng commit, cùng tag: lùi cùng API để payload event khớp.
+          N_MANIFEST=$(aws ecr batch-get-image --repository-name "${ECR_NOTIFICATION_REPOSITORY}" \
+            --image-ids imageTag="${IMAGE_TAG}" --query 'images[0].imageManifest' --output text 2>/dev/null || echo "None")
+          if [ -n "$N_MANIFEST" ] && [ "$N_MANIFEST" != "None" ]; then
+            aws ecr put-image --repository-name "${ECR_NOTIFICATION_REPOSITORY}" --image-tag latest --image-manifest "$N_MANIFEST" > /dev/null
+            echo "Retagged notification ${IMAGE_TAG} -> latest."
+          else
+            echo "::warning::Không có image notification tag ${IMAGE_TAG} (bản trước khi tách service). Giữ image notification hiện tại."
+          fi
+
       - name: Set up Docker Buildx
         if: env.IS_ROLLBACK != 'true'
         uses: docker/setup-buildx-action@v3
@@ -101,11 +115,41 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
+          build-args: |
+            APP_VERSION=${{ env.IMAGE_TAG }}
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
             ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # UC6 (staging-readiness F4): image assistant service, tag SHA + latest. Image có sẵn model embedding (~1 GB).
+      - name: Build and push Assistant Image to ECR
+        if: env.IS_ROLLBACK != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/assistant
+          file: ./services/assistant/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_ASSISTANT_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_ASSISTANT_REPOSITORY }}:latest
+          cache-from: type=gha,scope=assistant
+          cache-to: type=gha,mode=max,scope=assistant
+
+      # ADR-15 bước 1 (staging-readiness F6): image notification service, tag SHA + latest.
+      - name: Build and push Notification Image to ECR
+        if: env.IS_ROLLBACK != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/notification
+          file: ./services/notification/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_NOTIFICATION_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_NOTIFICATION_REPOSITORY }}:latest
+          cache-from: type=gha,scope=notification
+          cache-to: type=gha,mode=max,scope=notification
 
       - name: Run Database Migration (ECS One-off Task)
         if: env.INPUT_SKIP_MIGRATION != 'true'
@@ -203,6 +247,33 @@ jobs:
             --cluster "${ECS_CLUSTER_NAME}" \
             --service "${ECS_WORKER_SERVICE}" \
             --force-new-deployment
+
+      # Deploy notification cùng lúc với API: event của API mới có danh sách người nhận (payload.mail).
+      - name: Update ECS Notification Service
+        run: |
+          STATUS=$(aws ecs describe-services --cluster "${ECS_CLUSTER_NAME}" --services "${ECS_NOTIFICATION_SERVICE}" \
+            --query "services[0].status" --output text 2>/dev/null || echo "None")
+          if [ "$STATUS" != "ACTIVE" ]; then
+            echo "::warning::Notification service '${ECS_NOTIFICATION_SERVICE}' chưa có (chưa apply infra F6): email sẽ không được gửi."
+          else
+            aws ecs update-service --cluster "${ECS_CLUSTER_NAME}" --service "${ECS_NOTIFICATION_SERVICE}" --force-new-deployment > /dev/null
+            echo "Đã deploy lại notification service."
+          fi
+
+      # Assistant mặc định tắt (desired_count = 0) để tiết kiệm; chỉ deploy lại khi đang bật cho demo.
+      - name: Update ECS Assistant Service (if running)
+        if: env.IS_ROLLBACK != 'true'
+        run: |
+          DESIRED=$(aws ecs describe-services --cluster "${ECS_CLUSTER_NAME}" --services "${ECS_ASSISTANT_SERVICE}" \
+            --query "services[0].desiredCount" --output text 2>/dev/null || echo "None")
+          if [ "$DESIRED" = "None" ] || [ -z "$DESIRED" ]; then
+            echo "Assistant service '${ECS_ASSISTANT_SERVICE}' chưa có (chưa apply infra F4). Bỏ qua."
+          elif [ "$DESIRED" = "0" ]; then
+            echo "Assistant service đang tắt (desired 0). Image mới sẽ được dùng khi bật."
+          else
+            aws ecs update-service --cluster "${ECS_CLUSTER_NAME}" --service "${ECS_ASSISTANT_SERVICE}" --force-new-deployment > /dev/null
+            echo "Đã deploy lại assistant service (${DESIRED} task)."
+          fi
 
       - name: Update App Runner API Service
         run: |

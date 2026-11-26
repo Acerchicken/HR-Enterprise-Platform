@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Readable } from 'stream';
 import { DataSource, EntityManager } from 'typeorm';
+import { fieldError } from '../../common/field-error';
 import { Page } from '../../common/pagination';
 import { AuditService } from '../audit/audit.service';
 import { EmployeeService, RequestMeta } from '../employee/employee.service';
@@ -15,12 +16,28 @@ import {
   DocumentScopeDto,
   DocumentView,
   FileSpecDto,
+  ManageDocumentQuery,
   UpdateDocumentDto,
   UploadTicket,
   VersionView,
 } from './document.dto';
 import { DocumentEntity, DocumentScope, DocumentVersion } from './document.entity';
+import { writeDocumentEvent } from './document-events';
 import { ObjectStorage } from './object-storage';
+
+type Scope = { all: boolean; departmentIds: string[]; roles: string[] };
+
+/** Có ít nhất một phiên bản `READY` (điều kiện để nhân viên thấy tài liệu). */
+const HAS_READY = `EXISTS (SELECT 1 FROM document.document_version v WHERE v.document_id = d.id AND v.status = 'READY')`;
+
+/** Escape ký tự đặc biệt của LIKE để từ khóa "50%" tìm đúng chữ. */
+const likePattern = (q: string) => `%${q.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+
+/**
+ * Tìm theo tiêu đề, không phân biệt hoa thường và dấu: "nghi phep" khớp "Quy chế nghỉ phép" (FR-5.4). Extension `unaccent` do
+ * migration `AssistantSchema` tạo; `public.` để không phụ thuộc `search_path`.
+ */
+const TITLE_MATCH = 'public.unaccent(d.title) ILIKE public.unaccent(:q)';
 
 /**
  * Kho tài liệu HR (UC5, docs/business/document-rules.md).
@@ -44,6 +61,7 @@ export class DocumentService {
     if (!viewer.active) return { items: [], page: q.page, size: q.size, total: 0 };
     const qb = this.visibleQuery(viewer).orderBy('d.updated_at', 'DESC').addOrderBy('d.title', 'ASC');
     if (q.type) qb.andWhere('d.type = :type', { type: q.type });
+    if (q.q?.trim()) qb.andWhere(TITLE_MATCH, { q: likePattern(q.q) });
     const [docs, total] = await qb.skip((q.page - 1) * q.size).take(q.size).getManyAndCount();
     return { items: await this.views(docs, false), page: q.page, size: q.size, total };
   }
@@ -66,9 +84,13 @@ export class DocumentService {
 
   // ---------- HR: quản lý kho (DR-03) ----------
 
-  async manageList(q: DocumentQuery): Promise<Page<DocumentAdminView>> {
-    const qb = this.ds.getRepository(DocumentEntity).createQueryBuilder('d').orderBy('d.updated_at', 'DESC');
+  async manageList(q: ManageDocumentQuery): Promise<Page<DocumentAdminView>> {
+    const qb = this.ds.getRepository(DocumentEntity).createQueryBuilder('d').orderBy('d.updated_at', 'DESC').addOrderBy('d.title', 'ASC');
     if (q.type) qb.andWhere('d.type = :type', { type: q.type });
+    if (q.q?.trim()) qb.andWhere(TITLE_MATCH, { q: likePattern(q.q) });
+    if (q.state === 'VISIBLE') qb.andWhere(`d.hidden = false AND ${HAS_READY}`);
+    if (q.state === 'HIDDEN') qb.andWhere('d.hidden = true');
+    if (q.state === 'NOT_READY') qb.andWhere(`NOT ${HAS_READY}`);
     const [docs, total] = await qb.skip((q.page - 1) * q.size).take(q.size).getManyAndCount();
     return { items: await this.adminViews(docs), page: q.page, size: q.size, total };
   }
@@ -81,7 +103,7 @@ export class DocumentService {
 
   async create(dto: CreateDocumentDto, actor: AuthUser, meta: RequestMeta = {}): Promise<{ document: DocumentAdminView; upload: UploadTicket }> {
     this.checkFile(dto);
-    const scope = await this.checkScope(dto.scope);
+    const scope = await this.checkScope(dto.scope, []);
     const { docId, ticket } = await this.ds.transaction(async (m) => {
       const doc = await m.getRepository(DocumentEntity).save(
         m.getRepository(DocumentEntity).create({ title: dto.title.trim(), type: dto.type, scopeAll: scope.all, hidden: false, createdBy: actor.employeeId }),
@@ -135,6 +157,20 @@ export class DocumentService {
     await this.ds.transaction(async (m) => {
       await m.getRepository(DocumentVersion).update({ id: v.id }, { status: 'READY', readyAt: new Date() });
       await m.query('UPDATE document.document SET updated_at = now() WHERE id = $1', [id]);
+      const doc = await m.getRepository(DocumentEntity).findOneByOrFail({ id });
+      // UC5 13.2: assistant service index phiên bản mới (UC6).
+      await writeDocumentEvent(m, 'DocumentPublished', {
+        documentId: id,
+        versionId: v.id,
+        versionNo: v.versionNo,
+        objectKey: v.objectKey,
+        contentType: v.contentType,
+        title: doc.title,
+        type: doc.type,
+        scope: await this.scopeOf(m, doc),
+        hidden: doc.hidden,
+        occurredAt: new Date().toISOString(),
+      });
       await this.audit.record(
         { actorId: actor.employeeId, action: 'DOCUMENT_PUBLISH', entityType: 'document', entityId: id, changedFields: { versionNo: v.versionNo, fileName: v.fileName }, ...meta },
         m,
@@ -144,7 +180,6 @@ export class DocumentService {
   }
 
   async update(id: string, dto: UpdateDocumentDto, actor: AuthUser, meta: RequestMeta = {}): Promise<DocumentAdminView> {
-    const scope = dto.scope ? await this.checkScope(dto.scope) : null;
     await this.ds.transaction(async (m) => {
       const repo = m.getRepository(DocumentEntity);
       const doc = await repo.findOne({ where: { id }, lock: { mode: 'pessimistic_write' } });
@@ -153,14 +188,31 @@ export class DocumentService {
       const changes: Record<string, unknown> = {};
       if (dto.title !== undefined && dto.title.trim() !== doc.title) changes.title = doc.title = dto.title.trim();
       if (dto.type !== undefined && dto.type !== doc.type) changes.type = doc.type = dto.type;
-      if (scope) {
-        doc.scopeAll = scope.all;
-        await m.getRepository(DocumentScope).delete({ documentId: id });
-        await this.saveScope(m, id, scope);
-        changes.scope = scope;
+      if (dto.scope) {
+        const current = await m.getRepository(DocumentScope).findBy({ documentId: id });
+        const before: Scope = {
+          all: doc.scopeAll,
+          departmentIds: current.filter((s) => s.kind === 'DEPARTMENT').map((s) => s.value),
+          roles: current.filter((s) => s.kind === 'ROLE').map((s) => s.value),
+        };
+        // D3: đơn vị đã ngừng hoạt động chỉ được giữ nếu đã có sẵn trong phạm vi.
+        const scope = await this.checkScope(dto.scope, before.departmentIds);
+        if (!sameScope(before, scope)) {
+          doc.scopeAll = scope.all;
+          await m.getRepository(DocumentScope).delete({ documentId: id });
+          await this.saveScope(m, id, scope);
+          changes.scope = scope;
+        }
       }
       if (!Object.keys(changes).length) return;
       await repo.save(doc);
+      await writeDocumentEvent(m, 'DocumentUpdated', {
+        documentId: id,
+        title: doc.title,
+        type: doc.type,
+        scope: await this.scopeOf(m, doc),
+        occurredAt: new Date().toISOString(),
+      });
       await this.audit.record({ actorId: actor.employeeId, action: 'DOCUMENT_UPDATE', entityType: 'document', entityId: id, changedFields: changes, ...meta }, m);
     });
     return this.manageGet(id);
@@ -171,6 +223,7 @@ export class DocumentService {
     await this.ds.transaction(async (m) => {
       const res = await m.getRepository(DocumentEntity).update({ id }, { hidden });
       if (!res.affected) throw new NotFoundException('Không tìm thấy tài liệu');
+      await writeDocumentEvent(m, hidden ? 'DocumentHidden' : 'DocumentRestored', { documentId: id, occurredAt: new Date().toISOString() });
       await this.audit.record({ actorId: actor.employeeId, action: hidden ? 'DOCUMENT_HIDE' : 'DOCUMENT_RESTORE', entityType: 'document', entityId: id, ...meta }, m);
     });
     return this.manageGet(id);
@@ -178,7 +231,11 @@ export class DocumentService {
 
   // ---------- Nội bộ ----------
 
-  /** Người xem tính lại mỗi lần (DR-06): phòng ban hiện tại, các phòng ban cha, vai trò hiện tại. */
+  /** Người xem tính lại mỗi lần (DR-06): phòng ban hiện tại, các phòng ban cha, vai trò hiện tại. Trợ lý UC6 dùng chung. */
+  async viewerOf(actor: AuthUser): Promise<Viewer> {
+    return this.viewer(actor);
+  }
+
   private async viewer(actor: AuthUser): Promise<Viewer> {
     const place = actor.employeeId ? await this.employees.placementOf(actor.employeeId) : null;
     if (!place || place.status === 'TERMINATED') return { active: false, departmentChain: [], roles: [] };
@@ -191,7 +248,7 @@ export class DocumentService {
       .getRepository(DocumentEntity)
       .createQueryBuilder('d')
       .where('d.hidden = false')
-      .andWhere(`EXISTS (SELECT 1 FROM document.document_version v WHERE v.document_id = d.id AND v.status = 'READY')`)
+      .andWhere(HAS_READY)
       .andWhere(
         `(d.scope_all OR EXISTS (SELECT 1 FROM document.document_scope s WHERE s.document_id = d.id AND
           ((s.kind = 'DEPARTMENT' AND s.value = ANY(:depts)) OR (s.kind = 'ROLE' AND s.value = ANY(:roles)))))`,
@@ -208,17 +265,34 @@ export class DocumentService {
 
   private checkFile(f: FileSpecDto) {
     const problem = checkDeclaredFile(f.fileName, f.contentType, f.sizeBytes);
-    if (problem) throw new BadRequestException(problem);
+    if (problem) throw fieldError(problem.field, problem.message);
   }
 
-  private async checkScope(s: DocumentScopeDto): Promise<{ all: boolean; departmentIds: string[]; roles: string[] }> {
-    const scope = { all: !!s.all, departmentIds: [...new Set(s.departmentIds ?? [])], roles: [...new Set(s.roles ?? [])] };
+  /**
+   * DR-01, DR-02: ít nhất một phạm vi; đơn vị phải tồn tại và đang hoạt động (D3), trừ đơn vị đã có sẵn trong phạm vi cũ
+   * (`keep`) để HR sửa tiêu đề hay vai trò không bị chặn vì một đơn vị vừa ngừng hoạt động.
+   */
+  private async checkScope(s: DocumentScopeDto, keep: readonly string[]): Promise<Scope> {
+    const scope: Scope = { all: !!s.all, departmentIds: [...new Set(s.departmentIds ?? [])], roles: [...new Set(s.roles ?? [])] };
     if (!scope.all && !scope.departmentIds.length && !scope.roles.length) {
-      throw new BadRequestException('Tài liệu phải có ít nhất một phạm vi xem');
+      throw fieldError('scope', 'Tài liệu phải có ít nhất một phạm vi xem');
     }
     const depts = (await this.org.lookups()).department;
-    if (scope.departmentIds.some((d) => !depts.has(d))) throw new BadRequestException('Phòng ban không tồn tại');
+    if (scope.departmentIds.some((d) => !depts.has(d))) throw fieldError('scope.departmentIds', 'Đơn vị không tồn tại');
+    if (scope.departmentIds.some((d) => depts.get(d)!.status !== 'ACTIVE' && !keep.includes(d))) {
+      throw fieldError('scope.departmentIds', 'Đơn vị đã ngừng hoạt động, hãy chọn đơn vị khác');
+    }
     return scope;
+  }
+
+  /** Phạm vi hiện tại của tài liệu, cho payload event (assistant service không đọc schema `document`). */
+  private async scopeOf(m: EntityManager, doc: DocumentEntity): Promise<Scope> {
+    const rows = await m.getRepository(DocumentScope).findBy({ documentId: doc.id });
+    return {
+      all: doc.scopeAll,
+      departmentIds: rows.filter((s) => s.kind === 'DEPARTMENT').map((s) => s.value),
+      roles: rows.filter((s) => s.kind === 'ROLE').map((s) => s.value),
+    };
   }
 
   private async saveScope(m: EntityManager, documentId: string, s: { departmentIds: string[]; roles: string[] }) {
@@ -279,9 +353,11 @@ export class DocumentService {
     const scopes: DocumentScope[] = ids.length
       ? await this.ds.getRepository(DocumentScope).createQueryBuilder('s').where('s.document_id IN (:...ids)', { ids }).getMany()
       : [];
+    const depts = (await this.org.lookups()).department;
     return docs.map((d) => {
       const vs = versions.get(d.id) ?? [];
       const mine = scopes.filter((s) => s.documentId === d.id);
+      const departmentIds = mine.filter((s) => s.kind === 'DEPARTMENT').map((s) => s.value);
       return {
         id: d.id,
         title: d.title,
@@ -293,10 +369,20 @@ export class DocumentService {
         versions: vs,
         scope: {
           all: d.scopeAll,
-          departmentIds: mine.filter((s) => s.kind === 'DEPARTMENT').map((s) => s.value),
+          departmentIds,
           roles: mine.filter((s) => s.kind === 'ROLE').map((s) => s.value),
+          departments: departmentIds.map((id) => {
+            const unit = depts.get(id);
+            return { id, name: unit?.name ?? 'Đơn vị không còn', active: unit?.status === 'ACTIVE' };
+          }),
         },
       };
     });
   }
+}
+
+/** Hai phạm vi giống nhau (không tính thứ tự): `PATCH` gửi lại phạm vi cũ thì không ghi audit, không đổi `version`. */
+function sameScope(a: Scope, b: Scope): boolean {
+  const same = (x: string[], y: string[]) => x.length === y.length && x.every((v) => y.includes(v));
+  return a.all === b.all && same(a.departmentIds, b.departmentIds) && same(a.roles, b.roles);
 }

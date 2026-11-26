@@ -797,14 +797,14 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
       <h3 style="font-size:18px;margin:8px 0 2px;display:flex;align-items:center;gap:8px"><svg class="i" style="color:var(--primary)"><use href="#swap"/></svg>Điều chuyển</h3>
       <div class="mut" style="font-size:13.5px">Hiện tại: Kỹ sư phần mềm · Nhóm Backend · quản lý Nguyễn Minh Khoa</div>
       <div class="fg" style="margin-top:4px">
-        <div><label class="l">Phòng ban mới *</label><div class="input f">Phòng Dữ liệu<span class="dn">▾</span></div></div>
+        <div><label class="l">Đơn vị mới *</label><div class="input f">Phòng Dữ liệu<span class="dn">▾</span></div></div>
         <div><label class="l">Chức danh mới *</label><div class="input">Kỹ sư dữ liệu · cấp 4<span class="dn">▾</span></div></div>
         <div><label class="l">Quản lý trực tiếp mới *</label><div class="input"><span class="av xs alt" style="margin-right:8px">VL</span>Vũ Hải Long<span class="pend" style="margin-left:8px">Trưởng phòng</span><span class="dn">▾</span></div></div>
         <div><label class="l">Ngày hiệu lực *</label><div class="input">01/12/2026<svg class="i" style="margin-left:auto;width:16px;color:var(--muted)"><use href="#cal"/></svg></div></div>
       </div>
       <label class="l">Lý do *</label>
       <div class="ta" style="height:56px;color:var(--text)">Chuyển sang dự án nền tảng dữ liệu</div>
-      <div class="alert w"><svg class="i"><use href="#alert"/></svg><span><b>Sắp hiệu lực.</b> Hồ sơ chưa đổi đến 00:00 ngày 01/12/2026. Hủy được trước ngày đó. An đang có <b>1 đơn nghỉ chờ duyệt</b>: khi điều chuyển có hiệu lực, đơn chuyển sang quản lý mới (BR-05).</span></div>
+      <div class="alert w"><svg class="i"><use href="#alert"/></svg><span><b>Sắp hiệu lực.</b> Hồ sơ đổi lúc 00:05 ngày 01/12/2026. Hủy được trước ngày đó. An đang có <b>1 đơn nghỉ chờ duyệt</b>: khi điều chuyển có hiệu lực, đơn chuyển sang quản lý mới (BR-05).</span></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><span class="btn g">Hủy</span><span class="btn p">Lưu điều chuyển</span></div>
       <div class="h4" style="margin-top:22px">Quá trình công tác (sau khi lưu)</div>
       <div class="tl">
@@ -816,6 +816,100 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
   </div>
   <div class="note" style="top:150px;left:40px;max-width:470px">Nút "Điều chuyển" nằm ở popup hồ sơ khi HR mở (không có trong hồ sơ nhân viên tự xem). Chọn phòng ban mới thì ô quản lý điền sẵn trưởng phòng đó, HR đổi được (AC-2.9.2). Ngày hiệu lực không trước ngày vào làm, không lùi quá 30 ngày; chỉ một điều chuyển chưa hiệu lực mỗi lúc.</div>
   <div class="note" style="top:300px;left:40px;max-width:470px">Danh sách chức danh chỉ có chức danh đang dùng (AC-2.6.2). Quản lý mới phải hợp lệ theo FR-2.5 (đang làm việc, không tạo vòng); lỗi hiện dưới ô quản lý. Nếu An đang là trưởng phòng thì form bắt chọn trưởng phòng mới cho phòng cũ (AC-2.7.5).</div>
+</div>
+
+<div class="frame desk" id="uc2-transfer-reports" style="height:860px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>9</i></span><span class="av alt2">HL</span></div>
+  </div>
+  <div class="page" style="opacity:.5"><div class="crumb">Trang chủ › Danh bạ</div><h1>Danh bạ</h1></div>
+  <div class="dim"></div>
+  <div class="drawer" style="width:760px">
+    <div class="ph" style="text-align:left;padding:14px 20px">
+      <div class="pbar"><svg class="i"><use href="#back"/></svg><span>Nguyễn Minh Khoa · 100207</span><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    </div>
+    <div style="padding:6px 22px">
+      <h3 style="font-size:18px;margin:8px 0 2px;display:flex;align-items:center;gap:8px"><svg class="i" style="color:var(--primary)"><use href="#swap"/></svg>Điều chuyển</h3>
+      <div class="mut" style="font-size:13.5px">Hiện tại: Trưởng nhóm Backend · Nhóm Backend · quản lý Trần Quốc Bình · <b>Trưởng nhóm</b> của Nhóm Backend</div>
+      <div class="fg" style="margin-top:4px">
+        <div><label class="l">Đơn vị mới *</label><div class="input">Phòng Dữ liệu<span class="dn">▾</span></div></div>
+        <div><label class="l">Chức danh mới *</label><div class="input">Trưởng nhóm · cấp 6<span class="dn">▾</span></div></div>
+        <div><label class="l">Quản lý trực tiếp mới *</label><div class="input"><span class="av xs alt" style="margin-right:8px">VL</span>Vũ Hải Long<span class="pend" style="margin-left:8px">Trưởng phòng</span><span class="dn">▾</span></div></div>
+        <div><label class="l">Ngày hiệu lực *</label><div class="input">01/12/2026<svg class="i" style="margin-left:auto;width:16px;color:var(--muted)"><use href="#cal"/></svg></div></div>
+      </div>
+      <label class="l">Trưởng mới cho Nhóm Backend * <span class="mut" style="font-weight:400">(Khoa rời nhóm, AC-2.7.5)</span></label>
+      <div class="input f">Lý Thanh Hằng · 100118<span class="dn">▾</span></div>
+      <div class="h4" style="display:flex;align-items:center;margin-top:14px">Cấp dưới trực tiếp của Khoa (8) <span style="margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400" class="lnk">Chọn cho tất cả: Chuyển sang Lý Thanh Hằng</span></div>
+      <table class="tbl" style="border:1px solid var(--line);border-radius:10px">
+        <tr><th>Nhân viên</th><th>Giữ quản lý</th><th>Đổi quản lý (cùng ngày hiệu lực)</th></tr>
+        <tr><td><div class="who"><span class="av sm">AN</span>Nguyễn Văn An</div></td><td style="white-space:nowrap"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line);margin-right:6px;vertical-align:-2px"></span>Giữ Khoa</td><td><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:4.5px solid var(--primary);margin-right:6px;vertical-align:-2px"></span>Chuyển sang <span class="input" style="display:inline-flex;height:30px;margin:0 0 0 4px;padding:0 8px;font-size:13px;width:190px">Lý Thanh Hằng<span class="dn">▾</span></span></td></tr>
+        <tr><td><div class="who"><span class="av sm">TN</span>Nguyễn Thị Ngọc</div></td><td style="white-space:nowrap"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line);margin-right:6px;vertical-align:-2px"></span>Giữ Khoa</td><td><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:4.5px solid var(--primary);margin-right:6px;vertical-align:-2px"></span>Chuyển sang <span class="input" style="display:inline-flex;height:30px;margin:0 0 0 4px;padding:0 8px;font-size:13px;width:190px">Lý Thanh Hằng<span class="dn">▾</span></span></td></tr>
+        <tr><td><div class="who"><span class="av sm">QV</span>Nguyễn Quang Vinh</div></td><td style="white-space:nowrap"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:4.5px solid var(--primary);margin-right:6px;vertical-align:-2px"></span>Giữ Khoa</td><td><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line);margin-right:6px;vertical-align:-2px"></span>Chuyển sang <span class="input" style="display:inline-flex;height:30px;margin:0 0 0 4px;padding:0 8px;font-size:13px;width:190px">Lý Thanh Hằng<span class="dn">▾</span></span></td></tr>
+      </table>
+      <div class="pager" style="border:0;padding:6px 0 0"><span class="tot">3 / 8 · còn 5 người chưa chọn</span></div>
+      <div class="alert e"><svg class="i"><use href="#alert"/></svg><span>Còn <b>5 cấp dưới</b> chưa chọn giữ hay đổi quản lý. Mỗi người phải có lựa chọn trước khi lưu (AC-2.7.6).</span></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px"><span class="btn g">Hủy</span><span class="btn p" style="opacity:.5">Lưu điều chuyển</span></div>
+    </div>
+  </div>
+  <div class="note" style="top:150px;left:30px;max-width:450px">Phần "Cấp dưới trực tiếp" chỉ hiện khi người được điều chuyển còn cấp dưới đang làm việc. Ô "Chuyển sang" điền sẵn trưởng mới của đơn vị cũ; HR chọn hàng loạt được. Không có lựa chọn ngầm: quan hệ quản lý quyết định ai duyệt đơn (BR-05).</div>
+  <div class="note" style="top:330px;left:30px;max-width:450px">Khi lưu: mỗi cấp dưới được đổi có một dòng quá trình công tác lý do "Đổi quản lý", cùng ngày hiệu lực; đơn nghỉ đang chờ của họ đi theo quản lý mới (AC-2.7.3). Người "Giữ Khoa" vẫn báo cáo Khoa dù khác đơn vị.</div>
+</div>
+
+<div class="frame desk" id="uc2-terminate" style="height:700px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>9</i></span><span class="av alt2">HL</span></div>
+  </div>
+  <div class="page" style="opacity:.5"><div class="crumb">Trang chủ › Hồ sơ › Sửa hồ sơ</div><h1>Sửa hồ sơ</h1></div>
+  <div class="dim"></div>
+  <div class="modal" style="top:80px;left:360px;width:580px">
+    <div class="mh">Xác nhận cho nghỉ việc<span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    <div class="mb">
+      <div class="pcard" style="margin-bottom:12px"><span class="av md alt2">QB</span><div><b>Trần Quốc Bình</b><small>Giám đốc công nghệ · Phòng Công nghệ · nghỉ từ 30/11/2026</small></div></div>
+      <div class="h4" style="margin-top:4px">Phải xử lý trước</div>
+      <div class="row ok" style="display:flex;gap:8px;align-items:center;font-size:14px;padding:4px 0"><span class="badge ok">Xong</span>Cấp dưới trực tiếp đang làm việc: 0 (đã chuyển hết, AC-1.7.1)</div>
+      <div class="row" style="display:flex;gap:8px;align-items:center;font-size:14px;padding:4px 0"><span class="badge ok">Xong</span>Là quản lý mới trong điều chuyển chưa hiệu lực của người khác: 0</div>
+      <div class="h4" style="margin-top:14px">Hệ thống sẽ tự làm khi lưu</div>
+      <div style="font-size:14px;line-height:1.7">
+        • Gỡ vai trò <b>Trưởng phòng</b> của Phòng Công nghệ → phòng hiện "Chưa có trưởng" (AC-2.9.8)<br>
+        • Gỡ vai trò <b>Phó Giám đốc trung tâm</b> của Trung tâm Công nghệ<br>
+        • Hủy 1 điều chuyển chưa hiệu lực của Bình (01/12/2026)<br>
+        • Hủy 1 đơn nghỉ đang chờ và 1 đơn đã duyệt bắt đầu sau 30/11; trả số ngày giữ chỗ (UC3 AC-3.1.7)<br>
+        • Đóng dòng quá trình công tác hiện tại ở ngày 30/11/2026
+      </div>
+      <div class="alert w"><svg class="i"><use href="#alert"/></svg><span>Không đổi quản lý trực tiếp của ai. Nhớ gán trưởng mới cho Phòng Công nghệ sau khi lưu.</span></div>
+    </div>
+    <div class="mf"><span class="btn g">Quay lại</span><span class="btn p" style="background:var(--danger);border-color:var(--danger)">Xác nhận nghỉ việc</span></div>
+  </div>
+  <div class="note" style="top:200px;left:960px;max-width:280px">Hộp này lấy dữ liệu từ <code>GET /employees/{id}/termination-impact</code>. Mục "Phải xử lý trước" còn số khác 0 thì nút xác nhận bị khóa, mỗi dòng có link mở danh sách để xử lý (UC1 AC-1.7.1, AC-1.7.3).</div>
+</div>
+
+<div class="frame desk" id="uc2-deactivate" style="height:600px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>9</i></span><span class="av alt2">HL</span></div>
+  </div>
+  <div class="page" style="opacity:.5"><div class="crumb">Trang chủ › Sơ đồ tổ chức</div><h1>Sơ đồ tổ chức</h1></div>
+  <div class="dim"></div>
+  <div class="modal" style="top:80px;left:360px;width:560px">
+    <div class="mh">Ngừng hoạt động Phòng Hạ tầng<span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    <div class="mb">
+      <div class="alert e" style="margin-top:0"><svg class="i"><use href="#alert"/></svg><span><b>Chưa ngừng được.</b> Đơn vị phải trống trước khi ngừng hoạt động (AC-2.10.1).</span></div>
+      <table class="tbl" style="border:1px solid var(--line);border-radius:10px;margin-top:12px">
+        <tr><th>Còn lại</th><th>Số lượng</th><th></th></tr>
+        <tr><td>Nhân viên đang làm việc trong phòng</td><td><b>12</b></td><td><span class="lnk">Điều chuyển ›</span></td></tr>
+        <tr><td>Đơn vị con đang hoạt động</td><td><b>1</b></td><td><span class="lnk">Xem ›</span></td></tr>
+        <tr><td>Điều chuyển chưa hiệu lực vào phòng này</td><td><b>1</b></td><td><span class="lnk">Xem ›</span></td></tr>
+      </table>
+      <div class="alert i"><svg class="i"><use href="#info"/></svg><span>Trưởng, phó kiêm nhiệm từ Trung tâm Công nghệ không tính là người của phòng; khi ngừng, vai trò của họ tự gỡ. Sáp nhập: điều chuyển hết người sang phòng mới (cùng ngày hiệu lực) rồi ngừng phòng cũ (AC-2.10.3).</span></div>
+    </div>
+    <div class="mf"><span class="btn g">Đóng</span><span class="btn p" style="opacity:.5">Ngừng hoạt động</span></div>
+  </div>
+  <div class="note" style="top:200px;left:940px;max-width:300px">Gọi <code>PATCH /departments/{id}</code> với <code>status: INACTIVE</code>; API trả 409 kèm ba con số này. Khi trống, đơn vị biến khỏi cây, danh bạ, danh sách chọn nhưng vẫn hiện trong quá trình công tác cũ.</div>
 </div>
 
 <div class="frame desk" id="uc2-positions" style="height:640px">
@@ -1134,6 +1228,158 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
   <div class="note" style="top:520px;left:16px;max-width:350px">Điện thoại: danh sách là một trang, mỗi đơn mở trang chi tiết này; nút dính đáy. Bấm "Từ chối" khi chưa có ghi chú thì không gửi request, báo lỗi ở ô (AC-0.6.3).</div>
 </div>
 
+<!-- ================= UC3, UC4: thiết kế 18/11/2026 ================= -->
+<div class="frame desk" id="uc3-cancel-request" style="height:760px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>5</i></span><span class="av">AN</span></div>
+  </div>
+  <div class="page" style="opacity:.5">
+    <div class="crumb">Trang chủ › Đơn nghỉ của tôi</div>
+    <div class="hdr"><h1>Đơn nghỉ của tôi</h1></div>
+    <div class="box" style="margin-top:14px;height:420px"></div>
+  </div>
+  <div class="dim"></div>
+  <div class="modal" style="top:80px;left:330px;width:620px">
+    <div class="mh">Đề nghị hủy đơn đã duyệt<span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    <div class="mb">
+      <div class="kv2" style="margin-top:0"><span class="k">Đơn</span><span>Phép năm · Thứ Hai 07/12 → Thứ Tư 09/12/2026 · 3 ngày</span><span class="k">Trạng thái</span><span><span class="badge ok">Đã duyệt</span> bởi Nguyễn Minh Khoa, 20/11</span><span class="k">Người xác nhận</span><span>Nguyễn Minh Khoa (quản lý trực tiếp) hoặc HR</span></div>
+      <label class="l">Lý do đề nghị hủy *</label>
+      <div class="ta" style="height:64px;color:var(--text)">Dự án dời lịch demo khách hàng sang tuần 7/12, em cần đi làm.<span style="float:right;color:var(--muted);font-size:12px;margin-top:22px">58/500</span></div>
+      <div class="alert i"><svg class="i"><use href="#info"/></svg><span>Đơn <b>vẫn là Đã duyệt</b> và vẫn giữ 3 ngày phép cho tới khi quản lý hoặc HR đồng ý hủy. Phải được xử lý trước ngày 07/12; tới ngày đó đề nghị hết hạn.</span></div>
+    </div>
+    <div class="mf"><span class="btn g">Không gửi</span><span class="btn p">Gửi đề nghị hủy</span></div>
+  </div>
+  <div class="note" style="top:470px;left:330px;max-width:620px">Nút "Đề nghị hủy" ở chi tiết đơn chỉ hiện khi API trả <code>canRequestCancel</code> (đơn Đã duyệt, trước ngày bắt đầu, chưa có đề nghị). Gửi <code>POST /leave-requests/{id}/cancel-request {version, reason}</code> (UC3 A6, AC-3.6.6). Sau khi gửi, chi tiết đơn hiện dải tím "Đã đề nghị hủy 21/11 · chờ quản lý xác nhận" thay cho nút.</div>
+  <div class="note" style="top:610px;left:330px;max-width:620px">Đơn thai sản, không lương dài (đã qua HR duyệt, BR-16): dòng "Người xác nhận" ghi "HR". Bị bác thì lịch sử có dòng "Quản lý giữ đơn" kèm ghi chú, nút hiện lại (AC-3.6.7).</div>
+</div>
+
+<div class="frame mob" id="uc3-event-mobile" style="height:960px">
+  <div class="spbar"><svg class="i"><use href="#back"/></svg>Đăng ký nghỉ</div>
+  <div class="mpage" style="padding-top:6px">
+    <label class="l">Loại nghỉ *</label><div class="input f">Nghỉ cưới (bản thân)<span class="dn">▾</span></div>
+    <div class="hint" style="margin-top:4px">Tối đa 3 ngày làm việc cho một lần kết hôn; không trừ phép năm.</div>
+    <label class="l">Ngày đăng ký kết hôn *</label><div class="input">05/12/2026</div>
+    <div class="fg" style="gap:0 10px"><div><label class="l">Từ ngày *</label><div class="input">04/12/2026</div></div><div><label class="l">Đến ngày *</label><div class="input">08/12/2026</div></div></div>
+    <div class="calc" style="margin-top:8px"><b class="n">3</b> ngày làm việc (bỏ T7 05/12, CN 06/12)</div>
+    <div class="alert w"><svg class="i"><use href="#alert"/></svg><span>Nộp giấy chứng nhận đăng ký kết hôn cho HR khi đi làm lại; HR kiểm trước khi hoàn tất đơn.</span></div>
+    <div class="alert e"><svg class="i"><use href="#alert"/></svg><span><b>Đã có đơn nghỉ cưới</b> cho ngày kết hôn 05/12/2026 (đang chờ duyệt). Mỗi sự kiện chỉ một đơn.</span></div>
+  </div>
+  <div class="sbar"><span class="btn p">Gửi đơn</span></div>
+  <div class="note" style="top:640px;left:16px;max-width:350px">Ô ngày sự kiện chỉ hiện với loại <code>requiresEventDate</code> (cưới, con cưới, tang, sinh con); tên ô đổi theo loại. Vượt mức → 400 (E12), trùng sự kiện → 409 (E13), AC-3.1.4, AC-3.2.6.</div>
+  <div class="note" style="top:770px;left:16px;max-width:350px">Đơn phép năm qua hai năm: dòng tính ngày ghi "3 ngày năm 2026 + 2 ngày năm 2027", mỗi năm phải đủ số dư (A5).</div>
+</div>
+
+<div class="frame desk" id="uc3-balances" style="height:780px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>9</i></span><span class="av alt2">HL</span></div>
+  </div>
+  <div class="page">
+    <div class="crumb">Trang chủ › Nghỉ phép › Số dư nhân viên</div>
+    <div class="hdr"><h1>Số dư nhân viên</h1></div>
+    <div class="fbar"><div class="pick" style="width:320px"><span class="av xs" style="margin-right:8px">AN</span>Nguyễn Văn An · NV00123</div><div class="pick" style="width:140px">Năm 2026</div><span class="mut" style="margin-left:auto;font-size:13px">Vào làm 16/07/2019 · đủ 5 năm 16/07/2024</span></div>
+    <div style="display:grid;grid-template-columns:1fr 400px;gap:20px;margin-top:6px">
+      <div class="box">
+        <table class="tbl">
+          <tr><th>Loại</th><th>Cách tính</th><th>Được hưởng</th><th>Đã dùng</th><th>Đang chờ</th><th>Còn lại</th><th></th></tr>
+          <tr class="sel"><td>Phép năm</td><td>Mức nền 12 + 1 thâm niên, đủ 12 tháng</td><td>13,00</td><td>3,00</td><td>2,00</td><td><b>8,00</b></td><td><span class="lnk">Sửa</span></td></tr>
+          <tr><td>Nghỉ ốm</td><td><span class="badge w">Mặc định</span> chưa xác minh BHXH</td><td>30,00</td><td>1,50</td><td>0,00</td><td><b>28,50</b></td><td><span class="lnk">Sửa</span></td></tr>
+          <tr><td>Nghỉ không lương</td><td>Chính sách công ty</td><td>30,00</td><td>0,00</td><td>5,00</td><td><b>25,00</b></td><td><span class="lnk">Sửa</span></td></tr>
+          <tr class="off"><td colspan="7">Nghỉ theo sự kiện (cưới, tang, sinh con) không có số dư: tính theo từng sự kiện.</td></tr>
+        </table>
+      </div>
+      <div class="box" style="padding:4px 20px 18px">
+        <h3 style="margin:14px 0 0;font-size:16px">Sửa phép năm 2026</h3>
+        <label class="l">Mức nền theo điều kiện lao động *</label>
+        <div class="seg"><span class="on">12 ngày</span><span>14 ngày</span><span>16 ngày</span></div>
+        <div class="hint" style="margin-top:4px">14, 16 ngày: công việc nặng nhọc, độc hại, nguy hiểm theo danh mục (BLLĐ Điều 113).</div>
+        <div class="calc" style="margin-top:10px">Được hưởng tính lại: <b class="n">13,00</b><br><span class="mut" style="font-size:13px">(12 + 1 thâm niên) / 12 × 12 tháng</span></div>
+        <label class="l">Ghi chú *</label>
+        <div class="ta" style="height:52px">Căn cứ hồ sơ…</div>
+        <div style="display:flex;justify-content:flex-end;margin-top:12px"><span class="btn p">Lưu</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="note" style="top:540px;left:40px;max-width:560px">Chỉ HR, URL <code>/leave/balances</code> (FR-3.8). Phép năm không cho sửa thẳng "Được hưởng", chỉ chọn mức nền; hệ thống tính lại theo UC3 13.2. Nghỉ ốm, không lương: ô số "Hạn mức năm" thay cho mức nền; nhỏ hơn đã dùng + đang chờ thì 409 (AC-3.8.2).</div>
+  <div class="note" style="top:540px;left:640px;max-width:400px">Ghi chú chỉ HR thấy, lưu ở dòng số dư, không vào audit. Mỗi lần lưu có audit giá trị cũ và mới (AC-3.8.1).</div>
+</div>
+
+<div class="frame desk" id="uc4-cancel-request" style="height:860px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>3</i></span><span class="av alt">MK</span></div>
+  </div>
+  <div class="page">
+    <div class="crumb">Trang chủ › Việc cần duyệt</div>
+    <h1>Việc cần duyệt</h1>
+    <div class="fbar"><div class="pick" style="width:200px">Người gửi: Tất cả</div><div class="pick" style="width:200px">Loại: Tất cả</div><span class="mut" style="margin-left:auto;font-size:13px">2 đơn chờ · 1 đề nghị hủy</span></div>
+    <div class="split" style="margin-top:0">
+      <div class="list">
+        <div class="li sel"><span class="av md" style="width:36px;height:36px;font-size:13px">AN</span><div>Nguyễn Văn An<small>Phép năm · 07/12 – 09/12 · 3 ngày</small></div><div class="age">21/11 09:12<br><span class="badge" style="background:#EDE9FE;color:#6D28D9">Đề nghị hủy</span></div></div>
+        <div class="li"><span class="av md alt" style="width:36px;height:36px;font-size:13px">TN</span><div>Nguyễn Thị Ngọc<small>Nghỉ ốm · 23/11 · 1 ngày</small></div><div class="age">23/11 07:05<br><span class="badge w">Chờ duyệt</span></div></div>
+        <div class="li"><span class="av md alt2" style="width:36px;height:36px;font-size:13px">PD</span><div>Hồ Phúc Đạt<small>Phép năm · 30/11 · 1 ngày</small></div><div class="age">20/11 16:40<br><span class="badge no">Quá hạn</span></div></div>
+      </div>
+      <div class="det">
+        <div style="display:flex;align-items:center"><h3>Nguyễn Văn An · Phép năm · 3 ngày</h3><span class="badge ok" style="margin-left:auto">Đã duyệt</span></div>
+        <div class="alert" style="background:#F5F3FF;border-color:#DDD6FE;color:#4C1D95;margin-top:8px"><svg class="i"><use href="#info"/></svg><span><b>An đề nghị hủy đơn này</b> (21/11 09:12): "Dự án dời lịch demo khách hàng sang tuần 7/12, em cần đi làm." Hạn xử lý: trước 07/12/2026.</span></div>
+        <div class="kv2"><span class="k">Ngày nghỉ</span><span>Thứ Hai 07/12 → Thứ Tư 09/12/2026</span><span class="k">Nếu đồng ý hủy</span><span>Trả 3 ngày phép năm 2026 cho An</span></div>
+        <div class="h4">Lịch sử</div>
+        <div class="tl">
+          <div class="ti"><b>Đề nghị hủy</b><small>21/11 09:12 · Nguyễn Văn An</small></div>
+          <div class="ti ok"><b>Đã duyệt</b><small>20/11 10:30 · Nguyễn Minh Khoa</small></div>
+          <div class="ti"><b>Đã gửi</b><small>19/11 14:00 · Nguyễn Văn An</small></div>
+        </div>
+        <label class="l">Ghi chú (bắt buộc khi giữ đơn)</label>
+        <div class="ta" style="height:48px">Nhập ghi chú cho An…</div>
+        <div style="display:flex;gap:10px;justify-content:flex-end"><span class="btn g">Giữ đơn</span><span class="btn d">Đồng ý hủy</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="note" style="top:740px;left:40px;max-width:420px">Đề nghị hủy nằm chung tab "Đơn nghỉ", nhãn tím, không thêm tab (UC4 13.4). Đơn đã qua HR duyệt thêm (BR-16) chỉ hiện ở danh sách của HR; quản lý không thấy nút (AC-4.5.6).</div>
+  <div class="note" style="top:740px;left:480px;max-width:400px">"Đồng ý hủy": <code>POST …/cancel-request/approve</code>; "Giữ đơn": <code>…/reject</code>, ghi chú bắt buộc. Gửi kèm <code>version</code>.</div>
+  <div class="note" style="top:740px;left:900px;max-width:360px">Tới ngày 07/12 chưa xử lý: nhãn đổi "Hết hạn", hai nút khóa (AC-4.5.7).</div>
+</div>
+
+<div class="frame desk" id="uc4-holidays" style="height:780px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>9</i></span><span class="av alt2">HL</span></div>
+  </div>
+  <div class="page">
+    <div class="crumb">Trang chủ › Nghỉ phép › Lịch nghỉ lễ</div>
+    <div class="hdr"><h1>Lịch nghỉ lễ</h1><div class="acts"><span class="btn p"><svg class="i"><use href="#plus"/></svg>Thêm ngày</span></div></div>
+    <div class="fbar"><div class="pick" style="width:140px">Năm 2026</div></div>
+    <div style="display:grid;grid-template-columns:420px 1fr;gap:20px;margin-top:6px">
+      <div class="box">
+        <table class="tbl">
+          <tr><th>Ngày</th><th>Tên</th><th>Loại</th><th></th></tr>
+          <tr><td>30/04</td><td>Giải phóng miền Nam</td><td>Lễ</td><td><span class="lnk">Xóa</span></td></tr>
+          <tr><td>01/05</td><td>Quốc tế Lao động</td><td>Lễ</td><td><span class="lnk">Xóa</span></td></tr>
+          <tr class="sel"><td>04/05</td><td>Nghỉ bù 02/05</td><td><span class="badge p">Nghỉ bù</span></td><td><span class="lnk">Xóa</span></td></tr>
+          <tr><td>02/09</td><td>Quốc khánh</td><td>Lễ</td><td><span class="lnk">Xóa</span></td></tr>
+        </table>
+      </div>
+      <div class="box" style="padding:4px 20px 18px">
+        <h3 style="margin:14px 0 4px;font-size:16px">Đơn bị ảnh hưởng (3)</h3>
+        <div class="hint">Đơn đã gửi không tự đổi (BR-19). Tính lại từng đơn, có lý do; trạng thái và quyết định duyệt giữ nguyên.</div>
+        <table class="tbl" style="margin-top:8px">
+          <tr><th>Nhân viên</th><th>Ngày nghỉ</th><th>Trạng thái</th><th>Đã lưu</th><th>Tính lại</th><th></th></tr>
+          <tr><td>Nguyễn Văn An</td><td>29/04 – 04/05</td><td><span class="badge ok">Đã duyệt</span></td><td>2</td><td><b>1</b></td><td><span class="btn o" style="height:30px">Tính lại</span></td></tr>
+          <tr><td>Lý Thanh Hằng</td><td>04/05 – 06/05</td><td><span class="badge w">Chờ duyệt</span></td><td>3</td><td><b>2</b></td><td><span class="btn o" style="height:30px">Tính lại</span></td></tr>
+          <tr><td>Hồ Phúc Đạt</td><td>04/05</td><td><span class="badge ok">Đã duyệt</span></td><td>1</td><td><b style="color:var(--danger)">0</b></td><td><span class="mut" style="font-size:12.5px">Cả đơn thành ngày nghỉ: HR hủy theo luồng khác</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="note" style="top:560px;left:40px;max-width:420px">Chỉ HR, URL <code>/leave/holidays</code> (FR-4.9). Thêm, xóa ngày gọi <code>POST /leave-holidays</code>, <code>DELETE /leave-holidays/{date}</code>; API trả số đơn bị ảnh hưởng. Nên nhập lịch năm sau trước 1/12.</div>
+  <div class="note" style="top:560px;left:480px;max-width:520px">"Tính lại" hỏi lý do rồi gọi <code>POST /leave-requests/{id}/recalculate</code>. Số ngày tăng mà thiếu số dư → 409, giữ đơn (AC-4.9.3). Chủ đơn nhận email chung.</div>
+</div>
+
 <!-- ================= UC5 + UC6: Tra cứu tài liệu ================= -->
 <div class="frame desk" id="uc56-documents" style="height:820px">
   <div class="nav">
@@ -1146,8 +1392,7 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
     <h1>Tra cứu tài liệu</h1>
     <div style="display:grid;grid-template-columns:1fr 400px;gap:20px;margin-top:14px">
       <div>
-        <div class="sbig"><svg class="i"><use href="#search"/></svg>Tìm trong tiêu đề và nội dung tài liệu…</div>
-        <div class="chips" style="margin:12px 0"><span class="chip on">Tất cả</span><span class="chip">Chính sách</span><span class="chip">Quy trình</span><span class="chip">Hướng dẫn</span><span class="chip">Biểu mẫu</span><span class="chip">Thông báo</span></div>
+        <div class="chips" style="margin:0 0 12px"><span class="chip on">Tất cả</span><span class="chip">Chính sách</span><span class="chip">Quy trình</span><span class="chip">Hướng dẫn</span><span class="chip">Biểu mẫu</span><span class="chip">Thông báo</span></div>
         <div class="box">
           <div class="doc"><span class="fi pdf">PDF</span><div><h3>Quy chế nghỉ phép 2026</h3><small>Chính sách · v3 · cập nhật 10/11/2026 · Toàn công ty</small></div><div class="r"><span class="badge p">Mới</span><span class="ib"><svg class="i" style="width:16px"><use href="#down"/></svg></span></div></div>
           <div class="doc"><span class="fi pdf">PDF</span><div><h3>Quy trình làm việc từ xa</h3><small>Quy trình · v2 · cập nhật 02/11/2026 · Trung tâm Công nghệ</small></div><div class="r"><span class="ib"><svg class="i" style="width:16px"><use href="#down"/></svg></span></div></div>
@@ -1166,32 +1411,8 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
       </div>
     </div>
   </div>
-  <div class="note" style="top:700px;left:40px;max-width:420px">Một trang <code>/documents</code> gồm 3 phần (frontend 2.2): ô tìm tài liệu (UC6 FR-6.2), danh sách (UC5 FR-5.2, mới cập nhật trước), khung trợ lý (UC6 FR-6.3). Chỉ có tài liệu trong phạm vi; không bao giờ hiện số lượng hay tiêu đề ngoài phạm vi.</div>
+  <div class="note" style="top:700px;left:40px;max-width:420px">Một trang <code>/documents</code> gồm 2 phần (frontend 2.2): danh sách (UC5 FR-5.2, mới cập nhật trước, lọc loại) và khung trợ lý (UC6 FR-6.3). Không có ô tìm trong nội dung (bỏ 22/11). Chỉ có tài liệu trong phạm vi; không bao giờ hiện số lượng hay tiêu đề ngoài phạm vi.</div>
   <div class="note" style="top:700px;left:500px;max-width:400px">Bấm một dòng mở chi tiết <code>/documents/{id}</code>; nút tải gọi <code>GET /documents/{id}/download</code> (API kiểm phạm vi rồi stream, không có link storage).</div>
-</div>
-
-<div class="frame desk" id="uc6-search" style="height:700px">
-  <div class="nav">
-    <div class="logo"><b>H</b>HRHelper</div>
-    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
-    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>5</i></span><span class="av">AN</span></div>
-  </div>
-  <div class="page">
-    <div class="crumb">Trang chủ › Tra cứu tài liệu</div>
-    <h1>Tra cứu tài liệu</h1>
-    <div style="margin-top:14px;max-width:820px">
-      <div class="sbig f"><svg class="i"><use href="#search"/></svg>phép năm chuyển sang năm sau|<span class="kbd">Esc</span></div>
-      <div class="chips" style="margin:12px 0"><span class="chip on">Tất cả</span><span class="chip">Chính sách</span><span class="chip">Quy trình</span><span class="chip">Hướng dẫn</span><span class="chip">Biểu mẫu</span><span class="chip">Thông báo</span></div>
-      <div class="mut" style="font-size:13px;margin-bottom:8px">3 kết quả, xếp theo mức khớp</div>
-      <div class="box">
-        <div class="doc"><span class="fi pdf">PDF</span><div><h3>Quy chế nghỉ <mark>phép năm</mark> 2026</h3><small>Chính sách · v3 · 10/11/2026 · khớp tiêu đề</small><p>…số ngày <mark>phép năm</mark> chưa nghỉ hết được <mark>chuyển sang năm sau</mark> tối đa 5 ngày và phải dùng trước 31/03…</p></div><div class="r"><span class="ib"><svg class="i" style="width:16px"><use href="#down"/></svg></span></div></div>
-        <div class="doc"><span class="fi pdf">PDF</span><div><h3>Nội quy lao động</h3><small>Chính sách · v5 · 01/09/2026 · khớp nội dung</small><p>…Điều 12. Người lao động được nghỉ <mark>phép năm</mark> theo Quy chế nghỉ phép hiện hành…</p></div><div class="r"><span class="ib"><svg class="i" style="width:16px"><use href="#down"/></svg></span></div></div>
-        <div class="doc"><span class="fi docx">DOCX</span><div><h3>Mẫu đơn xin nghỉ không lương</h3><small>Biểu mẫu · v1 · 15/08/2026 · khớp nội dung</small><p>…khi đã dùng hết số ngày <mark>phép năm</mark> trong năm…</p></div><div class="r"><span class="ib"><svg class="i" style="width:16px"><use href="#down"/></svg></span></div></div>
-      </div>
-    </div>
-  </div>
-  <div class="note" style="top:200px;left:900px;max-width:330px">Gõ xong 300 ms hoặc Enter mới tìm; URL <code>/documents?q=…&amp;type=</code>. Thứ tự: khớp nguyên tiêu đề, khớp một phần tiêu đề, chỉ khớp nội dung (AC-6.2.3). Đoạn trích có từ khóa tô màu.</div>
-  <div class="note" style="top:380px;left:900px;max-width:330px">Không có kết quả: "Không tìm thấy tài liệu phù hợp", gợi ý hỏi trợ lý. 429 (quá 20 lần mỗi phút): báo số giây chờ (AC-6.2.7).</div>
 </div>
 
 <div class="frame desk" id="uc6-assistant" style="height:780px">
@@ -1208,22 +1429,49 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
       <div class="bub bot">
         Có, nhưng có giới hạn:
         <ul style="margin:6px 0;padding-left:20px">
-          <li>Được chuyển tối đa <b>5 ngày</b> chưa nghỉ sang năm sau <sup class="c">1</sup></li>
-          <li>Số ngày chuyển phải dùng trước <b>31/03</b>, quá hạn thì không còn <sup class="c">1</sup></li>
-          <li>Nghỉ việc mà chưa nghỉ hết thì được thanh toán tiền những ngày chưa nghỉ <sup class="c">2</sup></li>
+          <li>Phần phép năm chưa nghỉ được <b>chuyển sang năm sau</b> <sup class="c">1</sup></li>
+          <li>Phần chuyển sang phải dùng trước <b>31/12 năm sau</b> và được trừ trước; không dùng hết thì hết hạn <sup class="c">1</sup></li>
+          <li>Không được chuyển tiếp lần thứ hai <sup class="c">2</sup></li>
         </ul>
         <div class="cite"><b>1</b><svg class="i" style="width:16px;color:#B42318"><use href="#file"/></svg>Quy chế nghỉ phép 2026 · v3 · mục 4.2<span class="lnk" style="margin-left:auto">Mở</span></div>
         <div class="cite"><b>2</b><svg class="i" style="width:16px;color:#B42318"><use href="#file"/></svg>Nội quy lao động · v5 · Điều 12<span class="lnk" style="margin-left:auto">Mở</span></div>
-        <div class="mut" style="font-size:12px;margin-top:8px">Câu trả lời do AI tạo từ tài liệu bạn được xem. Có thắc mắc thì liên hệ HR. <span class="lnk">Hữu ích</span> · <span class="lnk">Chưa đúng</span></div>
+        <div class="mut" style="font-size:12px;margin-top:8px">Câu trả lời do AI tạo từ tài liệu bạn được xem, chỉ để tham khảo. Có thắc mắc thì liên hệ HR. <span class="lnk">Hữu ích</span> · <span class="lnk">Chưa đúng</span></div>
       </div>
       <div class="bub me">Công ty có hỗ trợ tiền gửi trẻ không?</div>
       <div class="bub bot">Mình không tìm thấy nội dung này trong các tài liệu bạn được xem. Bạn có thể hỏi HR qua <span class="lnk">hr@hrhelper.vn</span>.</div>
-      <div class="input" style="height:48px;color:var(--muted)">Nhập câu hỏi…<span style="margin-left:auto;color:var(--primary)"><svg class="i"><use href="#send"/></svg></span></div>
+      <div class="input" style="height:48px;color:var(--muted)">Nhập câu hỏi (không nhập thông tin cá nhân)…<span style="margin-left:auto;color:var(--primary)"><svg class="i"><use href="#send"/></svg></span></div>
     </div>
   </div>
   <div class="note" style="top:150px;left:960px;max-width:280px">Mỗi ý có số trích dẫn; bấm số hoặc "Mở" thì mở đúng tài liệu, phiên bản (AC-6.3.1). Không có đáp án trong phạm vi thì nói không tìm thấy, không đoán (AC-6.3.2).</div>
-  <div class="note" style="top:330px;left:960px;max-width:280px">Quá 10 giây hoặc LLM lỗi: thay câu trả lời bằng "Trợ lý đang bận, đây là các tài liệu liên quan" và danh sách như kết quả tìm kiếm (AC-6.3.4). Đang chờ thì hiện 3 chấm, nút gửi khóa.</div>
+  <div class="note" style="top:330px;left:960px;max-width:280px">Quá 10 giây hoặc LLM lỗi: thay câu trả lời bằng "Trợ lý đang bận, đây là các tài liệu liên quan" và danh sách tài liệu liên quan, bấm mở chi tiết (AC-6.3.4). Quá 10 câu mỗi phút: báo số giây chờ (AC-6.3.6). Đang chờ thì hiện 3 chấm, nút gửi khóa.</div>
   <div class="note" style="top:520px;left:960px;max-width:280px">Lịch sử hỏi chỉ giữ trong phiên trang, không lưu <code>localStorage</code> (frontend 6).</div>
+</div>
+
+<div class="frame desk" id="uc6-config" style="height:760px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>2</i></span><span class="av alt">QT</span></div>
+  </div>
+  <div class="page">
+    <div class="crumb">Trang chủ › Quản trị › Cấu hình trợ lý</div>
+    <div class="hdr"><h1 style="display:flex;align-items:center;gap:10px"><svg class="i" style="width:24px;height:24px;color:var(--primary)"><use href="#spark"/></svg>Cấu hình trợ lý</h1></div>
+    <div class="box" style="max-width:820px;margin-top:16px;padding:20px 24px">
+      <div style="display:flex;align-items:center;gap:10px;font-weight:600"><span style="width:40px;height:22px;border-radius:999px;background:var(--primary);position:relative;display:inline-block"><span style="position:absolute;right:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff"></span></span>Bật trợ lý cho nhân viên<span class="mut" style="font-weight:400;font-size:13px">(tắt thì nhân viên chỉ nhận danh sách tài liệu liên quan)</span></div>
+      <label class="l">Nhà cung cấp *</label>
+      <div class="seg"><span class="on">Claude (Anthropic)</span><span>Google Gemini</span><span>DeepSeek</span></div>
+      <div class="mut" style="font-size:12.5px;margin-top:6px">Câu hỏi và đoạn tài liệu được gửi tới máy chủ của nhà cung cấp tại Mỹ. DeepSeek: Trung Quốc.</div>
+      <label class="l">API key *</label>
+      <div class="input" style="color:var(--muted)">••••••••••••••••••••7Q2a<span style="margin-left:auto;color:var(--primary);font-weight:600;font-size:13px">Thay khóa</span></div>
+      <label class="l">Model *</label>
+      <div style="display:flex;gap:10px;align-items:center"><div class="input f" style="flex:1">claude-haiku-5-5<span class="dn" style="margin-left:auto">▾</span></div><span class="btn o" style="margin-top:4px">Tải danh sách model</span></div>
+      <div class="alert s" style="margin-top:16px"><svg class="i"><use href="#check"/></svg><span>Kết nối thành công · 840 ms · claude-haiku-5-5</span></div>
+      <div style="display:flex;gap:10px;margin-top:18px"><span class="btn o">Kiểm tra kết nối</span><span class="btn p">Lưu</span><span style="margin-left:auto;align-self:center;font-size:13px" class="mut">Sửa lần cuối: Phạm Quang Tùng · 23/11/2026 09:20</span></div>
+    </div>
+  </div>
+  <div class="note" style="top:150px;left:900px;max-width:340px">Chỉ ADMIN (FR-6.4); HR cũng bị 403. Danh sách nhà cung cấp lấy từ API (registry adapter), thêm nhà cung cấp mới không phải sửa trang này.</div>
+  <div class="note" style="top:330px;left:900px;max-width:340px">Không bao giờ hiện lại khóa, chỉ 4 ký tự cuối (AC-6.4.4). Đổi sang nhà cung cấp khác thì ô khóa trống, bắt nhập khóa mới (AC-6.4.5).</div>
+  <div class="note" style="top:490px;left:900px;max-width:340px">"Tải danh sách model" gọi API của nhà cung cấp bằng khóa vừa dán (AC-6.4.1). "Kiểm tra kết nối" gửi một câu ngắn, báo độ trễ hoặc lỗi dễ hiểu (AC-6.4.2). Lưu có audit, không chứa khóa (AC-6.4.3).</div>
 </div>
 
 <div class="frame desk" id="uc5-detail" style="height:680px">
@@ -1310,8 +1558,7 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
   <div class="spbar"><svg class="i"><use href="#back"/></svg>Tra cứu tài liệu</div>
   <div class="mtabs"><span class="on">Tài liệu</span><span>Hỏi trợ lý</span></div>
   <div class="mpage">
-    <div class="sbig" style="height:44px;font-size:14px"><svg class="i"><use href="#search"/></svg>Tìm tài liệu…</div>
-    <div class="chips" style="margin:10px 0 2px;flex-wrap:nowrap;overflow:hidden"><span class="chip on">Tất cả</span><span class="chip">Chính sách</span><span class="chip">Quy trình</span><span class="chip">Hướng dẫn</span></div>
+    <div class="chips" style="margin:0 0 2px;flex-wrap:nowrap;overflow:hidden"><span class="chip on">Tất cả</span><span class="chip">Chính sách</span><span class="chip">Quy trình</span><span class="chip">Hướng dẫn</span></div>
     <div class="mcard" style="display:flex;gap:10px"><span class="fi pdf" style="width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-size:9px;font-weight:700;flex:none">PDF</span><div><b>Quy chế nghỉ phép 2026</b><br><small>Chính sách · v3 · 10/11/2026</small></div></div>
     <div class="mcard" style="display:flex;gap:10px"><span class="fi pdf" style="width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-size:9px;font-weight:700;flex:none">PDF</span><div><b>Quy trình làm việc từ xa</b><br><small>Quy trình · v2 · 02/11/2026</small></div></div>
     <div class="mcard" style="display:flex;gap:10px"><span class="fi docx" style="width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-size:9px;font-weight:700;flex:none">DOCX</span><div><b>Mẫu đề nghị thanh toán công tác phí</b><br><small>Biểu mẫu · v1 · 28/10/2026</small></div></div>
@@ -1355,6 +1602,115 @@ sup.c{background:var(--soft2);color:var(--primary);border-radius:4px;padding:0 4
   </div>
   <div class="note" style="top:690px;left:40px;max-width:560px">Chỉ HR, ADMIN (AC-7.3.2). Bộ lọc nằm trong URL để gửi link cho nhau. Ô "Đối tượng cụ thể" đổi theo loại: nhân viên thì chọn người, đơn nghỉ hay tài liệu thì dán ID. Ngày theo giờ Việt Nam, "đến ngày" tính hết ngày đó (AC-7.3.5). Bấm một dòng mở chi tiết ngay bên dưới.</div>
   <div class="note" style="top:690px;left:640px;max-width:360px">Chỉ xem, không có nút sửa hay xóa. Không bao giờ hiện giá trị CCCD, số tài khoản, lương, lý do nghỉ (AC-7.1.3). Nút sao chép traceId để đối chiếu log.</div>
+</div>
+
+<!-- ================= UC8: Đăng nhập và tài khoản ================= -->
+<div class="frame desk" id="uc8-account" style="height:900px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>9</i></span><span class="av alt2">HL</span></div>
+  </div>
+  <div class="page" style="opacity:.5"><div class="crumb">Trang chủ › Danh bạ</div><h1>Danh bạ</h1></div>
+  <div class="dim"></div>
+  <div class="drawer">
+    <div class="ph" style="text-align:left;padding:14px 20px">
+      <div class="pbar"><svg class="i"><use href="#back"/></svg><span>Trần Thị Mai · 100318</span><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    </div>
+    <span class="gh">Công việc</span>
+    <div class="blk">
+      <div class="row"><svg class="i ri"><use href="#briefcase"/></svg><span class="t">Thông tin công việc</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+      <div class="row"><svg class="i ri"><use href="#clock"/></svg><span class="t">Quá trình công tác</span><span class="v"><svg class="i ch"><use href="#chev"/></svg></span></div>
+      <div class="row" style="background:var(--soft1)"><svg class="i ri"><use href="#lock"/></svg><span class="t">Tài khoản đăng nhập</span><span class="v"><span class="badge w">Chờ kích hoạt</span><svg class="i ch" style="transform:rotate(90deg)"><use href="#chev"/></svg></span></div>
+    </div>
+    <div class="blk" style="padding:6px 16px 14px">
+      <div class="kv"><span class="k">Trạng thái</span><span class="badge w">Chờ kích hoạt</span><span class="mut" style="font-size:13px">Đã gửi thư, người này chưa đăng nhập lần nào</span></div>
+      <div class="kv"><span class="k">Email đăng nhập</span><span>mai.tran@hrhelper.demo</span></div>
+      <div class="kv"><span class="k">Gửi lời mời lúc</span><span>16/11/2026 09:12</span></div>
+      <div class="kv"><span class="k">Đăng nhập gần nhất</span><span class="mut">Chưa đăng nhập</span></div>
+      <div style="display:flex;gap:8px;margin-top:12px"><span class="btn o"><svg class="i"><use href="#send"/></svg>Gửi lại lời mời</span></div>
+      <div class="alert i"><svg class="i"><use href="#info"/></svg><span>Mật khẩu, MFA do trang đăng nhập quản lý. HR không thấy, không đặt mật khẩu cho nhân viên.</span></div>
+    </div>
+    <span class="gh">Các trạng thái khác</span>
+    <div class="blk" style="padding:6px 16px">
+      <div class="kv"><span class="k" style="width:150px"><span class="badge g">Chưa có tài khoản</span></span><span>Nút <b>Gửi lời mời</b> (nhân viên tạo trước khi có UC8)</span></div>
+      <div class="kv"><span class="k" style="width:150px"><span class="badge p">Đang tạo</span></span><span>Không có nút; tự chuyển trong 1 phút</span></div>
+      <div class="kv"><span class="k" style="width:150px"><span class="badge ok">Đang dùng</span></span><span>Hiện lần đăng nhập gần nhất; không có nút</span></div>
+      <div class="kv"><span class="k" style="width:150px"><span class="badge g">Đã khóa</span></span><span>Nhân viên đã nghỉ việc; mở lại bằng cách khôi phục hồ sơ</span></div>
+      <div class="kv"><span class="k" style="width:150px"><span class="badge no">Lỗi</span></span><span>"Không kết nối được trang đăng nhập" + nút <b>Gửi lại lời mời</b></span></div>
+    </div>
+  </div>
+  <div class="note" style="top:120px;left:40px;max-width:440px">Chỉ HR thấy dòng "Tài khoản đăng nhập" (AC-8.6.1); người khác xem hồ sơ không thấy. Bấm dòng mới gọi <code>GET /employees/{id}/account</code>.</div>
+  <div class="note" style="top:300px;left:40px;max-width:440px">Bấm "Gửi lại lời mời": <code>POST …/account/invite</code>, trả 202, trạng thái thành "Đang tạo" rồi "Chờ kích hoạt". Nút chỉ có ở Chờ kích hoạt, Lỗi, Chưa có tài khoản (AC-8.6.2, AC-8.6.4). Mỗi lần bấm có audit.</div>
+  <div class="note" style="top:500px;left:40px;max-width:440px">Lỗi chỉ hiện câu dễ hiểu theo mã lỗi, không hiện thông báo gốc của IdP.</div>
+</div>
+
+<div class="frame desk" id="uc8-roles" style="height:760px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="search"><svg class="i"><use href="#search"/></svg>Tìm đồng nghiệp…<span class="kbd">Ctrl K</span></div>
+    <div class="navr"><span class="bell"><svg class="i"><use href="#bell"/></svg><i>2</i></span><span class="av alt">QT</span></div>
+  </div>
+  <div class="page">
+    <div class="crumb">Trang chủ › Quản trị › Phân quyền</div>
+    <div class="hdr"><h1>Phân quyền</h1><div class="acts"><span class="btn p"><svg class="i"><use href="#plus"/></svg>Cấp vai trò</span></div></div>
+    <div class="fbar"><div class="sbig" style="width:340px;height:40px;font-size:14px"><svg class="i"><use href="#search"/></svg>Tìm tên, email…</div><div class="chips"><span class="chip on">Tất cả (7)</span><span class="chip">HR (5)</span><span class="chip">ADMIN (2)</span></div></div>
+    <div class="box">
+      <table class="tbl">
+        <tr><th>Nhân viên</th><th>Đơn vị</th><th>Vai trò</th><th>Người cấp</th><th>Ngày cấp</th><th>Lý do</th><th></th></tr>
+        <tr><td><div class="who"><span class="av sm alt2">HL</span>Lê Thu Hà</div></td><td>Phòng Nhân sự</td><td><span class="badge g">HR</span></td><td>Phạm Quang Tùng</td><td>18/11/2026</td><td>Chuyên viên C&amp;B mới</td><td><span class="btn d sm">Thu hồi</span></td></tr>
+        <tr><td><div class="who"><span class="av sm">NH</span>Ngô Thị Hạnh</div></td><td>Phòng Nhân sự</td><td><span class="badge g">HR</span></td><td class="mut">–</td><td class="mut">trước 18/11</td><td class="mut">–</td><td><span class="btn d sm">Thu hồi</span></td></tr>
+        <tr><td><div class="who"><span class="av sm alt">QT</span>Phạm Quang Tùng <span class="mut">(bạn)</span></div></td><td>Phòng CNTT nội bộ</td><td><span class="badge p">ADMIN</span></td><td class="mut">seed</td><td>01/11/2026</td><td>ADMIN đầu tiên</td><td><span class="btn dis sm">Thu hồi</span></td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="dim"></div>
+  <div class="modal" style="top:250px;left:560px;width:520px">
+    <div class="mh">Cấp vai trò<span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    <div class="mb">
+      <label class="l">Nhân viên *</label>
+      <div class="input f"><span class="av xs" style="margin-right:8px">VD</span>Vũ Đức Duy · Phòng Nhân sự<span class="dn">▾</span></div>
+      <label class="l">Vai trò *</label>
+      <div class="seg"><span class="on">HR</span><span>ADMIN</span></div>
+      <label class="l">Lý do * (5 – 200 ký tự)</label>
+      <div class="input" style="height:64px;align-items:flex-start;padding-top:10px">Chuyển sang mảng tuyển dụng từ 18/11</div>
+      <div class="alert w"><svg class="i"><use href="#alert"/></svg><span>Người này có quyền HR ngay ở thao tác kế tiếp. Lần đăng nhập sau sẽ phải đăng ký mã xác thực hai lớp.</span></div>
+    </div>
+    <div class="mf"><span class="btn g">Hủy</span><span class="btn p">Cấp vai trò</span></div>
+  </div>
+  <div class="note" style="top:470px;left:40px;max-width:480px">Chỉ ADMIN thấy menu "Quản trị" (AC-8.7.5); HR cũng bị 403. Ô chọn nhân viên tìm ở mức danh bạ, chỉ người đang làm việc có tài khoản. Không có <code>EMPLOYEE</code>, <code>MANAGER</code> để chọn: hai vai trò này tự suy ra.</div>
+  <div class="note" style="top:640px;left:40px;max-width:480px">Không tự thu hồi, tự cấp cho mình: nút bị khóa (API vẫn trả 403). Thu hồi mở hộp nhập lý do; ADMIN cuối cùng thì báo "Phải còn ít nhất một ADMIN" (409). Dòng có từ trước UC8 hiện "–".</div>
+</div>
+
+<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+<div class="frame desk" id="uc8-session" style="width:640px;height:520px">
+  <div class="nav">
+    <div class="logo"><b>H</b>HRHelper</div>
+    <div class="navr" style="margin-left:auto"><span class="av">AN</span></div>
+  </div>
+  <div class="page" style="opacity:.5"><div class="crumb">Trang chủ › Nghỉ phép</div><h1>Đơn nghỉ của tôi</h1></div>
+  <div class="dim"></div>
+  <div class="modal" style="top:110px;left:110px;width:420px">
+    <div class="mh">Phiên sắp hết</div>
+    <div class="mb">
+      <div style="font-size:14.5px;line-height:1.5">Bạn không thao tác 29 phút. Hệ thống sẽ đăng xuất sau <b style="color:var(--warn)">0:47</b> để bảo vệ dữ liệu.</div>
+    </div>
+    <div class="mf"><span class="btn g">Đăng xuất</span><span class="btn p">Tiếp tục làm việc</span></div>
+  </div>
+  <div class="note" style="top:330px;left:40px;max-width:560px">Thời gian lấy từ <code>VITE_IDLE_TIMEOUT_MINUTES</code> (mặc định 30). Hộp hiện ở mọi tab; bấm ở một tab thì tab khác cũng đóng. Hết giờ: xóa token, đăng xuất trên IdP, mở trang "Phiên đã hết" có nút "Đăng nhập lại" (AC-8.1.6). Dữ liệu form chưa lưu sẽ mất; form dài nên lưu nháp.</div>
+</div>
+
+<div class="frame desk" id="uc8-login-error" style="width:640px;height:520px;background:var(--bg)">
+  <div style="position:absolute;top:70px;left:120px;width:400px;background:#fff;border-radius:16px;box-shadow:0 4px 24px #0f172a14;padding:28px;text-align:center">
+    <div class="logo" style="justify-content:center;margin-bottom:18px"><b>H</b>HRHelper</div>
+    <span style="width:52px;height:52px;border-radius:50%;background:#FEF3F2;color:var(--danger);display:inline-grid;place-items:center"><svg class="i" style="width:26px;height:26px"><use href="#alert"/></svg></span>
+    <h2 style="font-size:19px;margin:14px 0 6px">Đăng nhập không thành công</h2>
+    <div class="mut" style="font-size:14px;line-height:1.5">Phiên đăng nhập đã hết hạn hoặc bị gián đoạn. Hãy thử lại.</div>
+    <div style="margin-top:20px"><span class="btn p" style="width:100%">Thử lại</span></div>
+    <div class="mut" style="font-size:12px;margin-top:12px">Mã tra cứu: <span class="mono">a91b…0d77</span></div>
+  </div>
+  <div class="note" style="top:400px;left:40px;max-width:560px">Trang <code>/callback</code> khi <code>state</code> sai, thiếu <code>code</code> hoặc IdP trả <code>error</code> (E1, AC-8.1.11). Không lưu token, không hiện chi tiết kỹ thuật. "Thử lại" bắt đầu lại luồng đăng nhập.</div>
+</div>
 </div>
 
 </body>

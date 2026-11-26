@@ -1,19 +1,35 @@
-# ADR-15 – Tách Notification và Search thành service riêng qua event
+# ADR-15 – Tách Notification và Search (nay là Assistant) thành service riêng qua event
 
 | Mục | Nội dung |
 |---|---|
-| Trạng thái | **Đề xuất** (Duong chọn phương án B ngày 15/11/2026) |
+| Trạng thái | **Đã chấp nhận** 16/11/2026 (PR #92; Duong chọn phương án B ngày 15/11/2026) |
 | Ngày quyết định | Ngày merge PR |
 | Thời điểm | Tuần 11 (16/11 – 23/11/2026) |
 | Người viết | TV1 (Dương) |
 | Góc nhìn | Cả hai |
-| ADR liên quan | ADR-01, ADR-03, ADR-06, ADR-07, ADR-09, ADR-12, ADR-13 |
-| Yêu cầu liên quan | FR-6.2, FR-6.3, AC-6.2.2, AC-6.2.5, AC-6.3.4, NFR-3.5 (SRS) |
+| ADR liên quan | ADR-01, ADR-03, ADR-06, ADR-07, ADR-09, ADR-12, ADR-13, ADR-16 |
+| Yêu cầu liên quan | FR-6.3, AC-6.3.2, AC-6.3.4, AC-6.3.7, NFR-3.5 (SRS). FR-6.2 đã bỏ ngày 22/11/2026 |
 
 ## Lịch sử thay đổi
 
 - 15/11/2026: bản đề xuất đầu tiên, sau khi đánh giá việc chuyển sang microservice. Duong chọn phương án B trên thẻ quyết
   định của thread "Đánh giá chuyển sang microservice".
+- 22/11/2026: kiểm chéo UC5. Không gửi email khi có tài liệu mới (UC5 D2), nên sửa tiêu chí nghiệm thu về upload tài liệu:
+  notification service nhận event nhưng bỏ qua loại `document.*`. Event tài liệu: [UC5 spec 13.2](../../features/UC5-document-repository/spec.md#132-event-cho-trợ-lý-adr-15).
+- 23/11/2026: UC6 thu gọn còn trợ lý (Duong, 22/11), bỏ tìm tài liệu theo từ khóa (FR-6.2). Search service đổi tên thành
+  **assistant service** (`services/assistant/`, schema `assistant`, DB user `assistant_svc`, queue `assistant.document`); index
+  là đoạn văn bản có full-text và vector theo [ADR-16](ADR-16-policy-assistant.md). Phương án B và các tiêu chí khác giữ nguyên.
+- 26/11/2026: làm bước 1 (`feat/notification-service`), ghi lại cách hiện thực, quyết định không đổi:
+  - Người nhận gắn lúc **publisher đẩy event** (`NotificationRecipients`), không lưu trong outbox, theo dữ liệu hiện tại như
+    worker cũ. Trường `mail: [{ group, to }]`, **chỉ email, không tên** (email là câu báo chung, BR-15). HR nhận danh sách email
+    HR như các nhóm khác; gộp tối đa một email mỗi giờ do service làm.
+  - Event tài khoản (UC8) tách routing key `identity.*`, queue `identity.sync`; worker của backend giữ `identity-sync` và các
+    job. Event tài liệu đã đi `document.*` nên không tới notification service (tiêu chí "nhận và bỏ qua" thành "không nhận").
+  - Thử lại khi gửi lỗi (NFR-3.5): chờ ≤ 10 s mỗi lần, tối đa 3 lần có giãn cách, rồi DLQ.
+- 26/11/2026: làm bước 4 (`feat/tracing-otel`): OpenTelemetry SDK 0.223 (chạy được trên Node 20) cho API, worker, notification,
+  assistant; instrumentation HTTP, Express, NestJS, pg, fetch (undici); `traceparent` lưu trong `leave.outbox.trace_context` rồi đi
+  theo message. Local: Jaeger (`docker compose --profile observability`). Staging X-Ray (`infra/xray-tracing`, cùng ngày): App Runner
+  observability configuration (API gửi OTLP gRPC) và container phụ ADOT collector trong task ECS; chưa apply.
 
 ## Nội dung quyết định
 
@@ -59,16 +75,17 @@ Cụ thể:
      transfer): `recipientEmail`, `recipientName`; event gộp cho HR mang danh sách email HR. Chỉ gửi email và tên, không
      gửi trường nhạy cảm (ADR-08).
    - DB user `notification_svc` chỉ có quyền trên schema `notification`.
-2. **Search service** (UC6 FR-6.2, sau đó FR-6.3)
+2. **Assistant service** (UC6 FR-6.3; trước 23/11 là search service cho cả FR-6.2)
    - Module document phát event qua `document.outbox` (quy tắc 3 của [event-contract](../event-contract.md)): phiên bản
      `READY`, tài liệu bị ẩn, đổi phạm vi.
-   - Search service nhận event, đọc file từ S3 bằng quyền chỉ đọc, trích text, ghi index full-text vào schema `search`
-     (PostgreSQL full-text search, không thêm OpenSearch). DB user `search_svc` chỉ có quyền trên schema `search`.
-   - Khi tìm, API (vai trò BFF) tính phạm vi hiện tại của người dùng rồi gọi nội bộ search service kèm phạm vi đó. Search
-     service lọc theo phạm vi trong truy vấn (ADR-13). Nhờ vậy đổi phòng ban có hiệu lực ngay (AC-6.2.5, DR-06) và tài liệu
-     ngoài phạm vi không lộ (AC-6.2.2, DR-08). Search service không giữ bản sao phòng ban của nhân viên.
-   - Trợ lý AI (FR-6.3) nằm trong search service vì dùng chung index; gọi LLM qua circuit breaker 10 giây (AC-6.3.4).
-3. **Fan-out event:** một event đến nhiều queue. Local: thêm queue `search.document` bind vào exchange `hr.events` có sẵn.
+   - Assistant service nhận event, đọc file từ S3 bằng quyền chỉ đọc, trích text, chia đoạn, ghi index full-text và vector
+     (pgvector) vào schema `assistant` (PostgreSQL, không thêm OpenSearch; chi tiết ở [ADR-16](ADR-16-policy-assistant.md)).
+     DB user `assistant_svc` chỉ có quyền trên schema `assistant`.
+   - Khi hỏi, API (vai trò BFF) tính phạm vi hiện tại của người dùng rồi gọi nội bộ assistant service kèm phạm vi đó. Assistant
+     service lọc theo phạm vi trong truy vấn (ADR-13) trước khi gửi đoạn văn bản cho LLM. Nhờ vậy đổi đơn vị có hiệu lực ngay
+     (AC-6.3.7, DR-06) và tài liệu ngoài phạm vi không lộ (AC-6.3.2, DR-08). Service không giữ bản sao đơn vị của nhân viên.
+   - Gọi LLM có timeout 10 giây, lỗi thì trả danh sách tài liệu (AC-6.3.4).
+3. **Fan-out event:** một event đến nhiều queue. Local: thêm queue `assistant.document` bind vào exchange `hr.events` có sẵn.
    AWS: thêm SNS topic `hr-events` trước các queue SQS, lọc theo loại event (subscription filter policy).
 4. **Truy vết phân tán:** OpenTelemetry cho API và hai service; `traceparent` đi theo message attribute/header qua outbox và
    queue. Local xem bằng Jaeger (docker-compose profile `observability`), AWS dùng X-Ray.
@@ -80,22 +97,22 @@ tách audit/employee/leave.
 
 **Trade-off:**
 
-- Thêm 1 image và 1 task Fargate (search) trên AWS, khoảng 9 USD/tháng nếu chạy 24/7, vượt hạn mức 60 USD. Giảm thiểu: tắt
-  ngoài giờ demo như các thành phần khác (`infra/README.md` mục 5.3), hoặc chạy notification và search chung một task
+- Thêm 1 image và 1 task Fargate (assistant) trên AWS, khoảng 9 USD/tháng nếu chạy 24/7, vượt hạn mức 60 USD. Giảm thiểu: tắt
+  ngoài giờ demo như các thành phần khác (`infra/README.md` mục 5.3), hoặc chạy notification và assistant chung một task
   Fargate (hai container). TV3 tính lại chi phí trước khi dựng staging.
-- Index tìm kiếm trễ vài giây sau khi upload (eventual consistency). Phạm vi người dùng vẫn tính đồng bộ nên không lộ dữ liệu.
+- Index của trợ lý trễ vài giây sau khi upload (eventual consistency). Phạm vi người dùng vẫn tính đồng bộ nên không lộ dữ liệu.
 - Payload event có email người nhận (dữ liệu cá nhân) đi qua queue. Giảm thiểu: SQS mã hóa KMS, RabbitMQ chỉ trong mạng nội bộ.
 - Thêm việc cho TV1 khoảng 7 ngày công. Giảm thiểu: tính năng UC luôn ưu tiên; hạ tầng giao TV3, kịch bản kiểm thử giao TV4.
 
 **Tiêu chí nghiệm thu:**
 
-- `services/notification` và `services/search` không import file nào trong `backend/` (kiểm tra trong CI).
-- DB user `notification_svc`, `search_svc` truy vấn schema khác bị PostgreSQL từ chối.
+- `services/notification` và `services/assistant` không import file nào trong `backend/` (kiểm tra trong CI).
+- DB user `notification_svc`, `assistant_svc` truy vấn schema khác bị PostgreSQL từ chối.
 - Tắt notification service, duyệt đơn vẫn thành công; bật lại thì email được gửi bù (giữ tiêu chí ADR-03).
-- Upload một tài liệu: cùng một event làm search service cập nhật index và notification service xử lý, hai service không gọi
-  nhau.
+- Upload một tài liệu: cùng một event `DocumentPublished` đến cả hai queue; assistant service cập nhật index, notification
+  service nhận và bỏ qua (không gửi email, UC5 D2); hai service không gọi nhau.
 - Một trace trên Jaeger (local) và X-Ray (staging) đi từ request duyệt đơn qua outbox, queue tới notification service.
-- AC-6.2.2 và AC-6.2.5 đạt khi tìm kiếm đi qua search service.
+- AC-6.3.2 và AC-6.3.7 đạt khi câu hỏi đi qua assistant service.
 
 **Khi nào xem lại:** một module trong lõi cần scale hoặc release độc lập; chi phí thực tế vượt ngân sách ADR-12; hoặc nhiều
 consumer cần đọc lại lịch sử event (cân nhắc event stream theo ADR-03).

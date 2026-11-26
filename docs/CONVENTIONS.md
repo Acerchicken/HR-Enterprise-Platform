@@ -143,11 +143,21 @@ Ngoài 3 trường hợp này, PR chưa đạt thì để mở và sửa tiếp.
 
 ### Checklist: thêm một trường hồ sơ nhân viên
 
-1. Migration thêm cột (trường nhạy cảm: thêm vào `employee.employee_sensitive`, mã hóa qua `FieldCrypto`).
-2. Entity và DTO (`CreateEmployeeDto`, `UpdateEmployeeDto`) kèm validation; trường nhân viên tự sửa thì thêm vào `SELF_EDITABLE`.
+**Trường chính** (cột của `employee.employee`):
+
+1. Migration thêm cột (trường nhạy cảm: thêm vào `employee.employee_sensitive`, mã hóa qua `FieldCrypto`); cập nhật
+   [database schema](architecture/database-schema.md) trong cùng PR.
+2. Entity và DTO (`CreateEmployeeDto`, `UpdateEmployeeDto`) kèm validation. Chỉ HR ghi thẳng; trường nhân viên được đề xuất
+   (qua yêu cầu cập nhật, FR-1.9) thì thêm vào `SELF_EDITABLE` **và** vào mục `personal` trong `profile-schema.ts`. Trường tổ
+   chức cần ghi giá trị cũ, mới trong audit thì thêm vào `ORG_FIELDS` (`employee-audit.ts`).
 3. `npm run openapi` (backend) rồi `npm run gen:api` (frontend) để sinh lại type; TypeScript sẽ báo các chỗ chưa xử lý.
-4. Thêm một dòng `FieldDef` trong `frontend/src/pages/employee/employee-fields.ts`; form tạo/sửa và trang hồ sơ tự hiện trường mới.
-   Test `employee-fields.spec.ts` (backend) kiểm `editableBy` khớp `SELF_EDITABLE`.
+4. Thêm một dòng `FieldDef` trong `frontend/src/pages/employee/employee-fields.ts` (form HR). Test `employee-fields.spec.ts`
+   (backend) kiểm `editableBy` khớp `SELF_EDITABLE`.
+
+**Mục hồ sơ mới** (dòng trong `employee.profile_item`, không cần migration): khai báo nhóm, mức xem, `available` trong
+`profile-sections.ts`; trường, ai nhập (`proposeBy`, `hrOnly`), số dòng tối đa trong `profile-schema.ts`; thêm mã mục vào danh
+sách mục dòng ở `frontend/src/profile/SectionPage.tsx`; e2e cho xem theo mức, gửi yêu cầu (nếu NV), HR ghi thẳng.
+
 5. TV2 thêm dòng vào ma trận phân quyền; TV4 thêm ca kiểm thử.
 
 ## 7. Test

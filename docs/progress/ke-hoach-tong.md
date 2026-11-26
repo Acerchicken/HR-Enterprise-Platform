@@ -2,6 +2,7 @@
 
 > Tên cũ: `tuan-04-ke-hoach-tong.md` (đổi 14/11/2026). File lập ở tuần 4 (28/9 – 5/10) và cập nhật trong suốt dự án.
 > Mục 1 và 6 là báo cáo tuần 4, giữ làm lịch sử. Lịch đang áp dụng: [mục 7 – hoàn thành từng chức năng](#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13).
+> Đối chiếu với yêu cầu môn học (deliverable P1–P5, Project Scope) và việc còn thiếu tới buổi bảo vệ: [mục 8](#8-đối-chiếu-với-yêu-cầu-môn-học-2511).
 
 Nhóm chọn đề tài số 3 – **Enterprise HR Platform**. MVP tập trung vào một luồng nghiệp vụ end-to-end:
 nhân viên tạo đơn nghỉ phép → quản lý duyệt → HR xử lý → hoàn tất, có phân quyền theo vai trò, audit và kho tài liệu
@@ -73,7 +74,12 @@ UC7 → UC5 → UC6, chức năng nào cũng phải sẵn sàng lên cloud trư�
 ([mục 7](#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13)).
 
 **Cập nhật 16/11:** UC1 code xong ngày 16/11. Tuần 11 làm 5 UC (UC1, UC3, UC4, UC7, UC5), tuần 12 làm UC6 theo ADR-15
-(search service) và dựng staging ([mục 7.2](#72-thứ-tự-và-mốc)).
+(search service, từ 23/11 là assistant service theo ADR-16) và dựng staging ([mục 7.2](#72-thứ-tự-và-mốc)).
+
+**Cập nhật 25/11:** đối chiếu với slide yêu cầu môn học cho thấy P1, P2 đủ; P3 đủ tài liệu và code nhưng chưa deploy; các mục P4
+(load test trên cloud, thử lỗi, dashboard, SLI, chi phí thật) và P5 (bộ đánh giá, độ trễ và chi phí token) của tuần 11, 12 chưa làm
+vì nhóm ưu tiên làm xong từng chức năng. Các mục này được theo dõi riêng ở [mục 8](#8-đối-chiếu-với-yêu-cầu-môn-học-2511), hạn trước
+T3 (1/12).
 
 ## 5. Quyết định quan trọng
 
@@ -122,7 +128,7 @@ UC nào cũng dở. Từ nay:
 
 > **Cập nhật 16/11:** UC1 đã code xong trong hai ngày 15–16/11 (#80, #84 → #87, #89, #90), sớm hơn kế hoạch 5 ngày. Mục tiêu
 > tuần 11 nâng lên **5 UC code xong (dev xong)**: UC1, UC3, UC4, UC7, UC5, cùng phần mức M của UC2. Tuần 12 làm UC6 theo
-> ADR-15 (search service), dựng staging và kiểm thử các UC trên staging. "Dev xong" là code đã merge vào `dev` có test tự động;
+> ADR-15 (assistant service, ADR-16), dựng staging và kiểm thử các UC trên staging. "Dev xong" là code đã merge vào `dev` có test tự động;
 > "xong" theo mục 7.1 cần thêm biên bản kiểm thử của TV4 và kiểm tra trên staging.
 
 | Bước | Chức năng | TV1 code | Dev xong | Xong (biên bản, staging) | Vì sao ở vị trí này |
@@ -131,7 +137,7 @@ UC nào cũng dở. Từ nay:
 | 2 | **UC3, UC4 – Tạo và duyệt đơn nghỉ** | T3 (17/11) → T6 (20/11) | T6 (20/11) | T4 (25/11), staging | Luồng end-to-end của MVP (ADR-05) |
 | 3 | **UC7 – Lịch sử thao tác**; UC2 loại đơn vị (ADR-14) | T6 (20/11) → T7 (21/11) | T7 (21/11) | T6 (27/11), staging | Việc nhỏ; kiểm được audit của UC1, UC3, UC4 |
 | 4 | **UC5 – Kho tài liệu** (giao diện) | T7 (21/11) → CN (22/11) | CN (22/11) | T6 (27/11), staging | API đã có (#64), còn giao diện |
-| 5 | **UC6 – Tra cứu tài liệu và trợ lý** qua search service (ADR-15) | T3 (24/11) → T6 (27/11) | T6 (27/11) | T3 (1/12), staging | Cần UC5 và hạ tầng event của ADR-15 |
+| 5 | **UC6 – Trợ lý chính sách** qua assistant service (ADR-15, ADR-16; thu gọn 22/11) | T3 (24/11) → T6 (27/11) | T6 (27/11) | T3 (1/12), staging | Cần UC5 và hạ tầng event của ADR-15 |
 | – | UC2 mở rộng, trang "Việc cần duyệt", các việc mức S còn lại | T7 (28/11) → T3 (1/12) | – | – | Cắt đầu tiên (mục 7.8) |
 
 **Đóng băng tính năng T4 (2/12).** Thiếu thời gian thì cắt từ dưới lên theo mục 7.8 và ghi vào báo cáo tuần.
@@ -149,10 +155,10 @@ UC nào cũng dở. Từ nay:
 | `test/load-k6` | TV4 Duy, TV1 hỗ trợ | Load test local 50 request/giây 15 phút; đo NFR-1.1 → 1.3, NFR-2.1, NFR-2.4. Dùng nhiều tài khoản hoặc nâng ngưỡng rate limit | NFR-1, NFR-2 | T6 (20/11) | CN (22/11) | TV1, TV3 |
 | `infra/service-extraction` | TV3 Bảo | ADR-15 phần hạ tầng: SNS topic `hr-events` và filter policy cho các queue SQS, task Fargate cho notification và search (có thể chung một task hai container), DB user `notification_svc`, `search_svc`, X-Ray. Chỉ `validate`, `plan` | Tiêu chí nghiệm thu ADR-15 | T7 (21/11), 21:00 | CN (22/11) | TV1 |
 | `docs/slo-dashboard-cost` | TV3 Bảo | Dashboard CloudWatch theo SLI ở SRS 6.13; chi phí/tháng theo kết quả load test và thêm task của ADR-15 | SRS 6.13 | CN (22/11), 12:00 | T2 (23/11) | TV1 |
-| `feat/notification-service` | TV1 Duong | ADR-15 bước 1: tách worker thành `services/notification/`, payload outbox mang sẵn người nhận, driver `MAIL_DRIVER=smtp\|ses` (thay nhánh `feat/mail-driver-ses` đã lên kế hoạch 14/11) | Tiêu chí ADR-15, worker gửi được email trên staging | CN (22/11) | T2 (23/11) | TV3, TV4 |
+| `feat/notification-service` | TV1 Duong | ADR-15 bước 1: tách worker thành `services/notification/`, payload outbox mang sẵn người nhận, driver `MAIL_DRIVER=smtp\|ses` (thay nhánh `feat/mail-driver-ses` đã lên kế hoạch 14/11) | Tiêu chí ADR-15, worker gửi được email trên staging | CN (22/11) | T2 (23/11) | TV3, TV4 (đã merge #148, #149 ngày 26/11) |
 | (không có nhánh) | TV3 Bảo | `terraform apply` staging theo `docs/aws-rollout-plan`, gồm bucket tài liệu, bucket hồ sơ, hạ tầng ADR-15; chạy Deploy Staging với seed | `deploy.md` mục 5 của các UC đã dev xong | T3 (24/11) xong | – | TV1 |
-| `feat/tracing-otel` | TV1 Duong | ADR-15 bước 4: OpenTelemetry cho API và hai service, `traceparent` qua outbox và queue; Jaeger local, X-Ray staging | Tiêu chí ADR-15 | T6 (27/11) | T7 (28/11) | TV3 |
-| `infra/llm-secrets-cost` | TV3 Bảo | Khóa LLM trong Secrets Manager, budget alarm chi phí LLM | NFR-7.1 | T4 (25/11), 21:00 | T5 (26/11) | TV1 |
+| `feat/tracing-otel` | TV1 Duong | ADR-15 bước 4: OpenTelemetry cho API và hai service, `traceparent` qua outbox và queue; Jaeger local, X-Ray staging | Tiêu chí ADR-15 | T6 (27/11) | T7 (28/11) | TV3 (đã merge #152 ngày 26/11; X-Ray staging chưa nối) |
+| `infra/llm-secrets-cost` | TV3 Bảo | Khóa mã hóa cấu hình trợ lý `ASSISTANT_CONFIG_KEY` trong Secrets Manager; cho phép gọi HTTPS ra API của Claude, Gemini, DeepSeek; RDS bật extension `vector`; task Fargate assistant khoảng 2 GB RAM cho EmbeddingGemma (ADR-16, sửa 23/11) | NFR-7.1 | T4 (25/11), 21:00 | T5 (26/11) | TV1 |
 
 PR đang mở của TV3: #68 (MinIO local) đang conflict và Request changes; #70 (Terraform tài liệu, email SES API) đã sửa 15/11, chờ
 TV1 review lại; #69 đã merge 16/11. TV3 sửa #68 trước T3 (17/11), 21:00 (đổi image S3 cả nhóm pull được, rebase `dev`). `apply`
@@ -189,19 +195,25 @@ staging T3 (24/11) cần #70, `infra/profile-files`, `infra/service-extraction` 
 |---|---|---|---|---|---|---|
 | `feat/audit-ui` | TV1 Duong | UC7: màn hình tra cứu audit cho HR, ADMIN; `to` tính cả ngày kết thúc | AC-7.3.4, AC-7.3.5 | T6 (20/11) | T7 (21/11) | TV2, TV4 |
 | `feat/org-unit-types` | TV1 Duong | UC2 theo ADR-14: cột loại đơn vị, luật loại cha, loại con, đổi seed (Công ty, Trung tâm, Phòng, Nhóm) | AC-2.4.8, AC-2.4.9, AC-2.2.3 | T6 (20/11) | T7 (21/11) | TV2, TV4 |
-| `feat/document-ui` | TV1 Duong | UC5: giao diện kho tài liệu cho HR (tải lên, phạm vi, phiên bản) và nhân viên (xem, tải), trang "Tra cứu tài liệu" `/documents` | AC-5.1.8, AC-5.2.7 | T7 (21/11) | CN (22/11) | TV2, TV4 |
+| `feat/document-ui` | TV1 Duong | UC5: giao diện kho tài liệu cho HR (tải lên, phạm vi, phiên bản) và nhân viên (xem, tải), trang "Tra cứu tài liệu" `/documents`; `fields` cho lỗi 400, chặn đơn vị `INACTIVE` trong phạm vi (UC5 D3, thêm 22/11) | AC-5.1.4, AC-5.1.8, AC-5.1.9, AC-5.2.7 | T7 (21/11) | CN (22/11) | TV2, TV4 |
 | `docs/test-cases-uc2-uc5-uc7` | TV4 Duy | Ca còn thiếu: loại đơn vị (UC2), giao diện kho tài liệu (UC5), lọc audit theo `actor`, thời gian; audit không chứa giá trị nhạy cảm (UC7) | AC-2.4.8, AC-2.4.9, AC-5.x, AC-7.1.2, AC-7.1.3, AC-7.3.1 | T7 (21/11), 21:00 | CN (22/11) | TV2, TV1 |
 | `docs/test-report-uc2-uc5-uc7` | TV4 Duy | Chạy ca UC2 (phần M), UC5, UC7 trên staging, nhất là UC5 (S3, CORS, bucket không public) | `test.md` UC2, UC5, UC7 | T6 (27/11), 21:00 | T7 (28/11) | TV1 |
 
-### 7.7 Bước 5 – UC6 qua search service (T2 23/11 → T6 27/11)
+### 7.7 Bước 5 – UC6 trợ lý chính sách (T2 23/11 → T6 27/11)
+
+**Cập nhật 23/11:** UC6 chỉ còn trợ lý hỏi đáp (Duong, 22/11). Bỏ FR-6.1, FR-6.2. Search service của ADR-15 đổi thành assistant service; cách làm theo ADR-16 (Duong chọn 23/11).
 
 | Nhánh | Người | Việc | Tiêu chí | Mở PR | Merge | Review |
 |---|---|---|---|---|---|---|
-| `docs/adr-16-policy-assistant` | TV1 Duong | ADR-16 (số 14 đã dùng cho loại đơn vị): cách truy hồi đoạn văn bản, nhà cung cấp LLM, ngưỡng đánh giá | AC-6.3.5 | T2 (23/11) | T3 (24/11) | TV2, TV3 |
+| `docs/adr-16-policy-assistant` | TV1 Duong | ADR-16: truy hồi lai full-text và pgvector, adapter nhiều nhà cung cấp LLM do ADMIN chọn, ngưỡng đánh giá; sửa UC6, SRS, ADR-15 sau khi thu gọn UC6 | AC-6.3.5 | T2 (23/11) | T3 (24/11) | TV2, TV3 |
 | `docs/assistant-eval-set` | TV2 Thanh | Bộ ≥ 30 câu hỏi có đáp án, tài liệu nguồn; có câu ngoài tài liệu, câu prompt injection | AC-6.3.1 → 6.3.3 | T3 (24/11), 21:00 | T4 (25/11) | TV1, TV4 |
-| `docs/test-cases-uc6` | TV4 Duy | Ca tìm tài liệu (trong và ngoài phạm vi, đổi phòng ban), trợ lý; ca ADR-15 (tắt notification service vẫn duyệt được đơn) | AC-6.2.x, AC-6.3.x | T3 (24/11), 21:00 | T4 (25/11) | TV2, TV1 |
-| `feat/search-service` | TV1 Duong | ADR-15 bước 2: `services/search/` nhận event tài liệu, trích văn bản PDF/DOCX, index full-text trong schema `search`; API tính phạm vi rồi gọi search service; ô tìm trên trang `/documents` (thay nhánh `feat/document-search`) | AC-6.2.1 → 6.2.6 | T3 (24/11) | T4 (25/11) | TV2, TV4 |
-| `feat/policy-assistant` | TV1 Duong | Trợ lý trong search service: lọc phạm vi trước khi gửi LLM, trích dẫn, circuit breaker 10 s. Mức C: nếu `feat/search-service` chưa merge T4 (25/11) thì cắt | AC-6.3.1 → 6.3.4 | T5 (26/11) | T6 (27/11) | TV2, TV4 |
+| `docs/test-cases-uc6` | TV4 Duy | Ca trợ lý (trong và ngoài phạm vi, đổi đơn vị, tài liệu ẩn, fallback, giới hạn tần suất); ca ADR-15 (tắt notification service vẫn duyệt được đơn) | AC-6.3.x | T3 (24/11), 21:00 | T4 (25/11) | TV2, TV1 |
+| `feat/idp-account-lifecycle` | TV1 Duong | UC8 (ADR-17): event `employee.created`/`terminated`/`reinstated`, consumer `identity-sync`, driver Keycloak/Cognito, `idp_status`, gửi lại lời mời, tự đăng xuất sau 30 phút không thao tác (thêm 17/11) | AC-8.1.6, AC-8.3.x, AC-8.4.2, 8.4.3, AC-8.6.x | T4 (25/11) | T5 (26/11) | TV3, TV4 |
+| `infra/idp-account-lifecycle` | TV3 Bảo | UC8: SQS `identity-sync` + DLQ, subscription SNS có filter, quyền IAM `cognito-idp:Admin*` theo ARN pool (thêm 17/11) | AC-8.3.3, 8.4.2 | T3 (24/11), 21:00 | T4 (25/11) | TV1 |
+| `docs/test-cases-uc8` | TV4 Duy | Ca kiểm thử UC8 theo `test.md` (thêm 17/11) | AC-8.x.y | T5 (26/11), 21:00 | T6 (27/11) | TV1, TV3 |
+| `feat/assistant-service` (trước là `feat/search-service`) | TV1 Duong | ADR-15 bước 2, ADR-16: trước hết module document phát event qua outbox chung `leave.outbox` và lệnh đồng bộ lần đầu (UC5 13.2, D1, AC-5.4.1 → 5.4.4); `services/assistant/` nhận event tài liệu, trích văn bản PDF/DOCX, chia đoạn, index full-text và pgvector (EmbeddingGemma qua adapter `Embedder`, lệnh `reindex-embeddings`) trong schema `assistant` | AC-5.4.x, AC-6.3.7 | T3 (24/11) | T4 (25/11) | TV2, TV4 |
+| `feat/policy-assistant` | TV1 Duong | API `POST /assistant/questions` (BFF tính phạm vi), adapter `openai-compatible` gọi DeepSeek (nhà cung cấp demo), trích dẫn, fallback 10 s, giới hạn 10 câu/phút; khung trợ lý trên `/documents`. Nếu phần vector chưa xong T6 (27/11) thì giao bản chỉ full-text (ADR-16) | AC-6.3.1 → 6.3.4, AC-6.3.6 | T5 (26/11) | T6 (27/11) | TV2, TV4 |
+| `feat/assistant-config` | TV1 Duong | Trang "Cấu hình trợ lý" cho ADMIN, lưu khóa mã hóa, audit; adapter `anthropic`, `google`; thêm 23/11 theo yêu cầu của Duong. Trễ thì hai adapter này sang tuần 13 (DeepSeek đã có từ `feat/policy-assistant`) | AC-6.4.1 → 6.4.7 | T6 (27/11) | T7 (28/11) | TV3, TV4 |
 | `docs/test-report-uc6` | TV4 Duy | Chạy ca UC6 trên staging | `test.md` UC6 | T2 (30/11), 21:00 | T3 (1/12) | TV1 |
 | `docs/assistant-eval-report` | TV4 Duy | Chạy bộ đánh giá: tỉ lệ đúng, có trích dẫn, độ trễ, chi phí mỗi câu (chỉ khi trợ lý đã merge) | AC-6.3.5 | T2 (30/11), 21:00 | T3 (1/12) | TV1, TV2 |
 
@@ -214,7 +226,7 @@ Các việc dưới đây TV1 làm từ T7 (28/11) tới T3 (1/12), chỉ khi b�
 | 1 | `feat/department-admin-ui` | TV1 Duong | UC2 AC-2.4.5, trưởng/phó đơn vị mọi cấp AC-2.9.x (ADR-14), chức danh AC-2.6.x, ngừng hoạt động đơn vị AC-2.10.x |
 | 2 | `feat/employee-transfer` | TV1 Duong | UC2 quá trình công tác AC-2.8.x, điều chuyển có ngày hiệu lực AC-2.7.x |
 | 3 | `infra/idp-auth-events` | TV3 Bảo | UC7 AC-7.4.1: ghi đăng nhập, cấp và thu hồi vai trò từ Keycloak, Cognito |
-| 4 | `feat/approvals-inbox` | TV1 Duong | Trang "Việc cần duyệt" `/approvals` có tab, chuyển tiếp `/leave/approvals`, `/leave/hr` (AC-0.6.1 → 0.6.4) |
+| 4 | `feat/approvals-inbox` | TV1 Duong | Trang "Việc cần duyệt" `/approvals` có tab, chuyển tiếp `/leave/approvals`, `/leave/hr` (AC-0.6.1 → 0.6.4). Đã xong: trang ở #120, số việc chờ trên tab, chuông, trang chủ ở `feat/approvals-todo-counts` (26/11) |
 
 | Việc | Người | Hạn |
 |---|---|---|
@@ -245,3 +257,52 @@ Báo cáo tuần ghi đúng việc đã làm, ví dụ "TV2 review `requirements
 | `test.md` của UC2 → UC7 | #76 | TV4 | TV4 Duy | Như trên, trước khi viết ca kiểm thử của bước tương ứng | Trước hạn mở PR ca kiểm thử của bước đó |
 
 TV1 xử lý mọi góp ý "cần sửa" trước khi merge #76, hoặc ở PR sau nếu #76 đã merge.
+
+## 8. Đối chiếu với yêu cầu môn học (25/11)
+
+> Lập 25/11/2026. Chi tiết từng slide, bằng chứng và câu trả lời chuẩn bị cho Architecture Defense:
+> [`defense/doi-chieu-yeu-cau-mon-hoc.md`](../defense/doi-chieu-yeu-cau-mon-hoc.md). Mã N1 → N13 trùng với mục 6 của file đó.
+> Báo cáo thứ 2 hằng tuần cập nhật cột "Trạng thái" của bảng 8.1 và chép các dòng 8.2 của tuần đó vào `tuan-NN/README.md`.
+
+Slide "Common Project Deliverables" của môn là **danh sách sản phẩm phải nộp theo vòng đời** P1 → P5, không phải lịch. Mục 4 ở trên
+đã xếp P1 → P5 vào tuần 5 → 12; mục 8.1 theo dõi từng ý của slide tới buổi bảo vệ.
+
+### 8.1 Trạng thái từng deliverable
+
+✅ có trên `dev` và chạy được ở local; 🟡 một phần (chưa đo, chưa lên cloud, thiếu một ý); ❌ chưa có.
+
+| Giai đoạn | Deliverable | Trạng thái 25/11 | Còn thiếu | Việc |
+|---|---|---|---|---|
+| P1 | Problem statement, users/stakeholders, FR, NFR có ngưỡng, workload, kiến trúc cloud ban đầu | ✅ | Cột trạng thái FR trong SRS lệch code | N10 |
+| P2 | Component architecture, API, data model, sync/async, integration | ✅ | SNS fan-out (ADR-15) chưa làm; notification service tách 26/11 (#148, #149, chờ merge) | `feat/notification-service`, `infra/service-extraction` |
+| P3 | Threat model | 🟡 | Chưa phủ kho tài liệu, trợ lý, Cognito, AWS | N11 |
+| P3 | IAM / access control | ✅ | Quyền Cognito cho worker (F2) | N1 |
+| P3 | CI/CD | 🟡 | e2e chưa chạy trong CI; Deploy Staging chưa chạy lần nào | N1, N9 |
+| P3 | Containerization | ✅ | – | – |
+| P3 | IaC | 🟡 | Chưa `apply`; B1, F2 → F4 | N1 |
+| P3 | Deploy / rollback strategy | 🟡 | Chưa diễn tập rollback | N6 |
+| P4 | Load / performance test | 🟡 | #121 chưa merge, NFR-2.1 chưa đạt ở local; chưa đo trên staging, chưa đo 5× | N4 |
+| P4 | Reliability / failure scenario | 🟡 | Chưa diễn tập lỗi có biên bản | N6 |
+| P4 | Observability dashboard | ❌ | Dashboard, log JSON, phiên bản ở `/health`, metric outbox | N5 |
+| P4 | SLI / SLO | 🟡 | Đã định nghĩa (SRS 6.13), chưa đo | N5 |
+| P4 | Capacity & cost analysis | 🟡 | Chưa có chi phí thật, chưa tính task assistant và tiền LLM | N5 |
+| P5 | AI architecture | ✅ | – | – |
+| P5 | Evaluation dataset / metrics | ❌ | Bộ câu hỏi trễ hạn T3 (24/11) | N7 |
+| P5 | Security / guardrails | ✅ | Chưa có ca tấn công chạy thật | N7 |
+| P5 | Latency & token-cost analysis | ❌ | Service đã log token và thời gian, chưa có báo cáo | N7 |
+
+Ngoài P1 → P5, slide "Business Problem & Functional Scope" từng thiếu một ý: nhân viên chưa tìm được tài liệu theo từ khóa
+(use case 6 "Employee self-service search" của slide), việc N2. **Đã xong 25/11** qua PR #140 (FR-5.4).
+
+### 8.2 Việc bổ sung tới buổi bảo vệ
+
+Phân việc, hạn và tiêu chí "xong" của từng người: [`tuan-12-bo-sung/`](tuan-12-bo-sung/README.md) (lập 25/11). Các việc này không
+thuộc danh sách cắt ở mục 7.8: chúng đứng **trước** `feat/approvals-inbox` vì giảng viên chấm trực tiếp.
+
+| Người | Việc | Hạn |
+|---|---|---|
+| TV1 Duong | N2 tìm tài liệu, N3 email SES + IP thật, N5a log JSON + metric + timeout database, N9 e2e trong CI, F4 hạ tầng trợ lý (nhận từ TV3), `fix/auth-email-verified`, N12 trạng thái ADR | Hết T5 (26/11) (Duong, 25/11) (**25/11: xong, PR #140 → #146 chờ merge**) |
+| TV2 Thanh | N7a bộ câu hỏi đánh giá (trễ), N10 trạng thái FR, N11 threat model | T5 (26/11) 21:00; T7 (28/11) 21:00 |
+| TV3 Bảo | N1 B1, F2, F3 + `apply` staging, N8 MFA, N5b dashboard và chi phí, N6 diễn tập lỗi | Mở PR T5 (26/11) 21:00; `apply` T6 (27/11) 21:00; còn lại CN (29/11) → T2 (30/11) |
+| TV4 Duy | N4 load test (local rồi staging), N6 biên bản diễn tập lỗi, N7b báo cáo đánh giá trợ lý | T6 (27/11); T2 (30/11) 21:00 |
+| Cả nhóm | N13 slide, tập bảo vệ, video demo | Tập T6 (4/12), bảo vệ T2 (7/12) |

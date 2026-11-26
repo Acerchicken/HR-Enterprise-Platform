@@ -1,6 +1,6 @@
 # Giao diện chung (frontend)
 
-> Phiên bản 1.4 – 15/11/2026 (1.4: bản vẽ UC2 → UC7, mục 10.8; 1.1: bản vẽ giao diện mục 10; 1.2: gộp mọi loại duyệt vào trang "Việc cần duyệt", mục 2.4; 1.3: ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp, tìm tài liệu và trợ lý AI chuyển vào trang "Tra cứu tài liệu"; chốt `lucide-react`). Áp dụng cho mọi tính năng UC1 → UC7. Bộ tài liệu: [`docs/README.md`](../README.md).
+> Phiên bản 1.5 – 26/11/2026 (1.5: số việc chờ `GET /me/todo-counts` cho chuông, dải "Việc cần làm", tab trang "Việc cần duyệt"; file hồ sơ và ảnh đại diện duyệt trong tab "Sửa hồ sơ"; 1.4: bản vẽ UC2 → UC7, mục 10.8; 1.1: bản vẽ giao diện mục 10; 1.2: gộp mọi loại duyệt vào trang "Việc cần duyệt", mục 2.4; 1.3: ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp, tìm tài liệu và trợ lý AI chuyển vào trang "Tra cứu tài liệu"; chốt `lucide-react`). Áp dụng cho mọi tính năng UC1 → UC7. Bộ tài liệu: [`docs/README.md`](../README.md).
 > Mỗi UC chỉ mô tả màn hình riêng của mình ở mục 9 trong `spec.md` và dẫn về file này cho phần dùng chung.
 > Mục còn ghi **Chưa có** là phần code chưa làm; tiêu chí `AC-0.x.y` dùng cho các PR giao diện như `AC` của từng UC.
 
@@ -22,9 +22,9 @@ thì người làm một tính năng phải đọc cả file dài. Hai tầng gi
 
 | Vị trí | Thành phần | Hành vi | Trạng thái |
 |---|---|---|---|
-| Trái | Logo HRHelper | Bấm về trang chủ `/` | Có chữ, chưa có logo |
-| Giữa | Ô tìm đồng nghiệp | **Chỉ tìm đồng nghiệp** theo tên, email, mã (UC2, UC6 FR-6.1); không tìm tài liệu. Gõ từ 2 ký tự, chờ 300 ms sau phím cuối mới gọi `GET /employees?q=&size=5`. Phím tắt `/` hoặc `Ctrl+K` để vào ô. Chọn một đồng nghiệp thì mở thẻ xem nhanh (mục 4.1). Enter thì sang Danh bạ `/directory?q=`. Tìm tài liệu và hỏi trợ lý AI nằm ở trang riêng "Tra cứu tài liệu" (mục 2.2) | **Chưa có** |
-| Phải | Chuông thông báo | Số việc đang chờ mình: đơn chờ duyệt (quản lý), yêu cầu cập nhật hồ sơ chờ duyệt (HR), yêu cầu của mình bị từ chối. Bấm mở danh sách ngắn, mỗi dòng dẫn tới trang xử lý | **Chưa có** |
+| Trái | Logo HRHelper | Bấm về trang chủ `/` | Đã có (#80) |
+| Giữa | Ô tìm đồng nghiệp | **Chỉ tìm đồng nghiệp** theo tên, email, mã (UC2 AC-2.1.6 → AC-2.1.9); không tìm tài liệu. Gõ từ 2 ký tự, chờ 300 ms sau phím cuối mới gọi `GET /employees?q=&size=5`. Phím tắt `/` hoặc `Ctrl+K` để vào ô. Chọn một đồng nghiệp thì mở thẻ xem nhanh (mục 4.1). Enter thì sang Danh bạ `/directory?q=`. Trợ lý AI nằm ở trang "Tra cứu tài liệu" (mục 2.2), không có trên nav bar | Đã có (`SearchBox.tsx`) |
+| Phải | Chuông thông báo | Số việc đang chờ mình: đơn chờ duyệt (quản lý), yêu cầu cập nhật hồ sơ chờ duyệt (HR), yêu cầu của mình bị từ chối. Bấm mở danh sách ngắn, mỗi dòng dẫn tới trang xử lý. Số lấy từ `GET /me/todo-counts`, tải lại mỗi lần đổi trang | Đã có (`feat/approvals-todo-counts`) |
 | Phải | Ảnh đại diện | Bấm mở menu: tên, vai trò; "Hồ sơ của tôi" (mở popup hồ sơ của mình); "Đăng xuất". Chưa có ảnh thì hiện chữ cái đầu | **Chưa có** (hiện là tên, nhãn vai trò, nút Đăng xuất) |
 
 Trên điện thoại (dưới 640 px): ô tìm kiếm thu thành biểu tượng kính lúp, bấm thì mở ô tìm kiếm toàn màn hình.
@@ -34,10 +34,11 @@ Trên điện thoại (dưới 640 px): ô tìm kiếm thu thành biểu tượn
 Từ trên xuống:
 
 1. **Lời chào và "Việc cần làm"**: "Chào {tên}", rồi một dải thẻ nhỏ cho việc đang chờ người dùng (ví dụ "3 đơn chờ bạn
-   duyệt", "2 yêu cầu cập nhật hồ sơ chờ HR"). Không có việc gì thì ẩn dải này. **Chưa có**
+   duyệt", "2 yêu cầu cập nhật hồ sơ chờ HR"). Không có việc gì thì ẩn dải này. Thẻ "yêu cầu của bạn bị từ chối", "chờ HR" mở popup hồ sơ
+   của mình. Đã có (`feat/approvals-todo-counts`)
 2. **Ô chức năng chính**: lưới các ô, mỗi ô có biểu tượng, tên, mô tả một dòng và số việc chờ (nếu có). Bấm thì sang trang của
-   chức năng, riêng "Hồ sơ của tôi" mở popup hồ sơ (mục 4). **Chưa có**
-3. **Số dư phép năm** dạng một dòng ngắn ("Còn 7 ngày phép năm"), bấm sang trang Nghỉ phép. **Chưa có**
+   chức năng, riêng "Hồ sơ của tôi" mở popup hồ sơ (mục 4). Đã có (#80)
+3. **Số dư phép năm** dạng một dòng ngắn ("Còn 7 ngày phép năm"), bấm sang trang Nghỉ phép. Đã có (#80)
 
 **Ô chức năng theo vai trò** (chỉ hiện ô người dùng được dùng; ô chức năng chưa làm vẫn hiện, tên màu đỏ và nhãn "Chưa có"):
 
@@ -48,11 +49,12 @@ Từ trên xuống:
 | Đơn nghỉ của tôi | `/leave` | Mọi người có hồ sơ | UC3 |
 | Việc cần duyệt | `/approvals` (mục 2.4) | Quản lý, người duyệt thay, HR | UC1, UC4 |
 | Danh bạ | `/directory` | Mọi người | UC2 |
-| Sơ đồ tổ chức | `/org` | Mọi người | UC2 |
-| Tra cứu tài liệu | `/documents`: một trang gồm ô tìm tài liệu (UC6 FR-6.2), khung hỏi trợ lý AI (UC6 FR-6.3) và danh sách tài liệu (UC5) | Mọi người | UC5, UC6 |
+| Sơ đồ tổ chức | `/org` (HR, ADMIN: thêm, sửa đơn vị; HR: `/org/positions` chức danh) | Mọi người | UC2 |
+| Tra cứu tài liệu | `/documents`: một trang gồm danh sách tài liệu (UC5) và khung hỏi trợ lý AI (UC6 FR-6.3). Không có ô tìm trong nội dung tài liệu (bỏ FR-6.2 ngày 22/11) | Mọi người | UC5, UC6 |
 | Quản lý nhân viên | `/employees/new`, danh bạ ở chế độ HR | HR | UC1 |
 | Đăng tài liệu | `/documents/manage` | HR | UC5 |
 | Lịch sử thao tác | `/audit` | HR, ADMIN | UC7 |
+| Cấu hình trợ lý | `/admin/assistant`: chọn nhà cung cấp AI, model, API key | ADMIN | UC6 |
 
 Lưới: 4 cột trên màn hình rộng, 3 cột trên máy tính bảng, 2 cột trên điện thoại. Thứ tự cố định như bảng, để người dùng nhớ
 vị trí.
@@ -72,9 +74,11 @@ chỉ cần dẫn về một nơi. Gộp **giao diện**, không gộp **nghiệ
 |---|---|---|---|---|
 | Đơn nghỉ | `leave` | Quản lý: đơn `SUBMITTED` của cấp dưới trực tiếp, đơn được giao duyệt thay. HR: đơn của CEO và đơn `PENDING_HR` chờ HR duyệt thêm (BR-16), hiện kèm quyết định của quản lý | Quản lý, người duyệt thay, HR | UC4 luồng chính, A1, A3, A5, A6 |
 | Hoàn tất đơn nghỉ | `leave-complete` | Đơn đã duyệt chờ HR hoàn tất | HR | UC4 A2 |
-| Sửa hồ sơ | `profile` | Yêu cầu sửa trường, thêm, sửa, xóa dòng (liên hệ khẩn cấp, thân nhân, chuyên môn…) | HR | UC1 4.2, 4.7 |
-| File hồ sơ | `profile-file` | File nhân viên tải lên đang `PENDING_REVIEW` | HR | UC1 4.3, 4.7 |
-| Ảnh đại diện | `avatar` | Ảnh đại diện mới chờ duyệt | HR | UC1 4.3, 4.7 |
+| Sửa hồ sơ | `profile` | Yêu cầu sửa trường, thêm, sửa, xóa dòng (liên hệ khẩn cấp, thân nhân, chuyên môn…), kể cả file Sơ yếu lý lịch, file kèm dòng và ảnh đại diện mới (lọc theo mục "Sơ yếu lý lịch", "Ảnh đại diện") | HR | UC1 4.2, 4.3, 4.7 |
+
+File nhân viên tải lên (`PENDING_REVIEW`) và ảnh đại diện mới luôn đi kèm một yêu cầu cập nhật hồ sơ (FR-1.9, #86, #87), HR duyệt
+hoặc từ chối cả yêu cầu. Vì vậy không có tab "File hồ sơ", "Ảnh đại diện" riêng như bản thiết kế 1.2: HR lọc tab "Sửa hồ sơ" theo mục
+(chốt 26/11/2026). Ngoài các tab, HR có link "Phân công duyệt thay" (`/approvals/delegations`, UC4 A6).
 
 Sau này có loại duyệt mới (ví dụ đăng ký làm thêm giờ) thì thêm một tab, không thêm trang hay ô chức năng mới.
 
@@ -123,7 +127,7 @@ Có hai mức, để tra cứu nhanh không phải tải cả hồ sơ:
 Mở khi chọn một đồng nghiệp trong ô tìm kiếm, hoặc bấm tên một người ở danh bạ, sơ đồ tổ chức, đơn nghỉ. Thẻ nhỏ (rộng 360 px)
 nổi giữa màn hình, gồm ảnh, họ tên, mã, chức danh, phòng ban, quản lý trực tiếp, số điện thoại, email (nút sao chép, nút gọi,
 nút gửi mail) và nút **"Xem hồ sơ đầy đủ"**. Chỉ gọi `GET /employees/{id}/summary`, chỉ chứa dữ liệu mức danh bạ. Đóng bằng X,
-Esc, bấm ra ngoài. **Chưa có**
+Esc, bấm ra ngoài. Đã có (#80)
 
 ### 4.2 Hồ sơ đầy đủ
 
@@ -170,14 +174,14 @@ chữ "Chưa có"; trạng thái đơn vừa có màu vừa có chữ.
 
 | Thành phần | Dùng ở | Trạng thái |
 |---|---|---|
-| `NavBar`, `SearchBox`, `NotificationBell`, `AvatarMenu` | Mọi trang | **Chưa có** |
-| `FeatureTile` (ô chức năng, có số việc chờ và trạng thái "Chưa có") | Trang chủ | **Chưa có** |
-| `ProfilePanel` (drawer hoặc toàn màn hình, có URL, trang con bên trong) | Popup hồ sơ | **Chưa có** |
-| `SectionRow` (hàng có biểu tượng, tiêu đề, giá trị, mũi tên; đỏ khi chưa có) | Hồ sơ, các trang danh sách mục | **Chưa có** |
-| `MaskedValue` (`********` + nút mắt, chỉ gọi API khi bấm) | Lương, số tài khoản, CCCD | **Chưa có** (hiện là nút "Xem trường nhạy cảm") |
+| `NavBar`, `SearchBox`, `NotificationBell`, `AvatarMenu` | Mọi trang | Đã có (#80); chuông có số từ `feat/approvals-todo-counts` |
+| `FeatureTile` (ô chức năng, có số việc chờ và trạng thái "Chưa có") | Trang chủ | Đã có (#80); số việc chờ từ `feat/approvals-todo-counts` |
+| `ProfilePanel` (drawer hoặc toàn màn hình, có URL, trang con bên trong) | Popup hồ sơ | Đã có (#80) |
+| `SectionRow` (hàng có biểu tượng, tiêu đề, giá trị, mũi tên; đỏ khi chưa có) | Hồ sơ, các trang danh sách mục | Đã có (#80) |
+| `MaskedValue` (`********` + nút mắt, chỉ gọi API khi bấm) | Lương, số tài khoản, CCCD | Đã có (#80) |
 | `StatusBadge` | Đơn nghỉ, yêu cầu cập nhật, tài liệu | Có một phần (`.badge`) |
-| `ErrorBox`, `EmptyState`, `Skeleton` | Mọi trang | `ErrorBox` có; hai cái còn lại **chưa có** |
-| `FileUpload` (chọn file, kiểm loại và dung lượng ở trình duyệt, thanh tiến độ) | UC1, UC5 | **Chưa có** |
+| `ErrorBox`, `EmptyState`, `Skeleton` | Mọi trang | Đã có |
+| `FileUpload` (chọn file, kiểm loại và dung lượng ở trình duyệt, thanh tiến độ) | UC1, UC5 | Đã có (#87), UC5 chưa dùng |
 
 Không thêm thư viện giao diện lớn; dùng React, CSS thuần với biến ở trên. Biểu tượng dùng một bộ duy nhất là `lucide-react`
 (đã chốt 14/11, chỉ đóng gói biểu tượng được dùng), không trộn nhiều bộ.
@@ -212,54 +216,51 @@ Không thêm thư viện giao diện lớn; dùng React, CSS thuần với biế
 
 ## 8. Tiêu chí chấp nhận
 
-- **AC-0.1.1** *(chưa có)* Mọi trang có nav bar gồm logo, ô tìm kiếm, chuông thông báo, ảnh đại diện; bấm logo về trang chủ.
-- **AC-0.1.2** *(chưa có)* Gõ "ngu" vào ô tìm kiếm. Thì sau 300 ms có tối đa 5 gợi ý đồng nghiệp, chỉ một request
+- **AC-0.1.1** Mọi trang có nav bar gồm logo, ô tìm kiếm, chuông thông báo, ảnh đại diện; bấm logo về trang chủ.
+- **AC-0.1.2** Gõ "ngu" vào ô tìm kiếm. Thì sau 300 ms có tối đa 5 gợi ý đồng nghiệp, chỉ một request
   `GET /employees?q=`, không có tài liệu. Chọn một đồng nghiệp thì mở thẻ xem nhanh người đó; Enter mở `/directory?q=ngu`.
-- **AC-0.2.1** *(chưa có)* Trang chủ của nhân viên thường không có ô "Việc cần duyệt", "Lịch sử thao tác"; của quản lý và HR
+- **AC-0.2.1** Trang chủ của nhân viên thường không có ô "Việc cần duyệt", "Lịch sử thao tác"; của quản lý và HR
   thì có ô "Việc cần duyệt". Ô chức năng chưa làm có tên màu `--todo` kèm nhãn "Chưa có".
-- **AC-0.2.2** *(chưa có)* Quản lý có 3 đơn chờ duyệt. Thì ô "Việc cần duyệt", tab "Đơn nghỉ" và chuông đều hiện số 3; dải
+- **AC-0.2.2** Quản lý có 3 đơn chờ duyệt. Thì ô "Việc cần duyệt", tab "Đơn nghỉ" và chuông đều hiện số 3; dải
   "Việc cần làm" có thẻ "3 đơn chờ bạn duyệt", bấm vào mở `/approvals?type=leave`.
-- **AC-0.6.1** *(chưa có)* Quản lý mở `/approvals`. Thì thấy ngay danh sách đơn nghỉ, không có thanh tab; HR mở thì có đủ 5 tab,
+- **AC-0.6.1** Quản lý mở `/approvals`. Thì thấy ngay danh sách đơn nghỉ, không có thanh tab; HR mở thì có đủ 3 tab (mục 2.4),
   mỗi tab có số việc chờ.
-- **AC-0.6.2** *(chưa có)* HR có 2 yêu cầu sửa hồ sơ và 1 đơn nghỉ chờ hoàn tất, mở `/approvals`. Thì vào tab "Sửa hồ sơ" (nhiều
+- **AC-0.6.2** HR có 2 yêu cầu sửa hồ sơ và 1 đơn nghỉ chờ hoàn tất, mở `/approvals`. Thì vào tab "Sửa hồ sơ" (nhiều
   việc nhất), có 2 dòng, cũ nhất lên đầu, và chỉ gọi API danh sách của tab đó. Mở một dòng thì URL là `/approvals/{type}/{id}` và
   chỉ gọi API chi tiết của dòng đó.
-- **AC-0.6.3** *(chưa có)* Bấm "Từ chối" khi chưa nhập lý do. Thì không gửi request, ô lý do báo lỗi, với mọi loại.
-- **AC-0.6.4** *(chưa có)* Mở link cũ `/leave/approvals`. Thì chuyển sang `/approvals?type=leave`.
-- **AC-0.3.0** *(chưa có)* Chọn một đồng nghiệp trong ô tìm kiếm. Thì thẻ xem nhanh hiện, chỉ có một request `summary`, không có
+- **AC-0.6.3** Bấm "Từ chối" khi chưa nhập lý do. Thì không gửi request, ô lý do báo lỗi, với mọi loại.
+- **AC-0.6.4** Mở link cũ `/leave/approvals`. Thì chuyển sang `/approvals?type=leave`.
+- **AC-0.3.0** Chọn một đồng nghiệp trong ô tìm kiếm. Thì thẻ xem nhanh hiện, chỉ có một request `summary`, không có
   ngày sinh, địa chỉ; bấm "Xem hồ sơ đầy đủ" thì mở hồ sơ đầy đủ.
-- **AC-0.3.1** *(chưa có)* Mở popup hồ sơ của một đồng nghiệp, copy URL, mở ở tab mới. Thì popup hồ sơ người đó mở sẵn. Bấm Back
+- **AC-0.3.1** Mở popup hồ sơ của một đồng nghiệp, copy URL, mở ở tab mới. Thì popup hồ sơ người đó mở sẵn. Bấm Back
   thì popup đóng, không rời ứng dụng.
-- **AC-0.3.2** *(chưa có)* Trong popup, bấm một mục con. Thì nội dung trượt sang trang con trong cùng popup, không có popup thứ
+- **AC-0.3.2** Trong popup, bấm một mục con. Thì nội dung trượt sang trang con trong cùng popup, không có popup thứ
   hai; nút "<" quay về.
-- **AC-0.3.3** *(chưa có)* Mở popup bằng bàn phím. Thì focus ở tiêu đề popup, Tab không ra ngoài popup, Esc đóng popup và focus
+- **AC-0.3.3** Mở popup bằng bàn phím. Thì focus ở tiêu đề popup, Tab không ra ngoài popup, Esc đóng popup và focus
   về nút đã mở.
-- **AC-0.4.1** *(chưa có)* Trên màn hình 375 px, popup hồ sơ là toàn màn hình; trên 1280 px là ngăn bên phải rộng 720 px.
-- **AC-0.5.1** *(chưa có)* Khi API trả 429. Thì hiện câu báo kèm số giây, nút gửi khóa đến hết thời gian `Retry-After`.
-- **AC-0.5.2** *(chưa có)* Khi kho file lỗi (503) lúc đang ở popup hồ sơ. Thì chỉ mục "Sơ yếu lý lịch" báo không dùng được; các
+- **AC-0.4.1** Trên màn hình 375 px, popup hồ sơ là toàn màn hình; trên 1280 px là ngăn bên phải rộng 720 px.
+- **AC-0.5.1** Khi API trả 429. Thì hiện câu báo kèm số giây, nút gửi khóa đến hết thời gian `Retry-After`.
+- **AC-0.5.2** *(một phần: mục file báo lỗi riêng, chưa kiểm hết trường hợp)* Khi kho file lỗi (503) lúc đang ở popup hồ sơ. Thì chỉ mục "Sơ yếu lý lịch" báo không dùng được; các
   mục khác vẫn mở được.
 
 ## 9. Hiện trạng và việc còn lại
 
 | Nội dung | Hiện tại | Việc còn lại |
 |---|---|---|
-| Nav bar | Thanh trên có tên HRHelper, các link Hồ sơ của tôi, Danh bạ, Sơ đồ tổ chức, Nghỉ phép, Duyệt đơn, HR hoàn tất; tên người dùng, nhãn vai trò, Đăng xuất (`frontend/src/components/Layout.tsx`) | Thay bằng logo, ô tìm kiếm, chuông, ảnh đại diện (mục 2.1); các link chuyển xuống ô chức năng ở trang chủ |
-| Trang chủ | `/` đang là trang "Hồ sơ của tôi" | Trang chủ mới (mục 2.2); hồ sơ chuyển vào popup |
-| Popup hồ sơ | Chưa có; hồ sơ người khác là trang `/employees/:id` | `ProfilePanel` theo mục 4 |
-| Màu | `--primary: #2457c5` (xanh dương) | Đổi sang bảng màu mục 5.1 |
-| Tìm đồng nghiệp | Chỉ có ô tìm trong trang Danh bạ | `SearchBox` trên nav bar, dùng API danh bạ đang có |
-| Tra cứu tài liệu | Chưa có | Trang `/documents` gồm tìm tài liệu, trợ lý AI, danh sách tài liệu (UC5, UC6) |
-| Trang duyệt | Ba trang riêng `/leave/approvals`, `/leave/hr`; chưa có trang duyệt hồ sơ | Gộp vào `/approvals` có tab (mục 2.4) |
-| Đếm việc cần làm | Chưa có API | `GET /me/todo-counts` (đơn chờ duyệt, yêu cầu hồ sơ chờ, yêu cầu bị từ chối) |
+| Nav bar, trang chủ, màu cyan, popup hồ sơ có URL, thẻ xem nhanh, ô tìm đồng nghiệp | Đã có (#80); chuông, dải "Việc cần làm" có số (`feat/approvals-todo-counts`) | – |
+| Tra cứu tài liệu | Trang `/documents` có danh sách tài liệu của UC5 (22/11); chưa có trợ lý | Thêm khung trợ lý AI (UC6) |
+| Trang duyệt | `/approvals` có đủ tab "Đơn nghỉ", "Hoàn tất đơn nghỉ", "Sửa hồ sơ"; link cũ `/leave/approvals`, `/leave/hr` chuyển tiếp (#120); số trên tab, mở tab nhiều việc nhất (`feat/approvals-todo-counts`) | – |
+| Đếm việc cần làm | `GET /me/todo-counts` (`feat/approvals-todo-counts`): `leave`, `leaveComplete`, `profile` (null khi không có tab), `myRejectedChanges`, `myPendingChanges`, `total` | – |
+| Lỗi 429 | Khóa nút tới hết `Retry-After` ở form hồ sơ, yêu cầu, duyệt (#85, #86) | Áp cho form đơn nghỉ |
 
 | Việc | Tiêu chí | Người | Nhánh | Tuần |
 |---|---|---|---|---|
-| Trang "Việc cần duyệt" `/approvals` có tab (gom trang duyệt đơn, HR hoàn tất hiện có), không thêm API gộp | AC-0.6.x | TV1 | `feat/approvals-inbox` | 12 |
-| Nav bar, trang chủ, màu, popup hồ sơ có URL | AC-0.1.1, AC-0.2.1, AC-0.3.x, AC-0.4.1, UC1 AC-1.8.x | TV1 | `feat/profile-layout` | 11 |
-| Ô tìm đồng nghiệp trên nav bar | AC-0.1.2 | TV1 | `feat/profile-layout` | 11 |
-| Trang "Tra cứu tài liệu" (tìm tài liệu, trợ lý AI) | UC6 AC-6.2.x, AC-6.3.x | TV1 | `feat/search-service`, `feat/policy-assistant` | 12–13 |
-| Chuông, việc cần làm, `GET /me/todo-counts` | AC-0.2.2 | TV1 | `feat/app-shell-todo` | 12 |
-| Hiển thị lỗi 429, 503 theo mục 6 | AC-0.5.x | TV1 | `feat/security-headers-ratelimit` | 11 |
+| Trang "Việc cần duyệt" `/approvals` có tab (gom trang duyệt đơn, HR hoàn tất hiện có), không thêm API gộp | AC-0.6.x | TV1 | #120; số trên tab ở `feat/approvals-todo-counts` | Xong (12) |
+| Nav bar, trang chủ, màu, popup hồ sơ có URL | AC-0.1.1, AC-0.2.1, AC-0.3.x, AC-0.4.1, UC1 AC-1.8.x | TV1 | `feat/profile-layout` | Xong (#80) |
+| Ô tìm đồng nghiệp trên nav bar | AC-0.1.2 | TV1 | `feat/profile-layout` | Xong (#80) |
+| Khung trợ lý AI trên trang "Tra cứu tài liệu" | UC6 AC-6.3.x | TV1 | `feat/assistant-service`, `feat/policy-assistant` | 12 |
+| Chuông, việc cần làm, `GET /me/todo-counts` | AC-0.2.2 | TV1 | `feat/approvals-todo-counts` | Xong (12) |
+| Hiển thị lỗi 429, 503 theo mục 6 | AC-0.5.x | TV1 | `feat/security-headers-ratelimit` | Xong phần hồ sơ (#85) |
 | Ca kiểm thử giao diện chung (bàn phím, 375 px, URL popup) | AC-0.x | TV4 | `docs/test-cases-week11` | 11 |
 
 ## 10. Bản vẽ giao diện
@@ -268,6 +269,9 @@ Bản vẽ để duyệt bố cục trước khi code, không phải ảnh chụ
 Nguồn là [`mockups/mockups.html`](mockups/mockups.html) (mở bằng trình duyệt là xem được); sửa file đó rồi xuất lại ảnh PNG
 bằng `powershell -ExecutionPolicy Bypass -File docs/features/mockups/render.ps1` (Windows, dùng Edge) hoặc
 `node docs/features/mockups/render.js` (máy có Playwright). Ô vàng là ghi chú cho người đọc, không có trong giao diện thật.
+Ảnh của màn hình chung (trang chủ, tìm đồng nghiệp, thẻ xem nhanh, Việc cần duyệt) nằm ở `docs/features/mockups/`; ảnh riêng
+của từng UC nằm ở thư mục `mockups/` trong thư mục UC đó (ví dụ `UC2-organization/mockups/`). Hai lệnh trên tự ghi ảnh vào
+đúng thư mục theo mã khung: `profile-*`, `subpage-*` vào UC1, `ucN-*` vào UC N, `uc56-*` vào UC5.
 Bản vẽ theo mục 2 → 7 ở trên và [UC1 spec mục 9.1](UC1-employee-profile/spec.md#91-bố-cục-trang-hồ-sơ); chỗ nào bản vẽ khác
 chữ thì chữ đúng.
 
@@ -298,13 +302,13 @@ Chỉ có nhóm Đồng nghiệp; tài liệu tra ở trang "Tra cứu tài li�
 
 Ngăn phải 720 px. Hai nhóm xếp thành hai cột để đỡ cuộn; trên điện thoại là một cột như ảnh mẫu.
 
-![Popup hồ sơ dạng ngăn bên phải](mockups/profile-desktop.png)
+![Popup hồ sơ dạng ngăn bên phải](UC1-employee-profile/mockups/profile-desktop.png)
 
 ### 10.6 Hồ sơ trên điện thoại, trang con và người khác xem
 
 | Hồ sơ của mình (toàn màn hình) | Trang con "Thông tin cá nhân", gửi yêu cầu sửa | Đồng nghiệp xem (mức danh bạ) |
 |---|---|---|
-| ![Hồ sơ trên điện thoại](mockups/profile-mobile.png) | ![Trang con và form gửi yêu cầu](mockups/subpage-mobile.png) | ![Đồng nghiệp xem hồ sơ](mockups/profile-directory-view.png) |
+| ![Hồ sơ trên điện thoại](UC1-employee-profile/mockups/profile-mobile.png) | ![Trang con và form gửi yêu cầu](UC1-employee-profile/mockups/subpage-mobile.png) | ![Đồng nghiệp xem hồ sơ](UC1-employee-profile/mockups/profile-directory-view.png) |
 
 ### 10.7 Trang "Việc cần duyệt" của HR, tab "Sửa hồ sơ" (mục 2.4, UC1 FR-1.9)
 
@@ -321,19 +325,22 @@ Bản vẽ màn hình riêng của từng UC nằm ở mục 9.1 trong `spec.md`
 | UC | Màn hình đã vẽ | Ở đâu |
 |---|---|---|
 | UC2 | Danh bạ, sơ đồ tổ chức, sửa phòng ban (trưởng, phó phòng), điều chuyển, chức danh; phòng ban và quá trình công tác trên điện thoại | [UC2 spec 9.1](UC2-organization/spec.md#91-bản-vẽ-giao-diện) |
-| UC3 | Đăng ký nghỉ, đơn nghỉ của tôi và chi tiết; form và hủy đơn trên điện thoại | [UC3 spec 9.1](UC3-create-leave-request/spec.md#91-bản-vẽ-giao-diện) |
-| UC4 | Quản lý duyệt (không có tab), HR duyệt thêm, HR hoàn tất, phân công duyệt thay; duyệt trên điện thoại | [UC4 spec 9.1](UC4-approve-leave-request/spec.md#91-bản-vẽ-giao-diện) |
+| UC3 | Đăng ký nghỉ, đơn nghỉ của tôi và chi tiết; form và hủy đơn trên điện thoại; đề nghị hủy đơn đã duyệt, nghỉ theo sự kiện, HR chỉnh số dư `/leave/balances` (18/11) | [UC3 spec 9.1](UC3-create-leave-request/spec.md#91-bản-vẽ-giao-diện) |
+| UC4 | Quản lý duyệt (không có tab), HR duyệt thêm, HR hoàn tất, phân công duyệt thay; duyệt trên điện thoại; đề nghị hủy trong tab Đơn nghỉ, lịch nghỉ lễ `/leave/holidays` (18/11) | [UC4 spec 9.1](UC4-approve-leave-request/spec.md#91-bản-vẽ-giao-diện) |
 | UC5 | Trang "Tra cứu tài liệu", chi tiết và phiên bản, quản lý tài liệu, đăng tài liệu; điện thoại | [UC5 spec 9.1](UC5-document-repository/spec.md#91-bản-vẽ-giao-diện) |
-| UC6 | Kết quả tìm tài liệu, trợ lý chính sách có trích dẫn | [UC6 spec 9.1](UC6-self-service-search/spec.md#91-bản-vẽ-giao-diện) |
+| UC6 | Trợ lý chính sách có trích dẫn, câu hỏi ngoài phạm vi; trang cấu hình trợ lý cho ADMIN | [UC6 spec 9.1](UC6-policy-assistant/spec.md#91-bản-vẽ-giao-diện) |
 | UC7 | Lịch sử thao tác: bộ lọc, bảng, chi tiết một dòng | [UC7 spec 9.1](UC7-audit-log/spec.md#91-bản-vẽ-giao-diện) |
 
 Điểm cần duyệt trong bản vẽ (đề xuất, chưa có trong spec):
 
 - **Phân công duyệt thay** là trang `/approvals/delegations`, vào từ nút trên trang "Việc cần duyệt" của HR, không thêm ô ở trang
-  chủ. API cho UC4 FR-4.3 chưa có.
+  chủ. API ở UC4 spec 9.3 (thiết kế 18/11).
+- **Trang HR mới cho nghỉ phép** (18/11): `/leave/balances` (số dư nhân viên) và `/leave/holidays` (lịch nghỉ lễ), vào từ menu
+  "Nghỉ phép" của HR. Đề nghị hủy không thêm tab ở "Việc cần duyệt", nằm chung tab Đơn nghỉ với nhãn tím.
 - **Đơn nghỉ trùng ngày trong nhóm** hiện cho quản lý khi duyệt (chỉ tên và ngày) như mục 2.4 đã ghi; cần API trả danh sách này.
 - **Số ngày tính sẵn ở trình duyệt** trên form đăng ký nghỉ, cùng quy tắc BR-03; backend vẫn là nơi quyết định.
 - **Sơ đồ tổ chức trên điện thoại** đi từng cấp phòng ban thay vì vẽ cây.
 - **Trang "Tra cứu tài liệu" trên điện thoại** chia hai tab Tài liệu và Hỏi trợ lý.
-- **Lịch sử thao tác** chỉ lọc theo các trường API đang có (đối tượng, ID, người thực hiện, khoảng ngày); chưa lọc theo hành động.
+- **Lịch sử thao tác** chỉ lọc theo các trường API đang có (đối tượng, ID, người thực hiện, khoảng ngày); lọc theo hành động
+  thêm theo [UC7 spec 13.3](UC7-audit-log/spec.md#133-quyết-định-đã-chốt-duong-23112026-theo-đề-xuất) (D3, Duong chốt 23/11).
 

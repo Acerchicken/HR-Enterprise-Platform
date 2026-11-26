@@ -16,9 +16,10 @@ describe('audit theo nhóm trường (AC-1.4.3)', () => {
     });
   });
 
-  it('tạo mới: trường tổ chức ghi giá trị, không lộ trường cá nhân', () => {
+  it('tạo mới: trường tổ chức ghi giá trị, không lộ trường cá nhân, mã nhân viên chỉ có tên', () => {
     const out = auditFields({ employeeCode: 'E00001', managerId: null, address: 'Hà Nội', workEmail: 'a@b.c' }, null);
-    expect(out).toEqual({ employeeCode: 'E00001', managerId: null, address: '***', workEmail: '***' });
+    expect(out).toEqual({ employeeCode: '***', managerId: null, address: '***', workEmail: '***' });
     expect(JSON.stringify(out)).not.toContain('Hà Nội');
+    expect(JSON.stringify(out)).not.toContain('E00001');
   });
 });

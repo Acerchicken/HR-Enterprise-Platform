@@ -39,6 +39,11 @@ variable "alert_emails" {
   type        = list(string)
 }
 
+variable "sender_email" {
+  description = "Verified sender email address in Amazon SES (required in sandbox mode, set in terraform.tfvars)"
+  type        = string
+}
+
 variable "budget_limit_usd" {
   description = "Monthly budget limit in USD"
   type        = number
@@ -55,4 +60,16 @@ variable "api_container_port" {
   description = "Port exposed by the API container"
   type        = number
   default     = 3000
+}
+
+variable "assistant_desired_count" {
+  description = "Số task assistant service lúc tạo (0 = tắt để tiết kiệm; bật khi demo bằng aws ecs update-service, UC6 deploy.md mục 4a)"
+  type        = number
+  default     = 0
+}
+
+variable "apprunner_min_instances" {
+  description = "Minimum number of App Runner instances (1 for cost saving in staging, 2 for load test and demo per ADR-06, NFR-3.2)"
+  type        = number
+  default     = 1
 }

@@ -1,18 +1,27 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './auth/auth';
+import { IdleGuard } from './auth/idle';
 import { Layout } from './components/Layout';
 import { ShellProvider } from './components/shell';
+import { AssistantConfigPage } from './pages/admin/AssistantConfigPage';
+import { RolesPage } from './pages/admin/RolesPage';
 import { ApprovalsPage } from './pages/ApprovalsPage';
+import { AuditPage } from './pages/AuditPage';
 import { ExpiringContractsPage } from './pages/ExpiringContractsPage';
 import { CallbackPage } from './pages/CallbackPage';
 import { DirectoryPage } from './pages/DirectoryPage';
+import { DocumentDetailPage } from './pages/documents/DocumentDetailPage';
+import { DocumentManagePage } from './pages/documents/DocumentManagePage';
+import { DocumentsPage } from './pages/documents/DocumentsPage';
 import { EmployeeFormPage } from './pages/employee/EmployeeFormPage';
 import { ComingSoonPage, HomePage } from './pages/HomePage';
 import { LeaveDetailPage } from './pages/leave/LeaveDetailPage';
 import { LeaveListPage } from './pages/leave/LeaveListPage';
 import { NewLeavePage } from './pages/leave/NewLeavePage';
+import { DelegationsPage, HolidaysPage, LeaveBalancesPage } from './pages/leave/LeaveHrPages';
 import { LoginPage } from './pages/LoginPage';
 import { OrgPage } from './pages/OrgPage';
+import { PositionsPage } from './pages/org/PositionsPage';
 import { ProfileState } from './profile/navigation';
 import { ProfilePanel } from './profile/ProfilePanel';
 
@@ -30,6 +39,7 @@ export function App() {
   return (
     <ShellProvider>
       <AppRoutes />
+      <IdleGuard />
     </ShellProvider>
   );
 }
@@ -55,14 +65,25 @@ function AppRoutes() {
           <Route path="employees/:id" element={<HomePage />} />
           <Route path="employees/:id/:section" element={<HomePage />} />
           <Route path="org" element={<OrgPage />} />
-          <Route path="leave" element={<LeaveListPage key="mine" mode="mine" />} />
+          <Route path="org/positions" element={<PositionsPage />} />
+          <Route path="leave" element={<LeaveListPage />} />
           <Route path="leave/new" element={<NewLeavePage />} />
-          <Route path="leave/approvals" element={<LeaveListPage key="approvals" mode="approvals" />} />
-          <Route path="leave/hr" element={<LeaveListPage key="hr" mode="hr" />} />
+          {/* Link cũ chuyển sang trang "Việc cần duyệt" (AC-0.6.4). */}
+          <Route path="leave/approvals" element={<Navigate to="/approvals?type=leave" replace />} />
+          <Route path="leave/hr" element={<Navigate to="/approvals?type=leave-complete" replace />} />
+          <Route path="leave/balances" element={<LeaveBalancesPage />} />
+          <Route path="leave/holidays" element={<HolidaysPage />} />
           <Route path="leave/:id" element={<LeaveDetailPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
-          <Route path="approvals/profile/:id" element={<ApprovalsPage />} />
+          <Route path="approvals/delegations" element={<DelegationsPage />} />
+          <Route path="approvals/:type/:id" element={<ApprovalsPage />} />
           <Route path="contracts/expiring" element={<ExpiringContractsPage />} />
+          <Route path="documents" element={<DocumentsPage />} />
+          <Route path="documents/manage" element={<DocumentManagePage />} />
+          <Route path="documents/:id" element={<DocumentDetailPage />} />
+          <Route path="admin/roles" element={<RolesPage />} />
+          <Route path="admin/assistant" element={<AssistantConfigPage />} />
+          <Route path="audit" element={<AuditPage />} />
           <Route path="coming-soon" element={<ComingSoonPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

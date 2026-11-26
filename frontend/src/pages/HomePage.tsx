@@ -2,6 +2,7 @@ import {
   CalendarClock,
   CalendarDays,
   CalendarPlus,
+  CalendarRange,
   ClipboardCheck,
   FileSearch,
   History,
@@ -9,10 +10,13 @@ import {
   List,
   LucideIcon,
   Network,
+  Scale,
+  ShieldCheck,
   Upload,
   UserPlus,
   UserRound,
   Users,
+  Sparkles,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api, LeaveBalance, Role } from '../api/client';
@@ -20,6 +24,7 @@ import { useApi } from '../api/useApi';
 import { useShell } from '../components/shell';
 import { givenName, Skeleton, TodoBadge } from '../components/ui';
 import { useOpenProfile } from '../profile/navigation';
+import { countLabel, todoItems } from '../components/todo';
 
 interface Tile {
   title: string;
@@ -31,6 +36,8 @@ interface Tile {
   who?: (Role | 'employee')[];
   /** false: chức năng chưa làm, tên đỏ kèm "Chưa có" (AC-0.2.1). */
   ready?: boolean;
+  /** Số việc chờ hiện ở góc ô (AC-0.2.2), lấy từ `GET /me/todo-counts`. */
+  count?: 'leave' | 'leave-complete' | 'approvals-hr';
 }
 
 /** Ô chung theo thứ tự cố định ở frontend.md 2.2. */
@@ -38,27 +45,31 @@ const COMMON: Tile[] = [
   { title: 'Hồ sơ của tôi', desc: 'Thông tin cá nhân, công việc, giấy tờ', icon: UserRound, to: 'profile', who: ['employee'] },
   { title: 'Đăng ký nghỉ', desc: 'Tạo đơn nghỉ phép, nghỉ ốm, nghỉ việc riêng', icon: CalendarPlus, to: '/leave/new', who: ['employee'] },
   { title: 'Đơn nghỉ của tôi', desc: 'Trạng thái các đơn đã gửi', icon: List, to: '/leave', who: ['employee'] },
-  { title: 'Việc cần duyệt', desc: 'Đơn nghỉ của nhân viên cấp dưới', icon: ClipboardCheck, to: '/leave/approvals', who: ['MANAGER'] },
+  { title: 'Việc cần duyệt', desc: 'Đơn nghỉ, đề nghị hủy của cấp dưới', icon: ClipboardCheck, to: '/approvals?type=leave', who: ['MANAGER'], count: 'leave' },
   { title: 'Danh bạ', desc: 'Tra cứu đồng nghiệp', icon: Users, to: '/directory' },
   { title: 'Sơ đồ tổ chức', desc: 'Phòng ban và quản lý', icon: Network, to: '/org' },
-  { title: 'Tra cứu tài liệu', desc: 'Tìm quy chế, chính sách; hỏi trợ lý AI', icon: FileSearch, to: '/coming-soon', ready: false },
+  { title: 'Tra cứu tài liệu', desc: 'Quy chế, chính sách, biểu mẫu dành cho bạn', icon: FileSearch, to: '/documents' },
 ];
 
-/** Nhóm "Chức năng HR" (bản vẽ 10.2). Trang "Việc cần duyệt" có tab (frontend.md 2.4) làm ở tuần 12; tạm dẫn tới trang cũ. */
+/** Nhóm "Chức năng HR" (bản vẽ 10.2); ADMIN không có HR thấy nhóm này với tên "Quản trị". "Việc cần duyệt" mở tab nhiều việc nhất (frontend.md 2.4). */
 const HR_TILES: Tile[] = [
-  { title: 'Việc cần duyệt', desc: 'Yêu cầu cập nhật hồ sơ, đơn nghỉ', icon: Inbox, to: '/approvals?type=profile', who: ['HR'] },
-  { title: 'Hoàn tất đơn nghỉ', desc: 'Đơn đã duyệt chờ HR hoàn tất', icon: CalendarDays, to: '/leave/hr', who: ['HR'] },
+  { title: 'Việc cần duyệt', desc: 'Đơn nghỉ, yêu cầu cập nhật hồ sơ', icon: Inbox, to: '/approvals', who: ['HR'], count: 'approvals-hr' },
+  { title: 'Hoàn tất đơn nghỉ', desc: 'Đơn đã duyệt chờ HR hoàn tất', icon: CalendarDays, to: '/approvals?type=leave-complete', who: ['HR'], count: 'leave-complete' },
+  { title: 'Số dư phép', desc: 'Mức phép năm, hạn mức nghỉ ốm', icon: Scale, to: '/leave/balances', who: ['HR'] },
+  { title: 'Lịch nghỉ lễ', desc: 'Ngày lễ, nghỉ bù; tính lại đơn', icon: CalendarRange, to: '/leave/holidays', who: ['HR'] },
   { title: 'Quản lý nhân viên', desc: 'Thêm, sửa hồ sơ, nghỉ việc', icon: UserPlus, to: '/employees/new', who: ['HR'] },
   { title: 'Hợp đồng sắp hết hạn', desc: 'Hết hạn trong 30 ngày tới', icon: CalendarClock, to: '/contracts/expiring', who: ['HR'] },
-  { title: 'Đăng tài liệu', desc: 'Quy chế, biểu mẫu, phạm vi xem', icon: Upload, to: '/coming-soon', who: ['HR'], ready: false },
-  { title: 'Lịch sử thao tác', desc: 'Ai làm gì, lúc nào', icon: History, to: '/coming-soon', who: ['HR', 'ADMIN'], ready: false },
+  { title: 'Đăng tài liệu', desc: 'Quy chế, biểu mẫu, phạm vi xem', icon: Upload, to: '/documents/manage', who: ['HR'] },
+  { title: 'Lịch sử thao tác', desc: 'Ai làm gì, lúc nào', icon: History, to: '/audit', who: ['HR', 'ADMIN'] },
+  { title: 'Phân quyền', desc: 'Cấp, thu hồi vai trò HR, ADMIN', icon: ShieldCheck, to: '/admin/roles', who: ['ADMIN'] },
+  { title: 'Cấu hình trợ lý', desc: 'Nhà cung cấp AI, model, API key', icon: Sparkles, to: '/admin/assistant', who: ['ADMIN'] },
 ];
 
 const DAY = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
 
 /** Trang chủ (frontend.md 2.2): lời chào, ô chức năng theo vai trò, số dư phép năm. */
 export function HomePage() {
-  const { me, meError } = useShell();
+  const { me, meError, todo } = useShell();
   const openProfile = useOpenProfile();
   const hasEmployee = !!me?.employee;
   const balance = useApi(
@@ -71,9 +82,15 @@ export function HomePage() {
   if (!me) return <Skeleton lines={4} />;
   const canSee = (t: Tile) =>
     !t.who || t.who.some((w) => (w === 'employee' ? hasEmployee : me.roles.includes(w)));
-  const common = COMMON.filter(canSee).filter((t) => !(t.to === '/leave/approvals' && me.roles.includes('HR')));
+  const common = COMMON.filter(canSee).filter((t) => !(t.to === '/approvals?type=leave' && me.roles.includes('HR')));
   const hr = HR_TILES.filter(canSee);
   const annual = balance.data?.find((b) => b.leaveType === 'ANNUAL');
+  const todos = todoItems(todo);
+  const countOf = (t: Tile) =>
+    t.count === 'leave' ? (todo?.leave ?? 0)
+    : t.count === 'leave-complete' ? (todo?.leaveComplete ?? 0)
+    : t.count === 'approvals-hr' ? (todo?.leave ?? 0) + (todo?.profile ?? 0)
+    : 0;
 
   const tile = (t: Tile) => {
     const Icon = t.icon;
@@ -81,7 +98,11 @@ export function HomePage() {
       <>
         <span className="tile-ic"><Icon size={20} /></span>
         <span>
-          <h3>{t.title}{t.ready === false && <TodoBadge />}</h3>
+          <h3>
+            {t.title}
+            {t.ready === false && <TodoBadge />}
+            {countOf(t) > 0 && <span className="count" aria-label={`${countOf(t)} việc chờ`}>{countLabel(countOf(t))}</span>}
+          </h3>
           <p>{t.desc}</p>
         </span>
       </>
@@ -101,12 +122,23 @@ export function HomePage() {
         {me.roles.includes('HR') ? 'HR · ' : ''}
         {DAY.format(new Date())}
       </p>
+      {todos.length > 0 && (
+        <nav className="todo-strip" aria-label="Việc cần làm">
+          {todos.map((i) =>
+            i.to === 'profile' ? (
+              <button key={i.key} type="button" className={`todo-card ${i.action ? '' : 'info'}`} onClick={() => openProfile('me')}>{i.text}</button>
+            ) : (
+              <Link key={i.key} className="todo-card" to={i.to}>{i.text}</Link>
+            ),
+          )}
+        </nav>
+      )}
       {!hasEmployee && (
         <p className="warn-box">Tài khoản {me.email} chưa gắn với hồ sơ nhân viên nào. Liên hệ HR.</p>
       )}
       {hr.length > 0 && (
         <>
-          <h2 className="sect">Chức năng HR</h2>
+          <h2 className="sect">{me.roles.includes('HR') ? 'Chức năng HR' : 'Quản trị'}</h2>
           <div className="tiles">{hr.map(tile)}</div>
         </>
       )}

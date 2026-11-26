@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { api, ApiError, ChangeDetail, ChangeListItem, FieldSpec, Page } from '../api/client';
+import { api, ApiError, ChangeDetail, ChangeListItem, FieldSpec, LeaveRequest, Page, vnToday } from '../api/client';
 import { invalidateSummary } from '../api/cache';
 import { useApi } from '../api/useApi';
 import { useShell } from '../components/shell';
@@ -9,6 +9,8 @@ import { BASE_URL } from '../api/client';
 import { getToken } from '../auth/auth';
 import { FileList } from '../components/files';
 import { formatValue, visible } from '../profile/fields';
+import { LeaveDetail, period, StatusBadge } from './leave/leave-ui';
+import { tabCounts } from '../components/todo';
 
 const SECTION_TITLE: Record<string, string> = {
   personal: 'Thông tin cá nhân',
@@ -22,30 +24,155 @@ const SECTION_TITLE: Record<string, string> = {
 const ACTION_TEXT = { CREATE: 'Thêm', UPDATE: 'Sửa', DELETE: 'Xóa' } as const;
 const DT = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
 
+type Tab = 'leave' | 'leave-complete' | 'profile';
+
 /**
- * Trang "Việc cần duyệt" (frontend.md 2.4). Tab "Sửa hồ sơ" của HR làm trong UC1 (FR-1.9); tab đơn nghỉ tạm dẫn tới trang
- * cũ cho tới khi gộp hẳn ở `feat/approvals-inbox`.
+ * Trang "Việc cần duyệt" (frontend.md 2.4): tab "Đơn nghỉ" cho quản lý, người duyệt thay, HR (UC4 luồng chính, A3, A6, A7);
+ * "Hoàn tất đơn nghỉ", "Sửa hồ sơ" cho HR. Mở một việc là `/approvals/{type}/{id}`.
  */
 export function ApprovalsPage() {
-  const { me } = useShell();
-  const { id } = useParams();
+  const { me, todo, todoReady } = useShell();
+  const { id, type: pathType } = useParams();
   const [params] = useSearchParams();
-  const type = params.get('type') ?? 'profile';
   const isHr = !!me?.roles.includes('HR');
+  const isManager = !!me?.roles.includes('MANAGER');
   if (!me) return <Skeleton lines={4} />;
-  if (!isHr) return me.roles.includes('MANAGER') ? <Navigate to="/leave/approvals" replace /> : <EmptyState>Không tìm thấy hoặc bạn không có quyền xem.</EmptyState>;
-  if (type !== 'profile') return <Navigate to={type === 'leave-complete' ? '/leave/hr' : '/leave/approvals'} replace />;
+  const tabs: { key: Tab; label: string }[] = [
+    ...(isHr || isManager ? [{ key: 'leave' as Tab, label: 'Đơn nghỉ' }] : []),
+    ...(isHr ? [{ key: 'leave-complete' as Tab, label: 'Hoàn tất đơn nghỉ' }, { key: 'profile' as Tab, label: 'Sửa hồ sơ' }] : []),
+  ];
+  if (!tabs.length) return <EmptyState>Không tìm thấy hoặc bạn không có quyền xem.</EmptyState>;
+  // Mở `/approvals` không kèm `type` thì vào tab nhiều việc chờ nhất (frontend.md 2.4, AC-0.6.2).
+  // Chờ có số rồi mới chọn tab, để chỉ gọi API danh sách của đúng một tab.
+  if (!pathType && !params.get('type') && !todoReady) return <Skeleton lines={4} />;
+  const counts = tabCounts(todo);
+  const busiest = tabs.reduce((best, t) => ((counts[t.key] ?? 0) > (counts[best.key] ?? 0) ? t : best), tabs[0]!).key;
+  const wanted = (pathType ?? params.get('type') ?? busiest) as Tab;
+  const type = tabs.some((t) => t.key === wanted) ? wanted : tabs[0]!.key;
 
   return (
     <section>
       <h1 className="page-title">Việc cần duyệt</h1>
-      <nav className="tabs" aria-label="Loại việc">
-        <Link to="/leave/approvals">Đơn nghỉ</Link>
-        <Link to="/leave/hr">Hoàn tất đơn nghỉ</Link>
-        <Link to="/approvals?type=profile" className="on" aria-current="page">Sửa hồ sơ</Link>
-      </nav>
-      <ProfileInbox selected={id} />
+      {tabs.length > 1 && (
+        <nav className="tabs" aria-label="Loại việc">
+          {tabs.map((t) => (
+            <Link key={t.key} to={`/approvals?type=${t.key}`} className={t.key === type ? 'on' : ''} aria-current={t.key === type ? 'page' : undefined}>
+              {t.label}
+              {counts[t.key] !== undefined && <span className={`count ${counts[t.key] ? '' : 'zero'}`} aria-label={`${counts[t.key]} việc chờ`}>{counts[t.key]}</span>}
+            </Link>
+          ))}
+          {isHr && <Link to="/approvals/delegations">Phân công duyệt thay</Link>}
+        </nav>
+      )}
+      {type === 'profile' && <ProfileInbox selected={id} />}
+      {type === 'leave' && <LeaveInbox key="leave" selected={id} isHr={isHr} isManager={isManager} />}
+      {type === 'leave-complete' && <LeaveCompleteInbox selected={id} />}
     </section>
+  );
+}
+
+/** Đơn chờ quyết định và đề nghị hủy (UC4 9.3); HR thêm đơn chờ HR duyệt thêm (BR-16). */
+function LeaveInbox({ selected, isHr, isManager }: { selected?: string; isHr: boolean; isManager: boolean }) {
+  const navigate = useNavigate();
+  const list = useApi(async () => {
+    const parts = await Promise.all([
+      isHr || isManager ? api<Page<LeaveRequest>>('/leave-requests/pending-approval?size=100') : null,
+      isHr ? api<Page<LeaveRequest>>('/leave-requests/pending-hr?size=100') : null,
+    ]);
+    const seen = new Set<string>();
+    return parts.flatMap((p) => p?.items ?? []).filter((r) => !seen.has(r.id) && !!seen.add(r.id));
+  }, [isHr, isManager]);
+  const items = list.data ?? [];
+  const today = vnToday();
+  const label = (r: LeaveRequest) =>
+    r.status === 'PENDING_HR' ? 'Chờ HR duyệt' : r.kind === 'CANCEL_REQUEST' ? (r.startDate <= today ? 'Đề nghị hủy · Hết hạn' : 'Đề nghị hủy') : null;
+
+  function changed(u: LeaveRequest) {
+    const stillHere = u.status === 'SUBMITTED' || u.status === 'PENDING_HR' || (u.status === 'APPROVED' && !!u.cancelRequest);
+    if (stillHere) return;
+    const idx = items.findIndex((x) => x.id === u.id);
+    const next = items[idx + 1] ?? items[idx - 1];
+    list.setData(items.filter((x) => x.id !== u.id));
+    navigate(next ? `/approvals/leave/${next.id}` : '/approvals?type=leave', { replace: true });
+  }
+
+  return (
+    <div className={`split ${selected ? 'has-detail' : ''}`}>
+      <div className="inbox-list">
+        {list.error && <p className="error">{errorText(list.error)}</p>}
+        {!list.data && !list.error && <Skeleton lines={5} />}
+        {list.data && items.length === 0 && <EmptyState>Không có đơn nghỉ nào đang chờ bạn.</EmptyState>}
+        <ul className="plain inbox">
+          {items.map((r) => (
+            <li key={r.id}>
+              <button type="button" className={`inbox-row ${r.id === selected ? 'sel' : ''}`} onClick={() => navigate(`/approvals/leave/${r.id}`)}>
+                <span>
+                  <b>{r.employeeName}</b>
+                  <small>{r.leaveTypeName} · {period(r)} · {r.days} ngày{r.viaDelegation ? ' · duyệt thay' : ''}</small>
+                </span>
+                <span className="age">
+                  {label(r) && <span className={`badge ${r.kind === 'CANCEL_REQUEST' ? 'cancel-req' : 'status-pending-hr'}`}>{label(r)}</span>}
+                  {r.overdue && <span className="overdue">Quá hạn</span>}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="inbox-detail">
+        {selected ? (
+          <>
+            <Link className="back-mobile" to="/approvals?type=leave">‹ Danh sách</Link>
+            <LeaveDetail key={selected} id={selected} onChanged={changed} />
+          </>
+        ) : (
+          <EmptyState>Chọn một đơn để xem.</EmptyState>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** HR hoàn tất đơn đã duyệt sau ngày kết thúc (UC4 A2, BR-10). */
+function LeaveCompleteInbox({ selected }: { selected?: string }) {
+  const navigate = useNavigate();
+  const [page, setPage] = useState(1);
+  const list = useApi(() => api<Page<LeaveRequest>>(`/leave-requests?status=APPROVED&page=${page}&size=50`), [page]);
+  const today = vnToday();
+  const pages = list.data ? Math.max(1, Math.ceil(list.data.total / list.data.size)) : 1;
+  return (
+    <div className={`split ${selected ? 'has-detail' : ''}`}>
+      <div className="inbox-list">
+        {list.error && <p className="error">{errorText(list.error)}</p>}
+        {!list.data && !list.error && <Skeleton lines={5} />}
+        {list.data && list.data.items.length === 0 && <EmptyState>Không có đơn đã duyệt nào.</EmptyState>}
+        <ul className="plain inbox">
+          {(list.data?.items ?? []).map((r) => (
+            <li key={r.id}>
+              <button type="button" className={`inbox-row ${r.id === selected ? 'sel' : ''}`} onClick={() => navigate(`/approvals/leave-complete/${r.id}`)}>
+                <span>
+                  <b>{r.employeeName}</b>
+                  <small>{r.leaveTypeName} · {period(r)} · {r.days} ngày</small>
+                </span>
+                <span className="age">
+                  {r.completableFrom <= today ? <StatusBadge status="APPROVED" /> : <span className="muted small">Từ {r.completableFrom.split('-').reverse().join('/')}</span>}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        {pages > 1 && (
+          <div className="pager">
+            <button disabled={page <= 1} onClick={() => setPage(page - 1)}>‹</button>
+            <span>{page}/{pages}</span>
+            <button disabled={page >= pages} onClick={() => setPage(page + 1)}>›</button>
+          </div>
+        )}
+      </div>
+      <div className="inbox-detail">
+        {selected ? <LeaveDetail key={selected} id={selected} onChanged={() => list.reload()} /> : <EmptyState>Chọn một đơn để xem.</EmptyState>}
+      </div>
+    </div>
   );
 }
 

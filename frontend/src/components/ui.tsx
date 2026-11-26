@@ -123,3 +123,16 @@ export function useCooldown(error: Error | null): number {
   }, [error]);
   return left;
 }
+
+/** Phân trang "‹ Trước · Trang 2/5 · Sau ›"; ẩn khi chỉ có một trang. */
+export function Pager({ page, size, total, onPage }: { page: number; size: number; total: number; onPage: (p: number) => void }) {
+  const pages = Math.max(1, Math.ceil(total / size));
+  if (pages <= 1) return null;
+  return (
+    <div className="pager">
+      <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)}>‹ Trước</button>
+      <span>Trang {page}/{pages}</span>
+      <button type="button" disabled={page >= pages} onClick={() => onPage(page + 1)}>Sau ›</button>
+    </div>
+  );
+}

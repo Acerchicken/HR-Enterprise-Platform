@@ -22,7 +22,18 @@ export interface AppConfig {
     database: string;
     ssl: DbSslMode;
     sslCaFile: string | null;
+    /**
+     * Chịu lỗi khi database chậm (SRS 6.14, NFR-3.5): chờ lấy kết nối tối đa `connectTimeoutMs`, mỗi câu lệnh tối đa
+     * `statementTimeoutMs` (0 = không giới hạn), rồi API trả 503 thay vì treo. `poolMax`: số kết nối tối đa mỗi instance.
+     */
+    poolMax: number;
+    connectTimeoutMs: number;
+    statementTimeoutMs: number;
   };
+  /** `json` (một dòng JSON mỗi log, có traceId; mặc định khi NODE_ENV=production, NFR-8.1) hoặc `text` (dễ đọc khi dev). */
+  logFormat: LogFormat;
+  /** Phiên bản đang chạy (commit hoặc tag), trả ở /health (NFR-8.5). Image staging được build với APP_VERSION = commit SHA. */
+  appVersion: string;
   auth: {
     mode: AuthMode;
     issuer: string;
@@ -31,8 +42,6 @@ export interface AppConfig {
     allowedClients: string[];
     /** Claim chứa client id: `azp` (Keycloak) hoặc `client_id` (access token Cognito). */
     clientClaim: string;
-    /** Đường dẫn claim chứa danh sách role: `realm_access.roles` (Keycloak) hoặc `cognito:groups` (Cognito). */
-    rolesClaim: string;
     /** Endpoint userinfo của IdP; dùng khi access token không có email (Cognito). */
     userinfoUrl: string | null;
   };
@@ -46,13 +55,18 @@ export interface AppConfig {
     driver: QueueDriver;
     rabbitmqUrl: string | null;
     sqsQueueUrl: string | null;
+    /** Queue SQS của assistant service (UC6); không đặt thì event tài liệu không được gửi đi. */
+    sqsAssistantQueueUrl: string | null;
+    /** Queue SQS của event tài khoản, vai trò (UC8): API gửi vào, worker backend (identity-sync) nghe. */
+    sqsIdentityQueueUrl: string | null;
     awsRegion: string | null;
   };
-  smtp: {
-    host: string;
-    port: number;
-    from: string;
-  };
+  /**
+   * Số lớp proxy đứng trước API (Express `trust proxy`), để `req.ip` (audit, rate limit) là IP thật của người dùng thay vì
+   * IP của load balancer. Local: 0 (tắt). Staging App Runner: 1 (staging-readiness F5). Không đặt cao hơn số proxy thật,
+   * nếu không người dùng có thể giả IP bằng header X-Forwarded-For.
+   */
+  trustProxy: number;
   /**
    * Object storage cho kho tài liệu (S3 trên AWS, MinIO khi chạy local). `bucket` rỗng thì API tài liệu trả 503.
    * `publicEndpoint`: địa chỉ trình duyệt dùng để upload bằng presigned URL (khác `endpoint` khi API chạy trong Docker).
@@ -69,6 +83,16 @@ export interface AppConfig {
    * Bucket riêng cho file hồ sơ (UC1 FR-1.10): chặn public, SSE-KMS, lifecycle xóa object gắn tag `deleted=true` sau 30
    * ngày. Dùng chung endpoint và khóa của `storage`. Để trống thì thao tác file hồ sơ trả 503 (AC-1.10.9).
    */
+  /**
+   * Assistant service của trợ lý chính sách (UC6, ADR-16). `url` rỗng thì `POST /assistant/questions` trả `fallback = true`
+   * ("Trợ lý tạm thời không dùng được"), không lỗi 5xx (E5).
+   */
+  assistant: {
+    url: string | null;
+    internalToken: string | null;
+    /** Chờ assistant service tối đa (lớn hơn timeout LLM 10 s của service). */
+    timeoutMs: number;
+  };
   profileStorage: { bucket: string | null };
   /**
    * Giới hạn tần suất (NFR-5.21, UC1 FR-1.14). `overrides`: đổi ngưỡng của từng nhóm, ví dụ
@@ -78,7 +102,22 @@ export interface AppConfig {
     enabled: boolean;
     overrides: Record<string, Partial<Record<'minute' | 'hour' | 'day', number>>>;
   };
+  /**
+   * Tạo, khóa tài khoản và đồng bộ nhóm trên IdP (UC8 FR-8.3, 8.4, 8.7; ADR-17 mục 4). Worker dùng.
+   * IDP_ADMIN_DRIVER=keycloak (local) | cognito (staging) | none (mặc định: chỉ ghi log, dùng cho AUTH_MODE=dev và test).
+   */
+  idpAdmin: {
+    driver: IdpAdminDriver;
+    /** Keycloak: gốc server (bỏ phần /realms/...), realm, client `hr-api-admin` (client credentials, role manage-users). */
+    keycloak: { baseUrl: string; realm: string; clientId: string; clientSecret: string | null };
+    cognito: { userPoolId: string | null; region: string };
+    /** Số lần thử khi IdP lỗi tạm thời và thời gian chờ ban đầu (nhân đôi mỗi lần). */
+    attempts: number;
+    retryDelayMs: number;
+  };
 }
+
+export type IdpAdminDriver = 'keycloak' | 'cognito' | 'none';
 
 export interface LoadOptions {
   /** false cho process worker: worker không xác thực token nên không bắt buộc OIDC_ISSUER. */
@@ -105,23 +144,23 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
       database: env.DB_NAME ?? 'hr',
       ssl: (env.DB_SSL ?? 'off') as DbSslMode,
       sslCaFile: env.DB_SSL_CA_FILE || null,
+      poolMax: intOf(env, 'DB_POOL_MAX', 10, 1, 100),
+      connectTimeoutMs: intOf(env, 'DB_CONNECT_TIMEOUT_MS', 5000, 0, 60000),
+      statementTimeoutMs: intOf(env, 'DB_STATEMENT_TIMEOUT_MS', 5000, 0, 600000),
     },
+    logFormat: logFormatOf(env.LOG_FORMAT, nodeEnv),
+    appVersion: env.APP_VERSION || 'dev',
     auth: {
       mode,
       issuer,
       jwksUri: env.OIDC_JWKS_URI ?? `${issuer}/protocol/openid-connect/certs`,
       allowedClients: (env.OIDC_ALLOWED_CLIENTS ?? 'hr-web').split(',').map((c) => c.trim()),
       clientClaim: env.OIDC_CLIENT_CLAIM ?? 'azp',
-      rolesClaim: env.OIDC_ROLES_CLAIM ?? 'realm_access.roles',
       userinfoUrl: env.OIDC_USERINFO_URL || null,
     },
     fieldEncryptionKey: env.FIELD_ENCRYPTION_KEY ?? DEV_FIELD_ENCRYPTION_KEY,
     queue,
-    smtp: {
-      host: env.SMTP_HOST ?? 'localhost',
-      port: Number(env.SMTP_PORT ?? 1025),
-      from: env.SMTP_FROM ?? 'no-reply@hr.local',
-    },
+    trustProxy: trustProxyOf(env.TRUST_PROXY),
     storage: {
       bucket: env.STORAGE_BUCKET || null,
       region: env.STORAGE_REGION || env.AWS_REGION || 'ap-southeast-1',
@@ -131,9 +170,29 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
       secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY || null,
     },
     profileStorage: { bucket: env.PROFILE_STORAGE_BUCKET || null },
+    assistant: {
+      url: env.ASSISTANT_URL ? env.ASSISTANT_URL.replace(/\/+$/, '') : null,
+      internalToken: env.ASSISTANT_INTERNAL_TOKEN || null,
+      timeoutMs: Number(env.ASSISTANT_TIMEOUT_MS ?? 15000),
+    },
     rateLimit: {
       enabled: env.RATE_LIMIT_ENABLED !== 'false',
       overrides: parseOverrides(env.RATE_LIMIT_OVERRIDES),
+    },
+    idpAdmin: {
+      driver: (env.IDP_ADMIN_DRIVER ?? 'none') as IdpAdminDriver,
+      keycloak: {
+        baseUrl: env.KEYCLOAK_ADMIN_URL ?? issuer.replace(/\/realms\/[^/]+\/?$/, ''),
+        realm: env.KEYCLOAK_REALM ?? (/\/realms\/([^/]+)/.exec(issuer)?.[1] ?? 'hr'),
+        clientId: env.KEYCLOAK_ADMIN_CLIENT_ID ?? 'hr-api-admin',
+        clientSecret: env.KEYCLOAK_ADMIN_CLIENT_SECRET || null,
+      },
+      cognito: {
+        userPoolId: env.COGNITO_USER_POOL_ID || null,
+        region: env.AWS_REGION || 'ap-southeast-1',
+      },
+      attempts: Number(env.IDP_SYNC_ATTEMPTS ?? 5),
+      retryDelayMs: Number(env.IDP_SYNC_RETRY_DELAY_MS ?? 1000),
     },
   };
   assertValid(cfg, env, opts.needsAuth ?? true);
@@ -152,7 +211,14 @@ function assertValid(cfg: AppConfig, env: NodeJS.ProcessEnv, needsAuth: boolean)
   }
   if (!['off', 'require', 'verify'].includes(cfg.db.ssl)) problems.push('DB_SSL phải là off, require hoặc verify');
   if (cfg.db.ssl === 'verify' && !cfg.db.sslCaFile) problems.push('DB_SSL=verify cần DB_SSL_CA_FILE');
+  const idp = cfg.idpAdmin;
+  if (!['keycloak', 'cognito', 'none'].includes(idp.driver)) problems.push('IDP_ADMIN_DRIVER chỉ nhận keycloak, cognito, none');
+  if (idp.driver === 'keycloak' && !idp.keycloak.clientSecret) problems.push('IDP_ADMIN_DRIVER=keycloak cần KEYCLOAK_ADMIN_CLIENT_SECRET');
+  if (idp.driver === 'cognito' && !idp.cognito.userPoolId) problems.push('IDP_ADMIN_DRIVER=cognito cần COGNITO_USER_POOL_ID');
 
+  if (cfg.assistant.url && (!cfg.assistant.internalToken || cfg.assistant.internalToken.length < 16)) {
+    problems.push('ASSISTANT_URL cần ASSISTANT_INTERNAL_TOKEN dài ít nhất 16 ký tự');
+  }
   if (cfg.nodeEnv === 'production' && env.ALLOW_DEV_SECRETS !== 'true') {
     if (!env.FIELD_ENCRYPTION_KEY) problems.push('thiếu FIELD_ENCRYPTION_KEY');
     else if (env.FIELD_ENCRYPTION_KEY === DEV_FIELD_ENCRYPTION_KEY) problems.push('FIELD_ENCRYPTION_KEY đang là khóa dev');
@@ -174,7 +240,7 @@ function loadQueue(env: NodeJS.ProcessEnv): AppConfig['queue'] {
   if (driver === 'sqs' && (!sqsQueueUrl || !awsRegion)) {
     throw new Error('QUEUE_DRIVER=sqs cần SQS_QUEUE_URL và AWS_REGION');
   }
-  return { driver, rabbitmqUrl, sqsQueueUrl, awsRegion };
+  return { driver, rabbitmqUrl, sqsQueueUrl, sqsAssistantQueueUrl: env.SQS_ASSISTANT_QUEUE_URL || null, sqsIdentityQueueUrl: env.SQS_IDENTITY_QUEUE_URL || null, awsRegion };
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
@@ -188,4 +254,25 @@ function parseOverrides(raw: string | undefined): AppConfig['rateLimit']['overri
     // Rơi xuống lỗi bên dưới.
   }
   throw new Error('RATE_LIMIT_OVERRIDES phải là JSON, ví dụ {"global":{"minute":1000}}');
+}
+
+function trustProxyOf(v: string | undefined): number {
+  const n = Number(v ?? 0);
+  if (!Number.isInteger(n) || n < 0 || n > 5) throw new Error(`TRUST_PROXY phải là số nguyên 0–5 (số lớp proxy), nhận: ${v}`);
+  return n;
+}
+
+export type LogFormat = 'json' | 'text';
+
+function logFormatOf(v: string | undefined, nodeEnv: string): LogFormat {
+  const f = (v || (nodeEnv === 'production' ? 'json' : 'text')).trim().toLowerCase();
+  if (f !== 'json' && f !== 'text') throw new Error(`LOG_FORMAT không hợp lệ: ${v} (json | text)`);
+  return f;
+}
+
+function intOf(env: NodeJS.ProcessEnv, name: string, def: number, min: number, max: number): number {
+  const raw = env[name];
+  const n = raw === undefined || raw === '' ? def : Number(raw);
+  if (!Number.isInteger(n) || n < min || n > max) throw new Error(`${name} phải là số nguyên ${min}–${max}, nhận: ${raw}`);
+  return n;
 }

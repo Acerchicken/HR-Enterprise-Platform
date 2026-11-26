@@ -3,7 +3,7 @@ import { createHash } from 'crypto';
 import { Readable } from 'stream';
 
 /**
- * Bucket giả trong bộ nhớ cho e2e file hồ sơ khi máy không có MinIO. Cùng các hàm `S3Bucket` mà service dùng; URL tải lên có
+ * Bucket giả trong bộ nhớ cho e2e (file hồ sơ UC1, kho tài liệu UC5) khi máy không có S3Mock. Cùng các hàm `S3Bucket` mà service dùng; URL tải lên có
  * dạng `memory://<key>`, test ghi nội dung bằng `upload(url, body)` thay cho trình duyệt PUT.
  */
 export class FakeBucket {
@@ -11,12 +11,14 @@ export class FakeBucket {
   readonly objects = new Map<string, Buffer>();
   readonly tags = new Map<string, Record<string, string>>();
 
+  constructor(private readonly notConfigured = 'Kho file hồ sơ chưa được cấu hình (PROFILE_STORAGE_BUCKET)') {}
+
   get configured() {
     return this.enabled;
   }
 
   private ready() {
-    if (!this.enabled) throw new ServiceUnavailableException('Kho file hồ sơ chưa được cấu hình (PROFILE_STORAGE_BUCKET)');
+    if (!this.enabled) throw new ServiceUnavailableException(this.notConfigured);
   }
 
   async uploadUrl(key: string, contentType: string, size: number) {

@@ -1,6 +1,6 @@
 import { DeleteMessageCommand, ReceiveMessageCommand, SendMessageCommand } from '@aws-sdk/client-sqs';
 import { loadConfig } from '../config/config';
-import { createEventBus } from './factory';
+import { createEventBus, createEventConsumer } from './factory';
 import { RabbitMqEventBus } from './rabbitmq';
 import { SqsEventBus, SqsEventConsumer } from './sqs';
 
@@ -92,10 +92,73 @@ describe('SqsEventBus', () => {
     expect(cmd.input.MessageDeduplicationId).toBeUndefined();
   });
 
+  it('traceparent (ADR-15 bước 4) đi trong message attribute; không có thì không gửi attribute', async () => {
+    const sqs = fakeSqs();
+    const tp = '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01';
+    const bus = new SqsEventBus(sqs as any, 'https://sqs/hr-worker');
+    await bus.publish({ ...event, traceparent: tp });
+    await bus.publish(event);
+    expect(sqs.sent[0].input.MessageAttributes.traceparent.StringValue).toBe(tp);
+    expect(sqs.sent[1].input.MessageAttributes.traceparent).toBeUndefined();
+  });
+
   it('queue FIFO: id outbox làm MessageDeduplicationId', async () => {
     const sqs = fakeSqs();
     await new SqsEventBus(sqs as any, 'https://sqs/hr-worker.fifo').publish(event);
     expect(sqs.sent[0].input).toMatchObject({ MessageDeduplicationId: 'evt-1', MessageGroupId: 'leave' });
+  });
+});
+
+describe('Event tài liệu (UC6, ADR-15)', () => {
+  const docEvent = { id: 'evt-9', type: 'DocumentPublished', payload: { documentId: 'd-1' }, createdAt: new Date('2026-11-23T00:00:00Z') };
+
+  it('RabbitMQ: routing key document.<event>, queue notification.leave (bind leave.*) không nhận', async () => {
+    await new RabbitMqEventBus('amqp://x').publish(docEvent);
+    expect(amqpMock.__channel.publish).toHaveBeenCalledWith('hr.events', 'document.DocumentPublished', expect.any(Buffer), expect.objectContaining({ messageId: 'evt-9' }));
+  });
+
+  it('SQS: vào queue của assistant service; event nghỉ phép vẫn vào queue notification', async () => {
+    const sqs = fakeSqs();
+    const bus = new SqsEventBus(sqs as any, 'https://sqs/hr-worker', 'https://sqs/hr-assistant');
+    await bus.publish(docEvent);
+    await bus.publish(event);
+    expect((sqs.sent[0] as SendMessageCommand).input.QueueUrl).toBe('https://sqs/hr-assistant');
+    expect((sqs.sent[1] as SendMessageCommand).input.QueueUrl).toBe('https://sqs/hr-worker');
+  });
+
+  it('SQS chưa có queue assistant: bỏ qua event tài liệu, không gửi nhầm cho notification', async () => {
+    const sqs = fakeSqs();
+    await new SqsEventBus(sqs as any, 'https://sqs/hr-worker').publish(docEvent);
+    expect(sqs.sent).toHaveLength(0);
+  });
+
+  it('SQS_ASSISTANT_QUEUE_URL đọc từ cấu hình', () => {
+    const cfg = loadConfig({ QUEUE_DRIVER: 'sqs', SQS_QUEUE_URL: 'https://sqs/a', SQS_ASSISTANT_QUEUE_URL: 'https://sqs/b', AWS_REGION: 'ap-southeast-1' });
+    expect(cfg.queue.sqsAssistantQueueUrl).toBe('https://sqs/b');
+  });
+});
+
+describe('Event tài khoản (UC8, ADR-15 bước 1)', () => {
+  const idEvent = { id: 'evt-7', type: 'RoleGranted', payload: { accountId: 'a-1' }, createdAt: new Date('2026-11-26T00:00:00Z') };
+
+  it('RabbitMQ: routing key identity.<event>, không vào queue email notification.leave', async () => {
+    await new RabbitMqEventBus('amqp://x').publish(idEvent);
+    expect(amqpMock.__channel.publish).toHaveBeenCalledWith('hr.events', 'identity.RoleGranted', expect.any(Buffer), expect.objectContaining({ messageId: 'evt-7' }));
+  });
+
+  it('SQS: vào queue identity; chưa cấu hình thì bỏ qua, không gửi nhầm cho notification service', async () => {
+    const sqs = fakeSqs();
+    await new SqsEventBus(sqs as any, 'https://sqs/hr-worker', null, 'https://sqs/hr-identity').publish(idEvent);
+    expect((sqs.sent[0] as SendMessageCommand).input.QueueUrl).toBe('https://sqs/hr-identity');
+    const none = fakeSqs();
+    await new SqsEventBus(none as any, 'https://sqs/hr-worker').publish(idEvent);
+    expect(none.sent).toHaveLength(0);
+  });
+
+  it('worker backend với SQS cần SQS_IDENTITY_QUEUE_URL', () => {
+    const base = { QUEUE_DRIVER: 'sqs', SQS_QUEUE_URL: 'https://sqs/a', AWS_REGION: 'ap-southeast-1' };
+    expect(() => createEventConsumer(loadConfig(base))).toThrow('SQS_IDENTITY_QUEUE_URL');
+    expect(loadConfig({ ...base, SQS_IDENTITY_QUEUE_URL: 'https://sqs/i' }).queue.sqsIdentityQueueUrl).toBe('https://sqs/i');
   });
 });
 
@@ -112,7 +175,7 @@ describe('SqsEventConsumer', () => {
     const handler = jest.fn(async () => undefined);
     const ok = await new SqsEventConsumer(sqs as any, 'https://sqs/q', 0).pollOnce(handler);
     expect(ok).toBe(1);
-    expect(handler).toHaveBeenCalledWith({ id: 'evt-1', type: 'LeaveRequested', payload: { requestId: 'evt-1' } });
+    expect(handler).toHaveBeenCalledWith({ id: 'evt-1', type: 'LeaveRequested', payload: { requestId: 'evt-1' }, traceparent: null });
     const del = sqs.sent.find((c) => c instanceof DeleteMessageCommand);
     expect(del?.input.ReceiptHandle).toBe('rh-evt-1');
   });

@@ -43,7 +43,7 @@ flowchart TB
 
   idp[Identity provider OIDC]
   mail[Dịch vụ gửi email]
-  llm[LLM API]
+  llm[LLM API: Claude, Gemini, DeepSeek]
   payroll[Hệ thống Payroll<br/>ngoài phạm vi v1]
 
   emp & mgr & hr & adm -- trình duyệt, HTTPS --> sys
@@ -58,7 +58,7 @@ flowchart TB
 | Identity provider (OIDC) | Redirect đăng nhập + kiểm chữ ký token bằng khóa công khai (JWKS) | Đồng bộ | Không đăng nhập mới được; token còn hạn vẫn dùng |
 | Dịch vụ gửi email | Queue → worker gọi SMTP | Bất đồng bộ | Gửi lại; lỗi đưa vào hàng đợi chết (DLQ); trạng thái đơn không đổi |
 | Object storage | Tải lên bằng link ký sẵn (presigned URL); tải xuống qua API để kiểm quyền mỗi lần (ADR-13) | Tải lên đồng bộ, xử lý sau bất đồng bộ | Metadata "pending" tới khi file có thật |
-| LLM API | REST có timeout | Đồng bộ | Hết thời gian thì chỉ tới tài liệu gốc |
+| LLM API do ADMIN chọn: Claude, Google Gemini, DeepSeek ([ADR-16](adr/ADR-16-policy-assistant.md)) | REST có timeout 10 s, gọi từ assistant service qua adapter | Đồng bộ | Hết thời gian, lỗi hoặc thiếu khóa thì trả danh sách tài liệu liên quan |
 | Payroll | File CSV hằng đêm | Batch | Chạy lại được, idempotent theo ngày |
 
 Chi tiết: [integration và xử lý lỗi tuần 6](../progress/tuan-06/TV4_Duy.md).
@@ -108,10 +108,10 @@ flowchart LR
 |---|---|---|
 | Web app | Giao diện cho 4 vai trò, build ra file tĩnh | CDN |
 | Ứng dụng API | Toàn bộ nghiệp vụ, REST `/api/v1`, ghi outbox và đẩy event | 2 instance, không giữ phiên trong bộ nhớ |
-| Worker | Nhận event, gửi email; sau này trích text tài liệu | Thêm instance khi queue dồn |
+| Worker | Nhận event, gửi email; job áp dụng điều chuyển tới ngày (5 phút một lần); sau này trích text tài liệu | Thêm instance khi queue dồn; job dùng `SKIP LOCKED` nên nhiều instance vẫn an toàn |
 | Database quan hệ | Dữ liệu giao dịch, audit, outbox | Tăng tier; replica đọc khi cần |
 | Message queue | Chuyển event từ outbox sang worker | Dịch vụ managed |
-| Object storage | File tài liệu chính sách | Dịch vụ managed |
+| Object storage | File tài liệu chính sách; file hồ sơ nhân viên ở bucket riêng (quyền đọc, thời hạn giữ khác) | Dịch vụ managed |
 | Identity provider | Đăng nhập OIDC, nhóm người dùng | Dịch vụ managed |
 | Secret manager | Mật khẩu database, khóa mã hóa trường nhạy cảm | Dịch vụ managed |
 | Logging & metrics | Log tập trung, dashboard, cảnh báo | Dịch vụ managed |
@@ -158,6 +158,10 @@ API không giữ phiên đăng nhập (stateless JWT), nên thêm instance khôn
 
 **Quan sát:** mỗi request có mã truy vết (traceId) xuyên suốt log; metric request/giây, p95, tỷ lệ lỗi 5xx, độ dài queue,
 event outbox chưa gửi; cảnh báo theo SLO 99,5% và theo chi phí.
+Truy vết phân tán (ADR-15 bước 4): OpenTelemetry trên API, worker, notification và assistant; `traceparent` đi qua outbox và
+queue, nên một trace trên Jaeger (local, `docker compose --profile observability`) nối request duyệt đơn với email được gửi.
+Log JSON có `otelTraceId` để đi từ log sang trace. Staging gửi trace sang X-Ray: API qua collector của App Runner
+(observability configuration), các task ECS qua container phụ ADOT collector (`infra/staging/tracing.tf`, chưa apply).
 
 **Phát hành:**
 
@@ -259,6 +263,7 @@ flowchart TB
   ar & ecs -.-> sm[Secrets Manager + KMS]
   ar & ecs -.-> cw[CloudWatch]
   ar -- file tài liệu --> s3doc[(S3 – tài liệu)]
+  ar -- file hồ sơ --> s3prof[(S3 – hồ sơ, lifecycle 30 ngày)]
 ```
 
 Dự toán theo bản đề xuất mới nhất của ADR-12: ~57 USD/tháng nếu chạy 24/7, dưới trần 100 USD; giảm thêm bằng cách tắt NAT và
@@ -269,7 +274,7 @@ worker ngoài giờ demo. Con số chốt khi ADR-12 được merge.
 | Bước | Công cụ | Trạng thái |
 |---|---|---|
 | Bảo vệ `dev`, `main` | GitHub ruleset (chỉ qua PR, chỉ nhóm trưởng merge), CODEOWNERS | ✅ |
-| CI mọi PR | GitHub Actions `ci.yml`: Node 20, `npm ci`, `npm run lint`, `npm test` (backend), `npm run build` (frontend) | ✅ |
+| CI mọi PR | GitHub Actions `ci.yml`: Node 20, `npm ci`, `npm run lint`, `npm test` (backend), e2e với Postgres thật và kiểm tra `docs/openapi.yaml` khớp code (từ 25/11), test assistant, `npm run build` (frontend), build và quét Trivy 3 image | ✅ |
 | Build + quét image | Docker Buildx, Trivy (chặn lỗ hổng CRITICAL) | 🟡 nhánh `ci/docker-images` |
 | Deploy staging | GitHub Actions + OIDC vào AWS, push ECR, chạy migration trên ECS, cập nhật App Runner/ECS, upload S3, kiểm `/health` | 🟡 nhánh `ci/deploy-staging` |
 | Phát hành | Tag `week-NN` + GitHub Release trên `main` (đã có `week-08`) | ✅ |
@@ -283,6 +288,9 @@ worker ngoài giờ demo. Con số chốt khi ADR-12 được merge.
 | Dữ liệu nhạy cảm | AES-256-GCM (`FieldCrypto`), audit `VIEW_SENSITIVE` | Khóa từ Secrets Manager/KMS |
 | TLS | – (local) | TLS tới database (`DB_SSL`, 🟡), HTTPS ở CloudFront/App Runner |
 | Image | User `node` không phải root (API) | Quét Trivy, web chạy non-root (🟡) |
+| Chống lạm dụng | Giới hạn tần suất theo người dùng (100 request/phút, tìm kiếm 20/phút, ghi hồ sơ 30/phút và 300/ngày, xem nhạy cảm 100/giờ, tải file); body tối đa 64 KiB | Cảnh báo dashboard từ log `rate_limit_abuse`, `sensitive_scrape_suspected` (TV3, AC-1.14.5) |
+| Header bảo mật | API: CSP, `nosniff`, chặn iframe, HSTS khi production; web (nginx): CSP, `nosniff`, chặn iframe | Kiểm CSP của web với domain API, Cognito trên staging |
+| File hồ sơ | Bucket riêng `PROFILE_STORAGE_BUCKET`, kiểm loại theo nội dung, tải xuống qua API, tên file gốc không vào log | Bucket staging: chặn public, SSE-KMS, lifecycle theo tag, CORS cho PUT (TV3, `infra/profile-files`) |
 | Log | Log console, traceId trong mọi response lỗi | CloudWatch, dashboard, cảnh báo |
 
 ## 11. Năng lực và chi phí
@@ -291,7 +299,7 @@ worker ngoài giờ demo. Con số chốt khi ADR-12 được merge.
 |---|---|---|
 | Lưu lượng | 50 request/giây thiết kế, 10 thực tế | App Runner 0,5 vCPU × 2 dư sức (kiểm bằng load test tuần 11) |
 | Database | ~25.000 đơn/năm, ~1,25 triệu dòng audit/năm | `db.t4g.micro`, 20 GB |
-| File | ~2 GB tài liệu | S3 tier chuẩn |
+| File | ~2 GB tài liệu; file hồ sơ tối đa 200 MiB mỗi người (thực tế vài MB) | S3 tier chuẩn |
 | Chi phí staging | ~57 USD/tháng (đề xuất) | Trần < 100 USD; AWS Budgets cảnh báo |
 
 ## 12. Chưa quyết định
@@ -302,4 +310,4 @@ worker ngoài giờ demo. Con số chốt khi ADR-12 được merge.
 | Dịch vụ gửi email trên cloud | Nhà cung cấp SMTP, xác thực domain gửi | Tuần 9–10 |
 | Web application firewall | Bật ở staging hay chỉ production | Tuần 10 |
 | Logging & metrics | Dashboard, ngưỡng cảnh báo cụ thể | Tuần 10–11 |
-| LLM API và nơi lưu vector | Nhà cung cấp LLM; pgvector trên PostgreSQL hay dịch vụ riêng | Tuần 12 |
+| ~~LLM API và nơi lưu vector~~ | Đã chốt 23/11 ở [ADR-16](adr/ADR-16-policy-assistant.md): pgvector trong PostgreSQL, LLM do ADMIN chọn qua adapter (demo DeepSeek), embedding EmbeddingGemma | Tuần 12 |

@@ -69,6 +69,11 @@ output "s3_documents_bucket" {
   value       = aws_s3_bucket.documents.bucket
 }
 
+output "s3_profile_files_bucket" {
+  description = "S3 Bucket hosting employee profile attachments (UC1 FR-1.10, F3)"
+  value       = aws_s3_bucket.profile_files.bucket
+}
+
 output "cloudfront_domain_name" {
   description = "CloudFront distribution domain name serving the Frontend Web SPA"
   value       = "https://${aws_cloudfront_distribution.web.domain_name}"
@@ -130,4 +135,60 @@ output "github_actions_role_arn" {
 output "nat_instance_id" {
   description = "ID of the NAT instance (stop outside demo hours to save cost)"
   value       = aws_instance.nat.id
+}
+
+# Monitoring & Email Outputs (Tuần 10)
+output "sns_system_alerts_topic_arn" {
+  description = "ARN of the SNS topic receiving system metric alarms"
+  value       = aws_sns_topic.system_alerts.arn
+}
+
+output "ses_sender_identity" {
+  description = "Verified SES sender email address for notifications"
+  value       = aws_ses_email_identity.sender.email
+}
+
+output "ecr_assistant_repository_url" {
+  description = "ECR repository của assistant service (UC6)"
+  value       = aws_ecr_repository.assistant.repository_url
+}
+
+output "assistant_service_name" {
+  description = "Tên ECS service assistant, dùng khi bật, tắt cho demo"
+  value       = aws_ecs_service.assistant.name
+}
+
+output "assistant_internal_url" {
+  description = "Địa chỉ API gọi assistant service trong VPC (Cloud Map)"
+  value       = "http://${aws_service_discovery_service.assistant.name}.${aws_service_discovery_private_dns_namespace.internal.name}:3100"
+}
+
+output "assistant_queue_url" {
+  description = "SQS nhận event document.* cho assistant service"
+  value       = aws_sqs_queue.assistant.url
+}
+
+output "assistant_secret_arn" {
+  description = "Secret chứa ASSISTANT_INTERNAL_TOKEN, ASSISTANT_CONFIG_KEY, mật khẩu assistant_svc"
+  value       = aws_secretsmanager_secret.assistant.arn
+}
+
+output "ecr_notification_repository_url" {
+  description = "ECR repository của notification service (ADR-15 bước 1)"
+  value       = aws_ecr_repository.notification.repository_url
+}
+
+output "notification_service_name" {
+  description = "Tên ECS service notification"
+  value       = aws_ecs_service.notification.name
+}
+
+output "identity_queue_url" {
+  description = "SQS nhận event tài khoản, vai trò cho worker (identity-sync)"
+  value       = aws_sqs_queue.identity.url
+}
+
+output "notification_secret_arn" {
+  description = "Secret chứa mật khẩu và URL kết nối của notification_svc"
+  value       = aws_secretsmanager_secret.notification.arn
 }

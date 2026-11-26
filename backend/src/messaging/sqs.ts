@@ -7,29 +7,52 @@ import {
   SQSClient,
 } from '@aws-sdk/client-sqs';
 import { BusEvent, EventBus, EventConsumer, EventHandler } from './event-bus';
+import { destinationOf, EventDestination } from './routing';
 
-/** Gửi event vào SQS. Queue FIFO (URL đuôi .fifo) thì dùng id outbox làm MessageDeduplicationId. */
+/**
+ * Gửi event vào SQS. Queue FIFO (URL đuôi .fifo) thì dùng id outbox làm MessageDeduplicationId.
+ * Mỗi đích một queue (routing.ts): notification `SQS_QUEUE_URL`, assistant `SQS_ASSISTANT_QUEUE_URL`, identity
+ * `SQS_IDENTITY_QUEUE_URL`. Đích chưa cấu hình queue thì bỏ qua event (không có ai nhận), không gửi nhầm sang queue khác.
+ */
+const GROUP: Record<EventDestination, string> = { notification: 'leave', assistant: 'document', identity: 'identity' };
+
 export class SqsEventBus implements EventBus {
-  private readonly fifo: boolean;
+  private readonly logger = new Logger('SqsEventBus');
+  private readonly warned = new Set<EventDestination>();
 
   constructor(
     private readonly client: Pick<SQSClient, 'send' | 'destroy'>,
     private readonly queueUrl: string,
-  ) {
-    this.fifo = queueUrl.endsWith('.fifo');
-  }
+    private readonly assistantQueueUrl: string | null = null,
+    private readonly identityQueueUrl: string | null = null,
+  ) {}
 
   async publish(event: BusEvent): Promise<void> {
+    const dest = destinationOf(event.type);
+    const url = dest === 'assistant' ? this.assistantQueueUrl : dest === 'identity' ? this.identityQueueUrl : this.queueUrl;
+    if (!url) {
+      if (!this.warned.has(dest)) {
+        this.warned.add(dest);
+        this.logger.warn(
+          dest === 'assistant'
+            ? 'Chưa đặt SQS_ASSISTANT_QUEUE_URL: bỏ qua event tài liệu, trợ lý (UC6) không được cập nhật'
+            : 'Chưa đặt SQS_IDENTITY_QUEUE_URL: bỏ qua event tài khoản, IdP không được đồng bộ (UC8)',
+        );
+      }
+      return;
+    }
+    const fifo = url.endsWith('.fifo');
     await this.client.send(
       new SendMessageCommand({
-        QueueUrl: this.queueUrl,
+        QueueUrl: url,
         MessageBody: JSON.stringify(event.payload),
         MessageAttributes: {
           messageId: { DataType: 'String', StringValue: event.id },
           type: { DataType: 'String', StringValue: event.type },
           createdAt: { DataType: 'String', StringValue: event.createdAt.toISOString() },
+          ...(event.traceparent ? { traceparent: { DataType: 'String', StringValue: event.traceparent } } : {}),
         },
-        ...(this.fifo ? { MessageGroupId: 'leave', MessageDeduplicationId: event.id } : {}),
+        ...(fifo ? { MessageGroupId: GROUP[dest], MessageDeduplicationId: event.id } : {}),
       }),
     );
   }
@@ -97,8 +120,9 @@ export class SqsEventConsumer implements EventConsumer {
   private async handleOne(msg: Message, handler: EventHandler): Promise<boolean> {
     const id = msg.MessageAttributes?.messageId?.StringValue ?? msg.MessageId ?? '';
     const type = msg.MessageAttributes?.type?.StringValue ?? '';
+    const traceparent = msg.MessageAttributes?.traceparent?.StringValue ?? null;
     try {
-      await handler({ id, type, payload: JSON.parse(msg.Body ?? 'null') });
+      await handler({ id, type, payload: JSON.parse(msg.Body ?? 'null'), traceparent });
     } catch (e) {
       // Không xóa: SQS trả lại message sau visibility timeout, quá maxReceiveCount thì vào DLQ.
       this.logger.error(`Event ${id} lỗi, để SQS thử lại: ${e instanceof Error ? e.message : e}`);

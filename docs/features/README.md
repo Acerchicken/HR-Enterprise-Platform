@@ -1,4 +1,4 @@
-# Tài liệu theo tính năng (UC1 → UC7)
+# Tài liệu theo tính năng (UC1 → UC8)
 
 > Bộ tài liệu: [`docs/README.md`](../README.md). Yêu cầu gốc: [SRS](../requirements/SRS.md) mục 4 (FR) và mục 6 (NFR).
 
@@ -23,19 +23,22 @@ nghĩa hẹp của UML. Bên trong, mỗi luồng ở mục 4 của `spec.md` l�
 xem hồ sơ, gửi yêu cầu sửa, tải file, HR duyệt yêu cầu, HR tạo và sửa hồ sơ). Vì vậy các UC không đều nhau về số FR; chia theo
 miền nghiệp vụ, không cố cho đều. Quyết định 14/11/2026: giữ 7 nhóm và giữ mã; mở rộng UC2 (chức danh, điều chuyển, quá trình
 công tác, trưởng/phó phòng); UC6 là "Tra cứu chung và trợ lý", danh bạ vẫn thuộc UC2, kho tài liệu vẫn thuộc UC5. Sửa cùng ngày:
-ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp; tìm tài liệu và trợ lý AI ở trang riêng "Tra cứu tài liệu".
+ô tìm kiếm trên nav bar chỉ tìm đồng nghiệp; tìm tài liệu và trợ lý AI ở trang riêng "Tra cứu tài liệu". Thêm 17/11/2026:
+UC8 "Đăng nhập và tài khoản" ([ADR-17](../architecture/adr/ADR-17-authentication.md)); yêu cầu bảo mật dùng chung vẫn là NFR-5.
+Thu gọn 22/11/2026: UC6 đổi tên "Trợ lý chính sách", chỉ còn hỏi đáp AI và cấu hình nhà cung cấp AI.
 
 ## Danh sách
 
 | Tính năng | Yêu cầu | Đặc tả | Deploy | Kiểm thử | FR | Trạng thái (13/11) |
 |---|---|---|---|---|---|---|
-| UC1 – Hồ sơ nhân viên | [requirements](UC1-employee-profile/requirements.md) | [spec](UC1-employee-profile/spec.md) | [deploy](UC1-employee-profile/deploy.md) | [test](UC1-employee-profile/test.md) | FR-1.1 → 1.6 | Đã có API và giao diện |
+| UC1 – Hồ sơ nhân viên | [requirements](UC1-employee-profile/requirements.md) | [spec](UC1-employee-profile/spec.md) | [deploy](UC1-employee-profile/deploy.md) | [test](UC1-employee-profile/test.md) | FR-1.1 → 1.6 | Đã có FR-1.1 → FR-1.14 (#80, #84 → #90); còn bucket staging, cảnh báo 429 (TV3) |
 | UC2 – Thông tin tổ chức | [requirements](UC2-organization/requirements.md) | [spec](UC2-organization/spec.md) | [deploy](UC2-organization/deploy.md) | [test](UC2-organization/test.md) | FR-2.1 → 2.9 | Đã có; quản lý phòng ban chưa có giao diện |
 | UC3 – Tạo đơn nghỉ | [requirements](UC3-create-leave-request/requirements.md) | [spec](UC3-create-leave-request/spec.md) | [deploy](UC3-create-leave-request/deploy.md) | [test](UC3-create-leave-request/test.md) | FR-3.1 → 3.7 | Đã có; tạo đơn hộ chưa có |
 | UC4 – Duyệt đơn nghỉ | [requirements](UC4-approve-leave-request/requirements.md) | [spec](UC4-approve-leave-request/spec.md) | [deploy](UC4-approve-leave-request/deploy.md) | [test](UC4-approve-leave-request/test.md) | FR-4.1 → 4.8 | Đã có; người duyệt thay, email chung, ẩn lý do ốm chưa có |
 | UC5 – Kho tài liệu | [requirements](UC5-document-repository/requirements.md) | [spec](UC5-document-repository/spec.md) | [deploy](UC5-document-repository/deploy.md) | [test](UC5-document-repository/test.md) | FR-5.1 → 5.3 | Đã có API; chưa có giao diện; staging chưa có bucket |
-| UC6 – Tra cứu chung và trợ lý | [requirements](UC6-self-service-search/requirements.md) | [spec](UC6-self-service-search/spec.md) | [deploy](UC6-self-service-search/deploy.md) | [test](UC6-self-service-search/test.md) | FR-6.1 → 6.3 | Tìm đồng nghiệp đã có; tìm tài liệu, trợ lý chưa có |
-| UC7 – Lịch sử thao tác | [requirements](UC7-audit-log/requirements.md) | [spec](UC7-audit-log/spec.md) | [deploy](UC7-audit-log/deploy.md) | [test](UC7-audit-log/test.md) | FR-7.1 → 7.3 | Ghi audit, API có; màn hình tra cứu chưa có |
+| UC6 – Trợ lý chính sách | [requirements](UC6-policy-assistant/requirements.md) | [spec](UC6-policy-assistant/spec.md) | [deploy](UC6-policy-assistant/deploy.md) | [test](UC6-policy-assistant/test.md) | FR-6.3, 6.4 | Chưa có (tuần 12, ADR-16); FR-6.1 chuyển về UC2, FR-6.2 bỏ (22/11) |
+| UC7 – Lịch sử thao tác | [requirements](UC7-audit-log/requirements.md) | [spec](UC7-audit-log/spec.md) | [deploy](UC7-audit-log/deploy.md) | [test](UC7-audit-log/test.md) | FR-7.1 → 7.3 | Đã code (`feat/audit-ui`, 23/11); còn audit đăng nhập (AC-7.4.1) |
+| UC8 – Đăng nhập và tài khoản (thêm 17/11) | [requirements](UC8-authentication/requirements.md) | [spec](UC8-authentication/spec.md) | [deploy](UC8-authentication/deploy.md) | [test](UC8-authentication/test.md) | FR-8.1 → 8.7 | Đăng nhập local đã có; thiết kế đủ (sơ đồ luồng, bản vẽ, API) 18/11; code tuần 11 theo 3 nhánh `feat/uc8-*` |
 
 Lịch làm phần còn lại: [kế hoạch hoàn thành từng chức năng](../progress/ke-hoach-tong.md#7-kế-hoạch-hoàn-thành-từng-chức-năng-tuần-10--13).
 
@@ -72,7 +75,8 @@ Biến môi trường đầy đủ: [`configuration.md`](../development/configur
 | Mức | Chạy ở đâu | Lệnh |
 |---|---|---|
 | Unit test | CI trên mọi PR vào `dev`, `main` | `cd backend && npm test` |
-| e2e (API với DB thật) | Local, **chưa chạy trong CI** | `cd backend && npm run test:e2e` sau khi đã migrate và seed |
+| e2e (API với DB thật) | Local; CI job `Backend (E2E & OpenAPI)` trên mọi PR vào `dev`, `main` (từ 25/11, Postgres pgvector, `AUTH_MODE=dev`, kho tài liệu giả trong bộ nhớ) | `cd backend && npm run test:e2e` sau khi đã migrate và seed |
+| Đặc tả OpenAPI khớp code | Cùng job CI trên: chạy `npm run openapi` rồi `git diff --exit-code docs/openapi.yaml` | `cd backend && npm run openapi`, commit `docs/openapi.yaml` cùng PR đổi API |
 | Ca kiểm thử tay | Local, staging | Theo `test.md` của từng tính năng; kết quả ghi vào `test-report-tuan-NN.md` |
 
 Tài khoản mẫu (Keycloak, realm `hr`): `employee@hr.local`, `manager@hr.local`, `hr@hr.local`, `admin@hr.local`. Chế độ không
@@ -88,3 +92,29 @@ cần Keycloak: `AUTH_MODE=dev` và token `Bearer dev:<email>` (bị chặn khi 
     và `code` theo [`error-codes.md`](../development/error-codes.md).
 - **Đường dẫn API** lược tiền tố `/api/v1`.
 - **Trạng thái** phản ánh nhánh `dev` ngày 13/11/2026. Ai merge code làm đổi hành vi thì cập nhật trong cùng PR.
+- **Giao diện và sơ đồ luồng trong spec:** mỗi luồng ở mục 4 (và nhóm luồng thay thế ở cuối mục 5) có khối "Giao diện và sơ
+  đồ luồng": ảnh màn hình từ `mockups/`, ảnh sơ đồ từ `flows/`, link chạy từng bước `flows/flows.html#fN`. Mục 9 giữ bảng mục
+  lục. Đổi luồng thì sửa `FLOWS` trong `flows.html`, chạy lại `render.js` hoặc `render.ps1`.
+
+## Rà ngoại lệ
+
+Mục 6 của mỗi spec rà theo các nhóm dưới đây. Mỗi ngoại lệ có mã HTTP, câu báo lỗi cố định và ít nhất một test. Ngoại lệ có
+ba tác dụng: đủ ca để kiểm thử, chặn đường tấn công, và là hợp đồng với frontend (giao diện biết hiện gì, người dùng biết làm gì
+tiếp). Ghi ca có thật, không thêm cho đủ số: ca nào cũng phải có code và test đi kèm.
+
+| Nhóm | Câu hỏi | Ví dụ |
+|---|---|---|
+| Dữ liệu vào | Rỗng, quá dài, sai định dạng, ngày vô lý, trường lạ? | Ngày sinh tương lai, `from` sau `to` |
+| Phân quyền | Sai vai trò, sai quan hệ, tự làm cho chính mình? | HR duyệt yêu cầu của mình, ADMIN tự cấp vai trò |
+| Tranh chấp | Hai người, hai tab cùng sửa? | `version` cũ → 409, khóa dòng số dư |
+| Gửi trùng | Bấm hai lần, retry, job chạy hai lần, event giao hai lần? | `Idempotency-Key`, `processed_event` |
+| Vòng đời dữ liệu | Đối tượng đã nghỉ việc, ngừng hoạt động, ẩn, hết hạn? | Điều chuyển tới đơn vị đã ngừng |
+| Toàn vẹn | Tạo vòng, mất gốc, vi phạm luật cây? | Quản lý là cấp dưới của chính mình |
+| Hệ thống ngoài | IdP, S3, queue, email, LLM chậm hoặc lỗi? | Fallback, thử lại, DLQ; không mất dữ liệu |
+| Bảo mật | Lộ dữ liệu qua lỗi, tên file, HTML, LIKE, redirect, prompt? | 404 thay 403, thoát ký tự LIKE |
+| Hiệu năng và giới hạn | Truy vấn quá rộng, trang quá sâu, gọi quá nhiều? | 429 `Retry-After`, giới hạn khoảng ngày |
+| Phiên (UC8) | Nhiều tab, token thu hồi, đồng hồ lệch? | Đăng xuất mọi tab |
+
+Ngoại lệ chung cho mọi API (401, 403 tài khoản đã nghỉ việc, 400 trường lạ hoặc UUID sai, 413, 500 kèm `traceId`) ghi một lần ở
+[error-codes.md](../development/error-codes.md#lỗi-chung), không lặp ở từng spec. Ngoại lệ thêm khi rà ghi ở mục 6.1 với cột
+"Code" (Có, Cần kiểm, Chưa đạt, Đề xuất); test.md có ca cho từng mã.

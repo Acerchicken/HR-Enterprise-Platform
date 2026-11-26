@@ -1,14 +1,25 @@
 /**
- * Notification worker:  npm run start:worker (dev) · node dist/worker/main.js (Docker)
+ * Worker (đồng bộ tài khoản sang IdP, job áp dụng điều chuyển, job nghỉ phép; email ở services/notification):  npm run start:worker (dev) · node dist/worker/main.js (Docker)
  */
+// Bật OpenTelemetry trước khi nạp các module được đo (ADR-15 bước 4).
+import '../tracing/register';
 import { NestFactory } from '@nestjs/core';
-import { NotificationWorker } from './notification-worker';
+import { JsonLogger, setMetricSink } from '../common/json-logger';
+import { loadConfig } from '../config/config';
+import { IdentityWorker } from './identity-worker';
+import { LeaveJob } from './leave-job';
+import { TransferJob } from './transfer-job';
 import { WorkerModule } from './worker.module';
 
 async function bootstrap() {
-  const app = await NestFactory.createApplicationContext(WorkerModule);
+  const cfg = loadConfig(process.env, { needsAuth: false });
+  const json = cfg.logFormat === 'json' ? new JsonLogger('worker', cfg.appVersion) : null;
+  if (json) setMetricSink(json);
+  const app = await NestFactory.createApplicationContext(WorkerModule, json ? { logger: json } : {});
   app.enableShutdownHooks();
-  await app.get(NotificationWorker).start();
+  app.get(TransferJob).start();
+  app.get(LeaveJob).start();
+  await app.get(IdentityWorker).start();
 }
 bootstrap().catch((e) => {
   console.error(e);
