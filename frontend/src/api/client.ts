@@ -91,6 +91,16 @@ export interface EmployeeProfile extends DirectoryEntry {
 }
 
 /** `GET /me`: chỉ tài khoản, vai trò, mã và tên hồ sơ (UC1 AC-1.8.7). Dữ liệu hồ sơ lấy qua `summary`. */
+/** `GET /me/todo-counts` (frontend.md 2.2, 2.4): null là người dùng không có tab đó. */
+export interface TodoCounts {
+  leave: number | null;
+  leaveComplete: number | null;
+  profile: number | null;
+  myRejectedChanges: number;
+  myPendingChanges: number;
+  total: number;
+}
+
 export interface Me {
   email: string;
   roles: Role[];

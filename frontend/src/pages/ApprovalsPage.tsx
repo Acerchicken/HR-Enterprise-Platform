@@ -10,6 +10,7 @@ import { getToken } from '../auth/auth';
 import { FileList } from '../components/files';
 import { formatValue, visible } from '../profile/fields';
 import { LeaveDetail, period, StatusBadge } from './leave/leave-ui';
+import { tabCounts } from '../components/todo';
 
 const SECTION_TITLE: Record<string, string> = {
   personal: 'Thông tin cá nhân',
@@ -30,7 +31,7 @@ type Tab = 'leave' | 'leave-complete' | 'profile';
  * "Hoàn tất đơn nghỉ", "Sửa hồ sơ" cho HR. Mở một việc là `/approvals/{type}/{id}`.
  */
 export function ApprovalsPage() {
-  const { me } = useShell();
+  const { me, todo, todoReady } = useShell();
   const { id, type: pathType } = useParams();
   const [params] = useSearchParams();
   const isHr = !!me?.roles.includes('HR');
@@ -41,7 +42,12 @@ export function ApprovalsPage() {
     ...(isHr ? [{ key: 'leave-complete' as Tab, label: 'Hoàn tất đơn nghỉ' }, { key: 'profile' as Tab, label: 'Sửa hồ sơ' }] : []),
   ];
   if (!tabs.length) return <EmptyState>Không tìm thấy hoặc bạn không có quyền xem.</EmptyState>;
-  const wanted = (pathType ?? params.get('type') ?? tabs[0]!.key) as Tab;
+  // Mở `/approvals` không kèm `type` thì vào tab nhiều việc chờ nhất (frontend.md 2.4, AC-0.6.2).
+  // Chờ có số rồi mới chọn tab, để chỉ gọi API danh sách của đúng một tab.
+  if (!pathType && !params.get('type') && !todoReady) return <Skeleton lines={4} />;
+  const counts = tabCounts(todo);
+  const busiest = tabs.reduce((best, t) => ((counts[t.key] ?? 0) > (counts[best.key] ?? 0) ? t : best), tabs[0]!).key;
+  const wanted = (pathType ?? params.get('type') ?? busiest) as Tab;
   const type = tabs.some((t) => t.key === wanted) ? wanted : tabs[0]!.key;
 
   return (
@@ -50,7 +56,10 @@ export function ApprovalsPage() {
       {tabs.length > 1 && (
         <nav className="tabs" aria-label="Loại việc">
           {tabs.map((t) => (
-            <Link key={t.key} to={`/approvals?type=${t.key}`} className={t.key === type ? 'on' : ''} aria-current={t.key === type ? 'page' : undefined}>{t.label}</Link>
+            <Link key={t.key} to={`/approvals?type=${t.key}`} className={t.key === type ? 'on' : ''} aria-current={t.key === type ? 'page' : undefined}>
+              {t.label}
+              {counts[t.key] !== undefined && <span className={`count ${counts[t.key] ? '' : 'zero'}`} aria-label={`${counts[t.key]} việc chờ`}>{counts[t.key]}</span>}
+            </Link>
           ))}
           {isHr && <Link to="/approvals/delegations">Phân công duyệt thay</Link>}
         </nav>

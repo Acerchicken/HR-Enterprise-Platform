@@ -6,10 +6,11 @@ import { LeaveCoreModule } from './leave-core.module';
 import { LeaveController } from './leave.controller';
 import { NotificationRecipients } from './outbox/notification-recipients';
 import { OutboxPublisher } from './outbox/outbox-publisher';
+import { TodoCountsController, TodoCountsService } from './todo-counts';
 
 @Module({
   imports: [LeaveCoreModule, EmployeeModule, AuditModule],
-  controllers: [LeaveController],
-  providers: [LeaveAdminService, OutboxPublisher, NotificationRecipients],
+  controllers: [LeaveController, TodoCountsController],
+  providers: [LeaveAdminService, OutboxPublisher, NotificationRecipients, TodoCountsService],
 })
 export class LeaveModule {}
