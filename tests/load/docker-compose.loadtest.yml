@@ -1,0 +1,4 @@
+services:
+  api:
+    environment:
+      RATE_LIMIT_OVERRIDES: '{"global":{"minute":100000},"search":{"minute":100000},"profile-write":{"minute":100000},"sensitive-view":{"hour":100000}}'
