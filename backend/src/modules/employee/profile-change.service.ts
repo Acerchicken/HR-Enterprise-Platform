@@ -128,6 +128,16 @@ export class ProfileChangeService {
     return new Map(rows.map((r) => [r.section, Number(r.n)]));
   }
 
+  /** Số yêu cầu của chính mình bị HR từ chối mà chưa đóng thông báo (dải "Việc cần làm", frontend.md 2.2, AC-0.2.2). */
+  rejectedUnacknowledged(employeeId: string): Promise<number> {
+    return this.requests.count({ where: { employeeId, status: 'REJECTED', acknowledgedAt: IsNull() } });
+  }
+
+  /** Số yêu cầu của chính mình đang chờ HR ("2 yêu cầu cập nhật hồ sơ chờ HR" ở dải "Việc cần làm"). */
+  ownPending(employeeId: string): Promise<number> {
+    return this.requests.count({ where: { employeeId, status: 'PENDING' } });
+  }
+
   /** Yêu cầu đang chờ và yêu cầu bị từ chối chưa đóng của một mục (AC-1.9.2). Người khác (kể cả quản lý) không thấy. */
   async openRequests(employeeId: string, section: string): Promise<RequestView[]> {
     const list = await this.requests.find({

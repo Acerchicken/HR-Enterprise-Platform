@@ -1,10 +1,11 @@
 import { Bell, LogOut, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/auth';
 import { useOpenProfile } from '../profile/navigation';
 import { SearchBox } from './SearchBox';
 import { useShell } from './shell';
+import { countLabel, todoItems } from './todo';
 import { Avatar } from './ui';
 
 const ROLE_LABEL: Record<string, string> = { EMPLOYEE: 'Nhân viên', MANAGER: 'Quản lý', HR: 'HR', ADMIN: 'Quản trị' };
@@ -36,18 +37,44 @@ export function Layout() {
   );
 }
 
-/** Chuông: số việc chờ lấy từ `GET /me/todo-counts` khi có (nhánh `feat/app-shell-todo`); hiện chưa có số. */
+/**
+ * Chuông (frontend.md 2.1, AC-0.2.2): số việc đang chờ mình lấy từ `GET /me/todo-counts`, cùng số với dải "Việc cần làm" và
+ * tab trang "Việc cần duyệt". Bấm mở danh sách ngắn, mỗi dòng dẫn tới đúng tab hoặc hồ sơ của mình.
+ */
 function NotificationBell() {
+  const { todo } = useShell();
+  const navigate = useNavigate();
+  const openProfile = useOpenProfile();
   const [open, setOpen] = useState(false);
   const ref = useClickOutside<HTMLDivElement>(() => setOpen(false));
+  const items = todoItems(todo);
+  const total = todo?.total ?? 0;
   return (
     <div className="menu-wrap" ref={ref}>
-      <button type="button" className="icon-btn" aria-label="Thông báo" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <button
+        type="button"
+        className="icon-btn bell"
+        aria-label={total ? `Thông báo, ${total} việc đang chờ` : 'Thông báo'}
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
         <Bell size={20} />
+        {total > 0 && <span className="count-dot" aria-hidden="true">{countLabel(total)}</span>}
       </button>
       {open && (
         <div className="menu" role="menu">
-          <p className="muted small pad">Chưa có thông báo nào.</p>
+          {items.length === 0 && <p className="muted small pad">Không có việc nào đang chờ bạn.</p>}
+          {items.map((i) => (
+            <button
+              key={i.key}
+              type="button"
+              role="menuitem"
+              className={i.action ? '' : 'muted'}
+              onClick={() => (setOpen(false), i.to === 'profile' ? openProfile('me') : navigate(i.to))}
+            >
+              {i.text}
+            </button>
+          ))}
         </div>
       )}
     </div>

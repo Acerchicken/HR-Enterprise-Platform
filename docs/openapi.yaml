@@ -1492,6 +1492,21 @@ paths:
           description: ""
       tags: *a13
       security: *a14
+  /api/v1/me/todo-counts:
+    get:
+      operationId: TodoCountsController_counts
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TodoCountsResponse"
+      tags:
+        - me
+      security:
+        - bearer: []
   /api/v1/documents:
     get:
       operationId: DocumentController_list
@@ -2515,6 +2530,39 @@ components:
         - delegateId
         - startDate
         - endDate
+    TodoCountsResponse:
+      type: object
+      properties:
+        leave:
+          type: object
+          nullable: true
+          description: 'Tab "Đơn nghỉ": đơn chờ quyết định, đề nghị hủy; HR thêm đơn chờ
+            HR duyệt thêm. null: không có tab này'
+        leaveComplete:
+          type: object
+          nullable: true
+          description: 'Tab "Hoàn tất đơn nghỉ" (HR): đơn đã duyệt chờ hoàn tất. null:
+            không có tab này'
+        profile:
+          type: object
+          nullable: true
+          description: 'Tab "Sửa hồ sơ" (HR): yêu cầu cập nhật hồ sơ đang chờ, gồm file và
+            ảnh đại diện. null: không có tab này'
+        myRejectedChanges:
+          type: number
+          description: Yêu cầu cập nhật hồ sơ của chính mình bị từ chối, chưa đóng thông báo
+        myPendingChanges:
+          type: number
+          description: Yêu cầu cập nhật hồ sơ của chính mình đang chờ HR (chỉ để hiện,
+            không tính vào chuông)
+        total:
+          type: number
+          description: "Số trên chuông: tổng việc chờ chính mình xử lý (leave +
+            leaveComplete + profile + myRejectedChanges)"
+      required:
+        - myRejectedChanges
+        - myPendingChanges
+        - total
     DocumentScopeDto:
       type: object
       properties:

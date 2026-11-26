@@ -27,6 +27,6 @@ import { EmployeeService, FIELD_CRYPTO } from './employee.service';
     TransferService,
     { provide: FIELD_CRYPTO, inject: [APP_CONFIG], useFactory: (cfg: AppConfig) => new FieldCrypto(cfg.fieldEncryptionKey) },
   ],
-  exports: [EmployeeService, TransferService],
+  exports: [EmployeeService, TransferService, ProfileChangeService],
 })
 export class EmployeeModule {}

@@ -56,7 +56,10 @@ Cập nhật 26/11: #139 → #147 đã merge.
 |---|---|---|---|
 | `feat/notification-service`: tách gửi email thành `services/notification`, API gắn sẵn người nhận, thử lại có giãn cách (NFR-3.5), queue `identity.sync` cho UC8 | [#148](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/148) | Backend unit 194/194, e2e 154/154; service 25 test + 2 test với PostgreSQL thật (chạy cả bằng user `notification_svc`) | Chưa chạy `docker compose` (container không có Docker) |
 | `infra/notification-staging` (F6): task ECS notification, queue `identity-sync`, quyền SES chuyển sang task mới | [#149](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/149) | `terraform fmt`, `validate` qua | Merge cùng đợt với #148. TV3 `plan`/`apply`, rồi `ALTER ROLE notification_svc` |
-| `feat/tracing-otel`: OpenTelemetry cho API, worker, notification, assistant; `traceparent` qua outbox và queue; Jaeger local | PR `feat/tracing-otel` (xếp trên #148) | Backend unit 199/199, e2e 154/154; chạy API thật gửi trace ra OTLP: trace của request khớp `trace_context` trong outbox | X-Ray staging chưa nối (cần ADOT collector) |
+| `feat/tracing-otel`: OpenTelemetry cho API, worker, notification, assistant; `traceparent` qua outbox và queue; Jaeger local | [#152](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/152) | Backend unit 199/199, e2e 154/154; chạy API thật gửi trace ra OTLP: trace của request khớp `trace_context` trong outbox | X-Ray staging chưa nối (cần ADOT collector) |
+| `feat/approvals-todo-counts`: số việc chờ (API `GET /me/todo-counts`) trên chuông, dải "Việc cần làm" ở trang chủ và tab trang Việc cần duyệt (AC-0.2.2, AC-0.6.1 → 0.6.4) | PR `feat/approvals-todo-counts` | Backend unit 204/204, e2e 155/155; chạy UI thật với 3 vai trò, màn hình 375 px không cuộn ngang | Tab "File hồ sơ", "Ảnh đại diện" bỏ: duyệt qua yêu cầu sửa hồ sơ |
+
+Cập nhật 26/11 chiều: #148, #149, #150, #151, #152 đã merge vào `dev`.
 
 ## Bảng tổng hợp
 
