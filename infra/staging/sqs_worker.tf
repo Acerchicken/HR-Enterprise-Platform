@@ -245,14 +245,14 @@ resource "aws_ecs_task_definition" "worker" {
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
   task_role_arn            = aws_iam_role.worker_task_role.arn
 
-  container_definitions = jsonencode([
+  container_definitions = jsonencode(concat([
     {
       name      = "worker"
       image     = "${aws_ecr_repository.api.repository_url}:latest"
       essential = true
       command   = ["node", "dist/worker/main.js"]
 
-      environment = [
+      environment = concat([
         { name = "NODE_ENV", value = "production" },
         { name = "DB_HOST", value = aws_db_instance.postgres.address },
         { name = "DB_PORT", value = tostring(aws_db_instance.postgres.port) },
@@ -269,7 +269,7 @@ resource "aws_ecs_task_definition" "worker" {
         { name = "COGNITO_USER_POOL_ID", value = aws_cognito_user_pool.main.id },
         # Job nền (cộng phép đầu năm, áp dụng điều chuyển) chạy câu lệnh dài hơn request API: nới statement_timeout.
         { name = "DB_STATEMENT_TIMEOUT_MS", value = "60000" }
-      ]
+      ], local.otel_ecs_env["worker"])
 
       secrets = [
         {
@@ -291,7 +291,7 @@ resource "aws_ecs_task_definition" "worker" {
         }
       }
     }
-  ])
+  ], local.adot_sidecar["worker"]))
 
   tags = {
     Name = "${var.project_name}-${var.environment}-worker-task"

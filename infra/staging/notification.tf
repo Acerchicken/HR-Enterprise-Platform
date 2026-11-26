@@ -161,13 +161,13 @@ resource "aws_ecs_task_definition" "notification" {
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
   task_role_arn            = aws_iam_role.notification_task_role.arn
 
-  container_definitions = jsonencode([
+  container_definitions = jsonencode(concat([
     {
       name      = "notification"
       image     = "${aws_ecr_repository.notification.repository_url}:latest"
       essential = true
 
-      environment = [
+      environment = concat([
         { name = "NODE_ENV", value = "production" },
         { name = "PORT", value = "3200" },
         { name = "DB_SSL", value = "require" },
@@ -178,7 +178,7 @@ resource "aws_ecs_task_definition" "notification" {
         { name = "SMTP_FROM", value = var.sender_email },
         { name = "MAIL_TIMEOUT_MS", value = "10000" },
         { name = "MAIL_ATTEMPTS", value = "3" }
-      ]
+      ], local.otel_ecs_env["notification"])
 
       secrets = [
         { name = "NOTIFICATION_DB_URL", valueFrom = "${aws_secretsmanager_secret.notification.arn}:NOTIFICATION_DB_URL::" }
@@ -193,7 +193,7 @@ resource "aws_ecs_task_definition" "notification" {
         }
       }
     }
-  ])
+  ], local.adot_sidecar["notification"]))
 
   tags = {
     Name = "${var.project_name}-${var.environment}-notification-task"

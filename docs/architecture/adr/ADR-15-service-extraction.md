@@ -28,8 +28,8 @@
   - Thử lại khi gửi lỗi (NFR-3.5): chờ ≤ 10 s mỗi lần, tối đa 3 lần có giãn cách, rồi DLQ.
 - 26/11/2026: làm bước 4 (`feat/tracing-otel`): OpenTelemetry SDK 0.223 (chạy được trên Node 20) cho API, worker, notification,
   assistant; instrumentation HTTP, Express, NestJS, pg, fetch (undici); `traceparent` lưu trong `leave.outbox.trace_context` rồi đi
-  theo message. Local: Jaeger (`docker compose --profile observability`). **Staging X-Ray chưa nối:** cần ADOT collector (sidecar
-  ECS, App Runner observability configuration) nhận OTLP rồi gửi X-Ray; code chỉ cần đặt `OTEL_EXPORTER_OTLP_ENDPOINT`.
+  theo message. Local: Jaeger (`docker compose --profile observability`). Staging X-Ray (`infra/xray-tracing`, cùng ngày): App Runner
+  observability configuration (API gửi OTLP gRPC) và container phụ ADOT collector trong task ECS; chưa apply.
 
 ## Nội dung quyết định
 
