@@ -3,7 +3,7 @@
 | Mục | Nội dung |
 |---|---|
 | Dự án | HRHelper – HR Enterprise Platform – môn Cloud Application Development |
-| Phiên bản tài liệu | 2.0 |
+| Phiên bản tài liệu | 2.1 |
 | Ngày | 26/11/2026 (tuần 12) |
 | Người soạn | TV1 (Dương), tách từ BRD 1.0 |
 | Người review | TV2 (Thanh) nghiệp vụ, TV4 (Duy) khả năng kiểm thử |
@@ -15,6 +15,7 @@
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
+| 2.1 | 26/11/2026 | Rà lại trạng thái FR sau #150/#151: cập nhật phần Cognito và file hồ sơ đang chờ apply; thống nhất FR-8.7 và tổng hợp thành 49 đã có, 8 một phần, 0 kế hoạch; sửa MT-2 theo 32 ca kiểm thử. |
 | 2.0 | 26/11/2026 | Đối chiếu trạng thái FR với code đã merge vào `dev`: UC2 #107, UC3/UC4 #120, UC5 #126/#140, UC6 #130/#131/#133; cập nhật tổng số FR và phạm vi MT-1. |
 | 1.9 | 26/11/2026 | Thêm FR-5.4 (nhân viên tìm tài liệu theo từ khóa) sau khi đối chiếu với use case "Employee self-service search" của đề bài |
 | 1.8 | 23/11/2026 | UC6 thu gọn còn trợ lý chính sách (Duong, 22/11): bỏ FR-6.1, FR-6.2, FR-6.3 nâng lên S (Duong chốt 23/11) theo [ADR-16](../architecture/adr/ADR-16-policy-assistant.md); thêm FR-6.4 (ADMIN chọn nhà cung cấp AI: Claude, Gemini, DeepSeek; dán API key trong ứng dụng); NFR-1.3 tách tìm đồng nghiệp và trợ lý; NFR-5.21 thêm nhóm `assistant`; LLM do ADMIN chọn qua adapter |
@@ -173,7 +174,7 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 | FR-1.7 | Nghỉ việc: không cho nghỉ khi còn cấp dưới; người đã nghỉ không truy cập được | M | 400 khi còn cấp dưới; token còn hạn của người đã nghỉ bị 403 | Đã có (#84) |
 | FR-1.8 | Trang hồ sơ chia nhóm (cá nhân, công việc, tài chính, phúc lợi, khác), màu chủ đạo cyan, mục chưa có tiêu đề đỏ; trang mặc định chỉ tải dữ liệu đang hiện, mỗi mục chỉ tải khi bấm vào | S | Đúng bố cục spec 9.1; mỗi người xem chỉ thấy mục được phép | Đã có (#80) |
 | FR-1.9 | Nhân viên đề xuất thêm, sửa, xóa liên hệ khẩn cấp, thân nhân, chuyên môn, tài khoản ngân hàng, nơi khám bệnh, ảnh, CV; HR so cũ và mới rồi duyệt hoặc từ chối, duyệt mới ghi vào hồ sơ | S | Yêu cầu `PENDING` không đổi hồ sơ; duyệt ghi trong một giao dịch, có audit; từ chối bắt buộc lý do; tối đa 20 yêu cầu chờ mỗi người | Đã có (#86) |
-| FR-1.10 | Tải file lên hồ sơ (CV, bằng cấp, giấy tờ, ảnh đại diện) | S | Chỉ PDF, DOCX, JPG, PNG ≤ 10 MiB, kiểm theo nội dung; tối đa 50 file, 200 MiB mỗi người; tải xuống qua API | Một phần: API đã có (#87); bucket staging còn chờ hạ tầng TV3 (#151 đang mở) |
+| FR-1.10 | Tải file lên hồ sơ (CV, bằng cấp, giấy tờ, ảnh đại diện) | S | Chỉ PDF, DOCX, JPG, PNG ≤ 10 MiB, kiểm theo nội dung; tối đa 50 file, 200 MiB mỗi người; tải xuống qua API | Một phần: API đã có (#87); bucket staging đã cấu hình (#151), chờ apply và smoke test |
 | FR-1.11 | Nhật ký thay đổi hồ sơ cho chủ hồ sơ và HR | S | Mỗi thao tác đúng một bản ghi, không có giá trị hay tên file gốc | Đã có (#86, #87) |
 | FR-1.12 | HR quản lý hợp đồng, lương theo thời gian, bảo hiểm, phụ cấp, khen thưởng kỷ luật | C | Hợp đồng không trùng khoảng ngày; nhân viên chỉ xem | Đã có (#89) |
 | FR-1.13 | Thông tin tự tính: quá trình công tác, các mốc thâm niên, ngày nghỉ dài | C | Quá trình công tác đọc từ bảng quá trình công tác (FR-2.8); thâm niên từ `hireDate`; ngày nghỉ dài từ đơn nghỉ | Đã có (#90; quá trình công tác đổi nguồn ở `feat/employee-transfer`) |
@@ -265,15 +266,15 @@ Mã `FR-x.y`: x là số use case, y là số thứ tự. Mức ưu tiên theo M
 
 | Mã | Yêu cầu | Ưu tiên | Tiêu chí chấp nhận | Trạng thái |
 |---|---|---|---|---|
-| FR-8.1 | Đăng nhập, đăng xuất qua identity provider; tự đăng xuất sau 30 phút không thao tác | M | Không có form mật khẩu trong web; đăng nhập 4 tài khoản demo ở local và staging | Một phần: local đã có, kể cả tự đăng xuất và màn hình lỗi `/callback`; staging lỗi `callback_urls` |
-| FR-8.2 | Quên mật khẩu tự phục vụ qua email đã xác minh | M | Thư đặt lại tới; email không tồn tại có cùng thông báo | Kế hoạch tuần 11 (`infra/idp-hardening`) |
-| FR-8.3 | Tạo tài khoản đăng nhập khi HR tạo hồ sơ, gửi email mời, bắt đổi mật khẩu tạm | M | Thư mời tới trong 1 phút; không tạo trùng khi event lặp | Một phần: local đã có (Keycloak, thư mời qua Mailpit); staging cần SNS → SQS, IAM, SES tuần 12 (`infra/idp-account-lifecycle`) |
-| FR-8.4 | Khóa tài khoản và thu hồi phiên khi nghỉ việc; mở lại khi khôi phục | M | Trong 1 phút không đăng nhập lại được; token còn hạn bị 403 | Một phần: API chặn 403 (FR-1.7); khóa, thu hồi phiên, mở lại trên IdP đã có ở local; staging tuần 12 |
-| FR-8.5 | MFA bằng ứng dụng TOTP | M | HR, ADMIN bị hỏi mã ở cả hai môi trường | Kế hoạch tuần 11 (`infra/idp-mfa`) |
+| FR-8.1 | Đăng nhập, đăng xuất qua identity provider; tự đăng xuất sau 30 phút không thao tác | M | Không có form mật khẩu trong web; đăng nhập 4 tài khoản demo ở local và staging | Một phần: local đã có, kể cả tự đăng xuất; Cognito callback đã cấu hình (#150), chờ apply và smoke test staging |
+| FR-8.2 | Quên mật khẩu tự phục vụ qua email đã xác minh | M | Thư đặt lại tới; email không tồn tại có cùng thông báo | Một phần: local đã bật đặt lại mật khẩu; Cognito recovery qua email đã cấu hình (#150), chờ apply và kiểm chứng gửi thư |
+| FR-8.3 | Tạo tài khoản đăng nhập khi HR tạo hồ sơ, gửi email mời, bắt đổi mật khẩu tạm | M | Thư mời tới trong 1 phút; không tạo trùng khi event lặp | Một phần: local đã có; đồng bộ tài khoản Cognito/IAM đã merge (#150, #151); luồng mời và email trên staging chờ apply/kiểm chứng |
+| FR-8.4 | Khóa tài khoản và thu hồi phiên khi nghỉ việc; mở lại khi khôi phục | M | Trong 1 phút không đăng nhập lại được; token còn hạn bị 403 | Một phần: API chặn 403 (FR-1.7); local đã có; tích hợp worker đồng bộ Cognito đã merge (#151), chờ apply và kiểm chứng staging |
+| FR-8.5 | MFA bằng ứng dụng TOTP | M | HR, ADMIN bị hỏi mã ở cả hai môi trường | Một phần: Cognito MFA bắt buộc đã cấu hình (#150), chờ apply; Conditional OTP cho `hr`, `admin` trên Keycloak local còn thiếu |
 | FR-8.6 | HR xem trạng thái tài khoản đăng nhập, gửi lại lời mời | S | Vai trò khác bị 403; ghi audit | Đã có |
-| FR-8.7 | ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, có lý do; vai trò chỉ lấy từ database, đồng bộ sang nhóm trên IdP | M | Có audit `ROLE_GRANT`, `ROLE_REVOKE`; tự cấp cho mình bị 403; thu hồi ADMIN cuối cùng bị 409; nhóm trong token bị bỏ qua | Đã có (đồng bộ nhóm trên IdP ở local; staging tuần 12) |
+| FR-8.7 | ADMIN cấp, thu hồi vai trò HR, ADMIN trong ứng dụng, có lý do; vai trò chỉ lấy từ database, đồng bộ sang nhóm trên IdP | M | Có audit `ROLE_GRANT`, `ROLE_REVOKE`; tự cấp cho mình bị 403; thu hồi ADMIN cuối cùng bị 409; nhóm trong token bị bỏ qua | Một phần: chức năng ứng dụng và local đã có; worker/IAM đồng bộ Cognito đã merge (#151), chờ apply và kiểm chứng staging |
 
-**Tổng hợp FR:** Có 57 yêu cầu đang áp dụng trong UC1 → UC8 (14 + 10 + 8 + 9 + 4 + 2 + 3 + 7). Trong đó 49 đã có trên `dev`, 6 một phần (2 hạng mục UC1 còn dashboard/hạ tầng staging và 4 hạng mục UC8 còn hoàn thiện staging), 2 theo kế hoạch (FR-8.2, FR-8.5). FR-6.1 và FR-6.2 được giữ làm mã lịch sử đã bỏ, không tính vào tổng.
+**Tổng hợp FR:** Có 57 yêu cầu đang áp dụng trong UC1 → UC8 (14 + 10 + 8 + 9 + 4 + 2 + 3 + 7). Trong đó 49 đã có trên `dev`, 8 một phần (2 hạng mục UC1 còn dashboard/hạ tầng staging và 6 hạng mục UC8 còn apply, kiểm chứng staging hoặc hoàn thiện Conditional OTP), 0 theo kế hoạch. FR-6.1 và FR-6.2 được giữ làm mã lịch sử đã bỏ, không tính vào tổng.
 
 ## 5. Yêu cầu dữ liệu
 
@@ -560,7 +561,7 @@ Chiều xuôi: mục tiêu (BRD) → yêu cầu (SRS) → thiết kế (SAD) →
 | Mục tiêu (BRD) | Use case | Yêu cầu (SRS) | Business rule | Thiết kế (SAD) | Kiểm chứng |
 |---|---|---|---|---|---|
 | MT-1 | UC1, UC2 | FR-1.1 → FR-1.14, FR-2.1 → FR-2.10 | Quy tắc hồ sơ, issue #21, #22, ADR-14 | Module Employee, Organization, Identity; ADR-10, ADR-14 | e2e `app.e2e-spec.ts`; biên bản kiểm thử tuần 7 |
-| MT-2 | UC3, UC4 | FR-3.1 → FR-3.8, FR-4.1 → FR-4.9 | BR-01 → BR-19 | Module Leave, Worker; outbox + queue (ADR-03) | 22 ca kiểm thử `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
+| MT-2 | UC3, UC4 | FR-3.1 → FR-3.8, FR-4.1 → FR-4.9 | BR-01 → BR-19 | Module Leave, Worker; outbox + queue (ADR-03) | 32 ca kiểm thử TC-01 → TC-32 trong `leave-test-cases.md`; e2e nhóm "workflow nghỉ phép" |
 | MT-3 | UC1, UC7 | FR-1.3, FR-1.4, FR-7.1 → FR-7.3 | ADR-08, ADR-09 | Module Employee (`FieldCrypto`, ADR-08), Audit (ADR-09) | e2e audit, `VIEW_SENSITIVE`; ma trận phân quyền |
 | MT-4 | UC5, UC6 | FR-5.1 → FR-5.4, FR-6.3, FR-6.4 | [Quy tắc kho tài liệu](../business/document-rules.md) | Module Document, object storage (ADR-13); assistant service (ADR-15, ADR-16) | Kế hoạch kiểm thử tuần 10, 12 |
 | MT-3 | UC8 | FR-8.1 → FR-8.7, NFR-5.1 → NFR-5.13 | Threat model T-02, T-03, T-06 | Module Identity, Keycloak/Cognito, outbox + SNS/SQS (ADR-17, ADR-18) | `test.md` UC8; ca kiểm thử bảo mật |
