@@ -4,8 +4,8 @@
 |---|---|
 | Đề tài | Số 3 – Enterprise HR Platform (sản phẩm HRHelper) |
 | Nguồn yêu cầu | Slide "Course Project Topics" của môn Cloud Application Development (TS. Dương Lê Minh): Common Expectations, Project 3 (Business Problem & Functional Scope; Engineering Requirements – Security & Workflow), Common Project Deliverables (P1–P5), Project Scope, How Projects Will Be Reviewed |
-| Hiện trạng đối chiếu | Nhánh `dev` commit `906a68f` (25/11/2026, sau PR #138), các PR đang mở #117, #121 → #124 |
-| Ngày | 25/11/2026 (tuần 12) |
+| Hiện trạng đối chiếu | Nhánh `dev` commit `9c659ac` (26/11/2026, sau PR #151); PR #140, #150 và #151 đã merge. Trạng thái PR đang mở được ghi tại mục 6. |
+| Ngày | 26/11/2026 (tuần 12) |
 | Người soạn | TV1 (Dương), soạn cùng Claude |
 | Người review | TV2 (Thanh) mục 1, 2; TV3 (Bảo) mục 3 → 5 phần cloud; TV4 (Duy) phần kiểm thử, đo |
 
@@ -18,7 +18,7 @@
 | ❌ | Chưa có |
 
 "Dev xong" khác "xong": theo [kế hoạch tổng 7.1](../progress/ke-hoach-tong.md#71-vì-sao-đổi-và-thế-nào-là-xong), một chức năng
-chỉ "xong" khi có biên bản kiểm thử đã merge và đã chạy trên staging. **Tới 25/11 chưa UC nào "xong" theo nghĩa này**, vì staging
+chỉ "xong" khi có biên bản kiểm thử đã merge và đã chạy trên staging. **Tới 26/11 chưa UC nào "xong" theo nghĩa này**, vì staging
 chưa `apply` và chưa có biên bản kiểm thử nào của tuần 11–12 được merge.
 
 Các việc ghi **Cần làm ngay** được gom ở [mục 6](#6-danh-sách-cần-làm-ngay), có người làm và hạn, và đã chép vào
@@ -41,19 +41,19 @@ Các việc ghi **Cần làm ngay** được gom ở [mục 6](#6-danh-sách-c�
 
 | Slide | Kết luận | Thiếu lớn nhất |
 |---|---|---|
-| Business Problem & Functional Scope | 🟡 **6/7 use case bắt buộc đạt ở mức dev xong**, thêm UC8 đăng nhập và tính năng nâng cao (trợ lý AI) đã có code | Use case 6 của slide "Employee self-service search": tìm đồng nghiệp có, nhưng **nhân viên chưa tìm được tài liệu theo từ khóa** (chỉ lọc theo loại; ô tìm tiêu đề chỉ có ở trang quản lý của HR) |
-| Engineering Requirements – Security & Workflow | 🟡 Workflow 5 bước, RBAC + kiểm theo dữ liệu, audit, mã hóa, RAG có kiểm quyền đều đã có trong code và e2e (150 ca) | **Chưa demo được trên cloud**; MFA, chính sách mật khẩu, khóa 5 lần sai chưa cấu hình trên IdP; trợ lý chưa có bộ đánh giá |
+| Business Problem & Functional Scope | 🟡 **7/7 use case bắt buộc có ở mức dev**; UC8 đăng nhập và tính năng nâng cao (trợ lý AI) cũng đã có code | Tìm đồng nghiệp và tìm tài liệu theo từ khóa đã có; vẫn cần xác nhận luồng tìm kiếm và trợ lý trên staging. PR #140 đã bổ sung tìm tài liệu cho nhân viên. |
+| Engineering Requirements – Security & Workflow | 🟡 Workflow 5 bước, RBAC + kiểm theo dữ liệu, audit, mã hóa, RAG có kiểm quyền đều đã có trong code và e2e (150 ca) | **Chưa demo được trên cloud**: IaC IdP và hồ sơ đã merge (#150, #151) nhưng staging chưa được apply; MFA có cấu hình Cognito, Conditional OTP cho HR/ADMIN trên Keycloak còn thiếu; bộ đánh giá đang chờ duyệt và chưa chạy báo cáo. |
 | Common Project Deliverables | Đây là **khung deliverable theo vòng đời** (P1–P5), không phải lịch. Kế hoạch tổng của nhóm đã đi theo khung này (tuần 5 → 12). P1, P2 đủ; P3 đủ tài liệu và code nhưng **chưa deploy**; **P4 yếu nhất**; P5 thiếu **evaluation** và **token cost** | P4: load test chỉ ở local (PR #121 chưa merge, NFR-2.1 chưa đạt), chưa có dashboard, chưa thử lỗi trên cloud |
 | Project Scope | 4/9 tiêu chí "We Expect" đạt, 5 tiêu chí một phần. Không rơi vào mục "We Do NOT Expect" nào | **Real cloud deployment**, **Observability**, **Measurable NFRs** (đo thật), **Cost awareness** (chi phí thật) |
 | How Projects Will Be Reviewed | Có câu trả lời cho cả 12 câu, kèm bằng chứng ở mục 5 | Câu 6 (5×, 10× tải), 10 (hệ thống khỏe), 11 (chi phí thật), 12 (chất lượng AI) chưa có **số đo** để chứng minh |
 
 **Năm việc quyết định điểm, phải xong trước đóng băng T4 (2/12):**
 
-1. TV3 sửa B1 trong [`staging-readiness.md`](../cloud/staging-readiness.md) rồi `terraform apply`, Deploy Staging chạy xanh (T5 26/11).
-2. TV1 thêm tìm tài liệu theo từ khóa cho nhân viên (`feat/document-search`, T6 27/11) để đủ use case 6 của slide.
+1. TV3 rà `plan` của cấu hình đã merge (#150, #151), được TV1 duyệt rồi mới `apply`; Deploy Staging và smoke test còn chờ.
+2. Tìm tài liệu theo từ khóa đã có trong PR #140; cần kiểm tra hành vi trên staging sau khi deploy.
 3. TV4 sửa #121 và chạy load test lại ở local rồi trên staging, kèm thử tắt một instance (T2 30/11).
 4. TV3 dựng dashboard CloudWatch theo SLI và báo chi phí thật sau 3 ngày chạy (CN 29/11).
-5. TV2 nộp bộ câu hỏi đánh giá trợ lý (đã trễ hạn T3 24/11, hạn mới T5 26/11); TV4 chạy đánh giá có độ trễ và chi phí mỗi câu (T2 30/11).
+5. Bộ câu hỏi đánh giá đã mở PR #153; chờ TV1/TV4 duyệt. TV4 chạy đánh giá và lập báo cáo độ chính xác, độ trễ, token và chi phí (hạn dự kiến 30/11).
 
 ---
 
@@ -79,21 +79,19 @@ phải chiếu bảng này để giảng viên không hiểu nhầm là nhóm th
 | 3 | Leave / request workflow | UC3 Tạo đơn nghỉ | Số dư theo loại phép (có chuyển phép năm), tạo đơn theo ngày làm việc trừ lễ, chống trùng lịch, chống gửi trùng (`Idempotency-Key`), hủy, đề nghị hủy đơn đã duyệt, tạo đơn hộ, HR chỉnh hạn mức. FR-3.1 → FR-3.8 | #120 (code lại theo thiết kế 13.x), #114, #118; [UC3](../features/UC3-create-leave-request/requirements.md) | ✅ dev xong |
 | 4 | Manager approval | UC4 Duyệt đơn | Quản lý trực tiếp duyệt/từ chối, người duyệt thay theo khoảng ngày, HR duyệt thêm theo loại phép (`PENDING_HR`), HR duyệt đơn của CEO, HR hoàn tất, email thông báo qua outbox + queue, nhắc đơn chờ lâu, lịch lễ. FR-4.1 → FR-4.9 | #60, #120; [UC4](../features/UC4-approve-leave-request/requirements.md) | ✅ dev xong |
 | 5 | HR policy / document repository | UC5 Kho tài liệu | HR tải lên PDF/DOCX thẳng lên object storage bằng presigned URL, phạm vi xem (toàn công ty, đơn vị, vai trò), phiên bản, ẩn/khôi phục; nhân viên chỉ thấy và tải tài liệu trong phạm vi (tải qua API, kiểm quyền mỗi lần, ADR-13). FR-5.1 → FR-5.3 | #64, #126; [UC5](../features/UC5-document-repository/requirements.md) | ✅ dev xong |
-| 6 | Employee self-service search | UC2 (FR-2.1) + UC5 + UC6 | **Tìm đồng nghiệp** theo tên, email, mã, lọc đơn vị: ô tìm trên nav bar và trang `/directory` (FR-2.1). **Hỏi đáp chính sách** bằng câu tự nhiên, có trích dẫn (UC6). **Tìm tài liệu theo từ khóa cho nhân viên: chưa có.** `GET /documents` của nhân viên chỉ lọc theo `type`; tham số `q` (tìm tiêu đề) chỉ có ở `GET /documents/manage` của HR. FR-6.2 (tìm tài liệu) bị bỏ ngày 22/11 với lý do "trùng UC5", nhưng UC5 không có FR tìm kiếm | `backend/src/modules/document/document.dto.ts` (`DocumentQuery` chỉ có `type`), `frontend/src/components/SearchBox.tsx` | 🟡 **Cần làm ngay** (mục 6, N2) |
+| 6 | Employee self-service search | UC2 (FR-2.1) + UC5 + UC6 | Tìm đồng nghiệp theo tên, email, mã và lọc đơn vị; tìm tài liệu theo từ khóa qua chức năng đã bổ sung ở PR #140; hỏi đáp chính sách bằng câu tự nhiên có trích dẫn (UC6). Phạm vi tài liệu vẫn phải được kiểm soát theo quyền người hỏi. | PR #140; [UC5](../features/UC5-document-repository/requirements.md), [UC6](../features/UC6-policy-assistant/spec.md) | ✅ code đã merge; kiểm thử staging còn chờ deploy |
 | 7 | Audit history | UC7 Lịch sử thao tác | Audit ghi cùng giao dịch với thao tác, append-only bằng trigger chặn UPDATE, DELETE, TRUNCATE (ADR-09); không ghi giá trị nhạy cảm; trang tra cứu cho HR, ADMIN lọc theo đối tượng, người làm, thời gian. FR-7.1 → FR-7.3 | #129, #137 (UC7 E10 chặn TRUNCATE); [UC7](../features/UC7-audit-log/requirements.md) | ✅ dev xong |
-| – | (thêm) Đăng nhập và tài khoản | UC8 | OIDC + PKCE qua Keycloak (local) / Cognito (staging), tự đăng xuất sau 30 phút, vòng đời tài khoản theo hồ sơ, ADMIN cấp/thu hồi HR, ADMIN. Tách từ yêu cầu bảo mật của slide 2 | #111 → #113, #115, #116; [ADR-17](../architecture/adr/ADR-17-authentication.md) | ✅ local; 🟡 staging (B1, F2) |
+| – | (thêm) Đăng nhập và tài khoản | UC8 | OIDC + PKCE qua Keycloak (local) / Cognito (staging), tự đăng xuất sau 30 phút, vòng đời tài khoản theo hồ sơ, ADMIN cấp/thu hồi HR, ADMIN. Tách từ yêu cầu bảo mật của slide 2 | #111 → #113, #115, #116; #150/#151; [ADR-17](../architecture/adr/ADR-17-authentication.md) | ✅ local; 🟡 staging (IaC merged, apply và smoke test còn chờ) |
 
 ### 1.3 Suggested Advanced Feature: AI assistant cho HR policies
 
 | Yêu cầu | Nhóm đã làm | Bằng chứng | Trạng thái |
 |---|---|---|---|
-| AI assistant cho HR policies và quy định nội bộ | UC6 – Trợ lý chính sách: service riêng `services/assistant` (ADR-15, ADR-16) nhận event tài liệu, trích văn bản PDF/DOCX, chia đoạn 1.500 ký tự, index lai full-text + pgvector (EmbeddingGemma), trả lời qua LLM do ADMIN chọn (DeepSeek, Claude, Gemini), có trích dẫn, fallback khi LLM lỗi | #128 (ADR-16), #130, #131, #133 | 🟡 code đã merge 24/11; **chưa có bộ đánh giá, chưa chạy trên staging** |
+| AI assistant cho HR policies và quy định nội bộ | UC6 – Trợ lý chính sách: service riêng `services/assistant` (ADR-15, ADR-16) nhận event tài liệu, trích văn bản PDF/DOCX, chia đoạn 1.500 ký tự, index lai full-text + pgvector (EmbeddingGemma), trả lời qua LLM do ADMIN chọn (DeepSeek, Claude, Gemini), có trích dẫn, fallback khi LLM lỗi | #128, #130, #131, #133; bộ đánh giá ở PR #153 | 🟡 code đã merge; dataset đang chờ duyệt, chưa chạy đánh giá/báo cáo và chưa xác nhận trên staging |
 
 ### 1.4 Trả lời câu hỏi "đã đủ chưa"
 
-**Chưa đủ hoàn toàn.** Phần nghiệp vụ đủ 6/7 use case ở mức dev xong và có thêm UC8, trợ lý AI. Thiếu duy nhất là **tìm tài liệu
-theo từ khóa cho nhân viên** (một phần của use case 6 trên slide). Việc này nhỏ (thêm `q` vào `DocumentQuery`, lọc tiêu đề và
-mô tả bằng `ILIKE` + `unaccent` như trang quản lý, thêm ô tìm trên `/documents`), làm trong một PR trước đóng băng.
+**Chưa đủ hoàn toàn.** Cả 7 use case bắt buộc đã có code ở mức dev; chức năng tìm tài liệu theo từ khóa đã merge ở #140. Chưa thể kết luận hoàn tất trên staging vì hạ tầng chưa được apply. Trợ lý AI có bộ câu hỏi ở PR #153 nhưng còn chờ duyệt và chưa có báo cáo đánh giá.
 
 Ngoài ra cột "Trạng thái" trong [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng-fr) đang lệch với code: FR-3.7, FR-3.8,
 FR-4.3, FR-4.8, FR-4.9 vẫn ghi "Kế hoạch tuần 10/12" hoặc "Thiết kế" dù đã code ở #120; FR-6.3, FR-6.4 ghi "Kế hoạch" dù đã có
@@ -119,7 +117,7 @@ sửa trong `docs/feature-status-final` (mục 6, N10).
 
 | Yêu cầu | Đã làm thế nào | Bằng chứng | Trạng thái | Thiếu |
 |---|---|---|---|---|
-| Authentication & SSO-ready | Ứng dụng không nhận mật khẩu; đăng nhập qua IdP chuẩn OIDC (Authorization Code + PKCE S256); API kiểm chữ ký JWKS, issuer, hạn, `azp`. Keycloak ở local, Cognito ở staging. "SSO-ready" vì mọi IdP OIDC/SAML (Google Workspace, Entra ID) gắn được qua Cognito federation mà không đổi code (ADR-17 mục 7 chủ động chưa bật SSO trước đóng băng) | [ADR-17](../architecture/adr/ADR-17-authentication.md), `backend/src/modules/identity/token-verifier.ts`, NFR-5.1, 5.6 → 5.8 | 🟡 | Cognito staging sai `callback_urls`, chưa MFA bắt buộc (B1); MFA TOTP cho HR, ADMIN (NFR-5.4, `infra/idp-mfa`); chính sách mật khẩu, khóa 5 lần sai trên Keycloak (NFR-5.2, 5.3, `infra/idp-hardening`) – **Cần làm ngay** (N1, N8) |
+| Authentication & SSO-ready | Ứng dụng không nhận mật khẩu; đăng nhập qua IdP chuẩn OIDC (Authorization Code + PKCE S256); API kiểm chữ ký JWKS, issuer, hạn, `azp`. Keycloak ở local, Cognito ở staging. "SSO-ready" vì mọi IdP OIDC/SAML (Google Workspace, Entra ID) gắn được qua Cognito federation mà không đổi code (ADR-17 mục 7 chủ động chưa bật SSO trước đóng băng) | [ADR-17](../architecture/adr/ADR-17-authentication.md), `backend/src/modules/identity/token-verifier.ts`, NFR-5.1, 5.6 → 5.8 | 🟡 | #150 đã merge cấu hình Cognito callback, tắt self-sign-up, MFA TOTP, password policy và token lifetime; #150/#151 chưa `apply` lên staging. Keycloak local đã có password policy/brute-force; Conditional OTP cho HR/ADMIN còn chờ N8. |
 | RBAC and/or ABAC | Cả hai: RBAC bằng `@Roles` ở controller (mặc định từ chối, chỉ `/health` công khai); kiểm theo dữ liệu (ABAC/ReBAC) ở service: quan hệ quản lý, chủ đơn, phạm vi tài liệu, trạng thái; danh sách lọc ngay trong truy vấn SQL. HR, ADMIN lấy từ database, MANAGER suy ra từ sơ đồ tổ chức | [ADR-18](../architecture/adr/ADR-18-authorization.md), [authorization.md](../security/authorization.md), [ma trận phân quyền](../security/access-control-matrix.md); e2e "ma trận phân quyền" | ✅ | – |
 | Dept / user-level data isolation | Nhân viên chỉ thấy dữ liệu của mình; quản lý chỉ cấp dưới (trực tiếp, và mức QL cho gián tiếp, #110), không thấy trường nhạy cảm; ADMIN không xem hồ sơ cá nhân và không thấy audit đơn nghỉ; tài liệu lọc theo đơn vị, vai trò trong SQL; lý do nghỉ ốm ẩn với quản lý | `employee-access.ts`, `leave-access.ts`, `document-rules.ts`; NFR-5.13 | ✅ | – |
 | Audit logging | Audit cho mọi ghi hồ sơ, đọc trường nhạy cảm, mọi bước đơn nghỉ, thay đổi tổ chức, tài liệu, tài khoản, vai trò, cấu hình trợ lý; ghi cùng giao dịch; append-only bằng trigger; có `traceId` | [ADR-09](../architecture/adr/ADR-09-append-only-audit.md), migration `InitSchemas`, `ExceptionGuards`; NFR-6.1 → 6.4 | ✅ | Chưa ghi đăng nhập thành công/thất bại (NFR-5.10, `infra/idp-auth-events`, cắt được); user ứng dụng là chủ bảng nên vẫn tắt được trigger (L3) |
@@ -152,11 +150,11 @@ Phần **thiết kế và code** của slide này đã đủ. Phần **thiếu**
 
 | Thiếu | Ảnh hưởng | Việc (mục 6) |
 |---|---|---|
-| Cognito staging sai `callback_urls`, chưa MFA, còn tự đăng ký | Không đăng nhập được trên staging, demo bảo mật không thuyết phục | N1 (TV3) |
-| MFA, chính sách mật khẩu, khóa 5 lần sai chưa cấu hình trên Keycloak | NFR-5.2 → 5.4 chưa đạt ở cả local | N8 (TV3) |
+| Cấu hình Cognito và hồ sơ đã có trong Terraform nhưng chưa apply; chưa xác nhận login, MFA và lưu file trên staging | Chưa demo được luồng xác thực/lưu hồ sơ trên cloud | N1 (TV3) |
+| Conditional OTP cho HR/ADMIN trên Keycloak local còn thiếu; cấu hình Cognito MFA mới ở IaC, chưa apply | Chưa thể tuyên bố MFA đã chạy ở hai môi trường | N8 (TV3) |
 | Email không gửi được trên staging | Demo workflow trên cloud thiếu thông báo | N3 (TV1) |
-| Bộ đánh giá trợ lý chưa có | Không chứng minh được chất lượng và an toàn của RAG | N7 (TV2, TV4) |
-| Threat model chưa có phần kho tài liệu, trợ lý, cloud; T-18 còn ghi "duyệt thay chưa có" dù #120 đã làm | Câu hỏi bảo mật về RAG không có tài liệu đỡ | N11 (TV2) |
+| Dataset 30 câu đang chờ duyệt ở #153; chưa có lần chạy và báo cáo đánh giá | Chưa chứng minh được chất lượng, an toàn, độ trễ và chi phí của RAG | N7 (TV2, TV4) |
+| Threat model ở PR #155 cần đồng bộ T-30 với Cognito đã tắt self-sign-up (#150) và bổ sung bucket hồ sơ S3 (#151) | Rủi ro và kiểm soát mới chưa được phản ánh đầy đủ | N11 (TV2) |
 
 ---
 
@@ -198,11 +196,11 @@ tổng), nên các mục P4, P5 bị đẩy lùi và chưa được theo dõi ri
 
 | Ý | Ở đâu | Trạng thái | Thiếu |
 |---|---|---|---|
-| Threat model | [threat-model.md](../security/threat-model.md) (STRIDE, 18+ mối đe dọa) | 🟡 | Chỉ phủ hồ sơ và nghỉ phép; thiếu kho tài liệu, trợ lý (prompt injection, rò dữ liệu qua LLM), Cognito, AWS. N11 |
-| IAM / access-control | [authorization.md](../security/authorization.md), [ma trận](../security/access-control-matrix.md), IAM role riêng cho API, worker, GitHub Actions (OIDC) trong `infra/staging/*.tf` | ✅ | Quyền `cognito-idp:*` cho worker (F2) |
+| Threat model | [threat-model.md](../security/threat-model.md) (STRIDE, 18+ mối đe dọa) và PR #155 | 🟡 | PR #155 đang bổ sung kho tài liệu, trợ lý, Cognito và AWS; cần sửa T-30 theo #150 (self-sign-up đã tắt trong IaC) và thêm bucket hồ sơ S3 theo #151. N11 |
+| IAM / access-control | [authorization.md](../security/authorization.md), [ma trận](../security/access-control-matrix.md), IAM role riêng cho API, worker, GitHub Actions (OIDC) trong `infra/staging/*.tf` | 🟡 | IAM Cognito cho worker và bucket hồ sơ đã khai báo ở #150/#151; cần kiểm tra policy sau apply. |
 | CI/CD | `ci.yml`: lint, unit test (backend, assistant với Postgres), build frontend, build và quét 3 image bằng Trivy; ruleset bảo vệ `dev`, `main`; `deploy-staging.yml` qua OIDC | 🟡 | 150 ca e2e **không chạy trong CI**; Deploy Staging **chưa chạy lần nào**, chỉ chạy tay (L4). N9 |
 | Containerization | `backend/Dockerfile` (API + worker), `frontend/Dockerfile` (nginx), `services/assistant/Dockerfile`, `docker-compose.yml` chạy đủ hệ thống | ✅ | – |
-| IaC | Terraform `infra/bootstrap`, `infra/staging` (mạng, RDS, App Runner, ECS, SQS, S3, CloudFront, Cognito, KMS, Secrets, Budgets, alarm) | 🟡 | Chưa `apply`; thiếu bucket hồ sơ (F3), hạ tầng trợ lý (F4). N1 |
+| IaC | Terraform `infra/bootstrap`, `infra/staging` (mạng, RDS, App Runner, ECS, SQS, S3, CloudFront, Cognito, KMS, Secrets, Budgets, alarm) | 🟡 | Cấu hình Cognito, bucket hồ sơ, worker sync và App Runner scaling đã merge (#150, #151); chưa `apply` và smoke test staging. N1 |
 | Deploy / rollback strategy | [infra/README mục 5, 7.3](../../infra/README.md): deploy theo SHA, rollback bằng `image_tag`, migration chạy trước bằng task ECS | 🟡 | Chưa diễn tập rollback. N6 |
 
 **P4 – Production Engineering** (tuần 11 theo kế hoạch): ❌/🟡 **yếu nhất**.
@@ -220,9 +218,9 @@ tổng), nên các mục P4, P5 bị đẩy lùi và chưa được theo dõi ri
 | Ý | Ở đâu | Trạng thái | Thiếu |
 |---|---|---|---|
 | AI architecture | [ADR-16](../architecture/adr/ADR-16-policy-assistant.md), [UC6 spec](../features/UC6-policy-assistant/spec.md), `services/assistant` | ✅ | – |
-| Evaluation dataset / metrics | Kế hoạch: ≥ 30 câu có đáp án, câu ngoài tài liệu, câu ngoài phạm vi, câu prompt injection (`docs/assistant-eval-set`) | ❌ | TV2 trễ hạn T3 24/11. Metric đề xuất: tỉ lệ trả lời đúng, tỉ lệ có trích dẫn đúng, Recall@6 của truy hồi, tỉ lệ từ chối đúng câu ngoài phạm vi, tỉ lệ chặn injection. N7 |
-| Security / guardrails | `guardrails/` (G1 che PII đầu vào, G2 che PII đầu ra, G2b chặn lộ prompt, G3 bọc tài liệu), lọc phạm vi trong SQL, rate limit | ✅ | Chưa có ca tấn công chạy thật (nằm trong N7) |
-| Latency & token-cost analysis | Service đã log `ms`, `usage.inputTokens`, `outputTokens` cho mỗi câu (`answerer.ts`); NFR-1.3: p95 ≤ 6 s | ❌ | Chưa có báo cáo. N7 |
+| Evaluation dataset / metrics | Bộ 30 câu, 5 nhóm theo yêu cầu N7a, tại PR #153 và tài liệu nguồn giả trong cùng thư mục | 🟡 | PR đang chờ TV1/TV4 approve; chưa được tải vào kho, chưa chạy đánh giá. Cần báo cáo accuracy, citation correctness, Recall@6, refusal/injection success; latency p95 và token/cost mỗi câu. N7 |
+| Security / guardrails | `guardrails/` (G1 che PII đầu vào, G2 che PII đầu ra, G2b chặn lộ prompt, G3 bọc tài liệu), lọc phạm vi trong SQL, rate limit | 🟡 | Bộ câu hỏi tấn công có ở #153 nhưng chưa chạy; cần ghi kết quả thực tế trong báo cáo N7. |
+| Latency & token-cost analysis | Service đã log `ms`, `usage.inputTokens`, `outputTokens` cho mỗi câu (`answerer.ts`); NFR-1.3: p95 ≤ 6 s | 🟡 | Chưa có báo cáo đo thực tế; TV4 chạy sau khi dataset được duyệt. N7 |
 
 ---
 
@@ -233,11 +231,11 @@ tổng), nên các mục P4, P5 bị đẩy lùi và chưa được theo dõi ri
 | Tiêu chí | Giải pháp nhóm đã làm | Trạng thái | Còn thiếu |
 |---|---|---|---|
 | One complete end-to-end business flow | Luồng nghỉ phép làm sâu (ADR-05): tạo → quản lý duyệt → HR duyệt thêm → HR hoàn tất, có số dư, ngày lễ, duyệt thay, hủy, email, audit (mục 2.1) | ✅ local | Chạy lại trên staging (N1, N3) |
-| Real cloud deployment | AWS ap-southeast-1 (ADR-12): CloudFront + S3 (web), App Runner (API), ECS Fargate (worker, assistant), RDS PostgreSQL 16, SQS + DLQ, Cognito, S3 tài liệu, KMS, Secrets Manager; toàn bộ bằng Terraform | ❌ | **Chưa `apply`**. Chặn bởi B1; F1 → F5 làm trước demo. N1 |
+| Real cloud deployment | AWS ap-southeast-1 (ADR-12): CloudFront + S3 (web), App Runner (API), ECS Fargate (worker, assistant), RDS PostgreSQL 16, SQS + DLQ, Cognito, S3 tài liệu/hồ sơ, KMS, Secrets Manager; toàn bộ bằng Terraform | ❌ | **Chưa `apply`**. Các thay đổi Cognito/bucket hồ sơ/scaling đã merge (#150, #151); cần `plan` review, `apply`, deploy và smoke test. N1 |
 | Meaningful architecture decisions | 19 ADR (ADR-00 → ADR-18), mỗi ADR có phương án, bảng tiêu chí 1–5, trade-off, tiêu chí nghiệm thu, khi nào xem lại | ✅ | ADR-15 → ADR-18 còn "Đề xuất" dù PR đã merge: đổi sang "Đã chấp nhận" (N12) |
 | Measurable NFRs | 74 NFR có ngưỡng và cách kiểm chứng; SLI/SLO | 🟡 | Mới đo ở local, một phần (N4); chưa đo trên cloud |
 | Failure handling | Outbox trong cùng giao dịch, DLQ, idempotency (`Idempotency-Key`, event lặp), optimistic lock (`version`), fallback LLM, timeout, rate limit 429, thông báo lỗi không lộ nội bộ | 🟡 | Có code và e2e; chưa diễn tập (N6); chưa có giãn cách tăng dần khi thử lại (NFR-3.5) |
-| Security controls | Mục 2.2 | 🟡 | IdP hardening, MFA (N1, N8) |
+| Security controls | Mục 2.2 | 🟡 | #150 đã thêm cấu hình IdP vào IaC nhưng chưa apply; Conditional OTP Keycloak còn thiếu (N1, N8). |
 | Automated deployment | `deploy-staging.yml`: OIDC, build, push ECR theo SHA, migration, cập nhật App Runner, ECS, S3, invalidation, kiểm `/health` | 🟡 | Chưa chạy lần nào; chạy tay (N1, N9) |
 | Observability | traceId, 5 alarm, health check | 🟡 | Dashboard, log JSON, phiên bản (N5) |
 | Cost awareness | Dự toán chi tiết, chọn NAT instance thay NAT Gateway (8,3 so với 32,4 USD), App Runner thay ALB + ECS cho API, không Redis (ADR-07), không Kubernetes (ADR-06), tắt staging ngoài giờ, Budgets 25/40/50 USD, task assistant để `desired_count = 0` | 🟡 | Chi phí thật sau khi chạy; chi phí mỗi câu hỏi AI (N5, N7) |
@@ -249,7 +247,7 @@ tổng), nên các mục P4, P5 bị đẩy lùi và chưa được theo dõi ri
 | A complete enterprise product | Không vi phạm | Ngoài phạm vi rõ ràng: lương, chấm công, tuyển dụng, mobile, đa ngôn ngữ, multi-AZ ([BRD 4.2](../business/BRD.md#42-ngoài-phạm-vi-version-1)) |
 | Dozens of microservices | Không vi phạm | Lõi là modular monolith (ADR-01); chỉ tách **một** service (assistant) và dự kiến **một** service thông báo theo ADR-15, vì hai phần này có tải, nhịp deploy và phụ thuộc ngoài (LLM, email) khác lõi |
 | Every possible feature | Cần lưu ý | UC1, UC2 làm khá rộng (FR-1.12, 1.13, 2.6 → 2.10 mức S/C). Khi bảo vệ, nói rõ trọng tâm là luồng nghỉ phép; phần UC2 mở rộng là do lõi đã xong sớm |
-| Complex AI without evaluation | **Đang có nguy cơ** | Trợ lý đã code nhưng **chưa có bộ đánh giá**. Nếu N7 không xong trước 1/12 thì trình bày trợ lý là tính năng thử nghiệm, không nhận là đạt |
+| Complex AI without evaluation | **Vẫn có nguy cơ** | Dataset đã mở PR #153 nhưng đang chờ duyệt; chưa chạy đánh giá và chưa có báo cáo. Cho tới khi TV4 có kết quả, chỉ trình bày trợ lý là tính năng thử nghiệm, không tuyên bố chất lượng đã được xác nhận. |
 | Architecture copied from large tech companies | Không vi phạm | Mỗi lựa chọn bắt nguồn từ workload 10 RPS cao điểm, 2.000 nhân viên và ngân sách < 60 USD (ADR-06, ADR-07, ADR-12) |
 
 **Câu chốt của slide "Build less — but design, implement, measure and defend it well":** design và implement đã tốt; **measure** là
@@ -387,8 +385,7 @@ không build lại, mục tiêu < 15 phút (NFR-3.3); migration lỗi thì chạ
 **Chiếu:** [threat model](../security/threat-model.md), [ma trận phân quyền](../security/access-control-matrix.md), e2e "ma trận
 phân quyền" (hơn 80 chỗ kiểm mã 403), demo ở mục 7.
 
-**Điểm yếu:** MFA, chính sách mật khẩu, khóa 5 lần sai chưa cấu hình (N1, N8); user database của ứng dụng là chủ bảng audit nên về lý
-thuyết tắt được trigger (L3).
+**Điểm yếu:** #150 đã thêm MFA/password policy vào cấu hình Cognito và Keycloak; chưa apply Cognito lên staging và Conditional OTP trên Keycloak local còn thiếu (N1, N8). User database của ứng dụng là chủ bảng audit nên về lý thuyết có thể tắt trigger (L3).
 
 ### Câu 10. How do you know the system is healthy?
 
@@ -429,7 +426,7 @@ Số liệu trợ lý *(cần đo bằng `usage` đã log, N7)*.
 
 **Chiếu:** [ADR-16](../architecture/adr/ADR-16-policy-assistant.md), `services/assistant/src/guardrails/`, `rag/retriever.ts`.
 
-**Điểm yếu:** chưa có bộ đánh giá và báo cáo. Nếu không kịp, nói thẳng "chưa đánh giá" thay vì nêu con số chưa đo.
+**Điểm yếu:** PR #153 đã có dataset nhưng chưa được duyệt/chạy; chưa có báo cáo. Nêu rõ trạng thái này và không trình bày số đo chưa thu thập.
 
 ---
 
@@ -443,21 +440,21 @@ Thành viên khác giữ hạn riêng. Phân việc từng người: [`progress/
 
 | Mã | Việc | Người | Nhánh / nơi làm | Hạn | Đáp ứng | Mới? |
 |---|---|---|---|---|---|---|
-| N1 | Sửa B1 (Cognito: `callback_urls` có `/callback`, MFA `ON`, chỉ admin tạo user, chính sách mật khẩu, token 15 phút, SES), F2, F3 trong `infra/staging`; `plan` → TV1 duyệt → `apply`; Deploy Staging với seed chạy xanh; smoke test theo `deploy.md` mục 5 | TV3 Bảo (TV1 duyệt plan, TV4 smoke) | `infra/idp-hardening`, `infra/profile-files`, rồi `apply` | Mở PR T4 25/11 21:00; `apply` T5 26/11. Quá T6 27/11 21:00 chưa có thì báo giảng viên và demo local | Real cloud deployment, Automated deployment, P3 IaC, CI/CD | Không |
-| N2 | Nhân viên tìm tài liệu theo từ khóa: `q` cho `GET /documents` (tiêu đề, mô tả, không dấu), ô tìm trên `/documents`, e2e, sửa UC5 `requirements.md`, SRS (thêm FR-5.4) | TV1 Duong | `feat/document-search` | Mở PR T6 27/11 | Use case 6 của slide | **Mới** |
+| N1 | Rà `plan` Cognito, bucket hồ sơ, worker sync và App Runner scaling; TV1 duyệt plan rồi mới `apply`; deploy staging, seed và smoke test theo `deploy.md` mục 5 | TV3 Bảo (TV1 duyệt plan, TV4 smoke) | #150, #151 đã merge; bước kế tiếp `plan` → duyệt → `apply` | IaC đã merge 26/11; apply/deploy/smoke test còn chờ | Real cloud deployment, Automated deployment, P3 IaC, CI/CD | Đang chờ vận hành |
+| N2 | Tìm tài liệu theo từ khóa cho nhân viên | TV1 Duong | PR #140 đã merge | Đã hoàn tất trong dev; chờ deploy để xác nhận staging | Use case 6 của slide | Hoàn tất code |
 | N3 | Email trên staging: đọc `MAIL_DRIVER=ses`, gửi bằng SES API (F1); `trust proxy` để audit đúng IP (F5) | TV1 Duong | `feat/notification-service` (đã có kế hoạch) + `fix/trust-proxy` | T5 26/11 | Complete workflow trên cloud, audit trail | F5 mới |
 | N4 | Sửa #121: mỗi VU giữ token tới gần hết hạn (không xin token đồng loạt), chạy lại NFR-2.1 ở local; chạy load test trên staging (50 request/giây 15 phút) có **tắt một instance** giữa chừng; một lượt tăng dần 10 → 250 request/giây (5×). Bật App Runner tối thiểu 2 instance trong lúc đo và demo (ngoài giờ để 1 cho đỡ tiền), ghi rõ trong ADR-06 | TV4 Duy (đo), TV3 Bảo (cấu hình App Runner) | `test/load-k6` (#121), `docs/load-test-staging` | Local T6 27/11; staging T2 30/11 | Measurable NFRs, câu 3, 6; P4 load test | Phần staging, 5× mới |
 | N5 | Dashboard CloudWatch theo 5 SLI (SRS 6.13) + độ dài queue, DLQ; chi phí thật sau 3 ngày; thống nhất NFR-7.1 với Budgets và hạn mức thẻ; cộng task assistant vào dự toán. TV1 làm phần code: log JSON có `traceId` (NFR-8.1), `/health` trả commit (NFR-8.5), metric outbox tồn, timeout kết nối và `statement_timeout` 5 s cho database (SRS 6.14) | TV3 Bảo (dashboard, chi phí); TV1 Duong (code) | `docs/slo-dashboard-cost`; `feat/observability-basics` | T7 28/11 mở PR, CN 29/11 merge | Observability, Cost awareness, câu 10, 11 | Phần code mới |
 | N6 | Diễn tập lỗi trên staging, ghi thời gian và ảnh: tắt worker rồi tạo đơn (email gửi bù), cho LLM khóa sai (fallback), tắt assistant service, rollback bằng `image_tag`, khôi phục RDS về một thời điểm (đo RTO) | TV3 Bảo (thao tác), TV4 Duy (ghi biên bản) | `docs/test-report-failure` | T2 30/11 – T3 1/12 | Failure handling, câu 7, 8; P4 reliability | **Mới** |
-| N7 | Bộ câu hỏi đánh giá trợ lý (≥ 30 câu, có câu ngoài tài liệu, ngoài phạm vi đơn vị, prompt injection trực tiếp và nằm trong tài liệu); chạy đánh giá ghi: tỉ lệ đúng, trích dẫn đúng, Recall@6, tỉ lệ chặn injection, p95 độ trễ, token và chi phí mỗi câu | TV2 Thanh (bộ câu hỏi), TV4 Duy (chạy, báo cáo), TV1 hỗ trợ script | `docs/assistant-eval-set`, `docs/assistant-eval-report` | Bộ câu hỏi: **trễ**, hạn mới T5 26/11 21:00; báo cáo T2 30/11 | Câu 12; P5 evaluation, latency & token cost | Không (trễ) |
-| N8 | MFA TOTP cho HR, ADMIN; Keycloak `passwordPolicy`, `failureFactor: 5` | TV3 Bảo | `infra/idp-mfa`, `infra/idp-hardening` | T6 27/11 21:00 | Security, câu 9 | Không |
+| N7 | Dataset ≥30 câu đã mở ở PR #153, gồm 5 nhóm; TV4 chạy đánh giá sau khi được duyệt và báo cáo accuracy, citation correctness, Recall@6, refusal/injection, p95 latency, token và cost mỗi câu | TV2 Thanh (dataset), TV4 Duy (chạy, báo cáo), TV1 hỗ trợ script | PR #153; báo cáo theo `docs/assistant-eval-report` | Dataset: chờ approve; báo cáo dự kiến 30/11 | Câu 12; P5 evaluation, latency & token cost | Đang chờ duyệt/chạy |
+| N8 | Bổ sung Conditional OTP cho HR/ADMIN trên Keycloak local; xác minh Cognito MFA sau khi apply #150 | TV3 Bảo | Cognito config trong #150; phần Keycloak còn lại | Còn chờ apply/kiểm chứng staging và cấu hình OTP local | Security, câu 9 | Chưa xong vận hành |
 | N9 | Chạy 150 ca e2e trong CI (job có Postgres như job assistant); bật lại `push: [dev]` cho Deploy Staging khi staging ổn (L4) | TV3 Bảo | `ci/e2e` | CN 29/11 | Automated deployment, P3 CI/CD | **Mới** |
-| N10 | Sửa cột trạng thái SRS mục 4 (FR-2.2, 2.4, 3.7, 3.8, 4.3, 4.8, 4.9, 6.3, 6.4) và tổng hợp FR; báo cáo MT-2 | TV2 Thanh | `docs/feature-status-final` (kéo sớm) | T6 27/11 | Functional scope (không để SRS nói thiếu khi code đã có) | Kéo sớm từ T5 3/12 |
-| N11 | Cập nhật threat model: kho tài liệu (presigned URL, file độc), trợ lý (prompt injection trực tiếp và gián tiếp, rò dữ liệu qua LLM, lộ khóa API), Cognito, AWS (IAM, bucket public); sửa T-18 theo #120 | TV2 Thanh (TV1 review) | `docs/threat-model-uc5-uc6-cloud` | T6 27/11 | P3 threat model, câu 9, 12 | **Mới** |
+| N10 | Đồng bộ trạng thái FR/tổng FR và ma trận truy vết trong SRS với code đã merge, gồm cập nhật theo #140, #150, #151 | TV2 Thanh | PR #154 đang mở; rà nội dung trước merge | Đồng bộ trạng thái IdP/tìm tài liệu và sửa mâu thuẫn tổng số FR trong #154 | Functional scope | Đang chờ cập nhật |
+| N11 | Hoàn thiện threat model cho kho tài liệu, trợ lý, Cognito và AWS; đồng bộ T-30 theo #150 (self-sign-up bị tắt), thêm rủi ro bucket hồ sơ S3 theo #151; kiểm lại T-18 theo #120 | TV2 Thanh (TV1 review) | PR #155 đang mở | Sửa và rà lại trước khi merge | P3 threat model, câu 9, 12 | Cần đồng bộ với code mới |
 | N12 | Đổi trạng thái ADR-15 → ADR-18 sang "Đã chấp nhận" (PR #92, #99, #100, #128 đã merge) | TV1 Duong | cùng PR báo cáo tuần 12 | T2 30/11 | Architecture decisions | **Mới** |
 | N13 | Slide bảo vệ dùng mục 5 và 7 của file này; tập trả lời 12 câu, mỗi người phụ trách câu thuộc vai trò mình (TV1: 1, 4, 5, 12; TV2: 2, 3; TV3: 6, 8, 10, 11; TV4: 3, 7 phần đo); quay video demo dự phòng | Cả nhóm, TV1 chủ trì | `docs/defense` | Tập lần 1 T6 4/12; bảo vệ T2 7/12 | How Projects Will Be Reviewed | **Mới** |
 
-> **Cập nhật 25/11 tối:** phần TV1 đã có PR: N2 [#140](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/140), N3 [#141](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/141), N5a [#142](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/142), T-02 [#143](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/143), N9 [#144](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/144), F4 [#145](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/145), N12 [#146](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/146). Chi tiết ở [tuần 12 bổ sung](../progress/tuan-12-bo-sung/README.md#trạng-thái-phần-tv1-cập-nhật-2511).
+> **Cập nhật 26/11:** N2 đã merge ở #140; cấu hình IdP và profile files đã merge ở #150/#151. N7, N10, N11 đang theo dõi lần lượt tại #153, #154, #155; cần kiểm tra lại trạng thái PR trước buổi bảo vệ. Phần TV1 đã có PR: N3 [#141](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/141), N5a [#142](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/142), T-02 [#143](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/143), N9 [#144](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/144), F4 [#145](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/145), N12 [#146](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/146). Chi tiết ở [tuần 12 bổ sung](../progress/tuan-12-bo-sung/README.md#trạng-thái-phần-tv1-cập-nhật-2511).
 
 ---
 
