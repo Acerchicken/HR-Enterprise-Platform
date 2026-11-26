@@ -91,7 +91,8 @@ resource "aws_iam_policy" "apprunner_instance_policy" {
         ]
         Resource = [
           aws_sqs_queue.worker_queue.arn,
-          aws_sqs_queue.assistant.arn
+          aws_sqs_queue.assistant.arn,
+          aws_sqs_queue.identity.arn
         ]
       },
       {
@@ -161,8 +162,10 @@ resource "aws_apprunner_service" "api" {
           CORS_ORIGIN          = "https://${aws_cloudfront_distribution.web.domain_name}"
           QUEUE_DRIVER         = "sqs"
           SQS_QUEUE_URL        = aws_sqs_queue.worker_queue.url
-          STORAGE_BUCKET       = aws_s3_bucket.documents.id
-          STORAGE_REGION       = var.aws_region
+          # Event tài khoản, vai trò (UC8) đi queue riêng cho worker (staging-readiness F6).
+          SQS_IDENTITY_QUEUE_URL = aws_sqs_queue.identity.url
+          STORAGE_BUCKET         = aws_s3_bucket.documents.id
+          STORAGE_REGION         = var.aws_region
           # UC6 (staging-readiness F4): assistant service qua Cloud Map; service tắt thì API trả fallback (FR-6.3).
           ASSISTANT_URL           = "http://${aws_service_discovery_service.assistant.name}.${aws_service_discovery_private_dns_namespace.internal.name}:3100"
           SQS_ASSISTANT_QUEUE_URL = aws_sqs_queue.assistant.url

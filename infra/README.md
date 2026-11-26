@@ -103,9 +103,9 @@ terraform apply plan.tfplan
 | **Mạng (Network)** | VPC, Subnets, IGW, NAT | 1 VPC (`10.0.0.0/16`), 2 Public Subnets, 2 Private Subnets. 1 NAT instance `t4g.nano` (Amazon Linux 2023 ARM, IMDSv2, không SSH key) tại Public Subnet 1 thay cho NAT Gateway để giữ chi phí dưới hạn mức (ADR-12, phương án B2); cho App Runner VPC Connector gọi Cognito JWKS, Secrets Manager, SQS và Fargate worker ra ngoài. |
 | **Cơ sở dữ liệu** | RDS PostgreSQL 16 | Instance `db.t4g.micro`, 20 GB gp3 SSD, Single-AZ trong Private Subnet, Backup tự động lưu 7 ngày. |
 | **Quản lý khóa & bí mật** | Secrets Manager & KMS | 1 Customer Managed KMS Key. Mật khẩu DB và khóa `FIELD_ENCRYPTION_KEY` (32 bytes base64) sinh ngẫu nhiên bảo mật, lưu trực tiếp vào Secrets Manager. |
-| **Container Registry** | Amazon ECR | 1 Repository `hr-api` (API và worker dùng chung image), bật scan lỗ hổng khi push image, giữ tối đa 10 tags mới nhất. Web build tĩnh lên S3, không cần ECR. Trợ lý chính sách cần thêm `hr-assistant` (chưa có, F4). |
+| **Container Registry** | Amazon ECR | 1 Repository `hr-api` (API và worker dùng chung image), bật scan lỗ hổng khi push image, giữ tối đa 10 tags mới nhất. Web build tĩnh lên S3, không cần ECR. Trợ lý chính sách cần thêm `hr-assistant` (chưa có, F4). Notification service: `hr-notification` (F6, `notification.tf`). |
 | **Backend API Compute** | AWS App Runner | Cấu hình 0.5 vCPU, 1 GB RAM, gắn VPC Connector nối trực tiếp RDS trong Private Subnet; nạp secrets từ Secrets Manager. |
-| **Async Worker Compute** | ECS Fargate & SQS | SQS Standard Queue + DLQ (maxReceiveCount = 5). ECS Cluster chạy 1 Task Fargate 24/7 (0.25 vCPU, 0.5 GB RAM, lệnh `node dist/worker/main.js`). |
+| **Async Worker Compute** | ECS Fargate & SQS | Từ 26/11 (ADR-15 bước 1, F6): 2 SQS Standard Queue + DLQ (maxReceiveCount = 5): `leave-notifications` cho notification service (gửi email qua SES), `identity-sync` cho worker (đồng bộ Cognito). ECS Cluster chạy 2 Task Fargate 24/7, mỗi task 0.25 vCPU, 0.5 GB RAM: worker (`node dist/worker/main.js`, image `hr-api`) và notification (image `hr-notification`, thêm khoảng 9 USD/tháng nếu chạy 24/7, tắt cùng worker ngoài giờ demo theo mục 5.3). |
 | **Frontend Web & Docs** | S3 & CloudFront | 2 S3 Buckets (Web SPA và Docs) chặn 100% public access. CloudFront OAC phân phối HTTPS toàn cầu, định tuyến SPA (rewrite 403/404 về `/index.html`). |
 | **Định danh & Phân quyền** | Cognito User Pool | User Pool OIDC với Authorization Code + PKCE. 3 nhóm `employee`, `hr`, `admin` (chỉ để bắt MFA theo vai trò; quyền lấy từ database, ADR-18; quản lý suy ra từ cây tổ chức) và 4 tài khoản demo. |
 | **Giám sát ngân sách** | AWS Budgets | Cảnh báo tự động gửi email tới ban quản trị khi chi phí chạm mốc **25 USD (50%)**, **40 USD (80%)**, và **50 USD (100%)**. |
@@ -118,7 +118,7 @@ Do tài khoản AWS mới mặc định nằm trong **Amazon SES Sandbox**:
 2. **Người nhận:** SES Sandbox chỉ cho phép gửi tới các địa chỉ người nhận đã được xác minh trước trong AWS SES. Các tài khoản demo mang email nội bộ `@hr.local` sẽ bị SES từ chối gửi.
 3. **Cách kiểm thử khi demo:**
    - *Cách 1 (Nhận email thật):* Thêm địa chỉ email cá nhân của người kiểm thử vào SES Verified Identities và cập nhật email của tài khoản demo tương ứng để nhận email thật.
-   - *Cách 2 (Kiểm tra qua hệ thống giám sát):* Khi gửi tới `@hr.local` chưa xác minh, SES trả lỗi; worker ghi nhận vào CloudWatch Logs (`/ecs/hr-platform-staging-worker`) và message sau 5 lần retry sẽ được chuyển vào Dead-Letter Queue (DLQ), kích hoạt CloudWatch Alarm `hr-platform-staging-sqs-dlq-messages`.
+   - *Cách 2 (Kiểm tra qua hệ thống giám sát):* Khi gửi tới `@hr.local` chưa xác minh, SES trả lỗi; notification service ghi nhận vào CloudWatch Logs (`/ecs/hr-platform-staging-notification`, thử 3 lần có giãn cách mỗi lượt nhận) và message sau 5 lần retry sẽ được chuyển vào Dead-Letter Queue (DLQ), kích hoạt CloudWatch Alarm `hr-platform-staging-sqs-dlq-messages`.
 
 ---
 
@@ -145,7 +145,9 @@ Khi không có lịch demo hoặc ngoài giờ làm việc, thực hiện các t
 1. **Tạm dừng ECS Worker:**
    ```bash
    aws ecs update-service --cluster hr-platform-staging-cluster --service hr-platform-staging-worker --desired-count 0
+   aws ecs update-service --cluster hr-platform-staging-cluster --service hr-platform-staging-notification --desired-count 0
    ```
+   Event chờ trong SQS (giữ 4 ngày), bật lại thì gửi bù.
 2. **Tạm dừng App Runner API:**
    Vào App Runner Console hoặc dùng AWS CLI bấm **Pause Service**.
 3. **Tạm dừng RDS PostgreSQL:**
@@ -211,7 +213,7 @@ Căn cứ quyết định của Nhóm trưởng (10/11/2026), hạ tầng AWS St
     2. Pause service AWS App Runner.
     3. Stop RDS PostgreSQL (`aws rds stop-db-instance`).
     4. Stop NAT instance (`aws ec2 stop-instances`).
-  - *Quy trình bật lại đầu ngày:* Khởi động theo thứ tự: NAT instance -> RDS instance (chờ available) -> Resume App Runner -> Bật lại ECS Worker (`desired-count = 1`).
+  - *Quy trình bật lại đầu ngày:* Khởi động theo thứ tự: NAT instance -> RDS instance (chờ available) -> Resume App Runner -> Bật lại ECS Worker và Notification (`desired-count = 1`).
 
 ### 7.3. Kịch bản diễn tập Rollback (Tuần 12)
 
