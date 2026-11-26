@@ -4,7 +4,7 @@
 |---|---|
 | Đề tài | Số 3 – Enterprise HR Platform (sản phẩm HRHelper) |
 | Nguồn yêu cầu | Slide "Course Project Topics" của môn Cloud Application Development (TS. Dương Lê Minh): Common Expectations, Project 3 (Business Problem & Functional Scope; Engineering Requirements – Security & Workflow), Common Project Deliverables (P1–P5), Project Scope, How Projects Will Be Reviewed |
-| Hiện trạng đối chiếu | Nhánh `dev` commit `906a68f` (25/11/2026, sau PR #138), các PR đang mở #117, #121 → #124 |
+| Hiện trạng đối chiếu | Nhánh `dev` commit `906a68f` (25/11/2026, sau PR #138), các PR đang mở #117, #121 → #124. Use case 6 (mục 1.2) cập nhật theo `dev` `7d1c591` (26/11, sau PR #140) |
 | Ngày | 25/11/2026 (tuần 12) |
 | Người soạn | TV1 (Dương), soạn cùng Claude |
 | Người review | TV2 (Thanh) mục 1, 2; TV3 (Bảo) mục 3 → 5 phần cloud; TV4 (Duy) phần kiểm thử, đo |
@@ -41,7 +41,7 @@ Các việc ghi **Cần làm ngay** được gom ở [mục 6](#6-danh-sách-c�
 
 | Slide | Kết luận | Thiếu lớn nhất |
 |---|---|---|
-| Business Problem & Functional Scope | 🟡 **6/7 use case bắt buộc đạt ở mức dev xong**, thêm UC8 đăng nhập và tính năng nâng cao (trợ lý AI) đã có code | Use case 6 của slide "Employee self-service search": tìm đồng nghiệp có, nhưng **nhân viên chưa tìm được tài liệu theo từ khóa** (chỉ lọc theo loại; ô tìm tiêu đề chỉ có ở trang quản lý của HR) |
+| Business Problem & Functional Scope | ✅ **7/7 use case bắt buộc đạt ở mức dev xong** (use case 6 đủ từ 26/11, PR #140), thêm UC8 đăng nhập và tính năng nâng cao (trợ lý AI) đã có code | Chưa có biên bản kiểm thử và chưa chạy trên staging, nên chưa UC nào "xong" theo kế hoạch tổng 7.1 |
 | Engineering Requirements – Security & Workflow | 🟡 Workflow 5 bước, RBAC + kiểm theo dữ liệu, audit, mã hóa, RAG có kiểm quyền đều đã có trong code và e2e (150 ca) | **Chưa demo được trên cloud**; MFA, chính sách mật khẩu, khóa 5 lần sai chưa cấu hình trên IdP; trợ lý chưa có bộ đánh giá |
 | Common Project Deliverables | Đây là **khung deliverable theo vòng đời** (P1–P5), không phải lịch. Kế hoạch tổng của nhóm đã đi theo khung này (tuần 5 → 12). P1, P2 đủ; P3 đủ tài liệu và code nhưng **chưa deploy**; **P4 yếu nhất**; P5 thiếu **evaluation** và **token cost** | P4: load test chỉ ở local (PR #121 chưa merge, NFR-2.1 chưa đạt), chưa có dashboard, chưa thử lỗi trên cloud |
 | Project Scope | 4/9 tiêu chí "We Expect" đạt, 5 tiêu chí một phần. Không rơi vào mục "We Do NOT Expect" nào | **Real cloud deployment**, **Observability**, **Measurable NFRs** (đo thật), **Cost awareness** (chi phí thật) |
@@ -50,7 +50,7 @@ Các việc ghi **Cần làm ngay** được gom ở [mục 6](#6-danh-sách-c�
 **Năm việc quyết định điểm, phải xong trước đóng băng T4 (2/12):**
 
 1. TV3 sửa B1 trong [`staging-readiness.md`](../cloud/staging-readiness.md) rồi `terraform apply`, Deploy Staging chạy xanh (T5 26/11).
-2. TV1 thêm tìm tài liệu theo từ khóa cho nhân viên (`feat/document-search`, T6 27/11) để đủ use case 6 của slide.
+2. ~~TV1 thêm tìm tài liệu theo từ khóa cho nhân viên (`feat/document-search`, T6 27/11) để đủ use case 6 của slide.~~ Xong: PR [#140](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/140) đã merge vào `dev` (26/11).
 3. TV4 sửa #121 và chạy load test lại ở local rồi trên staging, kèm thử tắt một instance (T2 30/11).
 4. TV3 dựng dashboard CloudWatch theo SLI và báo chi phí thật sau 3 ngày chạy (CN 29/11).
 5. TV2 nộp bộ câu hỏi đánh giá trợ lý (đã trễ hạn T3 24/11, hạn mới T5 26/11); TV4 chạy đánh giá có độ trễ và chi phí mỗi câu (T2 30/11).
@@ -79,7 +79,7 @@ phải chiếu bảng này để giảng viên không hiểu nhầm là nhóm th
 | 3 | Leave / request workflow | UC3 Tạo đơn nghỉ | Số dư theo loại phép (có chuyển phép năm), tạo đơn theo ngày làm việc trừ lễ, chống trùng lịch, chống gửi trùng (`Idempotency-Key`), hủy, đề nghị hủy đơn đã duyệt, tạo đơn hộ, HR chỉnh hạn mức. FR-3.1 → FR-3.8 | #120 (code lại theo thiết kế 13.x), #114, #118; [UC3](../features/UC3-create-leave-request/requirements.md) | ✅ dev xong |
 | 4 | Manager approval | UC4 Duyệt đơn | Quản lý trực tiếp duyệt/từ chối, người duyệt thay theo khoảng ngày, HR duyệt thêm theo loại phép (`PENDING_HR`), HR duyệt đơn của CEO, HR hoàn tất, email thông báo qua outbox + queue, nhắc đơn chờ lâu, lịch lễ. FR-4.1 → FR-4.9 | #60, #120; [UC4](../features/UC4-approve-leave-request/requirements.md) | ✅ dev xong |
 | 5 | HR policy / document repository | UC5 Kho tài liệu | HR tải lên PDF/DOCX thẳng lên object storage bằng presigned URL, phạm vi xem (toàn công ty, đơn vị, vai trò), phiên bản, ẩn/khôi phục; nhân viên chỉ thấy và tải tài liệu trong phạm vi (tải qua API, kiểm quyền mỗi lần, ADR-13). FR-5.1 → FR-5.3 | #64, #126; [UC5](../features/UC5-document-repository/requirements.md) | ✅ dev xong |
-| 6 | Employee self-service search | UC2 (FR-2.1) + UC5 + UC6 | **Tìm đồng nghiệp** theo tên, email, mã, lọc đơn vị: ô tìm trên nav bar và trang `/directory` (FR-2.1). **Hỏi đáp chính sách** bằng câu tự nhiên, có trích dẫn (UC6). **Tìm tài liệu theo từ khóa cho nhân viên: chưa có.** `GET /documents` của nhân viên chỉ lọc theo `type`; tham số `q` (tìm tiêu đề) chỉ có ở `GET /documents/manage` của HR. FR-6.2 (tìm tài liệu) bị bỏ ngày 22/11 với lý do "trùng UC5", nhưng UC5 không có FR tìm kiếm | `backend/src/modules/document/document.dto.ts` (`DocumentQuery` chỉ có `type`), `frontend/src/components/SearchBox.tsx` | 🟡 **Cần làm ngay** (mục 6, N2) |
+| 6 | Employee self-service search | UC2 (FR-2.1) + UC5 (FR-5.4) + UC6 | **Tìm đồng nghiệp** theo tên, email, mã, lọc đơn vị: ô tìm trên nav bar và trang `/directory` (FR-2.1). **Tìm tài liệu theo từ khóa**: nhân viên gõ vào ô tìm trên trang `/documents`, `GET /documents?q=` tìm trong tiêu đề, không phân biệt hoa thường và dấu ("nghi phep" khớp "nghỉ phép"), vẫn chỉ trả tài liệu trong phạm vi người tìm (DR-08); không khớp thì gợi ý hỏi trợ lý (FR-5.4, AC-5.2.10). **Hỏi đáp chính sách** bằng câu tự nhiên, có trích dẫn (UC6) | #60, #140; [UC5 FR-5.4](../features/UC5-document-repository/requirements.md), e2e "nhân viên tìm tài liệu theo từ khóa, không cần dấu; không lộ tài liệu ngoài phạm vi" trong `backend/test/app.e2e-spec.ts` | ✅ dev xong (N2 đóng 26/11) |
 | 7 | Audit history | UC7 Lịch sử thao tác | Audit ghi cùng giao dịch với thao tác, append-only bằng trigger chặn UPDATE, DELETE, TRUNCATE (ADR-09); không ghi giá trị nhạy cảm; trang tra cứu cho HR, ADMIN lọc theo đối tượng, người làm, thời gian. FR-7.1 → FR-7.3 | #129, #137 (UC7 E10 chặn TRUNCATE); [UC7](../features/UC7-audit-log/requirements.md) | ✅ dev xong |
 | – | (thêm) Đăng nhập và tài khoản | UC8 | OIDC + PKCE qua Keycloak (local) / Cognito (staging), tự đăng xuất sau 30 phút, vòng đời tài khoản theo hồ sơ, ADMIN cấp/thu hồi HR, ADMIN. Tách từ yêu cầu bảo mật của slide 2 | #111 → #113, #115, #116; [ADR-17](../architecture/adr/ADR-17-authentication.md) | ✅ local; 🟡 staging (B1, F2) |
 
@@ -91,9 +91,10 @@ phải chiếu bảng này để giảng viên không hiểu nhầm là nhóm th
 
 ### 1.4 Trả lời câu hỏi "đã đủ chưa"
 
-**Chưa đủ hoàn toàn.** Phần nghiệp vụ đủ 6/7 use case ở mức dev xong và có thêm UC8, trợ lý AI. Thiếu duy nhất là **tìm tài liệu
-theo từ khóa cho nhân viên** (một phần của use case 6 trên slide). Việc này nhỏ (thêm `q` vào `DocumentQuery`, lọc tiêu đề và
-mô tả bằng `ILIKE` + `unaccent` như trang quản lý, thêm ô tìm trên `/documents`), làm trong một PR trước đóng băng.
+**Đủ ở mức dev xong (cập nhật 26/11).** Phần nghiệp vụ đủ 7/7 use case và có thêm UC8, trợ lý AI. Chỗ thiếu duy nhất lúc đối
+chiếu 25/11 là **tìm tài liệu theo từ khóa cho nhân viên** (một phần của use case 6 trên slide); PR #140 đã thêm `q` vào
+`DocumentQuery`, tìm tiêu đề bằng `unaccent` + `ILIKE` như trang quản lý, và ô tìm trên `/documents` (FR-5.4). Tài liệu chưa có
+trường mô tả nên chỉ tìm trong tiêu đề; nội dung file thì nhân viên hỏi trợ lý (UC6). Còn lại là biên bản kiểm thử và chạy trên staging.
 
 Ngoài ra cột "Trạng thái" trong [SRS mục 4](../requirements/SRS.md#4-yêu-cầu-chức-năng-fr) đang lệch với code: FR-3.7, FR-3.8,
 FR-4.3, FR-4.8, FR-4.9 vẫn ghi "Kế hoạch tuần 10/12" hoặc "Thiết kế" dù đã code ở #120; FR-6.3, FR-6.4 ghi "Kế hoạch" dù đã có
@@ -444,7 +445,7 @@ Thành viên khác giữ hạn riêng. Phân việc từng người: [`progress/
 | Mã | Việc | Người | Nhánh / nơi làm | Hạn | Đáp ứng | Mới? |
 |---|---|---|---|---|---|---|
 | N1 | Sửa B1 (Cognito: `callback_urls` có `/callback`, MFA `ON`, chỉ admin tạo user, chính sách mật khẩu, token 15 phút, SES), F2, F3 trong `infra/staging`; `plan` → TV1 duyệt → `apply`; Deploy Staging với seed chạy xanh; smoke test theo `deploy.md` mục 5 | TV3 Bảo (TV1 duyệt plan, TV4 smoke) | `infra/idp-hardening`, `infra/profile-files`, rồi `apply` | Mở PR T4 25/11 21:00; `apply` T5 26/11. Quá T6 27/11 21:00 chưa có thì báo giảng viên và demo local | Real cloud deployment, Automated deployment, P3 IaC, CI/CD | Không |
-| N2 | Nhân viên tìm tài liệu theo từ khóa: `q` cho `GET /documents` (tiêu đề, mô tả, không dấu), ô tìm trên `/documents`, e2e, sửa UC5 `requirements.md`, SRS (thêm FR-5.4) | TV1 Duong | `feat/document-search` | Mở PR T6 27/11 | Use case 6 của slide | **Mới** |
+| N2 | ~~Nhân viên tìm tài liệu theo từ khóa: `q` cho `GET /documents` (tiêu đề, không dấu), ô tìm trên `/documents`, e2e, sửa UC5 `requirements.md`, SRS (thêm FR-5.4)~~ **Xong 26/11**: PR [#140](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/140) đã merge, TV2 đã review. Chỉ tìm trong tiêu đề vì tài liệu không có trường mô tả | TV1 Duong | `feat/document-search` | Mở PR T6 27/11 | Use case 6 của slide | **Mới** |
 | N3 | Email trên staging: đọc `MAIL_DRIVER=ses`, gửi bằng SES API (F1); `trust proxy` để audit đúng IP (F5) | TV1 Duong | `feat/notification-service` (đã có kế hoạch) + `fix/trust-proxy` | T5 26/11 | Complete workflow trên cloud, audit trail | F5 mới |
 | N4 | Sửa #121: mỗi VU giữ token tới gần hết hạn (không xin token đồng loạt), chạy lại NFR-2.1 ở local; chạy load test trên staging (50 request/giây 15 phút) có **tắt một instance** giữa chừng; một lượt tăng dần 10 → 250 request/giây (5×). Bật App Runner tối thiểu 2 instance trong lúc đo và demo (ngoài giờ để 1 cho đỡ tiền), ghi rõ trong ADR-06 | TV4 Duy (đo), TV3 Bảo (cấu hình App Runner) | `test/load-k6` (#121), `docs/load-test-staging` | Local T6 27/11; staging T2 30/11 | Measurable NFRs, câu 3, 6; P4 load test | Phần staging, 5× mới |
 | N5 | Dashboard CloudWatch theo 5 SLI (SRS 6.13) + độ dài queue, DLQ; chi phí thật sau 3 ngày; thống nhất NFR-7.1 với Budgets và hạn mức thẻ; cộng task assistant vào dự toán. TV1 làm phần code: log JSON có `traceId` (NFR-8.1), `/health` trả commit (NFR-8.5), metric outbox tồn, timeout kết nối và `statement_timeout` 5 s cho database (SRS 6.14) | TV3 Bảo (dashboard, chi phí); TV1 Duong (code) | `docs/slo-dashboard-cost`; `feat/observability-basics` | T7 28/11 mở PR, CN 29/11 merge | Observability, Cost awareness, câu 10, 11 | Phần code mới |
