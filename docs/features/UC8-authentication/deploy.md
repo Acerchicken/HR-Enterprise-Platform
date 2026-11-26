@@ -58,10 +58,10 @@ trên staging là phần của TV3 (mục 3).
   `node dist/database/grant-admin.js <email>` bằng task ECS một lần (staging; App Runner không vào container được,
   lệnh ở [staging-readiness mục 5](../../cloud/staging-readiness.md#5-lệnh-chạy-một-lần-trên-staging)). Người đó phải có hồ sơ chưa nghỉ việc. Seed local đã
   có `admin@hr.local`.
-- **Local:** `docker compose up -d --build` import lại realm. Realm đã có thì xóa volume Keycloak hoặc import bằng tay, vì Keycloak
-  không ghi đè realm đã tồn tại. Mở Mailpit (8025) để xem thư mời (tiêu đề mặc định của Keycloak "Update Your Account") và thư đặt lại mật khẩu. Sau khi có
+- **Local:** Keycloak chỉ import `realm-hr.json` khi realm chưa có, nên sau khi đổi file realm (ví dụ `passwordPolicy`, chống dò mật khẩu ở #150) phải tạo lại
+  container: `docker compose up -d --force-recreate keycloak` (container không gắn volume dữ liệu nên realm được import lại từ đầu; tài khoản tạo thêm trên Keycloak sẽ mất). Mở Mailpit (8025) để xem thư mời (tiêu đề mặc định của Keycloak "Update Your Account") và thư đặt lại mật khẩu. Sau khi có
   Conditional OTP (TV3), đăng nhập `hr@hr.local` lần đầu sẽ phải quét mã QR TOTP.
-- **Staging:** SES phải xác minh địa chỉ gửi trước khi `apply` (SES sandbox chỉ gửi tới địa chỉ đã xác minh: xác minh luôn email
+- **Staging:** SES phải xác minh địa chỉ gửi trước khi tạo user pool: `terraform apply -target=aws_ses_email_identity.sender`, bấm link xác minh, rồi apply phần còn lại ([infra/README.md mục 3.1](../../../infra/README.md)) (SES sandbox chỉ gửi tới địa chỉ đã xác minh: xác minh luôn email
   của các thành viên dùng để demo). Mật khẩu demo đọc từ Secrets Manager `…/cognito-demo-credentials`; lần đầu đăng nhập phải
   đăng ký TOTP, ghi lại cách làm trong `infra/README.md`.
 

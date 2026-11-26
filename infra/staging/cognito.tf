@@ -1,7 +1,7 @@
 # Cognito User Pool (OIDC Identity Provider per ADR-12)
 resource "aws_cognito_user_pool" "main" {
-  name             = "${var.project_name}-${var.environment}-users"
-  user_pool_tier   = "ESSENTIALS"
+  name           = "${var.project_name}-${var.environment}-users"
+  user_pool_tier = "ESSENTIALS"
 
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]

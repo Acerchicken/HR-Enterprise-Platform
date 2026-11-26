@@ -82,6 +82,10 @@ terraform init
 # Bước 1 (chỉ làm sau khi TV1 đã duyệt plan): tạo trước ECR Repositories bằng -target
 terraform apply -target=aws_ecr_repository.api -auto-approve   # chỉ có repo hr-api; web deploy thẳng lên S3
 
+# Bước 1b: tạo địa chỉ gửi SES trước, rồi bấm link xác minh AWS gửi tới sender_email.
+# User pool Cognito gửi email qua SES (B1), địa chỉ chưa xác minh thì bước tạo pool có thể lỗi.
+terraform apply -target=aws_ses_email_identity.sender
+
 # Bước 2: Đăng nhập ECR và push image ban đầu (:latest)
 aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com
 docker build -t <aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com/hr-api:latest ./backend
