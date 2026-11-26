@@ -1,16 +1,17 @@
 # Hợp đồng event và queue – HRHelper (HR Enterprise Platform)
 
 > Phụ lục của [SAD phần 2](SAD-2-software-architecture.md#7-pattern-đảm-bảo-đúng-nghiệp-vụ). Mô tả event nghiệp vụ mà API
-> phát ra qua transactional outbox và cách notification worker nhận chúng: tên event, payload, tên exchange/queue, bảo đảm
+> phát ra qua transactional outbox và cách notification service, worker nhận chúng: tên event, payload, tên exchange/queue, bảo đảm
 > giao nhận và chống trùng. Hợp đồng API đồng bộ (REST) nằm ở [`openapi.yaml`](../openapi.yaml).
 >
 > Nguồn trong code: `backend/src/modules/leave/outbox/` (event, publisher), `backend/src/messaging/` (driver RabbitMQ, SQS),
-> `backend/src/worker/` (worker), `infra/staging/sqs_worker.tf` (queue trên AWS).
+> `backend/src/worker/` (worker: event tài khoản), `services/notification/` (gửi email), `infra/staging/sqs_worker.tf` (queue trên AWS).
 
 | Phiên bản | Ngày | Người viết | Nội dung |
 |---|---|---|---|
 | 1.0 | 13/11/2026 | TV1 Duong | Bản đầu: 5 event nghỉ phép, RabbitMQ (local) và SQS (staging) |
 | 1.1 | 15/11/2026 | TV1 Duong | Thêm mục 7: thay đổi dự kiến theo ADR-15 (chưa áp dụng) |
+| 1.2 | 26/11/2026 | TV1 Duong | ADR-15 bước 1: payload có `mail` (người nhận), notification service, queue `identity.sync` |
 
 ## 1. Luồng tổng quát
 
@@ -21,18 +22,22 @@ sequenceDiagram
   participant DB as PostgreSQL
   participant PUB as OutboxPublisher (trong process API)
   participant Q as Queue (RabbitMQ / SQS)
-  participant W as Notification worker
-  participant M as SMTP (Mailpit / mail server)
+  participant W as Notification service
+  participant M as SMTP (Mailpit) / Amazon SES
 
   API->>DB: BEGIN, đổi leave_request, leave_balance, history, audit<br/>INSERT leave.outbox (event), COMMIT
   loop mỗi 1 giây, tối đa 50 dòng
     PUB->>DB: SELECT ... WHERE published_at IS NULL ORDER BY id<br/>FOR UPDATE SKIP LOCKED
+    PUB->>DB: tính người nhận theo dữ liệu hiện tại, gắn payload.mail
     PUB->>Q: publish (chờ broker xác nhận)
     PUB->>DB: UPDATE outbox SET published_at = now()
   end
   Q->>W: giao event (ít nhất một lần)
   W->>DB: đã có trong notification.processed_event? → bỏ qua
-  W->>M: gửi email
+  loop mỗi nhóm trong payload.mail chưa gửi
+    W->>M: gửi email (chờ ≤ 10 s, thử tối đa 3 lần, giãn cách)
+    W->>DB: INSERT processed_event "<id>#<nhóm>"
+  end
   W->>DB: INSERT notification.processed_event
   W-->>Q: ack / xóa message
 ```
@@ -43,6 +48,9 @@ sequenceDiagram
   trạng thái thì chắc chắn có event; transaction rollback thì không có event.
 - **Có thể trùng:** publisher chỉ đặt `published_at` sau khi broker xác nhận. Nếu API chết giữa "gửi xong" và "đánh dấu", lượt
   sau gửi lại event đó. Worker phải chống trùng ([mục 5](#5-bảo-đảm-giao-nhận-và-chống-trùng)).
+- **Người nhận tính ở API** (ADR-15 bước 1, event-carried state transfer): `NotificationRecipients` trong publisher đọc quản
+  lý trực tiếp, người duyệt thay đang hiệu lực, nhóm HR, email chủ đơn lúc đẩy event và gắn vào `payload.mail`. Notification
+  service chỉ có quyền trên schema `notification`, không đọc `employee.*`, `iam.*`, `leave.*`.
 - **Giữ thứ tự:** publisher gửi theo `id` tăng dần; gặp lỗi thì dừng lượt đó và thử lại từ chính event lỗi ở lượt sau.
 - **Nhiều instance API** chạy song song an toàn nhờ `FOR UPDATE SKIP LOCKED`: mỗi dòng outbox chỉ một instance gửi.
 - **Không cấu hình queue** (`QUEUE_DRIVER=none`, ví dụ khi chạy test): API vẫn ghi outbox, chỉ không đẩy đi. Khi bật queue,
@@ -74,12 +82,13 @@ ADR-15). Email chỉ là thông báo chung, không chứa giá trị hồ sơ, l
 | `BankAccountChanged` | HR duyệt yêu cầu đổi tài khoản ngân hàng | `POST /change-requests/{id}/approve` | Chủ hồ sơ (cảnh báo nếu không phải họ yêu cầu) |
 
 Payload (`ProfileEventPayload` trong `employee/profile-events.ts`): `requestId`, `employeeId`, `section`, `status`,
-`occurredAt`. Worker nhận dạng bằng `isProfileEvent(type)`.
+`occurredAt`, cộng `mail` (mục 3). Nhận dạng bằng `isProfileEvent(type)` (backend và `services/notification/src/templates.ts`).
 
 **Event tài khoản, vai trò (UC8, ADR-17, ADR-18)**
 
 Thuộc aggregate **tài khoản** (`iam.user_account`, `aggregate_id` là id tài khoản). Ghi chung `leave.outbox` như event hồ sơ
-(cùng nợ kỹ thuật). Consumer là `identity-sync` (đồng bộ sang IdP), không gửi email. Danh sách đầy đủ ở
+(cùng nợ kỹ thuật), nhưng routing key `identity.<Event>` (từ 26/11): đi queue `identity.sync` cho worker của backend
+(`IdentityWorker` → `identity-sync`, đồng bộ sang IdP), không qua notification service, không gửi email. Danh sách đầy đủ ở
 [UC8 spec mục 9.2](../features/UC8-authentication/spec.md#92-hợp-đồng-api); hằng số `IDENTITY_EVENTS` trong
 `identity/identity-events.ts`, worker nhận dạng bằng `isIdentityEvent(type)`.
 
@@ -93,13 +102,14 @@ Thuộc aggregate **tài khoản** (`iam.user_account`, `aggregate_id` là id t�
 | `EmployeeReinstated` | Hồ sơ từ `TERMINATED` về trạng thái khác | `PATCH /employees/{id}` | như trên |
 | `EmployeeEmailChanged` | HR đổi email công ty của người đã có tài khoản | `PATCH /employees/{id}` | như trên, thêm `oldEmail` |
 
-Hồ sơ chưa có tài khoản thì nghỉ việc, khôi phục, đổi email không phát event. Worker chuyển các event này sang `IdentitySync`
+Hồ sơ chưa có tài khoản thì nghỉ việc, khôi phục, đổi email không phát event. `IdentityWorker` chuyển các event này sang `IdentitySync`
 (`worker/identity-sync.ts`): gọi IdP qua driver `IDP_ADMIN_DRIVER`, cập nhật `idp_status`, rồi đánh dấu `processed_event`. Mọi
 thao tác trên IdP idempotent (tạo khi đã có thì chỉ gắn, khóa người không còn thì bỏ qua) nên giao hai lần không sinh hai tài khoản,
 hai thư mời (AC-8.3.4). Lỗi IdP: thử lại trong worker, hết lượt thì ném lỗi, message vào DLQ (UC8 E6).
 
-Ánh xạ hành động → event: `EVENT_OF_ACTION` trong `leave-events.ts`; người nhận: `recipientOf()`. Nhân viên không có quản lý
-trực tiếp (CEO) thì event loại "gửi quản lý" được đánh dấu đã xử lý mà không gửi email.
+Ánh xạ hành động → event: `EVENT_OF_ACTION` trong `leave-events.ts`; nhóm người nhận: `recipientsOf()`, địa chỉ:
+`NotificationRecipients` (`leave/outbox/notification-recipients.ts`). Nhân viên không có quản lý trực tiếp thì nhóm
+`APPROVERS` là nhóm HR (CEO, hoặc dữ liệu lỗi UC4 E8, có log cảnh báo).
 
 ## 3. Payload
 
@@ -117,6 +127,7 @@ Body của message là JSON của `LeaveEventPayload` (`leave-events.ts`). Cả 
 | `actorId` | string (uuid) | Có | Người thực hiện hành động (xem bảng mục 2) |
 | `comment` | string \| null | Có (có thể null) | Ghi chú khi duyệt/từ chối/hủy/hoàn tất; null với `LeaveRequested` |
 | `occurredAt` | string ISO 8601 (UTC) | Có | Thời điểm ghi event |
+| `mail` | mảng `{ group, to }` | Có trên queue (từ 26/11) | **Không lưu trong outbox**, publisher gắn lúc đẩy. `group`: `OWNER`, `APPROVERS`, `HR`; `to`: địa chỉ email. Một người chỉ ở nhóm đầu tiên; nhóm rỗng bị bỏ. Chỉ có email, không tên (ADR-08). Event hồ sơ cũng có trường này; event tài khoản, tài liệu thì không |
 
 Ví dụ (`LeaveApproved`):
 
@@ -131,7 +142,8 @@ Ví dụ (`LeaveApproved`):
   "days": 1,
   "actorId": "9a4d2e1f-7b3c-4d5e-8f6a-1c2b3d4e5f60",
   "comment": "Đồng ý",
-  "occurredAt": "2026-11-13T03:30:00.000Z"
+  "occurredAt": "2026-11-13T03:30:00.000Z",
+  "mail": [{ "group": "OWNER", "to": ["nv01@hr.local"] }]
 }
 ```
 
@@ -157,13 +169,15 @@ interface `EventBus` (publish) và `EventConsumer` (consume) trong `backend/src/
 |---|---|---|
 | Exchange | `hr.events` | `topic`, durable |
 | Routing key | `leave.<type>` | ví dụ `leave.LeaveApproved` |
-| Queue của worker | `notification.leave` | durable, bind `leave.*`, dead letter → `notification.leave.dlq` |
+| Queue của notification service | `notification.leave` | durable, bind `leave.*`, dead letter → `notification.leave.dlq`; service tự khai báo khi kết nối |
 | Dead letter queue | `notification.leave.dlq` | durable |
+| Routing key tài khoản | `identity.<type>` | ví dụ `identity.RoleGranted` (từ 26/11; trước đó `leave.<type>`) |
+| Queue của worker backend | `identity.sync` | durable, bind `identity.*`, dead letter → `identity.sync.dlq` |
 | Routing key tài liệu | `document.<type>` | ví dụ `document.DocumentPublished` (UC5 13.2, từ `feat/assistant-service`) |
 | Queue của assistant service | `assistant.document` | durable, bind `document.*`, dead letter → `assistant.document.dlq`; service tự khai báo khi kết nối (UC6) |
 
 - Publisher dùng **confirm channel**: `publish()` chỉ xong khi broker xác nhận đã nhận.
-- Worker `prefetch(10)`; xử lý xong thì `ack`, lỗi thì `nack` không requeue → message vào DLQ ngay.
+- Notification service và worker `prefetch(10)`; xử lý xong thì `ack`, lỗi thì `nack` không requeue → message vào DLQ ngay.
 - Exchange, queue, binding do code tự khai báo khi kết nối (`assertExchange`, `assertQueue`), không cần tạo tay.
 - Xem queue: RabbitMQ Management http://localhost:15672 (`hr` / `hr`).
 
@@ -175,10 +189,12 @@ interface `EventBus` (publish) và `EventConsumer` (consume) trong `backend/src/
 | Dead letter queue | `hr-platform-staging-leave-notifications-dlq` | giữ 14 ngày |
 | Redrive | `maxReceiveCount = 5` | nhận lỗi 5 lần thì chuyển DLQ |
 
-- Không có exchange: API gửi thẳng vào queue chính (`SQS_QUEUE_URL`), worker long polling 20 giây, tối đa 10 message/lần.
+- Không có exchange: API gửi thẳng vào queue chính (`SQS_QUEUE_URL`), notification service long polling 20 giây, tối đa 10 message/lần.
 - Xử lý xong thì xóa message; lỗi thì **không xóa**, message hiện lại sau visibility timeout.
 - Nếu đổi sang queue FIFO (URL đuôi `.fifo`), code tự đặt `MessageGroupId = leave` và `MessageDeduplicationId` = id event.
-- Quyền gửi/nhận lấy từ IAM role của App Runner (API) và ECS task (worker), không dùng access key.
+- Quyền gửi/nhận lấy từ IAM role của App Runner (API) và ECS task (notification, worker), không dùng access key.
+- Event tài khoản (`identity.*`) gửi vào queue riêng `SQS_IDENTITY_QUEUE_URL`, worker của backend nghe; FIFO: `MessageGroupId = identity`.
+  Chưa đặt biến này thì API bỏ qua event tài khoản như event tài liệu. Terraform cho queue này: PR riêng của notification service.
 - Event tài liệu (`Document*`) gửi vào queue riêng `SQS_ASSISTANT_QUEUE_URL` (`backend/src/messaging/routing.ts`); chưa đặt
   biến này thì API bỏ qua event tài liệu (đánh dấu đã gửi, ghi log cảnh báo một lần mỗi process). FIFO: `MessageGroupId = document`. Chưa có SNS
   fan-out (mục 7): mỗi loại event đi đúng một queue.
@@ -189,11 +205,13 @@ interface `EventBus` (publish) và `EventConsumer` (consume) trong `backend/src/
 |---|---|
 | Không mất event khi API hoặc queue chết | Outbox trong cùng transaction; chỉ đánh dấu đã gửi sau khi broker xác nhận; queue durable |
 | Giao **ít nhất một lần** | Cả RabbitMQ và SQS standard đều có thể giao lại |
-| Không gửi email trùng | Worker tra `notification.processed_event` theo id event trước khi gửi; gửi xong mới ghi id (`ON CONFLICT DO NOTHING`) |
+| Không gửi email trùng | Notification service tra `notification.processed_event` theo id event trước khi gửi; mỗi nhóm gửi xong ghi `<id>#<nhóm>`, gửi hết mới ghi id (`ON CONFLICT DO NOTHING`). Giao lại sau lỗi giữa chừng chỉ gửi nhóm chưa nhận |
+| Lỗi tạm thời của dịch vụ email (NFR-3.5) | Mỗi lần gửi chờ tối đa 10 s; thử tối đa 3 lần, chờ 1 s, 2 s giữa các lần (`MAIL_*`, [configuration.md mục 2b](../development/configuration.md)). SES chia lô 49 người, thử lại theo lô |
 | Không lặp vô hạn khi lỗi | RabbitMQ: nack → DLQ ngay. SQS: sau 5 lần nhận → DLQ |
+| Event thiếu `payload.mail` (API bản cũ) hoặc không phải event nghỉ phép, hồ sơ (event tài khoản phát trước khi tách `identity.*`) | Notification service báo lỗi → DLQ, không lặng lẽ bỏ. Triển khai API và service cùng lúc; còn sót thì đẩy từ DLQ sang đúng queue |
 | Thứ tự | Publisher gửi theo `id` outbox, nhưng queue không bảo đảm giữ thứ tự (SQS Standard, giao lại, đẩy lại từ DLQ). Worker không dựa vào thứ tự (mỗi event độc lập, chỉ để gửi email). Assistant service **có** phụ thuộc thứ tự: dùng id outbox làm mốc, bỏ event cũ hơn mốc đã áp dụng (UC6 spec 13.2) |
 
-Giới hạn hiện tại: nếu email đã gửi nhưng worker chết trước khi ghi `processed_event`, event được giao lại sẽ gửi email lần
+Giới hạn hiện tại: nếu email đã gửi nhưng service chết trước khi ghi dấu nhóm, event được giao lại sẽ gửi email nhóm đó lần
 hai. Chấp nhận được với email thông báo.
 
 **Theo dõi và xử lý sự cố:**
@@ -215,14 +233,15 @@ hai. Chấp nhận được với email thông báo.
    outbox theo schema là **nợ kỹ thuật**, làm khi tách publisher; không tạo outbox thứ hai trước đó vì cần thêm publisher.
 4. Đổi tên exchange/queue phải sửa đồng thời code (`rabbitmq.ts`), Terraform (`sqs_worker.tf`) và file này.
 
-## 7. Thay đổi dự kiến theo ADR-15 (chưa áp dụng)
+## 7. Thay đổi theo ADR-15
 
 [ADR-15](adr/ADR-15-service-extraction.md) tách Notification và Assistant (trước gọi là Search, đổi theo [ADR-16](adr/ADR-16-policy-assistant.md)) thành service riêng. Khi làm, các thay đổi sau đi
 cùng PR code và cập nhật lại các mục ở trên:
 
 | Thay đổi | Theo quy tắc | Ghi chú |
 |---|---|---|
-| Thêm `recipientEmail`, `recipientName` vào payload event gửi email | Quy tắc 1 (thêm trường) | Notification service không còn đọc `employee.*`, `iam.*` |
+| ~~Thêm `recipientEmail`, `recipientName`~~ **Đã làm 26/11** (`feat/notification-service`) dưới dạng trường `mail` (mục 3), chỉ email, không tên | Quy tắc 1 (thêm trường) | Notification service không đọc `employee.*`, `iam.*` (user `notification_svc`) |
+| Event tài khoản tách routing key `identity.*`, queue `identity.sync`: **đã làm 26/11** | Quy tắc 4 | Worker backend chỉ còn identity-sync và job |
 | ~~Thêm `document.outbox`~~ **Đã làm** (`feat/assistant-service`): event `document.<Event>` ghi vào `leave.outbox` chung (quy tắc 3) | Quy tắc 3 | Assistant service (UC6, ADR-16) nhận để cập nhật index. Tên event, payload: [UC5 spec 13.2](../features/UC5-document-repository/spec.md#132-event-cho-trợ-lý-adr-15) |
 | Queue `assistant.document` bind `document.*` vào `hr.events` (local): **đã làm** (mục 4). SNS topic `hr-events` trước các queue SQS (AWS): chưa, hiện API gửi thẳng vào hai queue | Quy tắc 4 | Fan-out: một event đến nhiều consumer; sửa Terraform và file này |
 | Thêm `traceparent` (W3C Trace Context) vào header RabbitMQ và message attribute SQS | Quy tắc 1 | Truy vết OpenTelemetry xuyên qua queue |

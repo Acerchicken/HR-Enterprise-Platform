@@ -57,17 +57,9 @@ export interface AppConfig {
     sqsQueueUrl: string | null;
     /** Queue SQS của assistant service (UC6); không đặt thì event tài liệu không được gửi đi. */
     sqsAssistantQueueUrl: string | null;
+    /** Queue SQS của event tài khoản, vai trò (UC8): API gửi vào, worker backend (identity-sync) nghe. */
+    sqsIdentityQueueUrl: string | null;
     awsRegion: string | null;
-  };
-  smtp: {
-    host: string;
-    port: number;
-    from: string;
-  };
-  /** Worker gửi email: `smtp` (local, Mailpit; mặc định) hoặc `ses` (AWS, staging-readiness F1). Địa chỉ gửi vẫn là SMTP_FROM. */
-  mail: {
-    driver: MailDriver;
-    sesRegion: string;
   };
   /**
    * Số lớp proxy đứng trước API (Express `trust proxy`), để `req.ip` (audit, rate limit) là IP thật của người dùng thay vì
@@ -168,15 +160,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: LoadOptio
     },
     fieldEncryptionKey: env.FIELD_ENCRYPTION_KEY ?? DEV_FIELD_ENCRYPTION_KEY,
     queue,
-    smtp: {
-      host: env.SMTP_HOST ?? 'localhost',
-      port: Number(env.SMTP_PORT ?? 1025),
-      from: env.SMTP_FROM ?? 'no-reply@hr.local',
-    },
-    mail: {
-      driver: mailDriverOf(env.MAIL_DRIVER),
-      sesRegion: env.SES_REGION || env.AWS_REGION || 'ap-southeast-1',
-    },
     trustProxy: trustProxyOf(env.TRUST_PROXY),
     storage: {
       bucket: env.STORAGE_BUCKET || null,
@@ -257,7 +240,7 @@ function loadQueue(env: NodeJS.ProcessEnv): AppConfig['queue'] {
   if (driver === 'sqs' && (!sqsQueueUrl || !awsRegion)) {
     throw new Error('QUEUE_DRIVER=sqs cần SQS_QUEUE_URL và AWS_REGION');
   }
-  return { driver, rabbitmqUrl, sqsQueueUrl, sqsAssistantQueueUrl: env.SQS_ASSISTANT_QUEUE_URL || null, awsRegion };
+  return { driver, rabbitmqUrl, sqsQueueUrl, sqsAssistantQueueUrl: env.SQS_ASSISTANT_QUEUE_URL || null, sqsIdentityQueueUrl: env.SQS_IDENTITY_QUEUE_URL || null, awsRegion };
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
@@ -271,14 +254,6 @@ function parseOverrides(raw: string | undefined): AppConfig['rateLimit']['overri
     // Rơi xuống lỗi bên dưới.
   }
   throw new Error('RATE_LIMIT_OVERRIDES phải là JSON, ví dụ {"global":{"minute":1000}}');
-}
-
-export type MailDriver = 'smtp' | 'ses';
-
-function mailDriverOf(v: string | undefined): MailDriver {
-  const d = (v || 'smtp').trim().toLowerCase();
-  if (d !== 'smtp' && d !== 'ses') throw new Error(`MAIL_DRIVER không hợp lệ: ${v} (smtp | ses)`);
-  return d;
 }
 
 function trustProxyOf(v: string | undefined): number {
