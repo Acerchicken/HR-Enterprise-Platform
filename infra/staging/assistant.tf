@@ -233,14 +233,14 @@ resource "aws_ecs_task_definition" "assistant" {
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
   task_role_arn            = aws_iam_role.assistant_task_role.arn
 
-  container_definitions = jsonencode([
+  container_definitions = jsonencode(concat([
     {
       name         = "assistant"
       image        = "${aws_ecr_repository.assistant.repository_url}:latest"
       essential    = true
       portMappings = [{ containerPort = 3100, protocol = "tcp" }]
 
-      environment = [
+      environment = concat([
         { name = "NODE_ENV", value = "production" },
         { name = "PORT", value = "3100" },
         { name = "DB_SSL", value = "require" },
@@ -250,7 +250,7 @@ resource "aws_ecs_task_definition" "assistant" {
         { name = "STORAGE_BUCKET", value = aws_s3_bucket.documents.id },
         { name = "STORAGE_REGION", value = var.aws_region },
         { name = "ASSISTANT_EMBEDDING_MODEL", value = "embeddinggemma-300m" }
-      ]
+      ], local.otel_ecs_env["assistant"])
 
       secrets = [
         { name = "ASSISTANT_DB_URL", valueFrom = "${aws_secretsmanager_secret.assistant.arn}:ASSISTANT_DB_URL::" },
@@ -267,7 +267,7 @@ resource "aws_ecs_task_definition" "assistant" {
         }
       }
     }
-  ])
+  ], local.adot_sidecar["assistant"]))
 
   tags = {
     Name = "${var.project_name}-${var.environment}-assistant-task"

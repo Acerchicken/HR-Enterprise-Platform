@@ -181,7 +181,7 @@ resource "aws_apprunner_service" "api" {
       image_configuration {
         port = tostring(var.api_container_port)
 
-        runtime_environment_variables = {
+        runtime_environment_variables = merge({
           NODE_ENV             = "production"
           PORT                 = tostring(var.api_container_port)
           DB_HOST              = aws_db_instance.postgres.address
@@ -208,7 +208,7 @@ resource "aws_apprunner_service" "api" {
           # UC6 (staging-readiness F4): assistant service qua Cloud Map; service tắt thì API trả fallback (FR-6.3).
           ASSISTANT_URL           = "http://${aws_service_discovery_service.assistant.name}.${aws_service_discovery_private_dns_namespace.internal.name}:3100"
           SQS_ASSISTANT_QUEUE_URL = aws_sqs_queue.assistant.url
-        }
+        }, local.otel_apprunner_env)
 
         # Sensitive secrets retrieved directly from AWS Secrets Manager
         runtime_environment_secrets = {
@@ -225,6 +225,12 @@ resource "aws_apprunner_service" "api" {
       egress_type       = "VPC"
       vpc_connector_arn = aws_apprunner_vpc_connector.main.arn
     }
+  }
+
+  # ADR-15 bước 4: X-Ray (tracing.tf).
+  observability_configuration {
+    observability_enabled           = var.xray_tracing_enabled
+    observability_configuration_arn = aws_apprunner_observability_configuration.xray.arn
   }
 
   instance_configuration {
