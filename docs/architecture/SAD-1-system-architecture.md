@@ -160,7 +160,8 @@ API không giữ phiên đăng nhập (stateless JWT), nên thêm instance khôn
 event outbox chưa gửi; cảnh báo theo SLO 99,5% và theo chi phí.
 Truy vết phân tán (ADR-15 bước 4): OpenTelemetry trên API, worker, notification và assistant; `traceparent` đi qua outbox và
 queue, nên một trace trên Jaeger (local, `docker compose --profile observability`) nối request duyệt đơn với email được gửi.
-Log JSON có `otelTraceId` để đi từ log sang trace. Staging (X-Ray qua ADOT collector) chưa nối.
+Log JSON có `otelTraceId` để đi từ log sang trace. Staging gửi trace sang X-Ray: API qua collector của App Runner
+(observability configuration), các task ECS qua container phụ ADOT collector (`infra/staging/tracing.tf`, chưa apply).
 
 **Phát hành:**
 

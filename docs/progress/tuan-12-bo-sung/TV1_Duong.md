@@ -71,4 +71,10 @@ ADR-15 (#92), ADR-16 (#128), ADR-17 (#99), ADR-18 (#100) đã merge: đổi "Đ�
 
 | Ngày | Việc | PR | Kết quả |
 |---|---|---|---|
-| 25/11 | Đối chiếu yêu cầu môn học, phân việc bổ sung | #139 | Mở |
+| 25/11 | Đối chiếu yêu cầu môn học, phân việc bổ sung | #139 | Đã merge |
+| 25/11 | N2, N3, N5a, T-02, N9, F4, N12 | #140 → #146 | Đã merge |
+| 26/11 | Tách notification service (ADR-15 bước 1) | #148 | Đã merge |
+| 26/11 | Hạ tầng notification trên staging (F6) | #149 | Đã merge |
+| 26/11 | Tracing OpenTelemetry, Jaeger local (ADR-15 bước 4) | #152 | Đã merge; X-Ray staging chưa nối |
+| 26/11 | Review #150, #151, #153, #154, #155; sửa `terraform fmt` và ghi chú apply cho #150, #151 | – | Đăng trên GitHub |
+| 26/11 | Số việc chờ trên chuông, trang chủ, tab Việc cần duyệt (AC-0.2.2, AC-0.6.x) | `feat/approvals-todo-counts` | Mở PR |

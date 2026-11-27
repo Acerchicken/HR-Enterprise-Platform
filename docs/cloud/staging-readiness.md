@@ -35,6 +35,7 @@ Vì vậy **chưa chạy `terraform apply` lần đầu trước khi xong B1**. 
 | F4 | Trợ lý chính sách (UC6) | Không có gì cho `services/assistant` trong Terraform và workflow. API thiếu `ASSISTANT_URL`, `ASSISTANT_INTERNAL_TOKEN`, `SQS_ASSISTANT_QUEUE_URL` → câu hỏi trả `fallback = true`, event tài liệu bị bỏ qua (log cảnh báo), không lỗi 5xx | Xem mục 4 | TV1 (25/11, nhánh `infra/assistant-staging`), TV3 kiểm tra khi apply | ☑ Terraform + workflow (validate qua, chưa apply) |
 | F6 | Notification service (ADR-15 bước 1) | Từ 26/11 (`feat/notification-service`) email do `services/notification` gửi, worker của backend chỉ nghe queue `identity-sync`. Terraform chưa có task ECS, ECR, queue `identity-sync`, secret `notification_svc` → trên staging email và đồng bộ tài khoản đều dừng nếu deploy code mà chưa apply | ECR `hr-notification`; task ECS notification (`MAIL_DRIVER=ses`, `SQS_QUEUE_URL` leave-notifications, `NOTIFICATION_DB_URL` từ secret); chuyển quyền `ses:SendEmail` sang role của task notification; queue `identity-sync` + DLQ, API `SQS_IDENTITY_QUEUE_URL` + `sqs:SendMessage`, worker nghe queue này; `ALTER ROLE notification_svc LOGIN PASSWORD` từ Secrets Manager; workflow build image | TV1 (code, PR Terraform `infra/notification-staging`), TV3 (apply) | Code ☑ 26/11 (#148), Terraform ☑ 26/11 (#149, chưa apply) |
 | F5 | IP người dùng trong audit (UC7 FR-7.1) | Không đặt `trust proxy` (`backend/src/main.ts`), nên `req.ip` là IP proxy của App Runner, không phải IP người dùng | Đặt `app.set('trust proxy', <số hop>)` theo biến `TRUST_PROXY` (staging: web gọi thẳng URL App Runner, có một lớp proxy của App Runner phía trước); kiểm lại bằng một thao tác rồi xem cột IP trên `/audit` | TV1 | ☑ code + Terraform `TRUST_PROXY=1` 25/11; kiểm lại cột IP trên `/audit` sau apply |
+| F7 | Truy vết phân tán X-Ray (ADR-15 bước 4) | Từ 26/11 (#152) code gửi trace qua OTLP khi có `OTEL_EXPORTER_OTLP_ENDPOINT`, nhưng staging không có collector nào nhận | `infra/staging/tracing.tf`: App Runner bật observability configuration (vendor `AWSXRAY`, collector của App Runner nhận gRPC `localhost:4317`, nên API dùng `OTEL_EXPORTER_OTLP_PROTOCOL=grpc`); task worker, notification, assistant thêm container phụ ADOT collector (OTLP/HTTP `127.0.0.1:4318` → X-Ray, cấu hình qua `AOT_CONFIG_CONTENT`); gắn `AWSXRayDaemonWriteAccess` cho instance role App Runner và 3 task role. Tắt bằng `xray_tracing_enabled = false` | TV1 (code, PR `infra/xray-tracing`), TV3 (apply, kiểm trên bảng X-Ray) | Code, Terraform ☑ 26/11 (chưa apply) |
 
 ## 4. Trợ lý chính sách trên staging (F4 chi tiết)
 
@@ -85,6 +86,7 @@ aws ecs run-task --cluster hr-platform-staging-cluster --task-definition hr-plat
 | L4 | Workflow chỉ chạy tay (`workflow_dispatch`) | Thêm lại `push: branches: [dev]` khi staging đã chạy ổn (tuần 12) | TV3 |
 | L5 | `force_destroy`, `skip_final_snapshot = true`, `deletion_protection = false` | Chấp nhận cho staging, không mang lên production | – |
 | L6 | Migration chạy hai lần mỗi deploy: task ECS trong workflow và `CMD` của image API khi App Runner khởi động | Không hại (migration đã chạy thì bỏ qua). Có thể bỏ khỏi `CMD` để App Runner khởi động nhanh hơn | TV1 |
+| L7 | Tài liệu AWS (đọc 26/11) ghi App Runner không còn nhận khách hàng mới; tài khoản đã dùng thì vẫn dùng bình thường | TV3 kiểm sớm bằng `aws apprunner list-services` hoặc tạo thử trên console. Nếu tài khoản không tạo được service App Runner, API phải chuyển sang ECS Fargate sau ALB (khi đó X-Ray của API đi qua container phụ ADOT như các task khác, F7) | TV3 |
 
 ## 7. Thứ tự đề xuất
 
@@ -115,4 +117,5 @@ aws ecs run-task --cluster hr-platform-staging-cluster --task-definition hr-plat
 | `SQS_ASSISTANT_QUEUE_URL` | ✓ (25/11) | – | – | ✓ | F4 |
 | `ASSISTANT_CONFIG_KEY`, `ASSISTANT_EMBEDDING_MODEL` | – | – | – | ✓ (25/11) | F4 |
 | `TRUST_PROXY=1` | ✓ (25/11) | – | – | – | F5 |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME` (X-Ray, F7) | ✓ (26/11, `localhost:4317`, `OTEL_EXPORTER_OTLP_PROTOCOL=grpc`) | ✓ (26/11, `127.0.0.1:4318`) | ✓ (26/11) | ✓ (26/11) | F7 |
 | `RATE_LIMIT_*` | Dùng mặc định | – | – | – | |

@@ -155,9 +155,9 @@ UC nào cũng dở. Từ nay:
 | `test/load-k6` | TV4 Duy, TV1 hỗ trợ | Load test local 50 request/giây 15 phút; đo NFR-1.1 → 1.3, NFR-2.1, NFR-2.4. Dùng nhiều tài khoản hoặc nâng ngưỡng rate limit | NFR-1, NFR-2 | T6 (20/11) | CN (22/11) | TV1, TV3 |
 | `infra/service-extraction` | TV3 Bảo | ADR-15 phần hạ tầng: SNS topic `hr-events` và filter policy cho các queue SQS, task Fargate cho notification và search (có thể chung một task hai container), DB user `notification_svc`, `search_svc`, X-Ray. Chỉ `validate`, `plan` | Tiêu chí nghiệm thu ADR-15 | T7 (21/11), 21:00 | CN (22/11) | TV1 |
 | `docs/slo-dashboard-cost` | TV3 Bảo | Dashboard CloudWatch theo SLI ở SRS 6.13; chi phí/tháng theo kết quả load test và thêm task của ADR-15 | SRS 6.13 | CN (22/11), 12:00 | T2 (23/11) | TV1 |
-| `feat/notification-service` | TV1 Duong | ADR-15 bước 1: tách worker thành `services/notification/`, payload outbox mang sẵn người nhận, driver `MAIL_DRIVER=smtp\|ses` (thay nhánh `feat/mail-driver-ses` đã lên kế hoạch 14/11) | Tiêu chí ADR-15, worker gửi được email trên staging | CN (22/11) | T2 (23/11) | TV3, TV4 (đã mở PR #148, Terraform #149 ngày 26/11) |
+| `feat/notification-service` | TV1 Duong | ADR-15 bước 1: tách worker thành `services/notification/`, payload outbox mang sẵn người nhận, driver `MAIL_DRIVER=smtp\|ses` (thay nhánh `feat/mail-driver-ses` đã lên kế hoạch 14/11) | Tiêu chí ADR-15, worker gửi được email trên staging | CN (22/11) | T2 (23/11) | TV3, TV4 (đã merge #148, #149 ngày 26/11) |
 | (không có nhánh) | TV3 Bảo | `terraform apply` staging theo `docs/aws-rollout-plan`, gồm bucket tài liệu, bucket hồ sơ, hạ tầng ADR-15; chạy Deploy Staging với seed | `deploy.md` mục 5 của các UC đã dev xong | T3 (24/11) xong | – | TV1 |
-| `feat/tracing-otel` | TV1 Duong | ADR-15 bước 4: OpenTelemetry cho API và hai service, `traceparent` qua outbox và queue; Jaeger local, X-Ray staging | Tiêu chí ADR-15 | T6 (27/11) | T7 (28/11) | TV3 (đã mở PR ngày 26/11; X-Ray staging chưa nối) |
+| `feat/tracing-otel` | TV1 Duong | ADR-15 bước 4: OpenTelemetry cho API và hai service, `traceparent` qua outbox và queue; Jaeger local, X-Ray staging | Tiêu chí ADR-15 | T6 (27/11) | T7 (28/11) | TV3 (đã merge #152 ngày 26/11; X-Ray staging chưa nối) |
 | `infra/llm-secrets-cost` | TV3 Bảo | Khóa mã hóa cấu hình trợ lý `ASSISTANT_CONFIG_KEY` trong Secrets Manager; cho phép gọi HTTPS ra API của Claude, Gemini, DeepSeek; RDS bật extension `vector`; task Fargate assistant khoảng 2 GB RAM cho EmbeddingGemma (ADR-16, sửa 23/11) | NFR-7.1 | T4 (25/11), 21:00 | T5 (26/11) | TV1 |
 
 PR đang mở của TV3: #68 (MinIO local) đang conflict và Request changes; #70 (Terraform tài liệu, email SES API) đã sửa 15/11, chờ
@@ -226,7 +226,7 @@ Các việc dưới đây TV1 làm từ T7 (28/11) tới T3 (1/12), chỉ khi b�
 | 1 | `feat/department-admin-ui` | TV1 Duong | UC2 AC-2.4.5, trưởng/phó đơn vị mọi cấp AC-2.9.x (ADR-14), chức danh AC-2.6.x, ngừng hoạt động đơn vị AC-2.10.x |
 | 2 | `feat/employee-transfer` | TV1 Duong | UC2 quá trình công tác AC-2.8.x, điều chuyển có ngày hiệu lực AC-2.7.x |
 | 3 | `infra/idp-auth-events` | TV3 Bảo | UC7 AC-7.4.1: ghi đăng nhập, cấp và thu hồi vai trò từ Keycloak, Cognito |
-| 4 | `feat/approvals-inbox` | TV1 Duong | Trang "Việc cần duyệt" `/approvals` có tab, chuyển tiếp `/leave/approvals`, `/leave/hr` (AC-0.6.1 → 0.6.4) |
+| 4 | `feat/approvals-inbox` | TV1 Duong | Trang "Việc cần duyệt" `/approvals` có tab, chuyển tiếp `/leave/approvals`, `/leave/hr` (AC-0.6.1 → 0.6.4). Đã xong: trang ở #120, số việc chờ trên tab, chuông, trang chủ ở `feat/approvals-todo-counts` (26/11) |
 
 | Việc | Người | Hạn |
 |---|---|---|
@@ -291,8 +291,8 @@ Slide "Common Project Deliverables" của môn là **danh sách sản phẩm ph�
 | P5 | Security / guardrails | ✅ | Chưa có ca tấn công chạy thật | N7 |
 | P5 | Latency & token-cost analysis | ❌ | Service đã log token và thời gian, chưa có báo cáo | N7 |
 
-Ngoài P1 → P5, slide "Business Problem & Functional Scope" còn thiếu một ý: **nhân viên chưa tìm được tài liệu theo từ khóa**
-(use case 6 "Employee self-service search" của slide). Việc N2.
+Ngoài P1 → P5, slide "Business Problem & Functional Scope" từng thiếu một ý: nhân viên chưa tìm được tài liệu theo từ khóa
+(use case 6 "Employee self-service search" của slide), việc N2. **Đã xong 25/11** qua PR #140 (FR-5.4).
 
 ### 8.2 Việc bổ sung tới buổi bảo vệ
 

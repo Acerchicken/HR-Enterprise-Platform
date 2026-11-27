@@ -80,4 +80,7 @@ trong SQL), `backend/src/modules/document/document-rules.ts`, `infra/staging/*.t
 
 ## Việc đã làm
 
-*(TV2 điền khi xong: ngày, PR, kết quả.)*
+- **26/11 — N7a, bộ câu hỏi UC6:** mở [PR #153](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/153), gồm 30 câu/5 nhóm và 4 DOCX giả lập. Q13–Q18, Q28–Q30 chạy theo cả insider Engineering và outsider Finance. DOCX hợp lệ; TV1/TV4 review và approve còn chờ.
+- **26/11 — N10, trạng thái FR:** mở [PR #154](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/154). Đã rà các PR merge trên `dev`, cập nhật 57 FR đang dùng (49 đã có, 6 một phần, 2 kế hoạch), giữ FR-6.1/6.2 là mã đã bỏ; bổ sung FR-2.6–2.10 vào MT-1. TV1 review còn chờ.
+- **26/11 — N11, threat model:** mở [PR #155](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/155), cập nhật DFD, T-18 và T-14/T-15 theo #120, thêm T-24–T-33. TV1 review còn chờ.
+- **26/11 — N2, review `feat/document-search`:** PR #140 đã merge; đã rà FR-5.4/DR-08 và test phạm vi, tìm không dấu, wildcard/độ dài. Không có điểm cần chặn; đã ghi kết quả trên [PR #140](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/140#issuecomment-7184077243).

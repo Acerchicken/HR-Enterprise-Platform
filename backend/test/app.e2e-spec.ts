@@ -1960,6 +1960,32 @@ describe('HRHelper API (e2e)', () => {
 
     afterAll(clean);
 
+    it('số việc chờ cho chuông, trang chủ và tab trang Việc cần duyệt khớp danh sách (AC-0.2.2, AC-0.6.1)', async () => {
+      const counts = async (who: Record<string, string>) => (await http.get('/api/v1/me/todo-counts').set(who).expect(200)).body;
+      const total = async (path: string, who: Record<string, string>) => (await http.get(path).set(who).expect(200)).body.total;
+
+      // Nhân viên thường không có tab nào; quản lý chỉ có tab "Đơn nghỉ" (AC-0.6.1).
+      expect(await counts(EMPLOYEE)).toMatchObject({ leave: null, leaveComplete: null, profile: null });
+      const m0 = await counts(MANAGER);
+      expect(m0).toMatchObject({ leaveComplete: null, profile: null });
+      expect(m0.leave).toBe(await total('/api/v1/leave-requests/pending-approval?size=100', MANAGER));
+
+      // Đơn mới của cấp dưới làm số của quản lý tăng 1; chuông cộng cùng số (AC-0.2.2).
+      const created = (await annual(wd(5))).body;
+      const m1 = await counts(MANAGER);
+      expect(m1.leave).toBe(m0.leave + 1);
+      expect(m1.total).toBe(m0.total + 1);
+
+      // HR: số mỗi tab bằng tổng của danh sách tab đó.
+      const hr = await counts(HR);
+      expect(hr.leaveComplete).toBe(await total('/api/v1/leave-requests?status=APPROVED&size=1', HR));
+      expect(hr.profile).toBe(await total('/api/v1/change-requests?status=PENDING&size=1', HR));
+      expect(hr.total).toBe(hr.leave + hr.leaveComplete + hr.profile + hr.myRejectedChanges);
+
+      await release(created.id);
+      expect((await counts(MANAGER)).leave).toBe(m0.leave);
+    });
+
     it('tạo → quản lý duyệt → HR hoàn tất sau ngày kết thúc; số dư, lịch sử, audit, outbox đúng (AC-3.2.1, AC-4.2.x, AC-4.5.1)', async () => {
       const before = await balance();
       const k = key();
