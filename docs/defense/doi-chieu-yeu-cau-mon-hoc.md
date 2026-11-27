@@ -235,7 +235,7 @@ tổng), nên các mục P4, P5 bị đẩy lùi và chưa được theo dõi ri
 | Real cloud deployment | AWS ap-southeast-1 (ADR-12): CloudFront + S3 (web), App Runner (API), ECS Fargate (worker, assistant), RDS PostgreSQL 16, SQS + DLQ, Cognito, S3 tài liệu/hồ sơ, KMS, Secrets Manager; toàn bộ bằng Terraform | ❌ | **Chưa `apply`**. Các thay đổi Cognito/bucket hồ sơ/scaling đã merge (#150, #151); cần `plan` review, `apply`, deploy và smoke test. Rủi ro thêm: AWS App Runner đóng với khách hàng mới từ 30/4/2026; TV3 phải xác nhận tài khoản nhóm đã đủ điều kiện. Nếu chưa, chuyển API sang ECS Express Mode hoặc ECS Fargate + ALB và cập nhật chi phí/kiến trúc ([AWS App Runner availability](https://docs.aws.amazon.com/apprunner/latest/dg/apprunner-availability-change.html), [staging-readiness L7](../cloud/staging-readiness.md)). N1 |
 | Meaningful architecture decisions | 19 ADR (ADR-00 → ADR-18), mỗi ADR có phương án, bảng tiêu chí 1–5, trade-off, tiêu chí nghiệm thu, khi nào xem lại | ✅ | ADR-15 → ADR-18 còn "Đề xuất" dù PR đã merge: đổi sang "Đã chấp nhận" (N12) |
 | Measurable NFRs | 74 NFR có ngưỡng và cách kiểm chứng; SLI/SLO | 🟡 | Mới đo ở local, một phần (N4); chưa đo trên cloud |
-| Failure handling | Outbox trong cùng giao dịch, DLQ, idempotency (`Idempotency-Key`, event lặp), optimistic lock (`version`), fallback LLM, timeout, rate limit 429, thông báo lỗi không lộ nội bộ | 🟡 | Có code và e2e; chưa diễn tập (N6); chưa có giãn cách tăng dần khi thử lại (NFR-3.5) |
+| Failure handling | Outbox trong cùng giao dịch, DLQ, idempotency (`Idempotency-Key`, event lặp), optimistic lock (`version`), fallback LLM, timeout, rate limit 429, thông báo lỗi không lộ nội bộ | 🟡 | Có code và e2e; chưa diễn tập (N6). Thử lại có giãn cách tăng dần đã có từ #148 (NFR-3.5) |
 | Security controls | Mục 2.2 | 🟡 | #150 đã thêm cấu hình IdP vào IaC nhưng chưa apply; Conditional OTP Keycloak còn thiếu (N1, N8). |
 | Automated deployment | `deploy-staging.yml`: OIDC, build, push ECR theo SHA, migration, cập nhật App Runner, ECS, S3, invalidation, kiểm `/health` | 🟡 | Chưa chạy lần nào; chạy tay (N1, N9) |
 | Observability | traceId, 5 alarm, health check | 🟡 | N5a code đã merge (#142); dashboard/đo SLI còn thiếu (N5b). |
@@ -345,7 +345,7 @@ instance" của ADR-06 và NFR-3.2 (N4).
 | Phụ thuộc lỗi | Hệ thống làm gì | Cơ chế |
 |---|---|---|
 | Queue (SQS) | Đơn vẫn tạo, duyệt được; event chờ trong bảng outbox, gửi bù khi queue sống lại | Outbox ghi cùng giao dịch (ADR-03) |
-| Email (SES) | Thử lại, hết lượt vào DLQ, có alarm; trạng thái đơn không đổi; không gửi trùng | Worker idempotent, DLQ giữ 14 ngày |
+| Email (SES) | Chờ tối đa 10 s mỗi lần, thử lại tối đa 3 lần có giãn cách tăng dần, hết lượt vào DLQ, có alarm; trạng thái đơn không đổi; không gửi trùng | Notification service idempotent (`notification.processed_event`, #148), DLQ giữ 14 ngày |
 | LLM | Sau 10 s trả danh sách tài liệu liên quan (`fallback`), chức năng khác không ảnh hưởng | Timeout + fallback trong `answerer.ts` |
 | Assistant service tắt | Câu hỏi trả `fallback`; event tài liệu chờ trong queue riêng | Queue giữ 14 ngày |
 | IdP (Cognito) | Phiên còn hạn vẫn dùng; chỉ đăng nhập mới bị ảnh hưởng | JWKS được cache |
@@ -355,7 +355,7 @@ instance" của ADR-06 và NFR-3.2 (N4).
 
 **Chiếu:** [SRS 6.14](../requirements/SRS.md#614-kịch-bản-lỗi-và-cách-chịu-lỗi), `worker.e2e-spec.ts`.
 
-**Điểm yếu:** chưa diễn tập trên cloud (*cần làm*, N6); thử lại chưa giãn cách tăng dần (NFR-3.5).
+**Điểm yếu:** chưa diễn tập trên cloud (*cần làm*, N6).
 
 ### Câu 8. How do you deploy and rollback?
 
