@@ -106,5 +106,7 @@ Người làm cập nhật cột này khi mở PR, khi merge.
 | N2, N3, N5a, F4, N9, N12, `fix/auth-email-verified` | TV1 đang làm (25–26/11) | – |
 | N1 | Chưa mở PR | – |
 | N4 | #121 Request changes chưa sửa | #121 |
-| N7a | Chưa mở PR (trễ) | – |
-| N5b, N6, N7b, N8, N10, N11, N13 | Chưa tới hạn | – |
+| N7a | ✅ Đã merge (26/11, trễ từ 24/11) | [#153](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/153) |
+| N10 | ✅ Đã merge (26/11) | [#154](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/154) |
+| N11 | ✅ Đã merge (26/11) | [#155](https://github.com/Acerchicken/HR-Enterprise-Platform/pull/155) |
+| N5b, N6, N7b, N8, N13 | Chưa tới hạn | – |
